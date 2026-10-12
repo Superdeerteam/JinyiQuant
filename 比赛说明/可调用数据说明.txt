@@ -1,0 +1,372 @@
+1分钟K线(cpt_jyc_2026_stock_bar1m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument	string	股票代码
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+pre_close	float	前收盘价
+high	float	最高价
+open	float	开盘价
+low	float	最低价
+close	float	收盘价
+deal_number	int64	区间成交笔数
+volume	int64	区间成交量
+amount	double	区间成交额
+ask_price1	float	1档委卖价
+ask_price2	float	2档委卖价
+ask_price3	float	3档委卖价
+ask_price4	float	4档委卖价
+ask_price5	float	5档委卖价
+bid_price1	float	1档委买价
+bid_price2	float	2档委买价
+bid_price3	float	3档委买价
+bid_price4	float	4档委买价
+bid_price5	float	5档委买价
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+ask_volume4	int32	4档委卖量
+ask_volume5	int32	5档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+bid_volume4	int32	4档委买量
+bid_volume5	int32	5档委买量
+ask_num_orders1	int32	卖1档委托笔数
+ask_num_orders2	int32	卖2档委托笔数
+ask_num_orders3	int32	卖3档委托笔数
+ask_num_orders4	int32	卖4档委托笔数
+ask_num_orders5	int32	卖5档委托笔数
+bid_num_orders1	int32	买1档委托笔数
+bid_num_orders2	int32	买2档委托笔数
+bid_num_orders3	int32	买3档委托笔数
+bid_num_orders4	int32	买4档委托笔数
+bid_num_orders5	int32	买5档委托笔数
+股票列表(cpt_jyc_2026_instruments)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期
+instrument	string	证券代码
+name	string	证券简称
+未来30分VWAP收益率(cpt_jyc_2026_vwap)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	采样时点（未来30分钟窗口起点）
+instrument	string	股票或指数代码
+vwap_return	float	窗口终点价格相对未来30分钟VWAP的收益率
+vwap	float	未来30分钟成交量加权平均价
+end_price	float	未来30分钟窗口终点最新有效成交价
+volume	int64	未来30分钟成交量
+amount	double	未来30分钟成交额（元）
+num_trades	int32	未来30分钟成交笔数
+1分钟K线（供下载）(cpt_jyc_2026_e2e_bar1m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+high	int32	最高价(单位:分=元×100, 缺失=-1)
+open	int32	开盘价(单位:分=元×100, 缺失=-1)
+low	int32	最低价(单位:分=元×100, 缺失=-1)
+close	int32	收盘价(单位:分=元×100, 缺失=-1)
+deal_number	int32	成交笔数
+volume	int64	总成交量(单位:股)
+amount	int64	成交金额(单位:分=元×100)
+ask_price1	int32	1档委卖价(单位:分=元×100)
+ask_price2	int32	2档委卖价(单位:分=元×100)
+ask_price3	int32	3档委卖价(单位:分=元×100)
+bid_price1	int32	1档委买价(单位:分=元×100)
+bid_price2	int32	2档委买价(单位:分=元×100)
+bid_price3	int32	3档委买价(单位:分=元×100)
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+ask_num_orders1	int16	卖1档委托笔数
+ask_num_orders2	int16	卖2档委托笔数
+ask_num_orders3	int16	卖3档委托笔数
+bid_num_orders1	int16	买1档委托笔数
+bid_num_orders2	int16	买2档委托笔数
+bid_num_orders3	int16	买3档委托笔数
+5分钟K线(cpt_jyc_2026_stock_bar5m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument	string	股票代码
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+pre_close	float	前收盘价
+high	float	最高价
+open	float	开盘价
+low	float	最低价
+close	float	收盘价
+deal_number	int64	区间成交笔数
+volume	int64	区间成交量
+amount	double	区间成交额
+ask_price1	float	1档委卖价
+ask_price2	float	2档委卖价
+ask_price3	float	3档委卖价
+ask_price4	float	4档委卖价
+ask_price5	float	5档委卖价
+bid_price1	float	1档委买价
+bid_price2	float	2档委买价
+bid_price3	float	3档委买价
+bid_price4	float	4档委买价
+bid_price5	float	5档委买价
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+ask_volume4	int32	4档委卖量
+ask_volume5	int32	5档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+bid_volume4	int32	4档委买量
+bid_volume5	int32	5档委买量
+ask_num_orders1	int32	卖1档委托笔数
+ask_num_orders2	int32	卖2档委托笔数
+ask_num_orders3	int32	卖3档委托笔数
+ask_num_orders4	int32	卖4档委托笔数
+ask_num_orders5	int32	卖5档委托笔数
+bid_num_orders1	int32	买1档委托笔数
+bid_num_orders2	int32	买2档委托笔数
+bid_num_orders3	int32	买3档委托笔数
+bid_num_orders4	int32	买4档委托笔数
+bid_num_orders5	int32	买5档委托笔数
+5分钟K线（供下载）(cpt_jyc_2026_e2e_bar5m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+high	int32	最高价(单位:分=元×100, 缺失=-1)
+open	int32	开盘价(单位:分=元×100, 缺失=-1)
+low	int32	最低价(单位:分=元×100, 缺失=-1)
+close	int32	收盘价(单位:分=元×100, 缺失=-1)
+deal_number	int32	成交笔数
+volume	int64	总成交量(单位:股)
+amount	int64	成交金额(单位:分=元×100)
+ask_price1	int32	1档委卖价(单位:分=元×100)
+ask_price2	int32	2档委卖价(单位:分=元×100)
+ask_price3	int32	3档委卖价(单位:分=元×100)
+bid_price1	int32	1档委买价(单位:分=元×100)
+bid_price2	int32	2档委买价(单位:分=元×100)
+bid_price3	int32	3档委买价(单位:分=元×100)
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+ask_num_orders1	int16	卖1档委托笔数
+ask_num_orders2	int16	卖2档委托笔数
+ask_num_orders3	int16	卖3档委托笔数
+bid_num_orders1	int16	买1档委托笔数
+bid_num_orders2	int16	买2档委托笔数
+bid_num_orders3	int16	买3档委托笔数
+风格暴露(cpt_jyc_2026_exposure)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期
+instrument	string	证券代码
+SIZE	double	风格因子: 市值
+BETA	double	风格因子: 贝塔
+MOMENTUM	double	风格因子: 传统动量
+RESVOL	double	风格因子: 残差波动率
+SIZENL	double	风格因子: 非线性市值
+BTOP	double	风格因子: 账面市值比
+LIQUIDTY	double	风格因子: 流动性
+EARNYILD	double	风格因子: 盈利能力
+GROWTH	double	风格因子: 成长
+LEVERAGE	double	风格因子: 杠杆
+industry_level1_code	string	一级行业代码
+float_market_cap	double	流通市值
+weights	double	市值权重（截面归一化）
+ret	double	当期收益率
+AGRIFOREST	int8	行业哑变量: 是否属于农林牧渔. 0: 不属于; 1: 属于
+MINING	int8	行业哑变量: 是否属于采掘. 0: 不属于; 1: 属于
+CHEM	int8	行业哑变量: 是否属于化工. 0: 不属于; 1: 属于
+IRONSTEEL	int8	行业哑变量: 是否属于钢铁. 0: 不属于; 1: 属于
+NONFERMETAL	int8	行业哑变量: 是否属于有色金属. 0: 不属于; 1: 属于
+ELECTRONICS	int8	行业哑变量: 是否属于电子. 0: 不属于; 1: 属于
+AUTO	int8	行业哑变量: 是否属于汽车. 0: 不属于; 1: 属于
+HOUSEAPP	int8	行业哑变量: 是否属于家用电气. 0: 不属于; 1: 属于
+FOODBEVER	int8	行业哑变量: 是否属于食品饮料. 0: 不属于; 1: 属于
+TEXTILE	int8	行业哑变量: 是否属于纺织服饰. 0: 不属于; 1: 属于
+LIGHTINDUS	int8	行业哑变量: 是否属于轻工制造. 0: 不属于; 1: 属于
+HEALTH	int8	行业哑变量: 是否属于医药生物. 0: 不属于; 1: 属于
+UTILITIES	int8	行业哑变量: 是否属于公用事业. 0: 不属于; 1: 属于
+TRANSPORTATION	int8	行业哑变量: 是否属于交通运输. 0: 不属于; 1: 属于
+REALESTATE	int8	行业哑变量: 是否属于房地产. 0: 不属于; 1: 属于
+COMMETRADE	int8	行业哑变量: 是否属于商业贸易. 0: 不属于; 1: 属于
+LEISERVICE	int8	行业哑变量: 是否属于休闲服务. 0: 不属于; 1: 属于
+BANK	int8	行业哑变量: 是否属于银行. 0: 不属于; 1: 属于
+NONBANKFINAN	int8	行业哑变量: 是否属于非银金融. 0: 不属于; 1: 属于
+CONGLOMERATES	int8	行业哑变量: 是否属于综合. 0: 不属于; 1: 属于
+CONMAT	int8	行业哑变量: 是否属于建筑材料. 0: 不属于; 1: 属于
+BUILDDECO	int8	行业哑变量: 是否属于建筑装饰. 0: 不属于; 1: 属于
+ELECEQP	int8	行业哑变量: 是否属于电气设备. 0: 不属于; 1: 属于
+MACHIEQUIP	int8	行业哑变量: 是否属于机械设备. 0: 不属于; 1: 属于
+AERODEF	int8	行业哑变量: 是否属于国防军工. 0: 不属于; 1: 属于
+COMPUTER	int8	行业哑变量: 是否属于计算机. 0: 不属于; 1: 属于
+MEDIA	int8	行业哑变量: 是否属于传媒. 0: 不属于; 1: 属于
+TELECOM	int8	行业哑变量: 是否属于通信. 0: 不属于; 1: 属于
+COAL	int8	行业哑变量: 是否属于煤炭. 0: 不属于; 1: 属于
+PETRO	int8	行业哑变量: 是否属于石油石化. 0: 不属于; 1: 属于
+ENVP	int8	行业哑变量: 是否属于环保. 0: 不属于; 1: 属于
+BEAUTY	int8	行业哑变量: 是否属于美容护理. 0: 不属于; 1: 属于
+15分钟K线（供下载）(cpt_jyc_2026_e2e_bar15m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+high	int32	最高价(单位:分=元×100, 缺失=-1)
+open	int32	开盘价(单位:分=元×100, 缺失=-1)
+low	int32	最低价(单位:分=元×100, 缺失=-1)
+close	int32	收盘价(单位:分=元×100, 缺失=-1)
+deal_number	int32	成交笔数
+volume	int64	总成交量(单位:股)
+amount	int64	成交金额(单位:分=元×100)
+ask_price1	int32	1档委卖价(单位:分=元×100)
+ask_price2	int32	2档委卖价(单位:分=元×100)
+ask_price3	int32	3档委卖价(单位:分=元×100)
+bid_price1	int32	1档委买价(单位:分=元×100)
+bid_price2	int32	2档委买价(单位:分=元×100)
+bid_price3	int32	3档委买价(单位:分=元×100)
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+ask_num_orders1	int16	卖1档委托笔数
+ask_num_orders2	int16	卖2档委托笔数
+ask_num_orders3	int16	卖3档委托笔数
+bid_num_orders1	int16	买1档委托笔数
+bid_num_orders2	int16	买2档委托笔数
+bid_num_orders3	int16	买3档委托笔数
+30分钟K线(cpt_jyc_2026_stock_bar30m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument	string	股票代码
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+pre_close	float	前收盘价
+high	float	最高价
+open	float	开盘价
+low	float	最低价
+close	float	收盘价
+deal_number	int64	区间成交笔数
+volume	int64	区间成交量
+amount	double	区间成交额
+ask_price1	float	1档委卖价
+ask_price2	float	2档委卖价
+ask_price3	float	3档委卖价
+ask_price4	float	4档委卖价
+ask_price5	float	5档委卖价
+bid_price1	float	1档委买价
+bid_price2	float	2档委买价
+bid_price3	float	3档委买价
+bid_price4	float	4档委买价
+bid_price5	float	5档委买价
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+ask_volume4	int32	4档委卖量
+ask_volume5	int32	5档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+bid_volume4	int32	4档委买量
+bid_volume5	int32	5档委买量
+ask_num_orders1	int32	卖1档委托笔数
+ask_num_orders2	int32	卖2档委托笔数
+ask_num_orders3	int32	卖3档委托笔数
+ask_num_orders4	int32	卖4档委托笔数
+ask_num_orders5	int32	卖5档委托笔数
+bid_num_orders1	int32	买1档委托笔数
+bid_num_orders2	int32	买2档委托笔数
+bid_num_orders3	int32	买3档委托笔数
+bid_num_orders4	int32	买4档委托笔数
+bid_num_orders5	int32	买5档委托笔数
+30分钟K线（供下载）(cpt_jyc_2026_e2e_bar30m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+high	int32	最高价(单位:分=元×100, 缺失=-1)
+open	int32	开盘价(单位:分=元×100, 缺失=-1)
+low	int32	最低价(单位:分=元×100, 缺失=-1)
+close	int32	收盘价(单位:分=元×100, 缺失=-1)
+deal_number	int32	成交笔数
+volume	int64	总成交量(单位:股)
+amount	int64	成交金额(单位:分=元×100)
+ask_price1	int32	1档委卖价(单位:分=元×100)
+ask_price2	int32	2档委卖价(单位:分=元×100)
+ask_price3	int32	3档委卖价(单位:分=元×100)
+bid_price1	int32	1档委买价(单位:分=元×100)
+bid_price2	int32	2档委买价(单位:分=元×100)
+bid_price3	int32	3档委买价(单位:分=元×100)
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+ask_num_orders1	int16	卖1档委托笔数
+ask_num_orders2	int16	卖2档委托笔数
+ask_num_orders3	int16	卖3档委托笔数
+bid_num_orders1	int16	买1档委托笔数
+bid_num_orders2	int16	买2档委托笔数
+bid_num_orders3	int16	买3档委托笔数
+15分钟K线(cpt_jyc_2026_stock_bar15m)
+Data Description
+字段	字段类型	字段描述
+date	timestamp[ns]	日期(bar结束时刻)
+instrument	string	股票代码
+instrument_id	int16	股票代码ID
+adjust_factor	float	复权因子
+pre_close	float	前收盘价
+high	float	最高价
+open	float	开盘价
+low	float	最低价
+close	float	收盘价
+deal_number	int64	区间成交笔数
+volume	int64	区间成交量
+amount	double	区间成交额
+ask_price1	float	1档委卖价
+ask_price2	float	2档委卖价
+ask_price3	float	3档委卖价
+ask_price4	float	4档委卖价
+ask_price5	float	5档委卖价
+bid_price1	float	1档委买价
+bid_price2	float	2档委买价
+bid_price3	float	3档委买价
+bid_price4	float	4档委买价
+bid_price5	float	5档委买价
+ask_volume1	int32	1档委卖量
+ask_volume2	int32	2档委卖量
+ask_volume3	int32	3档委卖量
+ask_volume4	int32	4档委卖量
+ask_volume5	int32	5档委卖量
+bid_volume1	int32	1档委买量
+bid_volume2	int32	2档委买量
+bid_volume3	int32	3档委买量
+bid_volume4	int32	4档委买量
+bid_volume5	int32	5档委买量
+ask_num_orders1	int32	卖1档委托笔数
+ask_num_orders2	int32	卖2档委托笔数
+ask_num_orders3	int32	卖3档委托笔数
+ask_num_orders4	int32	卖4档委托笔数
+ask_num_orders5	int32	卖5档委托笔数
+bid_num_orders1	int32	买1档委托笔数
+bid_num_orders2	int32	买2档委托笔数
+bid_num_orders3	int32	买3档委托笔数
+bid_num_orders4	int32	买4档委托笔数
+bid_num_orders5	int32	买5档委托笔数
