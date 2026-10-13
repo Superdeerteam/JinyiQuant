@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment_id": "real-data-engineering-smoke",
+  "hypothesis": "Verify local real-data engineering with audited out-of-universe exclusion and at most 1% missing coverage per section; no alpha claim",
+  "output_root": "../runs/real-smoke",
+  "data": {
+    "bars_path": "../data/bars",
+    "labels_path": "../cpt_jyc_2026_vwap.rar",
+    "instruments_path": "../cpt_jyc_2026_instruments.parquet",
+    "instrument_map_path": "../cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "outside_universe_labels": "exclude",
+    "source": "official_local_download_with_user_supplied_mapping",
+    "version": "cpt_jyc_2026",
+    "price_scale": 100,
+    "history_days": 0,
+    "lookback": 30,
+    "min_history": 1
+  },
+  "splits": {
+    "train": {"start": "2023-08-01", "end": "2023-08-02"},
+    "validation": {"start": "2023-08-02", "end": "2023-08-03"},
+    "final": {"start": "2023-08-03", "end": "2023-08-04"}
+  },
+  "budget": {"wall_seconds": 120, "max_rss_mb": 2048, "max_train_samples": 100000},
+  "acceptance": {"min_coverage": 0.99, "repro_atol": 1e-10, "repro_rtol": 1e-8}
+}
