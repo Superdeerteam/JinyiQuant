@@ -179,7 +179,7 @@ def test_invalid_configuration_archive_never_contains_rejected_credential_values
     manifest = read_json(run_dir / "manifest.json")
     assert manifest["status"] == "failed" and manifest["exit_code"] == 2
     assert not read_json(run_dir / "checks.json")["passed"]
-    events = [json.loads(line) for line in (run_dir / "events.jsonl").read_text().splitlines()]
+    events = [json.loads(line) for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()]
     assert any(event["stage"] == "configuration" and event["event_type"] == "failed" for event in events)
     for path in run_dir.rglob("*"):
         if path.is_file():

@@ -134,6 +134,10 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             raise ValueError(f"cross section {timestamp} has fewer than {min_cross_section} samples")
         score = section["score"]
         target = section["target"]
+        target_values = target.to_numpy(dtype=float)
+        target_ranks = target.rank(method="average").to_numpy()
+        eligible_rank_ic = bool(np.isfinite(_correlation(target_ranks, target_ranks)))
+        eligible_ic = bool(np.isfinite(_correlation(target_values, target_values)))
         tail_size = max(1, int(np.floor(quantile * len(section))))
         long = _tail_weights(score, tail_size, largest=True)
         short = _tail_weights(score, tail_size, largest=False)
@@ -151,8 +155,12 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             raise ValueError("portfolio return overflow; target units are not representable")
         rows.append({
             "date": timestamp.normalize(),
-            "rank_ic": _correlation(score.rank(method="average").to_numpy(), target.rank(method="average").to_numpy()),
-            "ic": _correlation(score.to_numpy(dtype=float), target.to_numpy(dtype=float)),
+            "timestamp": timestamp.isoformat(),
+            "rank_ic": _correlation(score.rank(method="average").to_numpy(), target_ranks)
+                       if eligible_rank_ic else float("nan"),
+            "ic": _correlation(score.to_numpy(dtype=float), target_values) if eligible_ic else float("nan"),
+            "eligible_rank_ic": eligible_rank_ic,
+            "eligible_ic": eligible_ic,
             "long_return": long_return,
             "short_return": short_return,
             "long_short_return": long_return - short_return,
@@ -166,12 +174,26 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
     daily["cross_section_count"] = sections.groupby("date").size()
     daily["valid_rank_ic_count"] = sections.groupby("date")["rank_ic"].count()
     daily["valid_ic_count"] = sections.groupby("date")["ic"].count()
+    daily["eligible_rank_ic_count"] = sections.groupby("date")["eligible_rank_ic"].sum()
+    daily["eligible_ic_count"] = sections.groupby("date")["eligible_ic"].sum()
     daily = daily.reset_index()
     daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
     metrics = {
         name: aggregate_metric(daily[column].to_numpy(), method, periods_per_year)
         for name, (column, method, _) in METRIC_SPEC.items()
     }
+    # Eligibility depends only on targets. Hash timestamps before daily grouping
+    # so equal counts at different prediction times cannot justify promotion.
+    correlation_coverage = {"schema_version": 1}
+    for column in ("rank_ic", "ic"):
+        eligible = sections[f"eligible_{column}"]
+        valid = eligible & sections[column].notna()
+        correlation_coverage[column] = {
+            "eligible_section_count": int(eligible.sum()),
+            "valid_section_count": int(valid.sum()),
+            "eligible_sections_sha256": digest(sections.loc[eligible, "timestamp"].tolist()),
+            "valid_sections_sha256": digest(sections.loc[valid, "timestamp"].tolist()),
+        }
     metrics.update({
         "schema_version": 1,
         "metric_scope": "local_approximation",
@@ -183,11 +205,14 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
         "targets_sha256": digest(aligned[KEYS + ["target"]].assign(date=aligned["date"].astype(str)).to_dict("records")),
         "undefined_rank_ic_count": int(sections["rank_ic"].isna().sum()),
         "undefined_ic_count": int(sections["ic"].isna().sum()),
+        "correlation_coverage": correlation_coverage,
         "valid_days": {column: int(daily[column].notna().sum()) for column in columns},
         "conventions": {
             "version": "local-v1",
             "cross_section": "one prediction timestamp; average ranks for ties",
             "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+            "correlation_comparison": "each policy correlation requires all target-eligible timestamps; "
+                                      "incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
             "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
             "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
             "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",

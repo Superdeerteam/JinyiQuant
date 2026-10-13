@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from jinyiquant.comparison import _block_indices, compare_runs, validate_policy
+from jinyiquant.evaluation import aggregate_metric, evaluate
 from jinyiquant.io import digest, file_sha256
 
 
@@ -43,7 +44,9 @@ def run_fixture(root, arm, seed, month, policy, *, improvement=0.04):
     daily = pd.DataFrame({"date": dates, "rank_ic": rank_ic, "ic": rank_ic,
                           "long_short_return": np.repeat(0.003, len(dates)),
                           "turnover": np.repeat(0.3, len(dates)),
-                          "sample_count": 100, "cross_section_count": 1})
+                          "sample_count": 100, "cross_section_count": 1,
+                          "eligible_rank_ic_count": 1, "valid_rank_ic_count": 1,
+                          "eligible_ic_count": 1, "valid_ic_count": 1})
     daily.to_csv(path / "daily.csv", index=False)
     pd.DataFrame({"date": dates, "instrument": "A", "score": rank_ic}).to_parquet(path / "predictions.parquet")
     (path / "source.zip").write_bytes(b"fixture source snapshot")
@@ -60,8 +63,15 @@ def run_fixture(root, arm, seed, month, policy, *, improvement=0.04):
                 "code": {"content_sha256": digest({"fixture.py": "example"}), "files": {"fixture.py": "example"},
                          "snapshot_sha256": file_sha256(path / "source.zip")}}
     (path / "config.sha256").write_text(digest(config), encoding="utf-8")
-    metrics = {"rank_ic_mean": float(rank_ic.mean()), "long_short_return_mean": 0.003, "turnover_mean": 0.3,
-               "sample_keys_sha256": "a" * 64, "targets_sha256": "b" * 64}
+    section_hash = digest([date.isoformat() for date in dates])
+    coverage = {"eligible_section_count": len(dates), "valid_section_count": len(dates),
+                "eligible_sections_sha256": section_hash, "valid_sections_sha256": section_hash}
+    metrics = {"rank_ic_mean": float(rank_ic.mean()), "ic_mean": float(rank_ic.mean()),
+               "rank_ic_ir": aggregate_metric(rank_ic, "ir"),
+               "long_short_return_mean": 0.003, "turnover_mean": 0.3,
+               "cross_section_count": len(dates),
+               "sample_keys_sha256": "a" * 64, "targets_sha256": "b" * 64,
+               "correlation_coverage": {"schema_version": 1, "rank_ic": coverage, "ic": coverage}}
     save(path, "manifest", manifest)
     save(path, "config", config)
     save(path, "metrics", metrics)
@@ -92,6 +102,39 @@ def edit(path, filename, update):
     save(path, filename, value)
 
 
+def edit_verified_metrics(path, update):
+    """Keep a rerun and its reference consistent when probing semantic evidence."""
+    for run in (path, path.with_name(path.name + "-original")):
+        edit(run, "metrics", update)
+        archive(run)
+
+
+def evaluated_suite(tmp_path, policy, *, baseline_scores, candidate_scores,
+                    section_targets=((0.01, 0.02, 0.03, 0.04), (0.01, 0.02, 0.03, 0.04))):
+    """Archive actual evaluation of two four-stock timestamps per trading day."""
+    baseline, candidate = suite(tmp_path, policy)
+    for arm, scores in ((baseline, baseline_scores), (candidate, candidate_scores)):
+        for path in arm:
+            dates = pd.to_datetime(pd.read_csv(path / "daily.csv")["date"])
+            rows = [
+                {"date": day + pd.Timedelta(hours=10, minutes=30 * section),
+                 "instrument": instrument, "score": scores[section][stock],
+                 "target": section_targets[section][stock]}
+                for day in dates for section in range(2)
+                for stock, instrument in enumerate(("A", "B", "C", "D"))
+            ]
+            frame = pd.DataFrame(rows)
+            predictions = frame[["date", "instrument", "score"]]
+            metrics, daily = evaluate(predictions, frame[["date", "instrument", "target"]],
+                                      {"quantile": 0.25, "periods_per_year": 252, "min_cross_section": 3})
+            for run in (path, path.with_name(path.name + "-original")):
+                save(run, "metrics", metrics)
+                daily.to_csv(run / "daily.csv", index=False)
+                predictions.to_parquet(run / "predictions.parquet", index=False)
+                archive(run)
+    return baseline, candidate
+
+
 def test_verified_multiseed_multiperiod_gain_is_accepted_deterministically(tmp_path, policy):
     baseline, candidate = suite(tmp_path, policy)
     comparison, decision = compare_runs(baseline, candidate, policy)
@@ -110,6 +153,158 @@ def test_single_win_never_accepted(tmp_path, policy):
     assert decision["status"] == "inconclusive"
     assert any("seeds" in issue for issue in decision["missing_evidence"])
     assert any("periods" in issue for issue in decision["missing_evidence"])
+
+
+def test_constant_candidate_sections_cannot_create_an_accepted_gain(tmp_path, policy):
+    baseline, candidate = evaluated_suite(
+        tmp_path, policy, baseline_scores=((1, 2, 3, 4), (4, 3, 2, 1)),
+        candidate_scores=((1, 2, 3, 4), (7, 7, 7, 7)),
+    )
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    # The old finite-only averaging produced a gain of 1.0 on every day.
+    assert comparison["improvement"] == pytest.approx(1)
+    assert decision["status"] == "reject"
+    assert any("incomplete rank_ic correlation coverage" in gate for gate in decision["failed_gates"])
+    assert not decision["missing_evidence"]
+
+
+def test_incomplete_baseline_cannot_support_candidate_acceptance(tmp_path, policy):
+    baseline, candidate = evaluated_suite(
+        tmp_path, policy, baseline_scores=((1, 3, 2, 4), (7, 7, 7, 7)),
+        candidate_scores=((1, 2, 3, 4), (1, 2, 3, 4)),
+    )
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "inconclusive"
+    assert not decision["failed_gates"]
+    assert any("incomplete rank_ic correlation coverage" in issue for issue in decision["missing_evidence"])
+
+
+def test_constant_target_sections_do_not_disqualify_an_otherwise_valid_gain(tmp_path, policy):
+    baseline, candidate = evaluated_suite(
+        tmp_path, policy, baseline_scores=((1, 3, 2, 4), (4, 3, 2, 1)),
+        candidate_scores=((1, 2, 3, 4), (7, 7, 7, 7)),
+        section_targets=((0.01, 0.02, 0.03, 0.04), (0.02, 0.02, 0.02, 0.02)),
+    )
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "accept"
+    assert comparison["improvement"] == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("evidence", ["metrics", "daily"])
+def test_legacy_archives_without_correlation_evidence_are_inconclusive(tmp_path, policy, evidence):
+    baseline, candidate = suite(tmp_path, policy)
+    if evidence == "metrics":
+        edit_verified_metrics(candidate[0], lambda value: value.pop("correlation_coverage"))
+    else:
+        for run in (candidate[0], candidate[0].with_name(candidate[0].name + "-original")):
+            daily = pd.read_csv(run / "daily.csv").drop(columns="eligible_rank_ic_count")
+            daily.to_csv(run / "daily.csv", index=False)
+            archive(run)
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "inconclusive"
+    assert not decision["failed_gates"]
+    assert any("correlation coverage evidence" in issue for issue in decision["missing_evidence"])
+
+
+@pytest.mark.parametrize("evidence", ["null", "list", "unsupported_schema", "missing_eligible_count"])
+def test_incomplete_coverage_metadata_is_inconclusive_without_population_errors(tmp_path, policy, evidence):
+    baseline, candidate = suite(tmp_path, policy)
+    def remove_evidence(value):
+        if evidence in {"null", "list"}:
+            value["correlation_coverage"] = None if evidence == "null" else []
+        elif evidence == "unsupported_schema":
+            value["correlation_coverage"]["schema_version"] = 99
+        else:
+            value["correlation_coverage"]["rank_ic"].pop("eligible_section_count")
+    edit_verified_metrics(candidate[0], remove_evidence)
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "inconclusive"
+    assert not decision["failed_gates"]
+    assert any("correlation coverage evidence" in issue for issue in decision["missing_evidence"])
+
+
+@pytest.mark.parametrize("primary,secondary,column", [
+    ("rank_ic_ir", "long_short_return_mean", "rank_ic"),
+    ("ic_mean", "rank_ic_mean", "rank_ic"),
+    ("rank_ic_mean", "ic_mean", "ic"),
+])
+def test_equal_counts_with_different_timestamp_identities_fail_policy_gates(
+    tmp_path, policy, primary, secondary, column,
+):
+    policy = {**policy, "primary_metric": primary,
+              "max_metric_regressions": {secondary: 0.1, "turnover_mean": 0.05}}
+    baseline, candidate = suite(tmp_path, policy)
+    edit_verified_metrics(candidate[0], lambda value: value["correlation_coverage"][column].update(
+        valid_sections_sha256=digest(["different prediction timestamp"]),
+    ))
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "reject"
+    assert any(f"incomplete {column} correlation coverage" in gate for gate in decision["failed_gates"])
+    assert not decision["missing_evidence"]
+
+
+def test_correlation_coverage_is_only_required_for_policy_correlations(tmp_path, policy):
+    policy = {**policy, "primary_metric": "long_short_return_mean", "min_improvement": 0.001,
+              "max_metric_regressions": {"turnover_mean": 0.05}}
+    baseline, candidate = evaluated_suite(
+        tmp_path, policy, baseline_scores=((1, 2, 3, 4), (4, 3, 2, 1)),
+        candidate_scores=((1, 2, 3, 4), (7, 7, 7, 7)),
+    )
+    for path in baseline + candidate:
+        edit_verified_metrics(path, lambda value: value.pop("correlation_coverage"))
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    assert comparison["improvement"] == pytest.approx(0.015)
+    assert decision["status"] == "accept"
+
+
+@pytest.mark.parametrize("mismatch", ["metadata_total", "daily_total", "population_hash", "population_count"])
+def test_inconsistent_or_unfair_correlation_populations_cannot_be_compared(tmp_path, policy, mismatch):
+    baseline, candidate = suite(tmp_path, policy)
+    path = candidate[0]
+    if mismatch == "metadata_total":
+        edit_verified_metrics(path, lambda value: value["correlation_coverage"]["rank_ic"].update(
+            eligible_section_count=13,
+        ))
+    elif mismatch == "population_hash":
+        edit_verified_metrics(path, lambda value: value["correlation_coverage"]["rank_ic"].update(
+            eligible_sections_sha256="c" * 64, valid_sections_sha256="c" * 64,
+        ))
+    else:
+        for run in (path, path.with_name(path.name + "-original")):
+            daily = pd.read_csv(run / "daily.csv")
+            daily.loc[0, "eligible_rank_ic_count"] = 0
+            daily.loc[0, "valid_rank_ic_count"] = 0
+            if mismatch == "population_count":
+                daily.loc[0, "rank_ic"] = np.nan
+                section_hash = digest([pd.Timestamp(date).isoformat() for date in daily["date"].iloc[1:]])
+                edit(run, "metrics", lambda value: value["correlation_coverage"]["rank_ic"].update(
+                    eligible_section_count=11, valid_section_count=11,
+                    eligible_sections_sha256=section_hash, valid_sections_sha256=section_hash,
+                ))
+                edit(run, "metrics", lambda value: value.update(
+                    rank_ic_mean=aggregate_metric(daily["rank_ic"].to_numpy(), "mean"),
+                    rank_ic_ir=aggregate_metric(daily["rank_ic"].to_numpy(), "ir"),
+                ))
+            daily.to_csv(run / "daily.csv", index=False)
+            archive(run)
+    with pytest.raises(ValueError, match="correlation coverage|target-eligible"):
+        compare_runs(baseline, candidate, policy)
+
+
+def test_finite_daily_correlation_cannot_claim_zero_valid_sections(tmp_path, policy):
+    baseline, candidate = suite(tmp_path, policy)
+    path = candidate[0]
+    for run in (path, path.with_name(path.name + "-original")):
+        daily = pd.read_csv(run / "daily.csv")
+        daily.loc[0, "valid_rank_ic_count"] = 0
+        section_hash = digest([pd.Timestamp(date).isoformat() for date in daily["date"].iloc[1:]])
+        edit(run, "metrics", lambda value: value["correlation_coverage"]["rank_ic"].update(
+            valid_section_count=11, valid_sections_sha256=section_hash,
+        ))
+        daily.to_csv(run / "daily.csv", index=False)
+        archive(run)
+    with pytest.raises(ValueError, match="daily values contradict valid correlation counts"):
+        compare_runs(baseline, candidate, policy)
 
 
 @pytest.mark.parametrize("field", ["budget", "evaluation", "splits", "data"])

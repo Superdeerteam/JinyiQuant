@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from jinyiquant.evaluation import align_predictions, evaluate
+from jinyiquant.io import digest
 
 CONFIG = {"quantile": 0.25, "periods_per_year": 252, "min_cross_section": 3}
 
@@ -65,7 +66,66 @@ def test_constant_score_is_undefined_ic_and_neutral_portfolio():
     assert daily["rank_ic"].isna().all()
     assert daily["long_short_return"].eq(0).all()
     assert metrics["rank_ic_ir"] is None
+    assert daily["eligible_rank_ic_count"].tolist() == [1, 1]
+    assert daily["valid_rank_ic_count"].tolist() == [0, 0]
+    for column in ("rank_ic", "ic"):
+        coverage = metrics["correlation_coverage"][column]
+        assert coverage["eligible_section_count"] == 2
+        assert coverage["valid_section_count"] == 0
+        assert coverage["valid_sections_sha256"] == digest([])
     json.dumps(metrics, allow_nan=False)
+
+
+def test_partial_intraday_coverage_retains_timestamp_identity_and_daily_counts():
+    predictions, targets = frames(days=1)
+    constant_predictions = predictions.assign(date="2025-01-02 10:30:00", score=7)
+    later_targets = targets.assign(date="2025-01-02 10:30:00")
+    predictions = pd.concat([constant_predictions, predictions]).sample(frac=1, random_state=4)
+    targets = pd.concat([targets, later_targets]).sample(frac=1, random_state=5)
+    metrics, daily = evaluate(predictions, targets, CONFIG)
+    assert daily["rank_ic"].tolist() == pytest.approx([1])
+    assert daily["cross_section_count"].tolist() == [2]
+    for column in ("rank_ic", "ic"):
+        assert daily[f"eligible_{column}_count"].tolist() == [2]
+        assert daily[f"valid_{column}_count"].tolist() == [1]
+        assert metrics["correlation_coverage"][column] == {
+            "eligible_section_count": 2, "valid_section_count": 1,
+            "eligible_sections_sha256": digest(["2025-01-02T10:00:00", "2025-01-02T10:30:00"]),
+            "valid_sections_sha256": digest(["2025-01-02T10:00:00"]),
+        }
+    ordered_metrics, _ = evaluate(predictions.iloc[::-1], targets.iloc[::-1], CONFIG)
+    assert metrics["correlation_coverage"] == ordered_metrics["correlation_coverage"]
+
+
+def test_constant_targets_are_excluded_from_eligible_correlation_populations():
+    predictions, targets = frames(days=1)
+    predictions = pd.concat([predictions, predictions.assign(date="2025-01-02 10:30:00", score=7)])
+    targets = pd.concat([targets, targets.assign(date="2025-01-02 10:30:00", target=0.02)])
+    metrics, daily = evaluate(predictions, targets, CONFIG)
+    assert metrics["cross_section_count"] == 2
+    assert metrics["rank_ic_mean"] == pytest.approx(1)
+    assert metrics["undefined_rank_ic_count"] == 1
+    for column in ("rank_ic", "ic"):
+        assert daily[f"eligible_{column}_count"].tolist() == [1]
+        assert daily[f"valid_{column}_count"].tolist() == [1]
+        assert metrics["correlation_coverage"][column] == {
+            "eligible_section_count": 1, "valid_section_count": 1,
+            "eligible_sections_sha256": digest(["2025-01-02T10:00:00"]),
+            "valid_sections_sha256": digest(["2025-01-02T10:00:00"]),
+        }
+
+
+def test_rank_and_linear_correlation_eligibility_use_their_own_target_representation():
+    predictions, targets = frames(targets=(0, 1e-300, 2e-300, 3e-300), days=1)
+    metrics, daily = evaluate(predictions, targets, CONFIG)
+    assert metrics["rank_ic_mean"] == pytest.approx(1)
+    assert metrics["ic_mean"] is None
+    assert daily["eligible_rank_ic_count"].tolist() == [1]
+    assert daily["eligible_ic_count"].tolist() == [0]
+    assert metrics["correlation_coverage"]["ic"] == {
+        "eligible_section_count": 0, "valid_section_count": 0,
+        "eligible_sections_sha256": digest([]), "valid_sections_sha256": digest([]),
+    }
 
 
 def test_boundary_ties_share_weight_independent_of_instrument_order():

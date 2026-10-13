@@ -77,7 +77,18 @@ uv run jinyi rerun <上一步输出的运行目录>
 uv run jinyi calibrate data/demo/config.json --seeds 11 29 --periods configs/demo_periods.json
 ```
 
-再准备 suite JSON，字段为 `baseline_config`、`candidate_config`、`seeds`、`periods`、`calibration_report`、`policy`。路径相对于 suite 文件。policy 必填字段及意义见 `docs/comparison.md`。阈值要依据基线波动与实际需求事先声明，工具不擅自设定“提升5%”。
+再准备 suite JSON，字段为 `baseline_config`、`candidate_config`、`seeds`、`periods`、`calibration_report`、`policy`。路径相对于 suite 文件。阈值要依据基线波动与实际需求事先声明，工具不擅自设定“提升5%”。policy 拒绝未知字段，必填项如下：
+
+| 字段 | 约定 |
+|---|---|
+| `primary_metric`、`direction`、`min_improvement` | 已实现的按日指标、maximize/minimize、事先声明的实际改善量 |
+| `max_metric_regressions` | 非空次要指标字典，值为允许退化量或 `{max_regression, direction}` |
+| `max_wall_ratio`、`max_memory_ratio` | 每个配对的候选/基线资源比值上限 |
+| `min_seeds`、`min_periods` | 均至少2；时段互不重叠 |
+| `bootstrap_samples`、`block_days`、`confidence`、`seed` | 至少100次连续日块抽样、块长度、置信度、抽样种子 |
+| `threshold_rationale` | 解释基线波动、实际改善门槛与成本限额 |
+
+主指标或次要指标涉及 RankIC/IC 时，对照必须覆盖全部由标签决定的可评价截面，并同时核对截面数和完整时间戳的 SHA256。标签为常数的截面不纳入相关评价；候选在可评价截面输出常数导致覆盖不足时拒绝，基线覆盖不足或旧档案缺少覆盖证据时结论为 `inconclusive`。描述指标仍保留未定义相关性，不能用忽略这些值后的均值证明改善。
 
 ```powershell
 uv run jinyi suite <suite.json>
@@ -91,6 +102,7 @@ Suite 先冻结策略、假设和预算，再为每个种子/时段分别执行�
 
 ```powershell
 uv run ruff check .
+New-Item -ItemType Directory -Force scratch | Out-Null
 uv run pytest -q --basetemp scratch/tests-001
 uv run python scripts/acceptance.py --output runs/engineering-acceptance
 ```
@@ -99,7 +111,7 @@ uv run python scripts/acceptance.py --output runs/engineering-acceptance
 
 `audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。CPU 参考实现不使用 GPU，资源日志中 GPU 项明确为不适用，尚未验收 GPU/神经网络训练。
 
-公开实现的取舍、指标近似与本地资料差异见 `docs/research.md`。
+具体本地指标口径保存在每次运行的 `metrics.json/conventions`。公开实现核对参考 [SciPy 的常数输入相关性约定](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html)与 [NumPy 的缺失值均值说明](https://numpy.org/doc/stable/reference/generated/numpy.nanmean.html)；对照额外要求固定的标签可评价截面集合。工程记录保留在独立运行档案中。
 
 ## 仓库发布边界
 

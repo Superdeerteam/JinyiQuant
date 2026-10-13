@@ -19,6 +19,10 @@ import pandas as pd
 from .evaluation import METRIC_SPEC, aggregate_metric
 from .io import digest, file_sha256, read_json
 
+_CORRELATION_COVERAGE_FIELDS = {
+    "eligible_section_count", "valid_section_count", "eligible_sections_sha256", "valid_sections_sha256",
+}
+
 
 def validate_policy(policy: dict) -> dict:
     required = {
@@ -275,6 +279,60 @@ def _finite(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and bool(np.isfinite(value))
 
 
+def _correlation_evidence(run: _Run, columns: set[str], *, candidate: bool) -> tuple[list[str], list[str]]:
+    """Require complete target-defined populations for every policy correlation."""
+    missing, failures = [], []
+    coverage = run.metrics.get("correlation_coverage")
+    if (not isinstance(coverage, dict) or type(coverage.get("schema_version")) is not int
+            or coverage["schema_version"] != 1):
+        return [f"{run.path.name}: correlation coverage evidence absent/unsupported"], []
+    for column in sorted(columns):
+        entry = coverage.get(column)
+        if not isinstance(entry, dict) or not _CORRELATION_COVERAGE_FIELDS.issubset(entry):
+            missing.append(f"{run.path.name}: {column} correlation coverage evidence incomplete")
+            continue
+        eligible, valid = entry["eligible_section_count"], entry["valid_section_count"]
+        hashes = [entry[name] for name in ("eligible_sections_sha256", "valid_sections_sha256")]
+        if (type(eligible) is not int or type(valid) is not int or not 0 <= valid <= eligible
+                or any(not isinstance(value, str) or len(value) != 64
+                       or any(char not in "0123456789abcdef" for char in value) for value in hashes)):
+            raise ValueError(f"{run.path}: malformed {column} correlation coverage")
+        count_columns = [f"eligible_{column}_count", f"valid_{column}_count", "cross_section_count"]
+        if not set(count_columns).issubset(run.daily):
+            missing.append(f"{run.path.name}: {column} daily correlation coverage evidence absent")
+            continue
+        counts = run.daily[count_columns].to_numpy(dtype=float)
+        if (not np.isfinite(counts).all() or (counts < 0).any() or (counts != np.floor(counts)).any()
+                or (counts[:, 1] > counts[:, 0]).any() or (counts[:, 0] > counts[:, 2]).any()
+                or counts[:, 0].sum() != eligible or counts[:, 1].sum() != valid):
+            raise ValueError(f"{run.path}: {column} correlation coverage differs from daily counts")
+        if column in run.daily and not np.array_equal(np.isfinite(run.daily[column]), counts[:, 1] > 0):
+            raise ValueError(f"{run.path}: {column} daily values contradict valid correlation counts")
+        if eligible == 0:
+            missing.append(f"{run.path.name}: no target-eligible {column} correlation sections")
+        elif valid != eligible or hashes[0] != hashes[1]:
+            reason = f"{run.path.name}: incomplete {column} correlation coverage ({valid}/{eligible} eligible sections)"
+            (failures if candidate else missing).append(reason)
+    return missing, failures
+
+
+def _fair_correlation_population(baseline: _Run, candidate: _Run, columns: set[str]) -> None:
+    coverages = [run.metrics.get("correlation_coverage") for run in (baseline, candidate)]
+    if not all(isinstance(coverage, dict) and type(coverage.get("schema_version")) is int
+               and coverage["schema_version"] == 1 for coverage in coverages):
+        return  # Missing/unsupported evidence is handled by the decision gate.
+    for column in columns:
+        entries = [coverage.get(column) for coverage in coverages]
+        if all(isinstance(entry, dict) and _CORRELATION_COVERAGE_FIELDS.issubset(entry) for entry in entries):
+            identities = [(entry.get("eligible_section_count"), entry["eligible_sections_sha256"]) for entry in entries]
+            if identities[0] != identities[1]:
+                raise ValueError(f"unfair comparison: differing target-eligible {column} correlation sections")
+            count = f"eligible_{column}_count"
+            if (count in baseline.daily and count in candidate.daily
+                    and not np.array_equal(baseline.daily[count], candidate.daily[count])):
+                raise ValueError(f"unfair comparison: differing daily target-eligible {column} correlation counts")
+
+
 def _metric(run: _Run, metric: str, indices: np.ndarray | None = None) -> float | None:
     column, method, _ = METRIC_SPEC[metric]
     if column not in run.daily:
@@ -326,6 +384,16 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
         run_missing, run_failures = _run_evidence(run, policy_hash)
         missing.extend(run_missing)
         failures.extend(run_failures)
+    correlation_columns = {METRIC_SPEC[metric][0] for metric in {policy["primary_metric"], *policy["max_metric_regressions"]}
+                           if METRIC_SPEC[metric][0] in {"rank_ic", "ic"}}
+    if correlation_columns:
+        for arm, is_candidate in ((baselines, False), (candidates, True)):
+            for run in arm:
+                run_missing, run_failures = _correlation_evidence(run, correlation_columns, candidate=is_candidate)
+                missing.extend(run_missing)
+                failures.extend(run_failures)
+        for baseline, candidate in pairs:
+            _fair_correlation_population(baseline, candidate, correlation_columns)
     sources = {run.manifest.get("code", {}).get("content_sha256") for run in baselines + candidates}
     if len(sources - {None}) > 1:
         raise ValueError("unfair comparison: differing software implementations; rerun both arms with one source version")

@@ -24,7 +24,7 @@ def test_prepares_exactly_one_member_without_overwriting(tmp_path):
     assert first != second
     assert (first / "202001.feather").read_bytes() == b"selected"
     assert not (first / "202002.feather").exists()
-    manifest = json.loads((first / "preparation.json").read_text())
+    manifest = json.loads((first / "preparation.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "succeeded"
     assert manifest["artifacts"][0]["sha256"] == hashlib.sha256(b"selected").hexdigest()
     assert manifest["source"]["sha256"] is None
@@ -44,7 +44,7 @@ def test_budget_failure_is_recorded_and_no_complete_data_is_published(tmp_path):
     with pytest.raises(ValueError, match="budget"):
         prepare_data(archive_path, "bars/202001.feather", tmp_path / "prepared", max_member_bytes=1)
     manifest_path = next((tmp_path / "prepared").glob("*/preparation.json"))
-    manifest = json.loads(manifest_path.read_text())
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["status"] == "failed"
     assert "traceback" in manifest["error"]
     assert not list(manifest_path.parent.glob("*.feather"))
