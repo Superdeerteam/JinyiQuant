@@ -84,8 +84,24 @@ class DataConfig(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    kind: Literal["ridge", "mean"] = "ridge"
+    kind: Literal["ridge", "mean", "modified_tlob"] = "ridge"
     alpha: float = Field(default=1.0, gt=0)
+    hidden_dim: int = Field(default=40, ge=4, le=512)
+    num_layers: int = Field(default=4, ge=1, le=12)
+    num_heads: int = Field(default=1, ge=1, le=8)
+    is_sin_emb: bool = True
+    epochs: int = Field(default=2, ge=1, le=1000)
+    batch_size: int = Field(default=32, ge=1)
+    learning_rate: float = Field(default=0.0001, gt=0)
+    device: Literal["auto", "cpu", "cuda"] = "auto"
+    cpu_threads: int = Field(default=1, ge=1, le=64)
+    log_every_steps: int = Field(default=10, ge=1)
+
+    @model_validator(mode="after")
+    def valid_embedding(self):
+        if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
+            raise ValueError("Sinusoidal embedding requires even hidden_dim")
+        return self
 
 
 class BudgetConfig(StrictModel):
@@ -133,6 +149,10 @@ class RunConfig(StrictModel):
 
     @model_validator(mode="after")
     def final_is_deliberate(self):
+        if self.model.kind == "modified_tlob":
+            from modified_tlob.schema import lob_columns
+            if self.data.lookback < 4 or self.data.feature_columns not in (lob_columns(3), lob_columns(5)):
+                raise ValueError("modified_tlob requires lookback >= 4 and ordered three/five-level price-volume fields")
         if self.splits.train.start < self.data.allowed_start or self.splits.final.end > self.data.allowed_end:
             raise ValueError("All splits must stay within the declared allowed development interval")
         if self.evaluation_split == "final" and not self.final_access.purpose.strip():

@@ -351,17 +351,7 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
     bars, records["bars"] = read_role("bars", _get(config, "bars_path"),
                                       ["date", "instrument", "instrument_id", *features], warm_start, end)
     bars = validate_keys(_map_instruments(bars, mapping, "bars"), "bars")
-    for column in features:
-        if column not in bars:
-            raise ValueError(f"bars: missing feature {column}")
-        bars[column] = pd.to_numeric(bars[column], errors="raise").astype(np.float64)
-        sentinel = _get(config, "missing_sentinel")
-        if sentinel is not None:
-            bars[column] = bars[column].mask(bars[column].eq(sentinel))
-        bars[column] = bars[column].replace([np.inf, -np.inf], np.nan)
-        if column in {"open", "high", "low", "close", "pre_close", "amount"} or re.match(r"^(ask|bid)_price\d+$", column):
-            bars[column] /= _get(config, "price_scale", 1.0)
-    bars = bars[[*KEYS, *features]]
+    bars = preprocess_bars(bars, config)
     label_path = _get(config, "labels_path")
     if label_path:
         labels, records["labels"] = read_role("labels", label_path,
@@ -394,8 +384,8 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
                                                         KEYS, start, end)
         instruments = validate_keys(instruments, "instruments")
         if len(labels):
-            # Membership is exact at the prediction timestamp, not the union of
-            # securities seen at any time. Keep the universe itself unchanged.
+            # Membership is exact at the prediction timestamp, not the union
+            # of securities seen at any time. Keep the universe unchanged.
             invalid = labels.merge(instruments.assign(_member=True), on=KEYS, how="left",
                                    validate="one_to_one", sort=False)["_member"].isna()
             if invalid.any():
@@ -420,6 +410,24 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
                 "timezone": "Asia/Shanghai (naive)", "history_days": _get(config, "history_days", 10)}
     return DataBundle(bars=bars, labels=labels, metadata=metadata, instruments=instruments,
                       cache_events=cache_events, data_events=data_events)
+
+
+def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
+    """Shared source-unit conversion and missing-value policy for local/platform inputs."""
+    features = list(_get(config, "feature_columns"))
+    bars = validate_keys(bars, "bars")
+    for column in features:
+        if column not in bars:
+            raise ValueError(f"bars: missing feature {column}")
+        bars[column] = pd.to_numeric(bars[column], errors="raise").astype(np.float64)
+        sentinel = _get(config, "missing_sentinel")
+        if sentinel is not None:
+            bars[column] = bars[column].mask(bars[column].eq(sentinel))
+        bars[column] = bars[column].replace([np.inf, -np.inf], np.nan)
+        if column in {"open", "high", "low", "close", "pre_close", "amount"} or re.match(r"^(ask|bid)_price\d+$", column):
+            bars[column] /= _get(config, "price_scale", 1.0)
+    bars = bars[[*KEYS, *features]]
+    return bars
 
 
 def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30) -> pd.DataFrame:

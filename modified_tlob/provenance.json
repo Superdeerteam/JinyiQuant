@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/LeonardoBerti00/TLOB",
+  "commit": "f1c0af4d81067978914361766db0457a7d8b6a46",
+  "retrieved_on": "2026-10-15",
+  "paper": {
+    "url": "https://arxiv.org/pdf/2502.15757v3",
+    "arxiv": "2502.15757v3",
+    "sha256": "da90d24cfcc7a0074187fd7d2c6d27c4a7ffbcc86cece5dd4d5ba12901e2e03b",
+    "pages": 11,
+    "reading_scope": "正文、脚注、表1–10、附录A/B；已核对图1/2/3/4；附录B的FI-2010图标为??且未提供"
+  },
+  "files": {
+    "models/tlob.py": {
+      "sha256": "607e69dac8e87f978cbec338db612437ebd3b097e79bca0064fee166d347c55e",
+      "vendored_reference": "modified_tlob/upstream/tlob.py.txt",
+      "git_blob_sha1": "d3d68b53d5cd1ac9c8600c878d8dcef94b6c5515"
+    },
+    "models/bin.py": {
+      "sha256": "1efd98dbad2a40612879b3148ef7bf534b2b100ce95d671f13dd3de91684807d",
+      "vendored_reference": "modified_tlob/upstream/bin.py.txt",
+      "git_blob_sha1": "bc0be9f35b4c6013eec0b99f61c182d8fcd57bc3"
+    },
+    "models/mlplob.py": {
+      "sha256": "dbd518a3757bc56f90de96a0b89ec45e1c2c146de29b813efa784430f212ac61",
+      "vendored_reference": "modified_tlob/upstream/mlplob.py.txt",
+      "git_blob_sha1": "40468e131f4d1c765b9e9210d6b3fa3c8b1560f0"
+    },
+    "LICENSE": {
+      "sha256": "622476939f6aad03c8c80fcd25a131b7ebaecdf44f23e8ee5423d9494f34f5c3",
+      "vendored_reference": "modified_tlob/LICENSE",
+      "git_blob_sha1": "521dc2bb84f5f2480e67b647d59d142366593483"
+    },
+    "requirements.txt": {
+      "sha256": "90385e5692c18ab668292e80e8ee94633bd2408fdd2227fbc9b24b387753bd97",
+      "vendored_reference": "modified_tlob/upstream/requirements.txt",
+      "git_blob_sha1": "0367ebf2b0b25bbdba7f8407a2e4f98c3e154c56"
+    }
+  },
+  "preserved": [
+    "单次输入BiN及样本标准差",
+    "输入投影与正弦/可学习位置编码",
+    "时间轴/隐藏特征轴交替注意力",
+    "外部Q/K/V加MHA内部投影",
+    "残差、LayerNorm、GELU MLP及官方残差顺序",
+    "最后双轴各压缩至floor(dim/4)",
+    "按feature/time顺序展平及逐级四倍缩小预测网络"
+  ],
+  "changes": [
+    {
+      "type": "task",
+      "detail": "末层3输出改1；无界连续值；官方vwap_return与MSE；不采用论文三分类标签"
+    },
+    {
+      "type": "safety",
+      "detail": "保留原torch.std算子；BiN两轴小标准差以torch.where保护，避免原地改动标准差，保持常数窗口梯度有限"
+    },
+    {
+      "type": "safety",
+      "detail": "负BiN混合权重原地重置.01，不替换Parameter，不丢失优化器引用"
+    },
+    {
+      "type": "engineering",
+      "detail": "移除全局设备、CUDA硬编码、LOBSTER事件嵌入及未使用绘图/跟踪对象"
+    },
+    {
+      "type": "engineering",
+      "detail": "正弦编码注册buffer；共享因果预处理；显式设备计算预检；二进制/文本权重"
+    },
+    {
+      "type": "input",
+      "detail": "三/五档分钟盘口替代论文十档事件快照；掩码仅用于历史覆盖与回退，不追加字段"
+    }
+  ],
+  "evidence_boundary": "结构迁移，不是论文性能复现；分类F1证据不证明A股分钟VWAP收益改进；最终检查区间未参与本轮",
+  "paper_findings": {
+    "mechanism": "窗口内先比较历史时刻，再沿隐藏特征轴比较；不需要窗口内部三角掩码，因全部输入均<=预测时点",
+    "component_evidence": "表9固定总层数的两轴消融支持互补；未单独隔离BiN和位置编码，不能称其贡献已被独立证明",
+    "fairness": "FI-2010基线来自已有benchmark；另两数据只重训两种基线；FI-2010追加104特征，LOBSTER追加事件字段",
+    "cautions": "BTC正文250ms/脚注100ms及12日/9+1+1切分存在不一致；附录MLPLOB最优lr=.003不在所列搜索集合中；历史比较仅两天，不能将同日事件当独立证据",
+    "examples": [
+      {
+        "formula": "论文Eq7，h=2,k=1",
+        "past_prices": [
+          100,
+          102
+        ],
+        "future_prices": [
+          104,
+          106
+        ],
+        "w_minus": 101,
+        "w_plus": 105,
+        "return": 0.039603960396039604,
+        "note": "本项目直接读取官方标签，不用此例生成训练标签"
+      },
+      {
+        "formula": "BiN sample std",
+        "slice": [
+          1,
+          3
+        ],
+        "mean": 2,
+        "std": 1.4142135623730951,
+        "standardized": [
+          -0.7071067811865475,
+          0.7071067811865475
+        ],
+        "constant_slice": [
+          2,
+          2
+        ],
+        "guarded_output": [
+          0,
+          0
+        ]
+      }
+    ]
+  }
+}

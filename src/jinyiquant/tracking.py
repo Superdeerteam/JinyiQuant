@@ -16,7 +16,8 @@ import psutil
 
 from .io import canonical_json, digest, file_sha256, read_json, redact, utc_now, write_json
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_MODULE = Path(__file__).resolve()
+PROJECT_ROOT = _MODULE.parents[2] if _MODULE.parent.parent.name == "src" else _MODULE.parents[1]
 
 
 def new_run_dir(output_root: Path) -> Path:
@@ -27,6 +28,12 @@ def new_run_dir(output_root: Path) -> Path:
 
 
 def resource_usage() -> dict:
+    # A lazy lookup keeps Ridge/Mean independent of the optional torch runtime.
+    torch = sys.modules.get("torch")
+    cuda = getattr(torch, "cuda", None)
+    if cuda is not None and getattr(cuda, "is_initialized", lambda: False)():
+        from modified_tlob.device import device_resources
+        return device_resources(torch.device("cuda"))
     p = psutil.Process()
     return {"rss_mb": p.memory_info().rss / 2**20, "cpu_seconds": sum(p.cpu_times()[:2]),
             "gpu_memory_mb": None, "gpu_note": "CPU reference implementation; GPU not used"}
@@ -55,11 +62,15 @@ class Recorder:
 
 def capture_source(run_dir: Path) -> dict:
     # Explicit allowlist: no raw datasets, environment, credentials or unrelated user files.
-    roots = [PROJECT_ROOT / x for x in ("src", "tests", "configs", "docs", "scripts")]
+    roots = [PROJECT_ROOT / x for x in
+             ("src", "jinyiquant", "tests", "configs", "docs", "scripts", "modified_tlob", ".github")]
     paths = [p for root in roots if root.exists() for p in root.rglob("*")
-             if p.is_file() and p.suffix in {".py", ".json", ".md", ".txt", ".toml"}
+             if p.is_file() and (p.suffix in {".py", ".json", ".md", ".txt", ".toml", ".ipynb", ".lock", ".yml", ".yaml"}
+                                or p.name == "LICENSE")
              and "__pycache__" not in p.parts]
-    paths += [PROJECT_ROOT / x for x in ("pyproject.toml", "uv.lock", ".python-version", "README.md", "AGENTS.md")
+    paths += [PROJECT_ROOT / x for x in ("pyproject.toml", "uv.lock", ".python-version", ".gitattributes", "README.md", "AGENTS.md",
+              "inference.ipynb", "training_config.json", "submission_config.json",
+              "requirements-cpu.lock.txt", "requirements-cuda.lock.txt")
               if (PROJECT_ROOT / x).is_file()]
     inventory = {p.relative_to(PROJECT_ROOT).as_posix(): file_sha256(p) for p in sorted(paths)}
     with zipfile.ZipFile(run_dir / "source.zip", "w", zipfile.ZIP_DEFLATED) as z:

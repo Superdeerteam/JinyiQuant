@@ -1,5 +1,7 @@
 # JinyiQuant 研究工程入口
 
+新增可选 [modified_tlob 回归模型](modified_tlob/README.md)：固定上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11/PyTorch 2.5.0 环境；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU 验收和平台提交包清单见该模块说明。
+
 七个模块已统一为可复跑的本地 CPU 工作流。本轮以工程正确性验收；内置岭回归仅用于贯通接口。生成数据上的指标不能作为模型有效性或比赛成绩证据。
 
 ## 安装与首次运行
@@ -109,7 +111,7 @@ uv run python scripts/acceptance.py --output runs/engineering-acceptance
 
 验收脚本从头生成固定种子数据，执行正常运行、相同配置复验、超时、超内存、缺文件、无效配置脱敏、基线波动测量及多种子/多时段对照。候选故意与基线相同，必须得出“证据不足”，用于检查系统不会把零改善误判为成功。脚本不覆盖已有输出；重复运行须换新目录。当前系统临时目录权限有限，因此测试明确使用工作区内的新临时目录。
 
-`audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。CPU 参考实现不使用 GPU，资源日志中 GPU 项明确为不适用，尚未验收 GPU/神经网络训练。
+`audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。Ridge/Mean 不使用 GPU；modified_tlob 已完成 CPU 神经网络工程闭环，GPU 实际计算仍未验收，详细证据见模块说明。
 
 具体本地指标口径保存在每次运行的 `metrics.json/conventions`。公开实现核对参考 [SciPy 的常数输入相关性约定](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html)与 [NumPy 的缺失值均值说明](https://numpy.org/doc/stable/reference/generated/numpy.nanmean.html)；对照额外要求固定的标签可评价截面集合。工程记录保留在独立运行档案中。
 

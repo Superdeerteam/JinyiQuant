@@ -1,0 +1,73 @@
+{
+  "acceptance": {
+    "final_access": false,
+    "prediction_atol": 1e-06,
+    "prediction_rtol": 1e-05,
+    "quality_improvement_claim": false,
+    "small_fixture_budget_seconds": 300
+  },
+  "attempts": [
+    {
+      "reason": "sqrt(var)替代std产生额外舍入",
+      "resolution": "保留原std算子与既定容差，两轴torch.where零标准差保护",
+      "result": "initial_parity_failed",
+      "step": "BiN safety"
+    },
+    {
+      "archive": "scratch/tlob-fixture/runs/20261014T162048.697794Z_e7ad4841ef01",
+      "reason": "fixture继承了真实数据映射路径",
+      "resolution": "fixture明确置空映射，新run成功；保留原失败日志",
+      "result": "failed",
+      "step": "first_synthetic_run"
+    },
+    {
+      "archive": "runs/tlob-cpu-only-002/acceptance.json",
+      "budget_seconds": 300,
+      "measured_wall_seconds": 15.2029999999977,
+      "package_prediction_difference": 1.1920928955078125e-07,
+      "reproducibility": {
+        "atol": 1e-06,
+        "max_abs_prediction_difference": 0.0,
+        "passed": true,
+        "reference_run_id": "20261014T163133.330395Z_e3ad5b085791",
+        "rtol": 1e-05
+      },
+      "result": "passed",
+      "scope": "小型合成数据；本地DAI替身；含隔离断网Notebook及显式私榜重训",
+      "step": "CPU_only_end_to_end"
+    },
+    {
+      "archive": "runs/baseline-post-tlob/acceptance.json",
+      "checks": 9,
+      "result": "passed",
+      "step": "baseline_engineering_suite"
+    },
+    {
+      "details": "dependency_provenance.json",
+      "result": "CPU_fresh_install_passed_CUDA_resolution_only",
+      "step": "dependency_closures"
+    },
+    {
+      "resolution": "Restore exact fixed Git blob bytes and pin .gitattributes; original upstream whitespace preserved",
+      "result": "passed",
+      "step": "upstream_reference_git_integrity"
+    }
+  ],
+  "baseline": "原Ridge/Mean工程路径；上游固定提交的同权重中间表示",
+  "decision": "保留工程实现，不晋升模型质量版本；未覆盖任何历史最佳权重",
+  "experiment_id": "modified-tlob-engineering",
+  "final_delivery_evidence": "runs/tlob-acceptance-delivery/acceptance.json",
+  "hypothesis": "在不改变固定上游主干有效结构的前提下，迁移官方VWAP回归并完成可复现CPU与文本提交闭环",
+  "next_step": "真实开发数据可用后运行冻结切片工程试跑；平台/GPU逐项补验；性能研究另轮预先声明对照门槛",
+  "not_verified": [
+    "真实开发数据字段/质量试跑（本地文件缺失）",
+    "真实GPU计算与GPU权重CPU加载容差",
+    "目标平台上传、全区间三小时预算、实际DAI行为",
+    "远端CI执行"
+  ],
+  "paper_reading": "provenance.json，11页正文与附录及图表核对；以官方代码定实现细节",
+  "recorded_on": "2026-10-15",
+  "schema_version": 1,
+  "test_evidence": "runs/tlob-final-tests.xml，最终提交前生成；GPU用例按可用性跳过",
+  "uncertainty": "合成小样本支持接口正确性，不支持样本外质量、真实运行成本或官方平台兼容性的结论"
+}

@@ -8,6 +8,33 @@ permissions:
   contents: read
 
 jobs:
+  tlob-cpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.17"
+          python-version: "3.11"
+      - name: Create isolated TLOB environment
+        shell: bash
+        run: |
+          uv venv --python 3.11 .venv-tlob
+          uv pip sync --python .venv-tlob modified_tlob/requirements-cpu.lock.txt modified_tlob/requirements-dev.lock.txt
+          if [ "$RUNNER_OS" = "Windows" ]; then echo "TLOB_PY=.venv-tlob/Scripts/python.exe" >> "$GITHUB_ENV"; else echo "TLOB_PY=.venv-tlob/bin/python" >> "$GITHUB_ENV"; fi
+      - name: Verify optional backend behavior and complete offline package
+        shell: bash
+        run: |
+          "$TLOB_PY" -m pytest -q --basetemp scratch/tlob-ci-tests
+          "$TLOB_PY" scripts/tlob_acceptance.py --output runs/tlob-ci-acceptance
+          uv pip check --python .venv-tlob
   verify:
     strategy:
       fail-fast: false

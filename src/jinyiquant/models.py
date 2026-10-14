@@ -55,6 +55,10 @@ class LinearModel:
         np.savez(path, mean=self.mean, scale=self.scale, weights=self.weights,
                  intercept=self.intercept, kind=self.kind, alpha=self.alpha)
 
+    def validate_training_preprocessing(self, batch, sample_mask):
+        return {"passed": np.array_equal(self.mean, self.features(batch)[sample_mask].mean(axis=0)),
+                "normalization": "training_only_population_statistics"}
+
     @classmethod
     def load(cls, path: Path):
         with np.load(path, allow_pickle=False) as state:
@@ -62,3 +66,24 @@ class LinearModel:
             model.mean, model.scale, model.weights = (state[k].copy() for k in ("mean", "scale", "weights"))
             model.intercept = float(state["intercept"])
         return model
+
+
+def create_model(config, *, recorder=None):
+    if config.model.kind == "modified_tlob":
+        try:
+            from modified_tlob.adapter import TLOBAdapter
+        except ModuleNotFoundError as exc:
+            raise RuntimeError("modified_tlob requires its optional Python 3.11/PyTorch environment; see README") from exc
+        return TLOBAdapter(config.model, config.data, seed=config.seed, recorder=recorder)
+    return LinearModel(config.model.kind, config.model.alpha)
+
+
+def model_filename(kind):
+    return "model.pt" if kind == "modified_tlob" else "model.npz"
+
+
+def load_model(path, config, *, recorder=None):
+    if config.model.kind == "modified_tlob":
+        from modified_tlob.adapter import TLOBAdapter
+        return TLOBAdapter.load(path, device=config.model.device, recorder=recorder)
+    return LinearModel.load(path)

@@ -16,7 +16,7 @@ from .config import RunConfig, load_config
 from .data import build_batch, load_data, select_targets
 from .evaluation import evaluate
 from .io import read_json, redact, utc_now, write_json
-from .models import LinearModel
+from .models import create_model, load_model, model_filename
 from .tracking import (
     Recorder,
     capture_source,
@@ -91,10 +91,13 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     train_targets = _aligned_targets(train, train_targets)
     fit_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
     no_history = ~validation.observed.any(axis=(1, 2))
+    fallback_mask = (validation.observed.any(axis=2).sum(axis=1) < config.data.min_history
+                     if config.model.kind == "modified_tlob" else no_history)
     coverage_report = {"train": train.coverage, "evaluation": validation.coverage,
                        "training_samples_used": int(fit_mask.sum()),
                        "training_samples_excluded_insufficient_history": int((~fit_mask).sum()),
                        "no_history_prediction_samples": int(no_history.sum()),
+                       "training_mean_fallback_samples": int(fallback_mask.sum()),
                        "no_history_prediction_policy": "training_mean"}
     write_json(run_dir / "coverage.json", coverage_report)
     checks += [dict(c, name="train_" + c["name"]) for c in
@@ -118,20 +121,42 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
                   missing_answers=missing_answers,
                   no_history_prediction_policy="training_mean")
     rec.event("preprocessing", "completed", resources=resource_usage())
-    model = LinearModel(config.model.kind, config.model.alpha)
+    model = create_model(config, recorder=rec)
+    if config.model.kind == "modified_tlob":
+        write_json(run_dir / "device.json", {"selected": str(model.device), "requested": config.model.device})
+        manifest = read_json(run_dir / "manifest.json")
+        manifest["environment"]["determinism"].update(device=str(model.device),
+            torch_version=str(__import__("torch").__version__), deterministic_algorithms=True,
+            cpu_threads=config.model.cpu_threads, note="Tolerance-based reproducibility; GPU rounding may vary")
+        write_json(run_dir / "manifest.json", manifest)
     rec.event("training", "started", seed=config.seed, samples=int(fit_mask.sum()))
     started = time.monotonic()
-    progress = model.fit(train, train_targets.target.to_numpy(), sample_mask=fit_mask)
+    fit_options = {"sample_mask": fit_mask}
+    if config.model.kind == "modified_tlob":
+        eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
+        fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
+    progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)
     elapsed = time.monotonic() - started
     rec.event("training", "progress", **progress, elapsed_seconds=elapsed,
               throughput_samples_per_second=int(fit_mask.sum()) / max(elapsed, 1e-9), resources=resource_usage())
-    model.save(run_dir / "model.npz")
-    rec.event("saving", "model_saved", path="model.npz")
-    loaded = LinearModel.load(run_dir / "model.npz")
-    rec.event("loading", "model_loaded", path="model.npz")
+    filename = model_filename(config.model.kind)
+    rec.event("saving", "started", path=filename)
+    model.save(run_dir / filename)
+    if config.model.kind == "modified_tlob":
+        model.export_text(run_dir / "modified_tlob_weights.json")
+        rec.event("saving", "text_model_saved", path="modified_tlob_weights.json")
+    rec.event("saving", "model_saved", path=filename)
+    loaded = load_model(run_dir / filename, config, recorder=rec)
+    rec.event("loading", "model_loaded", path=filename)
     checks.append(check("save_load_predictions", np.allclose(model.predict(validation), loaded.predict(validation),
                         atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol)))
-    checks.append(check("training_only_normalization", np.array_equal(model.mean, model.features(train)[fit_mask].mean(axis=0))))
+    normalization = model.validate_training_preprocessing(train, fit_mask)
+    checks.append(check("training_only_normalization", **normalization))
+    if config.model.kind == "modified_tlob":
+        text_model = load_model(run_dir / "modified_tlob_weights.json", config)
+        checks.append(check("text_save_load_predictions", np.allclose(model.predict(validation),
+                            text_model.predict(validation), atol=config.acceptance.repro_atol,
+                            rtol=config.acceptance.repro_rtol)))
     rec.event("inference", "started", label_input=False)
     predictions = validation.keys.copy()
     predictions["score"] = loaded.predict(validation)
@@ -153,6 +178,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
                            "scored_samples": len(scored_predictions),
                            "missing_answer_samples": len(predictions) - len(scored_predictions),
                            "no_history_prediction_samples": int(no_history.sum()),
+                           "training_mean_fallback_samples": int(fallback_mask.sum()),
                            "no_history_prediction_policy": "training_mean"}
     expected_daily = validation.keys.assign(day=validation.keys.date.dt.normalize(), no_history=no_history).groupby("day")
     scored_daily = scored_predictions.groupby(scored_predictions.date.dt.normalize()).size()
@@ -271,7 +297,7 @@ def run(config: RunConfig, *, reference: Path | None = None, policy_registration
             rec.event("run", "rerun", reference_run_id=reference.name, reason="predeclared reproducibility validation",
                       recovery_state="new_run_no_overwrite")
         env = {**os.environ, "PYTHONHASHSEED": str(config.seed), "OPENBLAS_NUM_THREADS": "1",
-               "MKL_NUM_THREADS": "1", "OMP_NUM_THREADS": "1"}
+               "MKL_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "CUBLAS_WORKSPACE_CONFIG": ":4096:8"}
         with (run_dir / "worker.log").open("w", encoding="utf-8") as log:
             process = subprocess.Popen([sys.executable, "-m", "jinyiquant", "_worker", str(run_dir)],
                                        stdout=log, stderr=log, env=env,
@@ -311,8 +337,9 @@ def run(config: RunConfig, *, reference: Path | None = None, policy_registration
         checks.append(check("run_completed", False, status=status, error=error))
         save_checks(run_dir, checks)
         (run_dir / "report.txt").write_text(f"Run {run_dir.name}: {status}\nReason: {error}\n", encoding="utf-8")
+    selected = read_json(run_dir / "device.json")["selected"] if (run_dir / "device.json").exists() else "cpu"
     resources = {"wall_seconds": time.monotonic() - started, "peak_rss_mb": peak_rss,
-                 "cpu_seconds": cpu_seconds, "monitor_interval_seconds": .05, "gpu_used": False}
+                 "cpu_seconds": cpu_seconds, "monitor_interval_seconds": .05, "gpu_used": selected == "cuda"}
     finish(run_dir, status, exit_code, resources=resources, error=error)
     return run_dir, exit_code
 

@@ -19,11 +19,11 @@ jinyi = "jinyiquant.cli:main"
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/jinyiquant"]
+packages = ["src/jinyiquant", "modified_tlob"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 target-version = "py313"

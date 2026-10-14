@@ -1,0 +1,3 @@
+# Keep fixed upstream reference bytes and original whitespace for hash verification.
+modified_tlob/upstream/*.txt -text -whitespace
+modified_tlob/LICENSE text eol=lf
