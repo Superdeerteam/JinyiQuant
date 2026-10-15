@@ -2,6 +2,8 @@
 
 新增可选 [modified_tlob 回归模型](modified_tlob/README.md)：固定上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11/PyTorch 2.5.0 环境；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU 验收和平台提交包清单见该模块说明。
 
+TLOB 本地训练入口为 `python -m modified_tlob.train <配置>`，本地只推理入口为 `python -m modified_tlob.infer --weights ... --bars ... --keys ... --output-root ...`；提交材料用 `python -m modified_tlob.package <训练运行目录> <新提交目录>` 生成。完整可复制命令、CPU/GPU 选择和输入输出说明见模块 README 的对应章节。
+
 七个模块已统一为可复跑的本地 CPU 工作流。本轮以工程正确性验收；内置岭回归仅用于贯通接口。生成数据上的指标不能作为模型有效性或比赛成绩证据。
 
 ## 安装与首次运行

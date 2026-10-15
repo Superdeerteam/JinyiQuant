@@ -9,12 +9,15 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from tlob_fixture import create_fixture
 
 from jinyiquant.checks import verify_artifacts
 from jinyiquant.config import load_config
 from jinyiquant.io import read_json, write_json
 from jinyiquant.runner import run
+from modified_tlob.infer import infer
 from modified_tlob.package import build_package
 
 
@@ -25,7 +28,8 @@ def acceptance(destination):
     write_json(destination / "plan.json", {"schema_version": 1, "hypothesis": "Engineering contracts only",
         "device": "cpu", "budget_seconds": 300, "repro_atol": 1e-6, "repro_rtol": 1e-5,
         "checks": ["train_save_load", "text_weights", "causality", "no_labels_in_inference",
-                   "archive_integrity", "rerun", "isolated_offline_notebook"], "final_access": False})
+                   "archive_integrity", "rerun", "isolated_offline_notebook", "local_inference_saved_weights"],
+        "final_access": False})
     config = load_config(create_fixture(destination / "fixture"))
     attempts = []
     try:
@@ -38,6 +42,15 @@ def acceptance(destination):
         if code:
             raise RuntimeError(f"CPU rerun failed: {second}")
         assert verify_artifacts(first)["passed"] and verify_artifacts(second)["passed"]
+        local_run = infer(first / "model.pt", config.data.bars_path, config.data.instruments_path,
+                          destination / "local-inference", device="cpu", min_coverage=config.acceptance.min_coverage,
+                          start_date=config.splits.validation.start, end_date=config.splits.validation.end)
+        local_predictions = pd.read_parquet(local_run / "predictions.parquet")
+        expected_predictions = pd.read_parquet(first / "predictions.parquet")
+        assert local_predictions[["date", "instrument"]].equals(expected_predictions[["date", "instrument"]])
+        np.testing.assert_allclose(local_predictions.factor, expected_predictions.score,
+                                   atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol)
+        assert verify_artifacts(local_run)["passed"]
         package = build_package(first, destination / "upload")
         shutil.copyfile(first / "predictions.parquet", destination / "fixture/expected_predictions.parquet")
         env = dict(os.environ)
@@ -51,6 +64,7 @@ def acceptance(destination):
             raise RuntimeError("Isolated package failed; see package_smoke.log")
         elapsed = time.monotonic() - started
         report = {"schema_version": 1, "passed": elapsed <= 300, "runs": attempts, "package": str(package),
+                  "local_inference_run": str(local_run),
                   "wall_seconds": elapsed, "budget_seconds": 300, "package_smoke": read_json(smoke),
                   "reproducibility": read_json(second / "manifest.json")["reproducibility"],
                   "real_data": "not_available", "gpu": "not_verified", "platform": "not_verified",

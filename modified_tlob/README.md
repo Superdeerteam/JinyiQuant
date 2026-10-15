@@ -49,6 +49,16 @@ PyTorch wheel 通过限定到 torch 包的 find-links 提供，其余包从常�
 
 ## 数据、训练、档案与复跑
 
+三个日常入口如下；本地训练和本地推理均支持 CPU/GPU，设备设置决定实际使用的硬件：
+
+| 操作 | 显式 Python 文件 | 调用方式 |
+|---|---|---|
+| 本地训练 | `modified_tlob/train.py` | `python -m modified_tlob.train <训练配置.json>` |
+| 本地只推理 | `modified_tlob/infer.py` | `python -m modified_tlob.infer --weights ... --bars ... --keys ... --output-root ...` |
+| 组装提交材料 | `modified_tlob/package.py` | `python -m modified_tlob.package <训练运行目录> <新提交目录>` |
+
+训练入口复用统一 `jinyi run` 流程，会训练、验证并存档；本地推理入口只加载权重，不调用 fit，不读取标签，不计算需要标签的评价指标。比赛平台的推理入口仍是 `submission.py` 中的 `main(datasources, start_date, end_date)`。
+
 `configs/modified_tlob_cpu.json` 固定三档十二列：每档按 `ask_price/ask_volume/bid_price/bid_volume` 排列。初始主干为 hidden_dim=40、四个双轴块、一头、128 条历史、正弦编码。改变五档时必须使用 `schema.lob_columns(5)` 的二十列顺序。字段缺失、错序、错误维度或非法配置均失败。掩码只用于覆盖检查与缺历史回退；不拼入主干输入。
 
 共享 `jinyiquant.data.preprocess_bars/build_batch` 完成缺失哨兵、有限前向填充、补零和因果窗口。训练只选达到 min_history 的样本；推理不足 min_history 的窗口返回训练样本标签均值。BiN 仅使用当前历史窗口的统计，无跨样本归一化拟合。下载价格单位为分、scale=100；平台行情为元、scale=1；两端最终都是元。平台单位转换明确保存在提交配置，缺失策略与字段/窗口参数随权重保存。
@@ -82,6 +92,47 @@ $tlobPython = '.venv-tlob/Scripts/python.exe'
 
 验收脚本预先写 plan，运行 CPU 训练、保存、加载、预测、评价、复跑，组装提交包，启动无仓库导入路径且禁网的独立进程执行 Notebook。它用严格拒绝标签查询的本地 DAI 替身，报告为 `acceptance.json/package_smoke.json`；不冒充线上验收。合成权重只用于工程检查，不能证明真实预测质量。
 
+## 本地只推理：infer.py
+
+先完成一次训练，使用其运行目录中的 `model.pt` 或 `modified_tlob_weights.json`。PowerShell 从仓库根目录执行：
+
+```powershell
+$projectRoot = (Get-Location).Path
+$env:PYTHONPATH = "$projectRoot\src;$projectRoot"
+$tlobPython = "$projectRoot\.venv-tlob\Scripts\python.exe"
+$trainingRun = '<已训练运行目录的绝对路径>'
+
+& $tlobPython -m modified_tlob.infer `
+  --weights "$trainingRun\model.pt" `
+  --bars "$projectRoot\data\bars" `
+  --keys "$projectRoot\cpt_jyc_2026_instruments.parquet" `
+  --instrument-map "$projectRoot\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv" `
+  --start-date '2023-08-02 00:00:00' `
+  --end-date '2023-08-03 00:00:00' `
+  --device cpu --min-coverage 0.99 `
+  --output-root "$projectRoot\runs\local-inference"
+```
+
+也可以直接执行文件，参数相同：`& $tlobPython "$projectRoot\modified_tlob\infer.py" --help`。模块方式依赖上面的 PYTHONPATH；直接执行文件会按源码位置定位公共包。无需修改 Notebook。CLI 成功时输出 JSON，给出此次运行目录和预测文件的实际路径；失败返回非零状态并保存失败档案。
+
+参数说明：
+
+| 参数 | 含义 |
+|---|---|
+| `--weights` | 必填，已训练的 `.pt` 或 JSON 文本权重；不存在则失败，不会训练兜底 |
+| `--bars` | 必填，原始行情文件或月度分片目录；复用项目 Parquet/Feather/CSV/RAR 读取器 |
+| `--keys` | 必填，独立的预测股票池/键文件，包含 date/instrument；不要按答案是否存在筛选键 |
+| `--output-root` | 必填，每次在此目录下创建唯一 run_id，不覆盖历史预测 |
+| `--device` | auto/cpu/cuda，默认 auto；GPU 需使用 CUDA 依赖环境 |
+| `--instrument-map` | 行情仅含 instrument_id 时提供官方一对一映射；已有 instrument 可省略 |
+| `--start-date / --end-date` | 可选，上海时间无时区，筛选预测键的半开区间 `[start, end)`；行情按保存的 history_days 补取历史 |
+| `--price-scale` | 默认使用权重内保存的原始价格除数；输入为分用100、元用1。覆盖值进入日志，不更改权重 |
+| `--min-coverage` | 每个截面的最小有效历史覆盖率，默认0.6；工程严格配置示例用0.99 |
+
+预测键必须位于保存模型约定的采样时点、精确到分钟且无重复；不合法时失败。输出为新运行目录下的 `predictions.parquet`，严格三列 `date/instrument/factor`。同时保存 manifest、events、有效配置、数据校验、覆盖、检查、源码快照和设备信息。字段顺序、窗口长度、缺失处理和训练均值回退全部从权重恢复，不在推理数据上重新拟合。此入口不自动控制最终检查区间查看次数；日常研究请明确指定允许的开发区间。
+
+CPU/GPU 使用同一文件。GPU 推理时将解释器改为 CUDA 环境的 Python，并设置 `--device cuda`；auto 可按预检结果回退 CPU，显式 cuda 不可用会报错。`modified_tlob_cpu.json` 中的设备只控制训练；本地只推理以这里的 `--device` 为准。
+
 ## 生成并上传提交包
 
 从通过验收的训练目录生成新包（源码改变后必须先重新训练/复跑，打包器拒绝源码或权重校验不符）：
@@ -92,7 +143,7 @@ $tlobPython = '.venv-tlob/Scripts/python.exe'
 
 上传 `dist/modified-tlob-upload-001` **内的文件与两个包目录**，保持同级结构；在该目录中打开唯一的 `inference.ipynb`。平台环境预先提供 Python 3.11、匹配的 PyTorch、核心依赖和 `dai`；Notebook 不执行 pip、不下载文件。缺依赖、模块、权重或校验失败均直接报错，不训练兜底。
 
-以下为打包器实际生成的完整清单，共 32 个文件：
+以下为打包器实际生成的完整清单，共 33 个文件：
 
 | 相对路径 | 用途 | 必需性 |
 |---|---|---|
@@ -111,6 +162,7 @@ $tlobPython = '.venv-tlob/Scripts/python.exe'
 | `modified_tlob/adapter.py` | 训练、批次预测与权重加载 | 必需 |
 | `modified_tlob/submission.py` | 平台数据查询及只推理 main | 必需 |
 | `modified_tlob/train.py` | 隔离的显式 train_and_save | 私榜重训必需 |
+| `modified_tlob/infer.py` | 独立本地文件推理入口；平台 main 不调用它 | 本地使用，随包保留 |
 | `modified_tlob/provenance.json` | 固定论文/源码与变更清单 | 来源声明必需 |
 | `modified_tlob/LICENSE` | 上游许可 | 必需 |
 | `jinyiquant/__init__.py`、`jinyiquant/__main__.py` | 工程包和统一 CLI 入口 | 必需 |

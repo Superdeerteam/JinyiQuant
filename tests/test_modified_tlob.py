@@ -179,6 +179,51 @@ else:
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.parametrize("filename", ["model.pt", "weights.json"])
+def test_local_inference_entry_never_trains_and_preserves_predictions(tmp_path, monkeypatch, filename):
+    from jinyiquant.checks import verify_artifacts
+    from modified_tlob.infer import infer
+    b, m = batch(), adapter()
+    m.fit(b, np.zeros(7))
+    path = tmp_path / filename
+    m.save(path) if path.suffix == ".pt" else m.export_text(path)
+    rows = []
+    for i, row in enumerate(b.keys.itertuples(index=False)):
+        for lag in range(8):
+            rows.append({"date": row.date - pd.Timedelta(minutes=7 - lag), "instrument": row.instrument,
+                         **dict(zip(data_config().feature_columns, b.x[i, lag]))})
+    bars_path, keys_path = tmp_path / "bars.parquet", tmp_path / "keys.parquet"
+    pd.DataFrame(rows).assign(vwap_return=999).to_parquet(bars_path, index=False)
+    b.keys.to_parquet(keys_path, index=False)
+    monkeypatch.setattr(TLOBAdapter, "fit", lambda *a, **kw: pytest.fail("Inference attempted training"))
+    destination = infer(path, bars_path, keys_path, tmp_path / "inference", device="cpu", min_coverage=1)
+    result = pd.read_parquet(destination / "predictions.parquet")
+    assert list(result) == ["date", "instrument", "factor"]
+    np.testing.assert_allclose(result.factor, m.predict(b), atol=1e-6, rtol=1e-5)
+    assert verify_artifacts(destination)["passed"]
+    assert json.loads((destination / "config.json").read_text())["data"]["labels_path"] is None
+    # Direct file execution must work from another cwd without PYTHONPATH.
+    import os
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    command = [sys.executable, str(ROOT / "modified_tlob/infer.py"), "--weights", str(path),
+               "--bars", str(bars_path), "--keys", str(keys_path), "--device", "cpu",
+               "--output-root", str(tmp_path / "cli"), "--start-date", "2020-01-03", "--end-date", "2020-01-04"]
+    completed = subprocess.run(command, cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    cli = pd.read_parquet(json.loads(completed.stdout)["predictions"])
+    assert cli.date.eq(pd.Timestamp("2020-01-03 10:00")).all() and len(cli) == 1
+
+
+def test_local_inference_failure_archived_without_output(tmp_path):
+    from modified_tlob.infer import infer
+    with pytest.raises(FileNotFoundError):
+        infer(tmp_path / "missing.pt", tmp_path / "bars.parquet", tmp_path / "keys.parquet", tmp_path / "runs")
+    run_dir = next((tmp_path / "runs").iterdir())
+    assert json.loads((run_dir / "manifest.json").read_text())["status"] == "failed"
+    assert not (run_dir / "predictions.parquet").exists()
+
+
 def test_platform_errors_are_logged_and_never_train(tmp_path, monkeypatch):
     from jinyiquant.io import file_sha256, write_json
     from modified_tlob.submission import predict_range

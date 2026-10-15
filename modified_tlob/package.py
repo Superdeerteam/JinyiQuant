@@ -9,7 +9,7 @@ from jinyiquant.io import file_sha256, read_json, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 TLOB_FILES = ("__init__.py", "model.py", "normalization.py", "schema.py", "device.py", "adapter.py",
-              "submission.py", "train.py", "provenance.json", "LICENSE")
+              "submission.py", "train.py", "infer.py", "provenance.json", "LICENSE")
 JINYI_FILES = ("__init__.py", "__main__.py", "checks.py", "cli.py", "comparison.py", "config.py", "data.py",
                "demo.py", "evaluation.py", "experiments.py", "io.py", "models.py", "preparation.py",
                "runner.py", "tracking.py")
