@@ -50,6 +50,9 @@ def main(argv=None):
     compare.add_argument("--candidate", nargs="+", type=Path, required=True)
     compare.add_argument("--policy", type=Path, required=True)
     compare.add_argument("--output", type=Path, required=True)
+    diagnosis = commands.add_parser("diagnose", help="Suggest one next hypothesis from an intact learning audit")
+    diagnosis.add_argument("--learning-audit", type=Path, required=True)
+    diagnosis.add_argument("--output", type=Path, required=True)
     prepare = commands.add_parser("prepare-data")
     prepare.add_argument("archive", type=Path)
     prepare.add_argument("--member", required=True)
@@ -93,9 +96,16 @@ def main(argv=None):
             print(canonical_json(result))
             return 0 if result["passed"] else 3
         elif args.command == "compare":
-            path, code = save_comparison(args.baseline, args.candidate, read_json(args.policy), args.output)
+            policy = read_json(args.policy)
+            if isinstance(policy.get("threshold_basis"), dict):
+                basis = policy["threshold_basis"]
+                basis["calibration_report"] = str((args.policy.parent / basis["calibration_report"]).resolve())
+            path, code = save_comparison(args.baseline, args.candidate, policy, args.output)
         elif args.command == "suite":
             path, code = suite(args.plan)
+        elif args.command == "diagnose":
+            from .diagnosis import diagnose
+            path, code = diagnose(args.learning_audit, args.output)
         elif args.command == "prepare-data":
             from .preparation import prepare_data
             path = prepare_data(args.archive, args.member, args.output)

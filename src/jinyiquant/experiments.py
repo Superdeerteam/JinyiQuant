@@ -1,16 +1,26 @@
 """Baseline calibration and preregistered, bounded seed/period comparison suites."""
 
 from pathlib import Path
+from time import monotonic
 
 import numpy as np
 
-from .checks import verify_artifacts
 from .comparison import compare_runs, validate_policy
 from .config import Period, RunConfig, load_config
 from .evaluation import METRIC_SPEC
 from .io import digest, read_json, utc_now, write_json
+from .protocol import calibration_evidence, fair_config_pair
 from .runner import run
-from .tracking import new_run_dir
+from .tracking import Recorder, capture_source, environment, finish, new_run_dir
+
+
+def _start_archive(archive, experiment_id, **context):
+    recorder = Recorder(archive, experiment_id)
+    write_json(archive / "manifest.json", {"schema_version": 1, "run_id": archive.name,
+        "experiment_id": experiment_id, "started_at": utc_now(), "status": "running",
+        "code": capture_source(archive), "environment": environment()})
+    recorder.event("run", "started", **context)
+    return recorder
 
 
 def _variant(config, seed, period):
@@ -35,15 +45,27 @@ def calibrate(config, seeds, periods):
     combinations = _grid(seeds, periods)
     configs = [_variant(config, s, p) for s, p in combinations]
     archive = new_run_dir(config.output_root / "calibrations")
+    started = monotonic()
+    recorder = _start_archive(archive, config.experiment_id, kind="baseline_calibration")
     write_json(archive / "plan.json", {"registered_at": utc_now(), "config": config.snapshot(),
                                      "seeds": seeds, "periods": periods})
     paths, code = [], 0
-    for cfg in configs:
-        path, status = run(cfg)
-        paths.append(path)
-        if status:
-            code = status
-            break
+    try:
+        for cfg in configs:
+            path, status = run(cfg)
+            recorder.event("calibration", "attempt_completed", child_run=str(path), exit_code=status)
+            paths.append(path)
+            if status:
+                code = status
+                break
+    except BaseException as exc:
+        recorder.failure("calibration", exc)
+        code = 130 if isinstance(exc, KeyboardInterrupt) else 1
+        write_json(archive / "calibration.json", {"schema_version": 1, "status": "failed",
+            "created_at": utc_now(), "runs": [str(p) for p in paths], "reason": str(exc)})
+        finish(archive, "interrupted" if code == 130 else "failed", code, error=str(exc),
+               resources={"wall_seconds": monotonic() - started})
+        return archive, code
     values = {metric: [] for metric in METRIC_SPEC}
     for path in paths:
         if read_json(path / "manifest.json")["status"] == "completed":
@@ -60,11 +82,15 @@ def calibrate(config, seeds, periods):
               "scope": "Baseline variation across declared seeds/time periods, not candidate evidence",
               "next_step": "Declare practical threshold and regression/cost limits before candidate runs"}
     write_json(archive / "calibration.json", report)
+    recorder.event("evaluation", "completed", status=report["status"], metrics=summary)
+    finish(archive, report["status"], code, resources={"wall_seconds": monotonic() - started})
     return archive, code
 
 
 def save_comparison(baselines, candidates, policy, destination):
     destination = new_run_dir(destination)
+    started = monotonic()
+    recorder = _start_archive(destination, "paired-comparison", kind="comparison")
     try:
         comparison, decision = compare_runs(baselines, candidates, policy)
         write_json(destination / "comparison.json", comparison)
@@ -73,12 +99,17 @@ def save_comparison(baselines, candidates, policy, destination):
             f"Decision: {decision['status']}\nAction: {decision['action']}\n"
             f"Failed gates: {decision['failed_gates']}\nMissing evidence: {decision['missing_evidence']}\n"
             "No automatic model replacement; original baseline and candidate archives are retained.\n", encoding="utf-8")
+        recorder.event("evaluation", "completed", result=decision["result"])
+        finish(destination, "completed", 0, resources={"wall_seconds": monotonic() - started})
         return destination, 0
     except Exception as exc:
+        recorder.failure("comparison", exc)
         write_json(destination / "comparison.json", {"schema_version": 1, "status": "invalid",
                                                      "reason": str(exc)})
         write_json(destination / "decision.json", {"schema_version": 1, "status": "reject",
+                    "result": "回退",
                     "accepted": False, "action": "retain_baseline", "reason": str(exc), "automatic_promotion": False})
+        finish(destination, "failed", 2, error=str(exc), resources={"wall_seconds": monotonic() - started})
         return destination, 2
 
 
@@ -90,74 +121,73 @@ def suite(plan_path):
         raise ValueError(f"Suite plan keys must be exactly {sorted(allowed)}")
     baseline = load_config(plan_path.parent / plan["baseline_config"])
     candidate = load_config(plan_path.parent / plan["candidate_config"])
-    policy = validate_policy(plan["policy"])
-    calibration_path = plan_path.parent / plan["calibration_report"]
+    policy_raw = validate_policy(plan["policy"])
+    policy_raw["threshold_basis"]["calibration_report"] = str(
+        (plan_path.parent / policy_raw["threshold_basis"]["calibration_report"]).resolve())
+    policy = validate_policy(policy_raw)
+    calibration_path = (plan_path.parent / plan["calibration_report"]).resolve()
+    if calibration_path != Path(policy["threshold_basis"]["calibration_report"]):
+        raise ValueError("Suite calibration must match threshold_basis.calibration_report")
     calibration = read_json(calibration_path)
     if calibration.get("status") != "completed":
         raise ValueError("A completed baseline calibration is required before registering comparison thresholds")
     combinations = _grid(plan["seeds"], plan["periods"])
     if len(plan["seeds"]) < policy["min_seeds"] or len(plan["periods"]) < policy["min_periods"]:
         raise ValueError("Suite grid cannot satisfy the declared seed/period minimum")
-    # Verify the calibration came from this baseline/data recipe; preserve every source run.
-    calibration_runs = [Path(p) for p in calibration["runs"]]
-    if not calibration_runs:
-        raise ValueError("Calibration has no runs")
-    for path in calibration_runs:
-        if not verify_artifacts(path)["passed"]:
-            raise ValueError("Calibration artifact checksum mismatch")
-        old = read_json(path / "config.json")
-        for field in ("model", "data", "budget", "evaluation", "acceptance"):
-            if old[field] != baseline.snapshot()[field]:
-                raise ValueError(f"Calibration baseline differs in {field}")
-        if old["splits"]["train"] != baseline.snapshot()["splits"]["train"]:
-            raise ValueError("Calibration training period differs")
-        if read_json(path / "manifest.json")["status"] != "completed":
-            raise ValueError("Calibration contains an unsuccessful run")
-    actual_configs = [read_json(p / "config.json") for p in calibration_runs]
-    actual_seeds = {c["seed"] for c in actual_configs}
-    actual_periods = {digest(c["splits"]["validation"]) for c in actual_configs}
-    actual_pairs = {(c["seed"], digest(c["splits"]["validation"])) for c in actual_configs}
-    if len(actual_pairs) != len(actual_configs) or len(actual_pairs) != len(actual_seeds) * len(actual_periods):
-        raise ValueError("Calibration archives must form a complete unique seed/period grid")
-    if len(actual_seeds) < policy["min_seeds"] or len(actual_periods) < policy["min_periods"]:
-        raise ValueError("Baseline variation needs the declared seed and period counts")
     variants = [(_variant(baseline, s, p), _variant(candidate, s, p)) for s, p in combinations]
     for b, c in variants:
-        for field in ("data", "splits", "evaluation", "budget", "acceptance"):
-            if b.snapshot()[field] != c.snapshot()[field]:
-                raise ValueError(f"Unfair planned comparison: {field} differs")
+        fair_config_pair(b.snapshot(), c.snapshot(), policy["change"])
+    registered_at = utc_now()
+    calibrated = calibration_evidence(policy, baseline.snapshot(), registered_at=registered_at)
     archive = new_run_dir(baseline.output_root / "suites")
-    registration = {"comparison_policy_sha256": digest(policy), "comparison_policy_registered_at": utc_now()}
-    write_json(archive / "plan.json", {**plan, **registration, "calibration_sha256": digest(calibration),
+    started = monotonic()
+    recorder = _start_archive(archive, baseline.experiment_id, kind="single_factor_suite")
+    registration = {"comparison_policy_sha256": digest(policy), "comparison_policy_registered_at": registered_at}
+    write_json(archive / "plan.json", {**plan, "policy": policy, **registration,
+                                     "baseline_snapshot": baseline.snapshot(),
+                                     "candidate_snapshot": candidate.snapshot(), "calibration": calibrated,
+                                     "calibration_sha256": digest(calibration),
                                      "max_runs": len(variants) * 4,
                                      "max_worker_wall_seconds": len(variants) * 4 * baseline.budget.wall_seconds})
     baselines, candidates, attempts = [], [], []
+    recorder.event("registration", "completed", **registration, change=policy["change"],
+                   threshold_basis=policy["threshold_basis"], calibration=calibrated)
     try:
         for b, c in variants:
             for config, arm in ((b, baselines), (c, candidates)):
                 original, code = run(config, policy_registration=registration)
                 attempts.append(str(original))
                 write_json(archive / "attempts.json", attempts)
+                recorder.event("experiment", "attempt_completed", child_run=str(original), exit_code=code)
                 if code:
                     raise RuntimeError(f"Suite run failed: {original.name} (exit {code})")
                 repeated, code = run(config, reference=original, policy_registration=registration)
                 attempts.append(str(repeated))
                 write_json(archive / "attempts.json", attempts)
+                recorder.event("reproducibility", "attempt_completed", child_run=str(repeated), exit_code=code)
                 if code:
                     raise RuntimeError(f"Suite rerun failed: {repeated.name} (exit {code})")
                 arm.append(repeated)
         comparison, decision = compare_runs(baselines, candidates, policy)
-        comparison["calibration"] = {"path": str(calibration_path), "sha256": digest(calibration)}
         comparison["all_attempts"] = attempts
         write_json(archive / "comparison.json", comparison)
         write_json(archive / "decision.json", decision)
         (archive / "report.txt").write_text(
             f"Decision: {decision['status']}\nAll {len(attempts)} attempts retained.\n"
             "Metrics are local approximations; comparison does not replace an accepted model.\n", encoding="utf-8")
+        recorder.event("evaluation", "completed", result=decision["result"], attempts=len(attempts))
+        finish(archive, "completed", 0, resources={"wall_seconds": monotonic() - started})
         return archive, 0
     except BaseException as exc:
+        recorder.failure("experiment", exc)
         write_json(archive / "comparison.json", {"schema_version": 1, "status": "failed", "attempts": attempts,
                                                  "reason": str(exc), "registration": registration})
-        write_json(archive / "decision.json", {"schema_version": 1, "status": "reject", "accepted": False,
+        interrupted = isinstance(exc, KeyboardInterrupt)
+        write_json(archive / "decision.json", {"schema_version": 1,
+                    "status": "inconclusive" if interrupted else "reject", "accepted": False,
+                    "result": "证据不足" if interrupted else "回退",
                     "action": "retain_baseline", "automatic_promotion": False, "reason": str(exc)})
-        return archive, 130 if isinstance(exc, KeyboardInterrupt) else 1
+        code = 130 if isinstance(exc, KeyboardInterrupt) else 1
+        finish(archive, "interrupted" if code == 130 else "failed", code, error=str(exc),
+               resources={"wall_seconds": monotonic() - started})
+        return archive, code

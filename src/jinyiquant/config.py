@@ -115,6 +115,7 @@ class EvaluationConfig(StrictModel):
     quantile: float = Field(default=0.2, gt=0, le=0.5)
     periods_per_year: int = Field(default=252, ge=1)
     min_cross_section: int = Field(default=3, ge=2)
+    constant_portfolios: Literal["neutral", "undefined"] = "neutral"
 
 
 class AcceptanceConfig(StrictModel):
@@ -125,6 +126,7 @@ class AcceptanceConfig(StrictModel):
 
 class LoggingConfig(StrictModel):
     resource_interval_seconds: float = Field(default=5, gt=0)
+    learning_curves: bool = False
 
 
 class FinalAccess(StrictModel):

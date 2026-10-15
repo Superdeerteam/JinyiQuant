@@ -78,6 +78,68 @@ uv run jinyi rerun <上一步输出的运行目录>
 
 ## 公平对照
 
+### 真实后续日期三参照基线
+
+先运行短测，再冻结正式计划。使用现有 TLOB 环境并安装可选绘图依赖：
+
+```powershell
+uv pip install --python .venv-tlob/Scripts/python.exe -r modified_tlob/requirements-research.lock.txt
+$env:PYTHONPATH = 'src;.'
+& .venv-tlob/Scripts/python.exe -m jinyiquant run configs/later_date_speed.json
+& .venv-tlob/Scripts/python.exe -m jinyiquant.baselines --plan configs/later_date_baselines.json --output runs/later-date-baselines/attempt-001
+```
+
+正式计划中的 `pilot_run` 指向已完成且完整性校验通过的短测档案；更换机器或训练设置时，应重新短测并创建新计划。
+当前计划保留现有 TLOB 主干、原始官方收益标签、Adam/MSE、两轮训练和09:30/14:30时点；
+每段训练两个交易日，研究验证为2023-07-18至07-21、07-25至07-28，种子11/29/47。
+8月3日最终区间及预取边界均自动检查，最终区间不加载。7月已做过学习诊断，属于研究数据。
+Mean/Ridge/TLOB分别训练，使用相同训练键、评分键、标签、覆盖阈值和单次时间/内存上限；
+Mean/Ridge为闭式解，无需人为消耗与神经网络相同的轮次，重复种子也不增加独立日期证据。
+最多两个独立单线程运行并发，总时间上限7200秒、总内存10240MiB，单次上限900秒/6144MiB。
+额外复跑预先指定时段的首个种子TLOB，核对保存预测及指标容差，不选模、不替换最佳权重。
+
+自动输出 `summary.json/csv`、`metrics.json`、`daily.csv`、`by_timestamp.csv`、
+`coverage_by_timestamp.csv`、`paired_comparison.json` 和 `baseline_overview.png`。
+每个子运行含训练/验证定权误差曲线 `learning_curve.json/csv/png`、原始预测、评分预测、历史质量和资源日志。
+闭式模型曲线仅表示训练均值参照与一次求解结果，不能解释为逐轮优化。
+常数预测的IC、RankIC和高低分组/换手在此入口均为未定义；CSV留空、JSON用null。
+信号变化包括共同股票上的分数绝对变化、排序持续性及组合净权重换手；首时点未定义。
+缺失报告分别列出答案缺失、无历史、min_history不足、完整128条不足、含补齐及源字段缺失；
+训练历史质量以有答案的训练键为分母，验证历史以独立完整预测股票池为分母，答案覆盖始终以独立股票池为分母。
+逐日均值跨种子后按连续交易日块配对抽样；四天一期证据有限，指标都是本地近似口径。
+
+### 模型学习能力诊断
+
+在独立 TLOB 环境执行两个预先冻结的小实验：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-tlob/Scripts/python.exe -m modified_tlob.diagnostics --plan configs/learning_diagnostics.json --output runs/learning-diagnostics/attempt-001
+```
+
+配置冻结32个完全观测的真实训练样本，沿用原始官方收益尺度、主干、Adam和学习率，固定500次更新。
+最终误差必须同时低于初始化误差和样本均值预测误差的10%，防止只学会截距就通过；这只是记忆诊断门槛，不是收益改善标准。
+保留学习曲线、目标尺度、梯度范数、各层权重变化、输入/样本、保存加载及同种子复跑检查；未通过也如实完成实验并记录结论。
+
+负对照在2023年7月两段研究窗口、三个种子上比较正确答案和同一完整预测时间戳内固定打乱的训练答案。
+只有实际参与训练的股票进入置换，逐截面标签分布保持不变；评估用后续日期的原始答案与独立股票池。
+配对固定模型初始化、输入顺序、训练预算和评价键，记录训练前预测作为额外参照。
+输出逐日配对指标及连续交易日块区间；两个时段均出现跨种子的显著正向打乱标签RankIC时提示排查。
+每段仅四个交易日、三个置换，统计证据有限；未触发提示不证明无泄漏，也不证明模型有效。
+冻结的8月3日最终区间不读取，不选模或替换权重。总预算2400秒/4096MiB，由独立进程监控。
+产物为 `manifest.json/events.jsonl/metrics.json/small_sample.json/negative_control.json/paired_daily.csv`、子运行及可恢复源码，已有目录拒绝覆盖。
+完成后可独立复算相关指标、核对预测键，并输出训练误差相对均值预测的比例和两版预测的相关性：
+
+```powershell
+& .venv-tlob/Scripts/python.exe scripts/analyze_learning_diagnostics.py runs/learning-diagnostics/attempt-001 --output runs/learning-diagnostics/audit-001
+```
+
+该检查只读已保存产物，不重开原始数据；独立档案保留复算代码与检查结果。
+运行中断后可向原诊断命令增加 `--resume-from <旧档案目录>`，并指定新的输出目录；
+只复用校验完整且已完成的子运行。冻结计划、核心训练/数据/评价源码、样本与置换必须一致，
+未完成配对重新训练，每次恢复使用独立预算，原始失败或超时状态保留。
+方法参考 [单批次过拟合检查](https://karpathy.github.io/2019/04/25/recipe/)与[分组内置换标签](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.permutation_test_score.html)。
+
 先对固定基线执行多种子、互不重叠时段的波动测量：
 
 ```powershell
@@ -94,6 +156,12 @@ uv run jinyi calibrate data/demo/config.json --seeds 11 29 --periods configs/dem
 | `min_seeds`、`min_periods` | 均至少2；时段互不重叠 |
 | `bootstrap_samples`、`block_days`、`confidence`、`seed` | 至少100次连续日块抽样、块长度、置信度、抽样种子 |
 | `threshold_rationale` | 解释基线波动、实际改善门槛与成本限额 |
+| `change` | 单一 `factor`、基线值 `baseline`、候选值 `candidate`、非空 `hypothesis` |
+| `threshold_basis` | 校准档案路径及摘要、实际意义门槛 `practical_improvement`、基线波动倍数 `noise_multiplier` |
+
+例如只研究历史长度时，登记 `change={"factor":"data.lookback","baseline":30,"candidate":60,"hypothesis":"更长历史改善后续日期的预测"}`。一轮只能声明一个模型或数据字段，不能同时改变模型结构、窗口和字段。支持历史长度、历史预取天数、最少历史、字段集合及缺失处理等数据因素；评价时点、标签定义、股票池、数据版本和来源、时间切分、预算及评价口径仍固定。评价日期、样本键和答案摘要必须相同，不能用删掉难预测样本制造改善。增加字段时允许对应字段元信息变化，原始文件校验仍须一致；新增字段应来自双方共同冻结的数据快照。`control.identity`（两值均为 null）仅供相同方案的工程负对照。
+
+`threshold_basis` 例如 `{"calibration_report":"calibrations/校准目录/calibration.json","calibration_sha256":"校准JSON内容的SHA256","practical_improvement":0.001,"noise_multiplier":1.0}`。摘要按项目的规范 JSON 计算。工具复核已完成校准档案的产物、配置、种子/时段网格，并从逐日结果重算波动；校准必须早于策略登记。`min_improvement` 至少为 `max(practical_improvement, noise_multiplier × 基线跨种子/时段标准差)`，两个依据均须为正数，倍数及实际意义由研究目标预先说明。这里的0.001和1.0只是格式示例，不能直接作为研究阈值。门槛验证失败时不运行 suite；离线对照缺失可验证校准时输出证据不足。suite 的校准路径必须与策略一致，所有路径相对于所在计划或策略文件解析。
 
 主指标或次要指标涉及 RankIC/IC 时，对照必须覆盖全部由标签决定的可评价截面，并同时核对截面数和完整时间戳的 SHA256。标签为常数的截面不纳入相关评价；候选在可评价截面输出常数导致覆盖不足时拒绝，基线覆盖不足或旧档案缺少覆盖证据时结论为 `inconclusive`。描述指标仍保留未定义相关性，不能用忽略这些值后的均值证明改善。
 
@@ -103,7 +171,15 @@ uv run jinyi suite <suite.json>
 
 Suite 先冻结策略、假设和预算，再为每个种子/时段分别执行基线、基线复验、候选、候选复验；单次失败即停止且保留全部尝试。比较数据、时间切分、预算、样本、答案、源码、评价口径及成本；通过真实复跑产物验证容差。按交易日配对连续日块 bootstrap，同一时段跨种子使用相同抽样，不把同日股票当独立样本。
 
-只有多种子/多时段复验、统计及实际门槛、次要指标和成本检查均通过，decision 才建议保留候选。证据不足为 `inconclusive`，不满足要求为 `reject`。所有历史基线保留，不自动替换模型。多次筛选仍有选择偏差，需新的验证证据；此工具不声称自动消除了选择偏差。
+`decision.json/result` 统一为三类：**保留**（`accept`）：达到预登记改善门槛、置信区间支持，复验和成本检查均通过；**回退**（`reject`）：证据完整但改善未达标，或关键指标/行为/成本检查失败；**证据不足**（`inconclusive`）：日期、种子、复验、校准或区间支持不足。缺少复验且观察改善不足时不能据此下回退结论；已发现明确行为或成本失败则回退。`action` 自动选择保留候选或维持基线，所有历史产物保留，不覆盖最佳模型。多次筛选仍有选择偏差，需新的验证证据。
+
+先利用已有学习审计提出下一假设：
+
+```powershell
+uv run jinyi diagnose --learning-audit runs/learning-diagnostics/audit-001 --output runs/evidence-led-diagnosis
+```
+
+输出 `diagnosis.json`、完整校验清单和日志；只读取审计产物，不打开原始数据或最终检查区间。小样本失败时优先排查输入、目标尺度和优化；小样本通过但常规训练差于拟合常数时，可以先单独检验学习率。报告为八类诊断保留证据状态，未测得的分日期、时点、历史覆盖、简单模型等效性、稳定性和盘口贡献不能自动认定成立；“增加成交信息”尚无优先级证据。这只是下一轮提案，仍须预登记和公平复验，不能当作改善结论。公开方法参考 [TLOB 的时序/字段注意力消融](https://arxiv.org/html/2502.15757v3#S7.SS6)与 [MLflow 的基线阈值验证](https://mlflow.org/docs/latest/ml/evaluation)。
 
 ## 自动验收与证据
 
@@ -135,7 +211,7 @@ uv run pytest -q --basetemp scratch/tests-001
 uv run python scripts/acceptance.py --output runs/engineering-acceptance
 ```
 
-验收脚本从头生成固定种子数据，执行正常运行、相同配置复验、超时、超内存、缺文件、无效配置脱敏、基线波动测量及多种子/多时段对照。候选故意与基线相同，必须得出“证据不足”，用于检查系统不会把零改善误判为成功。脚本不覆盖已有输出；重复运行须换新目录。当前系统临时目录权限有限，因此测试明确使用工作区内的新临时目录。
+验收脚本从头生成固定种子数据，执行正常运行、相同配置复验、超时、超内存、缺文件、无效配置脱敏、基线波动测量及多种子/多时段对照。候选故意与基线相同，完成充分证据后必须得出“回退”，用于检查系统不会把零改善误判为成功。脚本不覆盖已有输出；重复运行须换新目录。当前系统临时目录权限有限，因此测试明确使用工作区内的新临时目录。
 
 `audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。Ridge/Mean 不使用 GPU；modified_tlob 已完成 CPU 神经网络工程闭环，GPU 实际计算仍未验收，详细证据见模块说明。
 

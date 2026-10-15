@@ -18,6 +18,15 @@ import pandas as pd
 
 from .evaluation import METRIC_SPEC, aggregate_metric
 from .io import digest, file_sha256, read_json
+from .protocol import (
+    calibration_evidence,
+    fair_config_pair,
+    fair_data_pair,
+    recipe,
+    validate_change,
+    validate_threshold_basis,
+    without_locations,
+)
 
 _CORRELATION_COVERAGE_FIELDS = {
     "eligible_section_count", "valid_section_count", "eligible_sections_sha256", "valid_sections_sha256",
@@ -29,9 +38,12 @@ def validate_policy(policy: dict) -> dict:
         "primary_metric", "direction", "min_improvement", "max_metric_regressions",
         "max_wall_ratio", "max_memory_ratio", "min_seeds", "min_periods",
         "bootstrap_samples", "block_days", "confidence", "seed", "threshold_rationale",
+        "change", "threshold_basis",
     }
     if set(policy) != required:
         raise ValueError(f"comparison policy keys must be exactly {sorted(required)}")
+    validate_change(policy["change"])
+    validate_threshold_basis(policy)
     if policy["primary_metric"] not in METRIC_SPEC:
         raise ValueError("primary_metric must be a supported daily-derived metric")
     if policy["direction"] not in {"maximize", "minimize"}:
@@ -114,24 +126,9 @@ def _read_run(path: str | Path) -> _Run:
     return run
 
 
-def _data_identity(data: Any) -> Any:
-    """Strip file locations only; all checksums/version/selection metadata remain."""
-    if isinstance(data, dict):
-        return {key: _data_identity(value) for key, value in data.items()
-                if key not in {"path", "bars_path", "labels_path", "instruments_path", "cache_path"}}
-    if isinstance(data, list):
-        return [_data_identity(item) for item in data]
-    return data
-
-
-def _fair_pair(baseline: _Run, candidate: _Run) -> None:
-    for key in ("splits", "evaluation", "budget", "acceptance"):
-        if baseline.config.get(key) != candidate.config.get(key):
-            raise ValueError(f"unfair comparison: differing {key}")
-    if _data_identity(baseline.config["data"]) != _data_identity(candidate.config["data"]):
-        raise ValueError("unfair comparison: differing data preprocessing")
-    if not baseline.data or _data_identity(baseline.data) != _data_identity(candidate.data):
-        raise ValueError("unfair comparison: differing or missing data identity")
+def _fair_pair(baseline: _Run, candidate: _Run, change: dict) -> None:
+    fair_config_pair(baseline.config, candidate.config, change)
+    fair_data_pair(baseline.data, candidate.data, change)
     if not baseline.daily.index.equals(candidate.daily.index):
         raise ValueError("unfair comparison: daily dates do not align exactly")
     for key in ("sample_count", "cross_section_count"):
@@ -369,17 +366,28 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
         raise ValueError("baseline and candidate seed/validation-period pairs must match exactly")
     pairs = [(left[key], right[key]) for key in sorted(left)]
     for baseline, candidate in pairs:
-        _fair_pair(baseline, candidate)
+        _fair_pair(baseline, candidate, policy["change"])
     periods = sorted({run.period for run in baselines}, key=lambda period: pd.Timestamp(period[0]))
     for prior, following in zip(periods, periods[1:]):
         if pd.Timestamp(prior[1]) > pd.Timestamp(following[0]):
             raise ValueError("validation periods must be nonoverlapping; overlapping windows are not independent periods")
     for arm in (baselines, candidates):
-        if len({digest(run.config["model"]) for run in arm}) != 1:
-            raise ValueError("an arm must use one fixed model configuration across seeds and periods")
+        if len({digest(recipe(run.config, across_grid=True)) for run in arm}) != 1:
+            raise ValueError("an arm must use one fixed configuration across seeds and periods")
     missing: list[str] = []
     failures: list[str] = []
     policy_hash = digest(policy)
+    calibration = None
+    try:
+        registration_times = [pd.Timestamp(run.manifest.get("comparison_policy_registered_at"))
+                              for run in baselines + candidates]
+        if all(not pd.isna(t) and t.tzinfo is not None for t in registration_times):
+            calibration = calibration_evidence(policy, baselines[0].config, registered_at=min(registration_times),
+                baseline_data={digest(run.config["splits"]["validation"]): run.data for run in baselines})
+        else:
+            missing.append("calibration registration timestamps absent")
+    except (OSError, KeyError, ValueError, TypeError) as exc:
+        missing.append(f"verified baseline calibration unavailable: {exc}")
     for run in baselines + candidates:
         run_missing, run_failures = _run_evidence(run, policy_hash)
         missing.extend(run_missing)
@@ -449,6 +457,13 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
         period_runs = [run for run in baselines + candidates if run.period == period]
         if any(not period_runs[0].daily.index.equals(run.daily.index) for run in period_runs[1:]):
             raise ValueError("all seeds in one period must have identical daily dates")
+        for arm in (baselines, candidates):
+            identities = {digest(without_locations(run.data)) for run in arm if run.period == period}
+            if len(identities) != 1:
+                raise ValueError("unfair comparison: data snapshot changed across seeds in one period")
+        for field in ("sample_keys_sha256", "targets_sha256"):
+            if len({run.metrics.get(field) for run in period_runs}) != 1:
+                raise ValueError(f"unfair comparison: evaluated {field} changed across seeds")
         if len(period_runs[0].daily) < 2 * policy["block_days"]:
             missing.append(f"period {period}: need at least two complete temporal blocks")
             bootstrap_ready = False
@@ -481,10 +496,12 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
             low, high = np.quantile(draws, [alpha, 1 - alpha])
             interval = {"low": float(low), "high": float(high), "confidence": policy["confidence"]}
     stability = all(item["improvement"] is not None and item["improvement"] >= 0 for item in pair_results)
-    if observed and not stability and len(observed) == len(pairs):
+    if not missing and observed and not stability and len(observed) == len(pairs):
         failures.append("primary improvement is negative in at least one seed/period pair")
-    if effect is not None and effect < policy["min_improvement"]:
+    if not missing and effect is not None and effect < policy["min_improvement"]:
         failures.append("observed primary improvement below preregistered practical threshold")
+    if not missing and policy["change"]["factor"] == "control.identity":
+        failures.append("identity control cannot justify candidate promotion")
     status = "reject" if failures else "inconclusive"
     if not failures and not missing and interval is not None and interval["low"] > 0 and interval["low"] >= policy["min_improvement"]:
         status = "accept"
@@ -493,6 +510,7 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
     baseline_values = [item["baseline"] for item in pair_results if item["baseline"] is not None]
     comparison = {
         "schema_version": 1, "metric_scope": "local_approximation", "policy": policy,
+        "calibration": calibration, "change": policy["change"],
         "policy_sha256": policy_hash, "primary_metric": primary, "direction": policy["direction"],
         "pairs": pair_results, "seed_count": len(seeds), "period_count": len(periods),
         "baseline_variation": {"minimum": min(baseline_values) if baseline_values else None,
@@ -511,6 +529,7 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
                         "interval conditions on evaluated seeds and periods; repeated candidate selection needs fresh validation"],
     }
     decision = {"schema_version": 1, "status": status, "accepted": status == "accept",
+                "result": {"accept": "保留", "reject": "回退", "inconclusive": "证据不足"}[status],
                 "action": "retain_candidate" if status == "accept" else "retain_baseline",
                 "failed_gates": sorted(set(failures)), "missing_evidence": sorted(set(missing)),
                 "primary_stable_across_pairs": stability, "policy_sha256": policy_hash,

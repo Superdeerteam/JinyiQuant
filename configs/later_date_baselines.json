@@ -1,0 +1,74 @@
+{
+  "base_config": "frozen_tlob_real_v1.json",
+  "block_days": 2,
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 20261015,
+  "confidence": 0.95,
+  "experiment_id": "later-date-three-baselines-v1",
+  "max_rss_mb": 6144,
+  "max_total_rss_mb": 10240,
+  "max_train_samples": 10000,
+  "parallel_runs": 2,
+  "per_run_wall_seconds": 900,
+  "periods": [
+    {
+      "name": "july_18_21",
+      "train": {
+        "end": "2023-07-18",
+        "start": "2023-07-14"
+      },
+      "validation": {
+        "end": "2023-07-22",
+        "start": "2023-07-18"
+      }
+    },
+    {
+      "name": "july_25_28",
+      "train": {
+        "end": "2023-07-25",
+        "start": "2023-07-21"
+      },
+      "validation": {
+        "end": "2023-07-29",
+        "start": "2023-07-25"
+      }
+    }
+  ],
+  "pilot_run": "../runs/later-date-baselines/pilot/20261015T050502.455235Z_136d57cdc439",
+  "rationale": "Establish raw-return Mean/Ridge/current TLOB forward-date references with the same complete stock pools, two training trading days and four subsequent validation trading days per fold, two pre-existing prediction times 09:30/14:30, three seeds, unchanged two-epoch Adam budget, one fit per cell and one predeclared TLOB reproduction. Choose length and bounded budget from measured short pilot, not quality metrics. No tuning, selection or final access. Equal data and wall/memory caps; analytic Mean/Ridge solve once rather than spending artificial epoch time. Eight research dates give weak uncertainty evidence. Prior July diagnostic exposure means these are research baselines, not untouched holdouts.",
+  "reproduce_period": "july_18_21",
+  "schema_version": 1,
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "speed_estimate": {
+    "approx_train_samples_per_period": 4000,
+    "approx_validation_samples_per_period": 8000,
+    "budget_margin_note": "CPU full-pipeline pilot 174s for 1 train/1 validation day; larger validation, fixed-weight curves and behavioral checks are counted, conservatively bounded at 7200s overall and 900s per fit; no extension based on outcomes.",
+    "effective_training_samples_per_second": 67.24782067247972,
+    "epochs": 2,
+    "expected_total_seconds_range": [
+      2400,
+      5400
+    ],
+    "extra_tlob_reproduction_fits": 1,
+    "grid_fits": 18,
+    "manifest_sha256": "b0f347edb279be4228acf88932dca639a8b6a1db9b473b82a18518f0cfa4ff55",
+    "note": "Short CPU measurement; includes validation overhead; extrapolation is approximate",
+    "parallel_fit_slots": 2,
+    "peak_rss_mb": 1722.30859375,
+    "pipeline_wall_seconds": 174.26599999999962,
+    "run": "D:\\进益资本杯\\runs\\later-date-baselines\\pilot\\20261015T050502.455235Z_136d57cdc439",
+    "sample_times": [
+      "09:30",
+      "14:30"
+    ],
+    "training_days_per_period": 2,
+    "training_including_validation_seconds": 59.42199999999866,
+    "training_samples": 1998,
+    "validation_days_per_period": 4
+  },
+  "total_wall_seconds": 7200
+}

@@ -71,6 +71,8 @@ def align_predictions(predictions: pd.DataFrame, targets: pd.DataFrame) -> pd.Da
 
 
 def _correlation(a: np.ndarray, b: np.ndarray) -> float:
+    if np.ptp(a) == 0 or np.ptp(b) == 0:
+        return float("nan")
     # Scaling before centering avoids overflow for otherwise valid large inputs.
     a = a / max(float(np.max(np.abs(a))), 1.0)
     b = b / max(float(np.max(np.abs(b))), 1.0)
@@ -117,7 +119,8 @@ def aggregate_metric(values: np.ndarray, method: str, periods_per_year: float = 
     return value if np.isfinite(value) else None
 
 
-def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config: Any) -> tuple[dict, pd.DataFrame]:
+def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config: Any, *, return_sections=False,
+             undefined_constant_portfolios=False):
     """Return JSON-safe metrics plus daily rows, retaining undefined statistics."""
     quantile = float(_option(evaluation_config, "quantile"))
     periods_per_year = float(_option(evaluation_config, "periods_per_year"))
@@ -129,6 +132,7 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
     aligned = align_predictions(predictions, targets)
     rows = []
     previous_weights: pd.Series | None = None
+    previous_scores: pd.Series | None = None
     for timestamp, section in aligned.groupby("date", sort=True):
         if len(section) < min_cross_section:
             raise ValueError(f"cross section {timestamp} has fewer than {min_cross_section} samples")
@@ -142,6 +146,19 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
         long = _tail_weights(score, tail_size, largest=True)
         short = _tail_weights(score, tail_size, largest=False)
         weights = pd.Series(long - short, index=section["instrument"].to_numpy())
+        current_scores = pd.Series(score.to_numpy(dtype=float), index=weights.index)
+        score_change = float("nan")
+        rank_persistence = float("nan")
+        common_count = 0
+        if previous_scores is not None:
+            common = current_scores.index.intersection(previous_scores.index)
+            common_count = len(common)
+            if common_count:
+                score_change = float(np.abs(current_scores.loc[common] - previous_scores.loc[common]).mean())
+            if common_count >= 2:
+                rank_persistence = _correlation(current_scores.loc[common].rank().to_numpy(),
+                                                previous_scores.loc[common].rank().to_numpy())
+        previous_scores = current_scores
         turnover = float("nan")
         if previous_weights is not None:
             union = weights.index.union(previous_weights.index)
@@ -153,6 +170,9 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
         short_return = float(np.dot(short, target.to_numpy(dtype=float)))
         if not np.isfinite([long_return, short_return, long_return - short_return]).all():
             raise ValueError("portfolio return overflow; target units are not representable")
+        if undefined_constant_portfolios and score.nunique() == 1:
+            long_return = short_return = turnover = float("nan")
+            previous_weights = None
         rows.append({
             "date": timestamp.normalize(),
             "timestamp": timestamp.isoformat(),
@@ -165,10 +185,17 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             "short_return": short_return,
             "long_short_return": long_return - short_return,
             "turnover": turnover,
+            "score_change_mae": score_change,
+            "rank_persistence": rank_persistence,
+            "signal_common_count": common_count,
+            "ranking_defined": bool(score.nunique() > 1),
+            "mse": float(np.mean(np.square(score.to_numpy(dtype=float) - target_values))),
+            "mae": float(np.mean(np.abs(score.to_numpy(dtype=float) - target_values))),
             "sample_count": len(section),
         })
     sections = pd.DataFrame(rows)
-    columns = ["rank_ic", "ic", "long_return", "short_return", "long_short_return", "turnover"]
+    columns = ["rank_ic", "ic", "long_return", "short_return", "long_short_return", "turnover",
+               "mse", "mae", "score_change_mae", "rank_persistence"]
     daily = sections.groupby("date", sort=True)[columns].mean()
     daily["sample_count"] = sections.groupby("date")["sample_count"].sum()
     daily["cross_section_count"] = sections.groupby("date").size()
@@ -195,6 +222,11 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             "valid_sections_sha256": digest(sections.loc[valid, "timestamp"].tolist()),
         }
     metrics.update({
+        "mse": aggregate_metric(daily.mse.to_numpy(), "mean"),
+        "mae": aggregate_metric(daily.mae.to_numpy(), "mean"),
+        "score_change_mae": aggregate_metric(daily.score_change_mae.to_numpy(), "mean"),
+        "rank_persistence_mean": aggregate_metric(daily.rank_persistence.to_numpy(), "mean"),
+        "ranking_defined_section_count": int(sections.ranking_defined.sum()),
         "schema_version": 1,
         "metric_scope": "local_approximation",
         "local_approximation": True,
@@ -214,6 +246,11 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             "correlation_comparison": "each policy correlation requires all target-eligible timestamps; "
                                       "incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
             "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+            "constant_portfolio": ("undefined: signal cannot rank stocks" if undefined_constant_portfolios else
+                                   "constant signals give identical full-market long/short weights; "
+                                   "neutral spread is not evidence of stock ranking ability"),
+            "signal_change": "mean absolute raw score change and rank correlation on common stocks; "
+                             "first timestamp undefined; consecutive sampled timestamps, including overnight",
             "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
             "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
             "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
@@ -222,4 +259,4 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
             "official_score": "not implemented: official complete evaluation rules unavailable",
         },
     })
-    return metrics, daily
+    return (metrics, daily, sections) if return_sections else (metrics, daily)

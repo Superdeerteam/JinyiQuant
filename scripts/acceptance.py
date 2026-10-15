@@ -10,7 +10,7 @@ from jinyiquant.checks import verify_artifacts
 from jinyiquant.config import RunConfig, load_config
 from jinyiquant.demo import create_demo
 from jinyiquant.experiments import calibrate, suite
-from jinyiquant.io import read_json, write_json
+from jinyiquant.io import digest, read_json, write_json
 from jinyiquant.runner import failed_config, run
 
 
@@ -51,13 +51,19 @@ def main():
     calibration, code = calibrate(config, [11, 29], periods)
     results.append({"name": "baseline_variation", "passed": code == 0, "path": str(calibration)})
     # Identity candidate: zero effect is known a priori; passing this MUST NOT produce acceptance.
-    policy = {"primary_metric": "rank_ic_mean", "direction": "maximize", "min_improvement": 0.0,
+    calibrated = read_json(calibration / "calibration.json")
+    threshold = max(1e-12, calibrated["metrics"]["rank_ic_mean"]["std"])
+    policy = {"primary_metric": "rank_ic_mean", "direction": "maximize", "min_improvement": threshold,
               "max_metric_regressions": {"long_short_return_mean": 0.0, "turnover_mean": 0.0},
               "max_wall_ratio": 10.0, "max_memory_ratio": 2.0, "min_seeds": 2, "min_periods": 2,
               "bootstrap_samples": 200, "block_days": 2, "confidence": 0.95, "seed": 123,
-              "threshold_rationale": "Engineering identity-control after baseline calibration: exact same model. "
-              "Expected difference is zero; zero margin tests rejection of unsupported improvement. "
-              "Generous cost limits are fixture limits, not research promotion criteria."}
+              "threshold_rationale": "Engineering identity control: noise measured across baseline seeds/periods; "
+              "tiny practical floor tests rejection of zero effect. Cost limits are fixture limits.",
+              "change": {"factor": "control.identity", "baseline": None, "candidate": None,
+                         "hypothesis": "Identical arms cannot justify improvement"},
+              "threshold_basis": {"calibration_report": str(calibration / "calibration.json"),
+                                  "calibration_sha256": digest(calibrated),
+                                  "practical_improvement": 1e-12, "noise_multiplier": 1.0}}
     plan = {"baseline_config": str(config_path), "candidate_config": str(config_path), "seeds": [11, 29],
             "periods": periods, "policy": policy, "calibration_report": str(calibration / "calibration.json")}
     plan_path = config_path.parent / "suite.json"
@@ -65,7 +71,22 @@ def main():
     comparison, code = suite(plan_path)
     decision = read_json(comparison / "decision.json")
     results.append({"name": "identity_candidate_not_promoted", "passed": code == 0
-                    and decision["status"] == "inconclusive" and not decision["accepted"], "path": str(comparison)})
+                    and decision["result"] == "回退" and not decision["accepted"], "path": str(comparison)})
+    # Exercise a real, permitted data-recipe change without weakening sample fairness.
+    candidate = config.snapshot()
+    candidate["data"]["lookback"] += 1
+    candidate_path = config_path.parent / "candidate-history.json"
+    write_json(candidate_path, candidate)
+    history_policy = {**policy, "change": {"factor": "data.lookback", "baseline": config.data.lookback,
+        "candidate": candidate["data"]["lookback"], "hypothesis": "Engineering check of controlled history change"}}
+    history_plan = {**plan, "candidate_config": str(candidate_path), "policy": history_policy}
+    history_plan_path = config_path.parent / "suite-history.json"
+    write_json(history_plan_path, history_plan)
+    history, code = suite(history_plan_path)
+    compared = read_json(history / "comparison.json")
+    results.append({"name": "single_history_factor_with_fixed_evaluation", "passed": code == 0
+                    and compared.get("change", {}).get("factor") == "data.lookback"
+                    and len(compared.get("pairs", [])) == 4, "path": str(history)})
     report = {"schema_version": 1, "scope": "synthetic engineering evidence only", "checks": results,
               "passed": all(r["passed"] for r in results)}
     write_json(config_path.parent / "acceptance.json", report)

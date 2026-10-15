@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "base_config": "frozen_tlob_real_v1.json",
+  "experiment_id": "tlob-learning-diagnostics-v1",
+  "small_sample": {
+    "samples": 32,
+    "epochs": 500,
+    "seed": 42,
+    "record_every": 25,
+    "max_initial_mse_ratio": 0.1,
+    "max_constant_mse_ratio": 0.1
+  },
+  "negative_control": {
+    "seeds": [11, 29, 47],
+    "sample_times": ["14:30"],
+    "periods": [
+      {"name": "july_18_21", "train": {"start": "2023-07-17", "end": "2023-07-18"}, "validation": {"start": "2023-07-18", "end": "2023-07-22"}},
+      {"name": "july_25_28", "train": {"start": "2023-07-24", "end": "2023-07-25"}, "validation": {"start": "2023-07-25", "end": "2023-07-29"}}
+    ],
+    "bootstrap_samples": 2000,
+    "block_days": 2,
+    "confidence": 0.95,
+    "bootstrap_seed": 20261014
+  },
+  "budget": {"wall_seconds": 2400, "max_rss_mb": 4096},
+  "rationale": "Diagnostic only. Small-batch pass requires at least 90% error reduction against BOTH initialization and the fitted constant, so learning only the intercept cannot pass. These are memorization criteria, not an alpha improvement threshold. Negative controls preserve each training timestamp's target multiset, with independent fixed permutations, identical model initialization, input order, optimizer, epochs and unchanged later evaluation targets. July research windows avoid the frozen August 3 final interval. Day-block intervals flag repeated positive shuffled RankIC; four days per period give weak uncertainty evidence and never prove absence of leakage or model validity. No tuning or model promotion."
+}

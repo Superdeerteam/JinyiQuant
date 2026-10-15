@@ -151,14 +151,52 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     rec.event("training", "started", seed=config.seed, samples=int(fit_mask.sum()))
     started = time.monotonic()
     fit_options = {"sample_mask": fit_mask}
+    curve = []
+    curve_targets = None
+    if config.logging.learning_curves and not sealed_final:
+        curve_targets = validation.keys.merge(eval_targets[["date", "instrument", "target"]],
+                                              on=["date", "instrument"], how="left", validate="one_to_one").target
+
+    def observe_curve(adapter, epoch, steps):
+        scores = adapter._predict(train)
+        row = {"epoch": epoch, "steps": steps,
+               "train_mse": float(np.square(scores[fit_mask] - train_targets.target.to_numpy()[fit_mask]).mean()),
+               "validation_mse": None, "elapsed_seconds": time.monotonic() - started}
+        if curve_targets is not None:
+            valid = curve_targets.notna().to_numpy()
+            scores = adapter._predict(validation)
+            row["validation_mse"] = float(np.square(scores[valid] - curve_targets.to_numpy()[valid]).mean())
+        curve.append(row)
+        write_json(run_dir / "learning_curve.json", curve)
+        rec.event("validation", "curve_checkpoint", checkpoint_selection=False, **row)
     # A sealed final check must never become per-epoch training feedback.
     if config.model.kind == "modified_tlob" and config.evaluation_split == "validation":
-        eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
-        fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
+        if not config.logging.learning_curves:
+            eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
+            fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
+    if config.logging.learning_curves and config.model.kind == "modified_tlob":
+        fit_options["observer"] = observe_curve
     progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)
     elapsed = time.monotonic() - started
     rec.event("training", "progress", **progress, elapsed_seconds=elapsed,
               throughput_samples_per_second=int(fit_mask.sum()) / max(elapsed, 1e-9), resources=resource_usage())
+    if config.logging.learning_curves:
+        if config.model.kind != "modified_tlob":
+            constant = float(train_targets.target.to_numpy()[fit_mask].mean())
+            for checkpoint in ("training_mean_reference", "closed_form_solution"):
+                train_scores = np.full(len(train.keys), constant) if checkpoint == "training_mean_reference" else model.predict(train)
+                val_mse = None
+                if curve_targets is not None:
+                    valid = curve_targets.notna().to_numpy()
+                    scores = np.full(len(validation.keys), constant) if checkpoint == "training_mean_reference" else model.predict(validation)
+                    val_mse = float(np.square(scores[valid] - curve_targets.to_numpy()[valid]).mean())
+                curve.append({"epoch": len(curve), "steps": len(curve), "checkpoint": checkpoint,
+                    "train_mse": float(np.square(train_scores[fit_mask] - train_targets.target.to_numpy()[fit_mask]).mean()),
+                    "validation_mse": val_mse, "elapsed_seconds": time.monotonic() - started})
+        from .research_plots import plot_learning_curve
+        write_json(run_dir / "learning_curve.json", curve)
+        pd.DataFrame(curve).to_csv(run_dir / "learning_curve.csv", index=False)
+        plot_learning_curve(curve, run_dir / "learning_curve.png", config.model.kind)
     filename = model_filename(config.model.kind)
     rec.event("saving", "started", path=filename)
     model.save(run_dir / filename)
@@ -212,7 +250,8 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     scored_predictions = predictions.merge(eval_targets[["date", "instrument"]], on=["date", "instrument"],
                                             how="inner", validate="one_to_one")
     scored_predictions.to_parquet(run_dir / "scored_predictions.parquet", index=False)
-    metrics, daily = evaluate(scored_predictions, eval_targets, config.evaluation)
+    metrics, daily, sections = evaluate(scored_predictions, eval_targets, config.evaluation, return_sections=True,
+        undefined_constant_portfolios=config.evaluation.constant_portfolios == "undefined")
     metrics["coverage"] = {"expected_prediction_samples": len(validation.keys), "prediction_samples": len(predictions),
                            "scored_samples": len(scored_predictions),
                            "missing_answer_samples": len(predictions) - len(scored_predictions),
@@ -228,6 +267,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     daily["no_history_prediction_count"] = dates.map(expected_daily.no_history.sum()).astype(int)
     write_json(run_dir / "metrics.json", metrics)
     daily.to_csv(run_dir / "daily.csv", index=False)
+    sections.to_csv(run_dir / "by_timestamp.csv", index=False)
     rec.event("evaluation", "completed", metrics=metrics)
     manifest = read_json(run_dir / "manifest.json")
     manifest["data_version"] = bundle.metadata

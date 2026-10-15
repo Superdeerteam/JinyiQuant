@@ -1,0 +1,96 @@
+{
+  "acceptance": {
+    "min_coverage": 0.99,
+    "repro_atol": 1e-06,
+    "repro_rtol": 1e-05
+  },
+  "budget": {
+    "max_rss_mb": 6144,
+    "max_train_samples": 100000,
+    "wall_seconds": 600
+  },
+  "data": {
+    "allowed_end": "2025-01-01T00:00:00",
+    "allowed_start": "2020-01-01T00:00:00",
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "cache_dir": "../cache/frozen-tlob-real-v1",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "history_days": 10,
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "label_horizon_minutes": 30,
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "lookback": 128,
+    "max_ffill_steps": 5,
+    "min_history": 1,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1.0,
+    "outside_universe_labels": "exclude",
+    "price_scale": 100.0,
+    "sample_times": [
+      "09:30",
+      "14:30"
+    ],
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026"
+  },
+  "evaluation": {
+    "min_cross_section": 3,
+    "periods_per_year": 252,
+    "quantile": 0.2
+  },
+  "evaluation_split": "validation",
+  "experiment_id": "later-date-baseline-speed-v1",
+  "final_access": {
+    "max_views": 1,
+    "purpose": ""
+  },
+  "hypothesis": "Measure unchanged TLOB training speed and full pipeline costs before choosing formal windows; no model selection",
+  "logging": {
+    "resource_interval_seconds": 5.0
+  },
+  "model": {
+    "alpha": 1.0,
+    "batch_size": 32,
+    "cpu_threads": 1,
+    "device": "cpu",
+    "epochs": 2,
+    "hidden_dim": 40,
+    "is_sin_emb": true,
+    "kind": "modified_tlob",
+    "learning_rate": 0.0001,
+    "log_every_steps": 10,
+    "num_heads": 1,
+    "num_layers": 4
+  },
+  "output_root": "../runs/later-date-baselines/pilot",
+  "schema_version": 1,
+  "seed": 11,
+  "splits": {
+    "final": {
+      "end": "2023-08-04T00:00:00",
+      "start": "2023-08-03T00:00:00"
+    },
+    "train": {
+      "end": "2023-07-18",
+      "start": "2023-07-17"
+    },
+    "validation": {
+      "end": "2023-07-19",
+      "start": "2023-07-18"
+    }
+  }
+}

@@ -1,24 +1,46 @@
 import copy
 import json
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from jinyiquant.comparison import _block_indices, compare_runs, validate_policy
-from jinyiquant.evaluation import aggregate_metric, evaluate
+from jinyiquant.evaluation import METRIC_SPEC, aggregate_metric, evaluate
 from jinyiquant.io import digest, file_sha256
 
 
 @pytest.fixture
-def policy():
+def policy(tmp_path):
+    calibration_root = tmp_path / "calibration"
+    calibration_root.mkdir()
+    calibration_runs = [run_fixture(calibration_root, "baseline", seed, month, {})
+                        for month in (1, 2) for seed in (3, 8)]
+    for path in calibration_runs:
+        edit(path, "manifest", lambda m: m.update(started_at="2025-03-01T07:00:00Z",
+                                                 ended_at="2025-03-01T08:00:00Z"))
+    summaries = {}
+    for metric, (column, method, _) in METRIC_SPEC.items():
+        values = [aggregate_metric(pd.read_csv(path / "daily.csv")[column].to_numpy(), method)
+                  for path in calibration_runs if column in pd.read_csv(path / "daily.csv")]
+        if values:
+            summaries[metric] = {"n": len(values), "mean": float(np.mean(values)),
+                                 "std": float(np.std(values, ddof=1)), "min": min(values), "max": max(values)}
+    report = {"status": "completed", "created_at": "2025-03-01T08:30:00Z",
+              "runs": [str(p) for p in calibration_runs], "metrics": summaries}
+    save(calibration_root, "calibration", report)
     return {
         "primary_metric": "rank_ic_mean", "direction": "maximize", "min_improvement": 0.015,
         "max_metric_regressions": {"long_short_return_mean": 0.001, "turnover_mean": 0.05},
         "max_wall_ratio": 1.5, "max_memory_ratio": 1.2, "min_seeds": 2, "min_periods": 2,
         "bootstrap_samples": 100, "block_days": 2, "confidence": 0.95, "seed": 8,
         "threshold_rationale": "Fixture: measured baseline variation below 0.01, practical gain 0.015.",
+        "change": {"factor": "model.alpha", "baseline": 1, "candidate": 2, "hypothesis": "Higher alpha improves fit"},
+        "threshold_basis": {"calibration_report": str(calibration_root / "calibration.json"),
+                            "calibration_sha256": digest(report), "practical_improvement": 0.0001,
+                            "noise_multiplier": 1.0},
     }
 
 
@@ -56,6 +78,7 @@ def run_fixture(root, arm, seed, month, policy, *, improvement=0.04):
               "evaluation": {"periods_per_year": 252}, "budget": {"wall_seconds": 60, "max_rss_mb": 1024},
               "acceptance": {"repro_atol": 1e-10, "repro_rtol": 1e-8}}
     manifest = {"run_id": path.name, "status": "completed", "started_at": "2025-03-01T10:00:00Z",
+                "ended_at": "2025-03-01T10:10:00Z",
                 "comparison_policy_registered_at": "2025-03-01T09:00:00Z",
                 "comparison_policy_sha256": digest(policy), "resources": {"wall_seconds": 10, "peak_rss_mb": 200},
                 "reproducibility": {"passed": True, "reference_run_id": path.name + "-original", "atol": 1e-10, "rtol": 1e-8},
@@ -436,3 +459,106 @@ def test_thresholds_cannot_be_silently_invented(policy):
     invalid["min_seeds"] = 1
     with pytest.raises(ValueError, match="min_seeds"):
         validate_policy(invalid)
+
+
+def change_recipe(path, update, *, metadata=None):
+    """Update both archived reruns, preserving the artifact/checksum contract."""
+    for run in (path, path.with_name(path.name + "-original")):
+        config = json.loads((run / "config.json").read_text(encoding="utf-8"))
+        update(config)
+        save(run, "config", config)
+        (run / "config.sha256").write_text(digest(config), encoding="utf-8")
+        edit(run, "manifest", lambda m: m.update(config_sha256=digest(config)))
+        if metadata:
+            edit(run, "data", metadata)
+        archive(run)
+
+
+@pytest.mark.parametrize("factor,value", [("lookback", 60), ("feature_columns", ["close", "volume"])])
+def test_declared_data_factor_keeps_sample_and_source_checks(tmp_path, policy, factor, value):
+    baseline_value = 30 if factor == "lookback" else ["close"]
+    policy["change"] = {"factor": f"data.{factor}", "baseline": baseline_value,
+                        "candidate": value, "hypothesis": "Test one data factor"}
+    baseline, candidate = suite(tmp_path, policy)
+    for path in baseline:
+        change_recipe(path, lambda c: c["data"].update({factor: baseline_value}))
+    for path in candidate:
+        change_recipe(path, lambda c: (c["model"].update(alpha=1), c["data"].update({factor: value})))
+    # Feature metadata is allowed only when it agrees with the declared config.
+    if factor == "feature_columns":
+        for arm, fields in ((baseline, baseline_value), (candidate, value)):
+            for path in arm:
+                change_recipe(path, lambda c: None, metadata=lambda d: d.update(feature_columns=fields))
+        calibration = json.loads(Path(policy["threshold_basis"]["calibration_report"]).read_text())
+        for path in calibration["runs"]:
+            change_recipe(Path(path), lambda c: c["data"].update(feature_columns=baseline_value),
+                          metadata=lambda d: d.update(feature_columns=baseline_value))
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    assert decision["result"] == "保留", decision
+    assert comparison["change"]["factor"] == f"data.{factor}"
+    edit_verified_metrics(candidate[0], lambda m: m.update(sample_keys_sha256="different"))
+    with pytest.raises(ValueError, match="evaluated sample_keys"):
+        compare_runs(baseline, candidate, policy)
+
+
+def test_declared_history_change_does_not_allow_second_factor(tmp_path, policy):
+    policy["change"].update(factor="data.lookback", baseline=30, candidate=60)
+    baseline, candidate = suite(tmp_path, policy)
+    for path in candidate:
+        change_recipe(path, lambda c: c["data"].update(lookback=60))
+    with pytest.raises(ValueError, match="undeclared"):
+        compare_runs(baseline, candidate, policy)
+
+
+@pytest.mark.parametrize("issue", ["below_practical", "below_noise", "forged_summary", "late_calibration",
+                                  "changed_source", "different_calibration_data"])
+def test_unverified_threshold_cannot_retain_candidate(tmp_path, policy, issue):
+    calibration_path = Path(policy["threshold_basis"]["calibration_report"])
+    report = json.loads(calibration_path.read_text())
+    if issue == "below_practical":
+        policy["threshold_basis"]["practical_improvement"] = policy["min_improvement"] * 2
+    elif issue == "below_noise":
+        path = Path(report["runs"][0])
+        daily = pd.read_csv(path / "daily.csv")
+        daily["rank_ic"] += .2
+        daily.to_csv(path / "daily.csv", index=False)
+        edit(path, "metrics", lambda m: m.update(rank_ic_mean=float(daily.rank_ic.mean())))
+        archive(path)
+        values = [json.loads((Path(p) / "metrics.json").read_text())["rank_ic_mean"] for p in report["runs"]]
+        report["metrics"]["rank_ic_mean"] = {"n": 4, "mean": float(np.mean(values)),
+            "std": float(np.std(values, ddof=1)), "min": min(values), "max": max(values)}
+    elif issue == "forged_summary":
+        report["metrics"]["rank_ic_mean"]["std"] = 0.9
+    elif issue == "late_calibration":
+        report["created_at"] = "2025-03-01T09:30:00Z"
+    elif issue == "changed_source":
+        edit(Path(report["runs"][0]), "metrics", lambda m: m.update(rank_ic_mean=0.9))
+    else:
+        path = Path(report["runs"][0])
+        edit(path, "data", lambda d: d.update(version="different-snapshot"))
+        archive(path)
+    if issue in {"forged_summary", "late_calibration", "below_noise"}:
+        save(calibration_path.parent, "calibration", report)
+        policy["threshold_basis"]["calibration_sha256"] = digest(report)
+    baseline, candidate = suite(tmp_path, policy)
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["result"] == "证据不足"
+    assert any("calibration" in reason for reason in decision["missing_evidence"])
+
+
+def test_complete_zero_gain_reverts_but_missing_replication_is_inconclusive(tmp_path, policy):
+    baseline, candidate = suite(tmp_path, policy, improvement=0)
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["result"] == "回退"
+    assert decision["action"] == "retain_baseline"
+    edit(candidate[0], "manifest", lambda m: m.pop("reproducibility"))
+    _, decision = compare_runs(baseline, candidate, policy)
+    assert decision["result"] == "证据不足"
+
+
+def test_matching_pairs_still_require_one_evaluation_population_across_seeds(tmp_path, policy):
+    baseline, candidate = suite(tmp_path, policy)
+    for path in (baseline[0], candidate[0]):
+        edit_verified_metrics(path, lambda m: m.update(sample_keys_sha256="different-seed-population"))
+    with pytest.raises(ValueError, match="across seeds"):
+        compare_runs(baseline, candidate, policy)

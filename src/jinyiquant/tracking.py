@@ -67,7 +67,8 @@ def capture_source(run_dir: Path) -> dict:
     paths = [p for root in roots if root.exists() for p in root.rglob("*")
              if p.is_file() and (p.suffix in {".py", ".json", ".md", ".txt", ".toml", ".ipynb", ".lock", ".yml", ".yaml"}
                                 or p.name == "LICENSE")
-             and "__pycache__" not in p.parts]
+             and "__pycache__" not in p.parts
+             and (p.suffix != ".md" or p.name in {"README.md", "AGENTS.md"})]
     paths += [PROJECT_ROOT / x for x in ("pyproject.toml", "uv.lock", ".python-version", ".gitattributes", "README.md", "AGENTS.md",
               "inference.ipynb", "training_config.json", "submission_config.json",
               "requirements-cpu.lock.txt", "requirements-cuda.lock.txt")

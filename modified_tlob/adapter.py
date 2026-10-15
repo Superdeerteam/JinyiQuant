@@ -53,7 +53,7 @@ class TLOBAdapter:
         if self.recorder:
             self.recorder.event(stage, event, **context)
 
-    def fit(self, batch, target, *, sample_mask=None, validation=None):
+    def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None):
         x, y = self._input(batch), np.asarray(target, dtype=np.float32)
         if y.shape != (len(x),) or not len(y) or not np.isfinite(y).all():
             raise ValueError("Training requires nonempty aligned finite targets")
@@ -72,6 +72,8 @@ class TLOBAdapter:
         optimizer = torch.optim.Adam(self.network.parameters(), lr=self.config["learning_rate"])
         generator = torch.Generator().manual_seed(self.seed)
         started, steps = time.monotonic(), 0
+        if observer is not None:
+            observer(self, 0, steps)
         for epoch in range(self.config["epochs"]):
             self.network.train()
             order = torch.randperm(len(y), generator=generator).numpy()
@@ -92,13 +94,21 @@ class TLOBAdapter:
                 steps += 1
                 total += loss.item() * len(indices)
                 if steps % self.config["log_every_steps"] == 0:
+                    gradient_norms = {
+                        group: float(torch.stack([parameter.grad.detach().double().square().sum()
+                            for name, parameter in self.network.named_parameters()
+                            if name.split(".")[0] == group and parameter.grad is not None]).sum().sqrt())
+                        for group in ("norm_layer", "emb_layer", "layers", "final_layers")}
                     self._event("training", "progress", epoch=epoch + 1, step=steps, loss=loss.item(),
+                                gradient_norms=gradient_norms,
                                 learning_rate=optimizer.param_groups[0]["lr"],
                                 elapsed_seconds=time.monotonic() - started,
                                 throughput_samples_per_second=(epoch * len(y) + offset + len(indices)) /
                                 max(time.monotonic() - started, 1e-9), resources=device_resources(self.device))
             self._event("training", "epoch_completed", epoch=epoch + 1, step=steps, loss=total / len(y),
                         learning_rate=optimizer.param_groups[0]["lr"], resources=device_resources(self.device))
+            if observer is not None:
+                observer(self, epoch + 1, steps)
             if validation_inputs is not None:
                 vx, vy = validation_inputs
                 self.network.eval()
@@ -117,6 +127,10 @@ class TLOBAdapter:
     def predict(self, batch):
         if not self.trained:
             raise ValueError("Model is not fitted")
+        return self._predict(batch)
+
+    def _predict(self, batch):
+        """Fixed-weight scores for epoch diagnostics; public inference still requires a fitted model."""
         x = self._input(batch)
         scores = np.empty(len(x), dtype=np.float64)
         self.network.eval()
