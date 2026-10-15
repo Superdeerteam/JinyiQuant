@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from jinyiquant import runner
-from jinyiquant.checks import batch_checks, numerical_equal, verify_artifacts
+from jinyiquant.checks import batch_checks, numerical_equal, prediction_checks, verify_artifacts
 from jinyiquant.config import DataConfig, Period, RunConfig, load_config
 from jinyiquant.data import Batch, build_batch
 from jinyiquant.io import file_sha256, read_json, write_json
@@ -116,6 +116,33 @@ def test_mean_baseline_and_invalid_training_inputs():
     for target in ([1, 2], [1, np.nan, 3]):
         with pytest.raises(ValueError, match="aligned finite"):
             model.fit(training, target)
+
+
+@pytest.mark.parametrize("leaky_windows", [False, True])
+def test_future_check_exercises_single_section_even_for_constant_model(monkeypatch, leaky_windows):
+    from jinyiquant import checks
+
+    cutoff = pd.Timestamp("2020-01-02 10:00")
+    bars = pd.DataFrame({"date": [cutoff], "instrument": ["A"], "close": [10.0]})
+    config = DataConfig.model_validate(config_values()["data"])
+    batch = build_batch(bars, bars[["date", "instrument"]], config)
+    model = LinearModel("mean")
+    model.fit(batch, [0.1])
+    original_build = checks.build_batch
+
+    def build_with_future_leak(frame, keys, options):
+        result = original_build(frame, keys, options)
+        if (frame.date > cutoff).any():
+            result.x += 1
+        return result
+
+    if leaky_windows:
+        monkeypatch.setattr(checks, "build_batch", build_with_future_leak)
+    results = prediction_checks(model, batch, bars, config, 1e-10, 1e-8)
+    future = next(item for item in results if item["name"] == "future_market_invariance")
+    assert future["details"]["altered_future_rows"] > 0
+    assert future["details"]["injected_future_rows"] == 1
+    assert future["passed"] is (not leaky_windows)
 
 
 def test_acceptance_detects_nonfinite_features_future_history_and_boundary_crossing():

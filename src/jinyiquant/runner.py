@@ -75,8 +75,10 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     for event in bundle.data_events:
         rec.event("data", event["event"], level="WARNING", **{k: v for k, v in event.items() if k != "event"})
     write_json(run_dir / "data.json", bundle.metadata)
-    train_targets = select_targets(bundle.labels, config.splits.train, config.data.label_horizon_minutes)
-    eval_targets = select_targets(bundle.labels, split, config.data.label_horizon_minutes)
+    train_targets = select_targets(bundle.labels, config.splits.train, config.data.label_horizon_minutes,
+                                   sample_times=config.data.sample_times)
+    eval_targets = select_targets(bundle.labels, split, config.data.label_horizon_minutes,
+                                  sample_times=config.data.sample_times)
     selection = {"train": train_targets.attrs.get("selection", {}),
                  "evaluation": eval_targets.attrs.get("selection", {})}
     write_json(run_dir / "selection.json", selection)
@@ -132,7 +134,8 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     rec.event("training", "started", seed=config.seed, samples=int(fit_mask.sum()))
     started = time.monotonic()
     fit_options = {"sample_mask": fit_mask}
-    if config.model.kind == "modified_tlob":
+    # A sealed final check must never become per-epoch training feedback.
+    if config.model.kind == "modified_tlob" and config.evaluation_split == "validation":
         eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
         fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
     progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)

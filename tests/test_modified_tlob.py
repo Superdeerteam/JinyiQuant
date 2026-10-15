@@ -3,6 +3,7 @@
 import ast
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -119,6 +120,54 @@ def test_devices_preflight_and_no_runtime_fallback(monkeypatch):
         m.fit(batch(), np.zeros(7))
 
 
+@pytest.mark.parametrize("configured", [None, ":16:8", ":4096:8"])
+def test_cuda_workspace_prepared_before_preflight_and_logged(monkeypatch, configured):
+    from modified_tlob import device
+    name = "CUBLAS_WORKSPACE_CONFIG"
+    if configured is None:
+        monkeypatch.delenv(name, raising=False)
+    else:
+        monkeypatch.setenv(name, configured)
+    expected = configured or ":4096:8"
+    monkeypatch.setattr(torch.cuda, "is_initialized", lambda: False)
+    observed, events = [], []
+    monkeypatch.setattr(device, "_cuda_preflight", lambda: observed.append(os.environ[name]))
+    monkeypatch.setattr(device, "device_resources", lambda selected: {"device": str(selected)})
+    recorder = SimpleNamespace(event=lambda *args, **context: events.append(context))
+    assert str(select_device("auto", recorder)) == "cuda"
+    assert observed == [expected]
+    assert events[-1]["cublas_workspace_config"] == expected
+
+
+@pytest.mark.parametrize("requested", ["auto", "cuda"])
+@pytest.mark.parametrize("configured", ["", ":1:1", "4096:8"])
+def test_invalid_cuda_workspace_fails_before_preflight(monkeypatch, requested, configured):
+    from modified_tlob import device
+    monkeypatch.setenv("CUBLAS_WORKSPACE_CONFIG", configured)
+    monkeypatch.setattr(device, "_cuda_preflight", lambda: pytest.fail("Invalid config reached CUDA"))
+    with pytest.raises(ValueError, match="CUBLAS_WORKSPACE_CONFIG must be"):
+        select_device(requested)
+    assert os.environ["CUBLAS_WORKSPACE_CONFIG"] == configured
+
+
+def test_missing_workspace_after_cuda_initialization_requires_fresh_process(monkeypatch):
+    from modified_tlob import device
+    monkeypatch.delenv("CUBLAS_WORKSPACE_CONFIG", raising=False)
+    monkeypatch.setattr(torch.cuda, "is_initialized", lambda: True)
+    monkeypatch.setattr(device, "_cuda_preflight", lambda: pytest.fail("Late config reached CUDA"))
+    with pytest.raises(RuntimeError, match="fresh process"):
+        select_device("auto")
+
+
+def test_adapter_determinism_event_records_actual_workspace(monkeypatch):
+    monkeypatch.setenv("CUBLAS_WORKSPACE_CONFIG", ":16:8")
+    events = []
+    recorder = SimpleNamespace(event=lambda stage, event, **context: events.append((event, context)))
+    TLOBAdapter(adapter().config, data_config(), recorder=recorder)
+    determinism = next(context for event, context in events if event == "determinism")
+    assert determinism["cuda_matmul_workspace"] == ":16:8"
+
+
 def test_binary_and_text_roundtrip_frozen_preprocessing_and_history_fallback(tmp_path):
     m, b = adapter(), batch()
     m.fit(b, np.linspace(-.01, .01, len(b.x)))
@@ -158,7 +207,8 @@ def test_original_baselines_do_not_import_optional_torch():
     result = subprocess.run([sys.executable, "-c",
         "import sys; from jinyiquant.models import LinearModel; from jinyiquant.config import ModelConfig; "
         "assert 'torch' not in sys.modules; assert ModelConfig().kind == 'ridge'"],
-        capture_output=True, text=True)
+        capture_output=True, text=True,
+        env={**os.environ, "PYTHONPATH": os.pathsep.join((str(ROOT / "src"), str(ROOT)))})
     assert result.returncode == 0, result.stderr
 
 
@@ -175,7 +225,8 @@ except RuntimeError as exc:
 else:
     raise AssertionError('Missing torch masqueraded as CPU fallback')
 """
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                            env={**os.environ, "PYTHONPATH": os.pathsep.join((str(ROOT / "src"), str(ROOT)))})
     assert result.returncode == 0, result.stderr
 
 
@@ -183,6 +234,7 @@ else:
 def test_local_inference_entry_never_trains_and_preserves_predictions(tmp_path, monkeypatch, filename):
     from jinyiquant.checks import verify_artifacts
     from modified_tlob.infer import infer
+    monkeypatch.delenv("CUBLAS_WORKSPACE_CONFIG", raising=False)
     b, m = batch(), adapter()
     m.fit(b, np.zeros(7))
     path = tmp_path / filename
@@ -201,7 +253,7 @@ def test_local_inference_entry_never_trains_and_preserves_predictions(tmp_path, 
     assert list(result) == ["date", "instrument", "factor"]
     np.testing.assert_allclose(result.factor, m.predict(b), atol=1e-6, rtol=1e-5)
     assert verify_artifacts(destination)["passed"]
-    assert json.loads((destination / "config.json").read_text())["data"]["labels_path"] is None
+    assert json.loads((destination / "config.json").read_text(encoding="utf-8"))["data"]["labels_path"] is None
     # Direct file execution must work from another cwd without PYTHONPATH.
     import os
     env = dict(os.environ)
@@ -220,7 +272,7 @@ def test_local_inference_failure_archived_without_output(tmp_path):
     with pytest.raises(FileNotFoundError):
         infer(tmp_path / "missing.pt", tmp_path / "bars.parquet", tmp_path / "keys.parquet", tmp_path / "runs")
     run_dir = next((tmp_path / "runs").iterdir())
-    assert json.loads((run_dir / "manifest.json").read_text())["status"] == "failed"
+    assert json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["status"] == "failed"
     assert not (run_dir / "predictions.parquet").exists()
 
 

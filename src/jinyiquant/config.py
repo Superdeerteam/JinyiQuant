@@ -78,8 +78,9 @@ class DataConfig(StrictModel):
             if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", t):
                 raise ValueError("sample_times requires HH:MM")
             minutes = int(t[:2]) * 60 + int(t[3:])
-            if not (570 <= minutes <= 690 or 780 <= minutes <= 870):
-                raise ValueError("30-minute target must finish in the same continuous trading session")
+            if not (570 <= minutes <= 660 or minutes == 690 or 780 <= minutes <= 870):
+                raise ValueError("30-minute target requires a supported trading-clock time; "
+                                 "11:30 uses the declared 13:30 lunch exception")
         return self
 
 

@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -430,12 +431,15 @@ def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
     return bars
 
 
-def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30) -> pd.DataFrame:
+def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
+                   *, sample_times: Sequence[str] | None = None) -> pd.DataFrame:
     """Purge labels whose future observation window leaves the selected split.
 
     Explicit label_end is preferred. In its absence, 11:30 ends at 13:30 for
     30-minute labels, following the provided eight-section sampling schedule.
     This inferred trading clock is recorded; overnight windows are excluded.
+    Optional sampling times select a subset without changing existing rejection
+    counts, which describe all labels within the requested split.
     """
     frame = validate_keys(labels, "labels")
     if "target" not in frame:
@@ -463,12 +467,15 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30) 
         end_minute = minute + horizon_minutes
         known_horizon = (((minute >= 570) & (end_minute <= 690))
                          | ((minute >= 780) & (end_minute <= 900)) | lunch)
-    valid = finite & known_horizon & (frame["label_end"] < end)
+    approved_time = (pd.Series(True, index=frame.index) if sample_times is None
+                     else frame["date"].dt.strftime("%H:%M").isin(sample_times))
+    valid = finite & known_horizon & (frame["label_end"] < end) & approved_time
     selected = frame.loc[valid].reset_index(drop=True)
     selected.attrs["selection"] = {"requested": len(frame), "selected": len(selected),
                                    "missing_labels": int((~finite).sum()),
                                    "unknown_session_horizon": int((~known_horizon).sum()),
                                    "boundary_purged": int((frame["label_end"] >= end).sum()),
+                                   "outside_sample_times": int((~approved_time).sum()),
                                    "label_clock": ("explicit_label_end" if "label_end" in labels
                                                    else "assumed_trading_clock_1130_to_1330")}
     return selected

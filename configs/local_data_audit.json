@@ -1,0 +1,23 @@
+{
+  "format_version": 1,
+  "experiment_id": "local-data-audit-v1",
+  "project_root": "D:\\进益资本杯",
+  "source_directory": "数据/cpt_jyc_2026_e2e_bar1m",
+  "output_directory": "runs/local_data_audit",
+  "budget": {"gpu_count": 0, "max_seconds": 120, "max_sample_rows": 65536},
+  "inventory_expectation": {"first_month": "202001", "last_month": "202412", "feather_count": 60, "metadata_filename": "bmeta.bin"},
+  "official_training_dates": {"status": "unconfirmed", "allowed_start": null, "allowed_end": null},
+  "source_time_zone": {"status": "unconfirmed", "assumed_exchange": "Asia/Shanghai", "convert_source_timestamps": false},
+  "missing_values": {"ohlc_documented": -1, "ohlc_audit_nonpositive": true, "book_price_documented": 0},
+  "expected_schema": {
+    "date": "timestamp[ns]", "instrument_id": "int16", "adjust_factor": "float",
+    "high": "int32", "open": "int32", "low": "int32", "close": "int32",
+    "deal_number": "int32", "volume": "int64", "amount": "int64",
+    "ask_price1": "int32", "ask_price2": "int32", "ask_price3": "int32",
+    "bid_price1": "int32", "bid_price2": "int32", "bid_price3": "int32",
+    "ask_volume1": "int32", "ask_volume2": "int32", "ask_volume3": "int32",
+    "bid_volume1": "int32", "bid_volume2": "int32", "bid_volume3": "int32",
+    "ask_num_orders1": "int16", "ask_num_orders2": "int16", "ask_num_orders3": "int16",
+    "bid_num_orders1": "int16", "bid_num_orders2": "int16", "bid_num_orders3": "int16"
+  }
+}

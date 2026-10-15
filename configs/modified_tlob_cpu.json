@@ -5,9 +5,9 @@
   "seed": 42,
   "output_root": "../runs/modified-tlob",
   "data": {
-    "bars_path": "../data/bars", "labels_path": "../cpt_jyc_2026_vwap.rar",
-    "instruments_path": "../cpt_jyc_2026_instruments.parquet",
-    "instrument_map_path": "../cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m", "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
     "source": "official_local_download_with_explicit_mapping", "version": "cpt_jyc_2026",
     "feature_columns": ["ask_price1", "ask_volume1", "bid_price1", "bid_volume1",
                         "ask_price2", "ask_volume2", "bid_price2", "bid_volume2",

@@ -1,6 +1,7 @@
 """Batch training/inference and portable checkpoints with frozen preprocessing."""
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -37,7 +38,8 @@ class TLOBAdapter:
         self.trained = False
         if recorder:
             recorder.event("training", "determinism", seed=seed, algorithms=True, cpu_threads=torch.get_num_threads(),
-                           device=str(self.device), cuda_matmul_workspace="CUBLAS_WORKSPACE_CONFIG=:4096:8",
+                           device=str(self.device),
+                           cuda_matmul_workspace=os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
                            note="GPU tolerance-based reproducibility; cross-device rounding may differ")
 
     def _input(self, batch):

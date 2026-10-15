@@ -36,7 +36,6 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
         "scope": "local_inference_only"})
     rec.event("run", "started", label_input=False, training=False)
     try:
-        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
         if not 0 < min_coverage <= 1:
             raise ValueError("min_coverage must be in (0, 1]")
         first = None if start_date is None else pd.Timestamp(start_date)
@@ -66,7 +65,7 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
         manifest.update(code=capture_source(run_dir), environment=environment(), model_sha256=file_sha256(weights))
         manifest["environment"]["determinism"].update(device=str(model.device),
             cpu_threads=model.config["cpu_threads"], deterministic_algorithms=True,
-            cublas_workspace_config=os.environ["CUBLAS_WORKSPACE_CONFIG"])
+            cublas_workspace_config=os.environ.get("CUBLAS_WORKSPACE_CONFIG"))
         write_json(run_dir / "manifest.json", manifest)
         rec.event("data", "loading", label_input=False)
         bundle = load_data(config, start=first, end=last)

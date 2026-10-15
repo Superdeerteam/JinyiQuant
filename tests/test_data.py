@@ -3,7 +3,9 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
+from jinyiquant.config import DataConfig
 from jinyiquant.data import build_batch, load_data, select_targets
 
 
@@ -68,6 +70,40 @@ def test_target_purging_missing_labels_and_inferred_lunch_clock():
     assert selected.attrs["selection"]["boundary_purged"] == 1
     assert selected.attrs["selection"]["missing_labels"] == 1
     assert "assumed" in selected.attrs["selection"]["label_clock"]
+
+
+def test_configured_sample_subset_selects_only_requested_times_and_preserves_boundary_counts():
+    source = pd.DataFrame({"date": pd.to_datetime(["2020-01-01 10:00", "2020-01-02 10:00",
+                                                 "2020-01-02 10:30", "2020-01-02 14:30"]),
+                           "instrument": ["A"] * 4, "target": [0.0, 0.1, 0.2, 0.3]})
+    split = {"start": "2020-01-02", "end": "2020-01-02 15:00"}
+    selected = select_targets(source, split, sample_times=["10:00", "14:30"])
+    assert selected["date"].tolist() == [pd.Timestamp("2020-01-02 10:00")]
+    assert selected["target"].tolist() == [0.1]
+    assert selected.attrs["selection"]["requested"] == 3
+    assert selected.attrs["selection"]["selected"] == 1
+    assert selected.attrs["selection"]["outside_sample_times"] == 1
+    assert selected.attrs["selection"]["boundary_purged"] == 1
+    batch = build_batch(bars(), selected[["date", "instrument"]], config(sample_times=["10:00", "14:30"]))
+    assert len(batch.keys) == 1
+    legacy = select_targets(source, split)
+    assert legacy["target"].tolist() == [0.1, 0.2]
+    assert legacy.attrs["selection"]["outside_sample_times"] == 0
+
+
+@pytest.mark.parametrize("time", ["11:01", "11:15", "11:29"])
+def test_config_rejects_sampling_times_unsupported_by_inferred_label_clock(time):
+    with pytest.raises(ValidationError, match="supported trading-clock time"):
+        DataConfig(bars_path="unused", labels_path="unused", source="test", version="v1", sample_times=[time])
+
+
+@pytest.mark.parametrize("time,end", [("11:00", "11:30"), ("11:30", "13:30"), ("14:30", "15:00")])
+def test_configured_boundary_times_match_the_inferred_label_clock(time, end):
+    cfg = DataConfig(bars_path="unused", labels_path="unused", source="test", version="v1", sample_times=[time])
+    source = pd.DataFrame({"date": [pd.Timestamp("2020-01-02 " + time)], "instrument": ["A"], "target": [0.1]})
+    selected = select_targets(source, {"start": "2020-01-02", "end": "2020-01-03"}, sample_times=cfg.sample_times)
+    assert selected["label_end"].tolist() == [pd.Timestamp("2020-01-02 " + end)]
+    assert selected.attrs["selection"]["outside_sample_times"] == 0
 
 
 def test_explicit_label_end_and_invalid_horizon():

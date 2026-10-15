@@ -39,11 +39,25 @@ def prediction_checks(model, batch, bars, data_config, atol, rtol):
     altered = bars.copy()
     future = altered.date > cutoff
     altered.loc[future, list(data_config.feature_columns)] = 1e9
+    injected_rows = 0
+    if not future.any():
+        # Even a single-section run must exercise the future-data boundary.
+        injected = earlier_keys.drop_duplicates("instrument").copy()
+        injected["date"] = cutoff + pd.Timedelta(minutes=1)
+        for column in data_config.feature_columns:
+            injected[column] = 1e9
+        altered = pd.concat([altered, injected], ignore_index=True)
+        injected_rows = len(injected)
     original = build_batch(bars, earlier_keys, data_config)
     changed = build_batch(altered, earlier_keys, data_config)
+    inputs_unchanged = (np.array_equal(original.x, changed.x)
+                        and np.array_equal(original.observed, changed.observed)
+                        and np.array_equal(original.history_dates, changed.history_dates, equal_nan=True))
     checks.append(check("future_market_invariance",
-                        np.allclose(model.predict(original), model.predict(changed), atol=atol, rtol=rtol),
-                        cutoff=str(cutoff), altered_future_rows=int(future.sum())))
+                        inputs_unchanged and np.allclose(model.predict(original), model.predict(changed),
+                                                         atol=atol, rtol=rtol),
+                        cutoff=str(cutoff), altered_future_rows=int(future.sum()) + injected_rows,
+                        injected_future_rows=injected_rows, input_windows_unchanged=inputs_unchanged))
     # A fresh batch built solely from bars and keys proves the inference path has no target dependency.
     clean = build_batch(bars, batch.keys[["date", "instrument"]], data_config)
     checks.append(check("inference_without_labels",

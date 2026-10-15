@@ -11,6 +11,19 @@ from .io import canonical_json, read_json, redact
 from .runner import failed_config, run, worker
 
 
+def _check_input_paths(config):
+    """Check input locations without opening data files or traversing directories."""
+    checks = []
+    for name in ("bars_path", "labels_path", "instruments_path", "instrument_map_path"):
+        path = getattr(config.data, name)
+        if path is None:
+            continue
+        kind = "file" if path.is_file() else "directory" if path.is_dir() else "missing_or_other"
+        checks.append({"name": name, "path": str(path), "kind": kind,
+                       "passed": kind in {"file", "directory"}})
+    return checks
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="jinyi")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -18,6 +31,8 @@ def main(argv=None):
     demo.add_argument("--output", required=True, type=Path)
     validate = commands.add_parser("validate-config")
     validate.add_argument("config", type=Path)
+    validate.add_argument("--check-inputs", action="store_true",
+                          help="Check input paths exist as files/directories without reading their contents")
     execute = commands.add_parser("run")
     execute.add_argument("config", type=Path)
     rerun = commands.add_parser("rerun")
@@ -56,8 +71,12 @@ def main(argv=None):
                 print(canonical_json({"run_dir": str(path), "exit_code": code, "status": "invalid_config"}))
                 return code
             if args.command == "validate-config":
-                print(canonical_json({"valid": True, "config_sha256": config.checksum}))
-                return 0
+                result = {"valid": True, "config_sha256": config.checksum}
+                if args.check_inputs:
+                    checks = _check_input_paths(config)
+                    result.update(inputs_present=all(check["passed"] for check in checks), checks=checks)
+                print(canonical_json(result))
+                return 0 if result.get("inputs_present", True) else 2
             if args.command == "run":
                 path, code = run(config)
             else:

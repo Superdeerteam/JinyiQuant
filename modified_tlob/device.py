@@ -1,6 +1,22 @@
 """Device preflight only; runtime OOM/errors propagate to the run recorder."""
 
+import os
+
 import torch
+
+
+def _configure_cuda_workspace():
+    """PyTorch 2.5 requires one of these values before the first cuBLAS call."""
+    name = "CUBLAS_WORKSPACE_CONFIG"
+    value = os.environ.get(name)
+    if value is None:
+        if torch.cuda.is_initialized():
+            raise RuntimeError(f"Set {name} before CUDA initialization; restart in a fresh process")
+        value = ":4096:8"
+        os.environ[name] = value
+    if value not in {":4096:8", ":16:8"}:
+        raise ValueError(f"{name} must be ':4096:8' or ':16:8'; got {value!r}")
+    return value
 
 
 def _cuda_preflight():
@@ -16,6 +32,7 @@ def select_device(requested="auto", recorder=None):
         raise ValueError("device must be auto/cpu/cuda")
     selected, reason = "cpu", "explicit_cpu"
     if requested != "cpu":
+        _configure_cuda_workspace()
         try:
             _cuda_preflight()
         except (RuntimeError, AssertionError, OSError) as exc:
@@ -27,6 +44,7 @@ def select_device(requested="auto", recorder=None):
     if recorder:
         recorder.event("device", "selected", requested=requested, selected=selected, reason=reason,
                        torch_version=torch.__version__, cuda_build=torch.version.cuda,
+                       cublas_workspace_config=os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
                        resources=device_resources(torch.device(selected)))
     return torch.device(selected)
 

@@ -29,7 +29,7 @@ uv venv --python 3.11 .venv-tlob-cuda
 uv pip sync --python .venv-tlob-cuda modified_tlob/requirements-cuda.lock.txt modified_tlob/requirements-dev.lock.txt
 ```
 
-CUDA 锁使用 `torch==2.5.0+cu121`，运行需要兼容的 NVIDIA 驱动。普通 PyTorch wheel 计算不要求本地编译 Toolkit。此机器已验证依赖解析，尚未实际安装/计算 CUDA PyTorch；不能据此认定 GPU 可用。`model.device` 支持 `auto/cpu/cuda`：auto 在 CUDA 不可见或矩阵运算/反向预检失败时记录原因并回退 CPU；cpu 强制 CPU；显式 cuda 不可用会失败。训练时的 OOM 等异常传播并保留失败档案，不自动续跑 CPU；重新尝试必须使用新运行目录和记录的种子。
+CUDA 锁使用 `torch==2.5.0+cu121`，包含 Linux x86_64 所需的条件依赖；Windows 不安装这些独立 CUDA 库。两平台依赖闭包已解析验证，实际 GPU 计算仍未验收。运行需要兼容的 NVIDIA 驱动，不要求本地编译 Toolkit。`model.device` 支持 `auto/cpu/cuda`：auto 在 CUDA 不可见或矩阵运算/反向预检失败时记录原因并回退 CPU；cpu 强制 CPU；显式 cuda 不可用会失败。首次 CUDA 预检前统一设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，也允许显式 `:16:8`；非法值会报错，CUDA 已初始化后才发现缺失配置时要求重启进程，日志记录实际值。训练时的 OOM 等异常传播并保留失败档案，不自动续跑 CPU；重新尝试必须使用新运行目录和记录的种子。
 
 依赖文件按用途分开：
 
@@ -45,7 +45,7 @@ CUDA 锁使用 `torch==2.5.0+cu121`，运行需要兼容的 NVIDIA 驱动。普�
 
 补充锁是 2026-10-15 的实装环境，**不是原论文完整环境**。GPU ONNX 采用实际存在的 `onnxruntime-gpu==1.20.0`；CPU ONNX 为 `1.20.1`。未实现 ONNX 导出/推理路线，本轮采用 PyTorch 二进制与平台 JSON 文本权重。
 
-PyTorch wheel 通过限定到 torch 包的 find-links 提供，其余包从常规 Python 索引安装；已在全新环境验证核心锁与开发锁一起安装，避免 uv 在 PyTorch 索引中优先查找普通依赖的问题。本轮已建立可直接使用的 `.venv-tlob/Scripts/python.exe`，没有安装 CUDA/ONNX，也没有改动原 `.venv` 的依赖锁。
+PyTorch wheel 通过限定到 torch 包的 find-links 提供，其余包从常规 Python 索引安装；避免 uv 在 PyTorch 索引中优先查找普通依赖的问题。按上述命令创建独立环境后运行测试和验收，不依赖仓库中已经存在某个 `.venv-tlob`；CPU 工程验收不代表真实数据预测有效或 GPU 可用。
 
 ## 数据、训练、档案与复跑
 
@@ -63,7 +63,7 @@ PyTorch wheel 通过限定到 torch 包的 find-links 提供，其余包从常�
 
 共享 `jinyiquant.data.preprocess_bars/build_batch` 完成缺失哨兵、有限前向填充、补零和因果窗口。训练只选达到 min_history 的样本；推理不足 min_history 的窗口返回训练样本标签均值。BiN 仅使用当前历史窗口的统计，无跨样本归一化拟合。下载价格单位为分、scale=100；平台行情为元、scale=1；两端最终都是元。平台单位转换明确保存在提交配置，缺失策略与字段/窗口参数随权重保存。
 
-真实开发切片（需已有仓库说明中的行情、股票池、答案及映射文件；本机器当前无这些文件，未试跑）：
+真实行情、股票池、官方答案及映射文件已位于仓库 `数据/` 下。示例配置指向这些文件；真实模型训练、实际 GPU 计算和线上平台流程仍须分别验收：
 
 ```powershell
 $env:PYTHONPATH = 'src;.'
@@ -104,9 +104,9 @@ $trainingRun = '<已训练运行目录的绝对路径>'
 
 & $tlobPython -m modified_tlob.infer `
   --weights "$trainingRun\model.pt" `
-  --bars "$projectRoot\data\bars" `
-  --keys "$projectRoot\cpt_jyc_2026_instruments.parquet" `
-  --instrument-map "$projectRoot\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv" `
+  --bars "$projectRoot\数据\cpt_jyc_2026_e2e_bar1m" `
+  --keys "$projectRoot\数据\cpt_jyc_2026_instruments(1).parquet" `
+  --instrument-map "$projectRoot\数据\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv" `
   --start-date '2023-08-02 00:00:00' `
   --end-date '2023-08-03 00:00:00' `
   --device cpu --min-coverage 0.99 `
