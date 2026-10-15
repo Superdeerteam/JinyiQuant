@@ -1,0 +1,38 @@
+{
+  "baseline_reuse": "step2 none arms; exact core source, 1500 updates and other recipe fields must match before comparison",
+  "change": {
+    "baseline": {
+      "july_18_21": "2023-07-14",
+      "july_25_28": "2023-07-21"
+    },
+    "candidate": {
+      "july_18_21": "2023-07-10",
+      "july_25_28": "2023-07-17"
+    },
+    "factor": "splits.train.start",
+    "hypothesis": "Increase two to six training trading days at the same 1500 Adam updates, two sampling times, learning rate, inputs and validation keys. Assess added historical diversity at fixed optimizer budget."
+  },
+  "data_audit": "D:\\JinyiQuant\\.tmp\\phase3-data-audit.json",
+  "decision": "Both periods require nonnegative RankIC and long-short differences before other-seed replication. No automatic model promotion. Inspect costs and time bins. A separate ten-day extension will assess the next planned date increment, retaining two-day reference if six days fails.",
+  "experiment_id": "training-step3a-dates-six",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3a-six-days",
+  "runs": [
+    {
+      "arm": "candidate",
+      "config": "training_step3a\\july_18_21_s11_d6.json",
+      "name": "july_18_21_s11_d6",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3a\\july_25_28_s11_d6.json",
+      "name": "july_25_28_s11_d6",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 4000
+}

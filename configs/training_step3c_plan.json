@@ -1,0 +1,58 @@
+{
+  "budget_note": "1500 updates, at most48000sample exposures: about2.4passes for2times and0.6pass for8times. All-time training pool does not imply every row receives a gradient.",
+  "change": {
+    "baseline": [
+      "09:30",
+      "14:30"
+    ],
+    "candidate": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "factor": "data.training_sample_times",
+    "hypothesis": "At fixed ten-day training dates, training-only target scaling and 1500 updates, expand training sampling times from two to all eight. Both arms evaluate the identical complete eight-time inference universe; no comparison against two-time validation aggregates."
+  },
+  "decision": "Both periods require nonnegative RankIC and long-short differences for seed replication. Inspect stress and turnover before retaining. Regardless of pass/fail, phase4 can test whether train-only time weighting repairs the all-time branch; failed recipes remain marked unaccepted.",
+  "experiment_id": "training-step3c-all-times",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3c-all-times",
+  "runs": [
+    {
+      "arm": "baseline",
+      "config": "training_step3c\\july_18_21_s11_d10_t2.json",
+      "name": "july_18_21_s11_d10_t2",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3c\\july_18_21_s11_d10_t8.json",
+      "name": "july_18_21_s11_d10_t8",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "baseline",
+      "config": "training_step3c\\july_25_28_s11_d10_t2.json",
+      "name": "july_25_28_s11_d10_t2",
+      "period": "july_25_28",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3c\\july_25_28_s11_d10_t8.json",
+      "name": "july_25_28_s11_d10_t8",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 6000,
+  "working_recipe": "Ten-day train_std is a diagnostic research branch, not an accepted champion; original reference weights remain frozen. Confirm the complete seed replication and document tail-risk tradeoff before launch."
+}

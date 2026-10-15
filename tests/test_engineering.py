@@ -103,7 +103,8 @@ def test_training_preprocessing_is_frozen_during_inference_and_survives_persiste
     model.save(path)
     restored = LinearModel.load(path)
     np.testing.assert_array_equal(restored.predict(validation), model.predict(validation))
-    assert set(vars(training)) == {"keys", "x", "observed", "history_dates", "coverage"}
+    assert set(vars(training)) == {"keys", "x", "observed", "history_dates", "coverage", "history_feature_count"}
+    assert training.history_feature_count is None
 
 
 def test_mean_baseline_and_invalid_training_inputs():

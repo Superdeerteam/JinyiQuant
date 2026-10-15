@@ -1,0 +1,110 @@
+{
+  "budget_note": "Four runs, each1200s/6144MiB cap; stage6000s. Each run max1500updates at batch32 with epochs ceiling12: approximately2.4passes at t2 versus0.6pass at t8. Equal update budget does not mean full all-time sample coverage.",
+  "change": {
+    "baseline": [
+      "09:30",
+      "14:30"
+    ],
+    "candidate": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "factor": "data.training_sample_times",
+    "hypothesis": "At fixed ten-day training dates, training-only target scaling and 1500 updates, expand training sampling times from two to all eight. Both arms evaluate the identical complete eight-time inference universe; no comparison against two-time validation aggregates."
+  },
+  "configuration_checks": [
+    {
+      "actual_update_cap": 1500,
+      "config_schema_passed": true,
+      "evaluation_times": 8,
+      "final_split_unchanged": true,
+      "period": "july_18_21",
+      "seed": 47,
+      "single_factor_data_training_sample_times": true,
+      "target_scaling": "train_std",
+      "time_loss_weighting": "none"
+    },
+    {
+      "actual_update_cap": 1500,
+      "config_schema_passed": true,
+      "evaluation_times": 8,
+      "final_split_unchanged": true,
+      "period": "july_25_28",
+      "seed": 47,
+      "single_factor_data_training_sample_times": true,
+      "target_scaling": "train_std",
+      "time_loss_weighting": "none"
+    }
+  ],
+  "decision": "Use the existing comparison script and seed-averaged paired day blocks. Review each period/seed RankIC, IC, long-short, turnover, worst-day/tail returns, raw MSE and resources. No automatic champion promotion; record failed and inconclusive repeats.",
+  "experiment_id": "training-step3c-all-times-seed47",
+  "final_views": 0,
+  "model_promoted": false,
+  "output_root": "../runs/training-progression/step3c-all-times-seed47",
+  "preconditions": [
+    "Seed11 must complete all four step3c runs; both research periods must have defined nonnegative candidate-minus-baseline RankIC and long-short return changes, followed by tail-risk/resource review. One completed positive period alone is insufficient.",
+    "Root explicitly starts this frozen plan only after reviewing that gate; preparation is not execution.",
+    "Keep the same core source, environment, data,1500 actual updates and evaluation keys within each pair. These plans do not adopt phase4 weighting or phase5 inputs."
+  ],
+  "run_order": "july_18_21 t2, july_18_21 t8, july_25_28 t2, july_25_28 t8; seed29 stage before seed47 stage.",
+  "runs": [
+    {
+      "arm": "baseline",
+      "config": "training_step3c_seed47/july_18_21_s47_d10_t2.json",
+      "name": "july_18_21_s47_d10_t2",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3c_seed47/july_18_21_s47_d10_t8.json",
+      "name": "july_18_21_s47_d10_t8",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "arm": "baseline",
+      "config": "training_step3c_seed47/july_25_28_s47_d10_t2.json",
+      "name": "july_25_28_s47_d10_t2",
+      "period": "july_25_28",
+      "seed": 47
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3c_seed47/july_25_28_s47_d10_t8.json",
+      "name": "july_25_28_s47_d10_t8",
+      "period": "july_25_28",
+      "seed": 47
+    }
+  ],
+  "schema_version": 1,
+  "source_configs": [
+    {
+      "config": "training_step3c\\july_18_21_s11_d10_t2.json",
+      "sha256": "bca9237f6c7eebe43fb06edc6431bacecb19e8506f2ceace1abea8aeec0db06c"
+    },
+    {
+      "config": "training_step3c\\july_18_21_s11_d10_t8.json",
+      "sha256": "145d27dbe406e9545a774346ba2f045575122fff25d44d4a42ba87eaa0db7725"
+    },
+    {
+      "config": "training_step3c\\july_25_28_s11_d10_t2.json",
+      "sha256": "68baef33fc03ef3ba11db7386b589b1a1c880ead13bfa54c015ca142817df5a0"
+    },
+    {
+      "config": "training_step3c\\july_25_28_s11_d10_t8.json",
+      "sha256": "9fe31884335bed56bda334b8d9c957ecc3ce2177cac05b6878530947782d206e"
+    }
+  ],
+  "source_plan": "training_step3c_plan.json",
+  "source_plan_sha256": "d1d2339c2067a2a2346f01e43247f6d60af20424d8b51ad74c0fdb6fa996f9a5",
+  "status": "prepared_not_started",
+  "total_wall_seconds": 6000,
+  "working_recipe": "Ten-day train_std remains an unaccepted diagnostic branch until evidence and risks are reviewed."
+}

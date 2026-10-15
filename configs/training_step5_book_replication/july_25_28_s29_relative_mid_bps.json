@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "experiment_id": "training-step5-book-replication",
+  "hypothesis": "At fixed ten training dates, all eight training/evaluation times, train-only target scaling and 1500 Adam updates, replace only the six price channels by 10000 * (historical_price / trailing_window_end_mid - 1). Preserve six book-volume channels, 12-dimensional architecture, labels, keys and chronological splits; test subsequent-date ranking and long-short information.",
+  "output_root": "D:\\JinyiQuant\\runs\\training-progression\\step5-book-replication",
+  "seed": 29,
+  "data": {
+    "bars_path": "D:\\JinyiQuant\\data\\research-july-20261015\\bars",
+    "labels_path": "D:\\JinyiQuant\\cpt_jyc_2026_vwap.rar",
+    "instruments_path": "D:\\JinyiQuant\\cpt_jyc_2026_instruments.parquet",
+    "instrument_map_path": "D:\\JinyiQuant\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": "D:\\JinyiQuant\\cache\\training-progression",
+    "outside_universe_labels": "exclude",
+    "history_days": 10,
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "missing_policy": "ffill",
+    "max_ffill_steps": 5,
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "price_scale": 100.0,
+    "missing_sentinel": -1.0,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026"
+  },
+  "splits": {
+    "train": {
+      "start": "2023-07-11T00:00:00",
+      "end": "2023-07-25T00:00:00"
+    },
+    "validation": {
+      "start": "2023-07-25T00:00:00",
+      "end": "2023-07-29T00:00:00"
+    },
+    "final": {
+      "start": "2023-08-03T00:00:00",
+      "end": "2023-08-04T00:00:00"
+    }
+  },
+  "evaluation_split": "validation",
+  "model": {
+    "kind": "modified_tlob",
+    "alpha": 1.0,
+    "hidden_dim": 40,
+    "num_layers": 4,
+    "num_heads": 1,
+    "is_sin_emb": true,
+    "epochs": 12,
+    "max_steps": 1500,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "target_scaling": "train_std",
+    "time_loss_weighting": "none",
+    "book_representation": "relative_mid_bps",
+    "trade_features": "zero",
+    "device": "cuda",
+    "cpu_threads": 1,
+    "log_every_steps": 10
+  },
+  "budget": {
+    "wall_seconds": 1200.0,
+    "max_rss_mb": 6144.0,
+    "max_train_samples": 100000
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "acceptance": {
+    "min_coverage": 0.99,
+    "repro_atol": 1e-06,
+    "repro_rtol": 1e-05
+  },
+  "logging": {
+    "resource_interval_seconds": 5.0,
+    "learning_curves": true
+  },
+  "final_access": {
+    "purpose": "",
+    "max_views": 1
+  }
+}

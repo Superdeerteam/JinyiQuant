@@ -15,7 +15,7 @@ def batch_checks(batch, targets, split, minimum_coverage):
     timestamps = batch.history_dates.astype("datetime64[ns]")
     cutoffs = batch.keys["date"].to_numpy(dtype="datetime64[ns]")[:, None]
     valid = ~np.isnat(timestamps)
-    observed_rows = batch.observed.any(axis=2).any(axis=1)
+    observed_rows = batch.effective_rows.any(axis=1)
     coverage_by_date = pd.DataFrame({"date": batch.keys["date"], "covered": observed_rows}).groupby("date").covered.mean()
     return [check("finite_features", np.isfinite(batch.x).all()),
             check("causal_history", np.all(~valid | (timestamps <= cutoffs))),

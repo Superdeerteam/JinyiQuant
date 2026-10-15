@@ -25,6 +25,8 @@ import pyarrow.dataset as ds
 import pyarrow.ipc as ipc
 import pyarrow.parquet as pq
 
+from modified_tlob.schema import lob_trade_columns
+
 KEYS = ["date", "instrument"]
 FORBIDDEN_FEATURES = {"target", "vwap_return", "label_end", "end_price", "vwap"}
 READER_FORMAT_VERSION = 1
@@ -51,6 +53,12 @@ class Batch:
     observed: np.ndarray
     history_dates: np.ndarray
     coverage: dict[str, Any]
+    history_feature_count: int | None = None
+
+    @property
+    def effective_rows(self):
+        """Optional auxiliary inputs cannot create usable primary-input history."""
+        return self.observed[..., :self.history_feature_count].any(axis=2)
 
 
 def _get(config: Any, name: str, default: Any = None) -> Any:
@@ -425,6 +433,8 @@ def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
         if sentinel is not None:
             bars[column] = bars[column].mask(bars[column].eq(sentinel))
         bars[column] = bars[column].replace([np.inf, -np.inf], np.nan)
+        if tuple(features) == lob_trade_columns() and column in features[12:]:
+            bars[column] = bars[column].mask(bars[column] < 0)
         if column in {"open", "high", "low", "close", "pre_close", "amount"} or re.match(r"^(ask|bid)_price\d+$", column):
             bars[column] /= _get(config, "price_scale", 1.0)
     bars = bars[[*KEYS, *features]]
@@ -484,6 +494,7 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
 def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     """Build fixed-size trailing windows without accepting or accessing labels."""
     features = list(_get(config, "feature_columns"))
+    history_feature_count = 12 if tuple(features) == lob_trade_columns() else len(features)
     if FORBIDDEN_FEATURES.intersection(features):
         raise ValueError("Future label columns cannot be input features")
     bars = validate_keys(bars, "bars")
@@ -524,9 +535,11 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
         history_count[index] = length
         window = values[begin:stop].copy()
         observed[index, -length:] = np.isfinite(window)
-        enough[index] = int(np.isfinite(window).any(axis=1).sum()) >= minimum
+        enough[index] = int(np.isfinite(window[:, :history_feature_count]).any(axis=1).sum()) >= minimum
         if policy == "ffill" and limit:
-            window = pd.DataFrame(window).ffill(limit=limit).to_numpy(dtype=np.float32)
+            # Interval trades are flows; filling them repeats a past interval's activity.
+            window[:, :history_feature_count] = pd.DataFrame(window[:, :history_feature_count]).ffill(
+                limit=limit).to_numpy(dtype=np.float32)
         x[index, -length:] = np.nan_to_num(window, nan=0.0)
         history_dates[index, -length:] = dates[begin:stop]
     # Insufficient windows remain in the batch to preserve universe alignment.
@@ -542,10 +555,11 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
                 "history_min": int(history_count.min()) if len(keys) else 0,
                 "history_max": int(history_count.max()) if len(keys) else 0,
                 "by_section": sections}
-    batch = Batch(keys, x, observed, history_dates, coverage)
+    batch = Batch(keys, x, observed, history_dates, coverage, history_feature_count)
     quality = history_diagnostics(batch)
     coverage["history_quality"] = {
-        "definition": "Observed means finite before filling; effective rows have any observed feature; complete rows have all",
+        "definition": "Observed means finite before filling; effective rows use primary history features; complete rows have all",
+        "history_features": features[:history_feature_count],
         "age_unit": "elapsed calendar minutes (includes lunch, overnight and holidays); null means no history",
         "full_observed_window_samples": int(quality.full_observed_window.sum()),
         "statistics": {column: {"min": _finite_stat(quality[column], "min"),
@@ -568,7 +582,7 @@ def history_diagnostics(batch: Batch) -> pd.DataFrame:
     """Per-key source quality, measured before ffill/zero padding; never inferred from coverage."""
     dates, observed = batch.history_dates, batch.observed
     present = ~np.isnat(dates)
-    effective = observed.any(axis=2)
+    effective = batch.effective_rows
     complete = observed.all(axis=2)
     count = present.sum(axis=1)
     cutoff = batch.keys.date.to_numpy(dtype="datetime64[ns]")

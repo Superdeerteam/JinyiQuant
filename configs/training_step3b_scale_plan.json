@@ -1,0 +1,35 @@
+{
+  "baseline_reuse": "Completed ten-day original-return arms, same source and 1500 updates",
+  "change": {
+    "baseline": "none",
+    "candidate": "train_std",
+    "factor": "model.target_scaling",
+    "hypothesis": "A single bounded follow-up: target scaling severely overfits two training days; test whether ten training days mitigate that failure at identical 1500 updates. This is not a repetition on the same data or a claim that scaling is already accepted."
+  },
+  "decision": "All four period-by-metric differences (RankIC and long-short) must be nonnegative to justify independent seeds; if not, stop this scaling hypothesis without extra LR/scale search. A seed11 interaction signal remains exploratory. No automatic promotion.",
+  "experiment_id": "training-step3b-scale-interaction",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3b-scale-interaction",
+  "prior_evidence": [
+    "../runs/training-progression/step2-decision.json",
+    "../runs/training-progression/step3a-decision.json"
+  ],
+  "runs": [
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale\\july_18_21_s11_d10_train_std.json",
+      "name": "july_18_21_s11_d10_train_std",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale\\july_25_28_s11_d10_train_std.json",
+      "name": "july_25_28_s11_d10_train_std",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 4000
+}

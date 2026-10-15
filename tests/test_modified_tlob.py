@@ -45,6 +45,89 @@ def adapter(levels=3):
     return TLOBAdapter(cfg, data_config(levels))
 
 
+def test_update_cap_stops_inside_epoch_and_reports_processed_sample_loss(monkeypatch):
+    model = adapter()
+    model.config.update(epochs=10, max_steps=4)
+    events, checkpoints, optimizer_calls = [], [], []
+    model.recorder = SimpleNamespace(event=lambda stage, event, **values: events.append((event, values)))
+    original = torch.optim.Adam.step
+    def count_step(optimizer, *args, **kwargs):
+        optimizer_calls.append(1)
+        return original(optimizer, *args, **kwargs)
+    monkeypatch.setattr(torch.optim.Adam, "step", count_step)
+    progress = model.fit(batch(), np.linspace(-.01, .01, 7),
+                         observer=lambda _, epoch, steps: checkpoints.append((epoch, steps)))
+    assert len(optimizer_calls) == progress["steps"] == 4
+    assert progress["samples_seen"] == 10 and progress["epochs_completed"] == 1
+    assert progress["epochs"] == pytest.approx(1 + 3 / 7)
+    assert progress["stop_reason"] == "max_steps"
+    assert [steps for _, steps in checkpoints] == [0, 3, 4]
+    assert checkpoints[-1][0] == progress["epochs"]
+    last_batch = [values for event, values in events if event == "progress"][-1]
+    assert progress["loss"] == pytest.approx(last_batch["loss"])
+    stopped = [values for event, values in events if event == "epoch_stopped"]
+    assert len(stopped) == 1 and stopped[0]["epoch_samples"] == 3
+
+
+def test_absent_update_cap_preserves_full_epoch_training():
+    uncapped, capped = adapter(), adapter()
+    capped.config["max_steps"] = 6
+    target = np.linspace(-.01, .01, 7)
+    left, right = uncapped.fit(batch(), target), capped.fit(batch(), target)
+    assert left["steps"] == right["steps"] == 6
+    assert left["samples_seen"] == right["samples_seen"] == 14
+    assert left["epochs"] == right["epochs"] == 2
+    np.testing.assert_array_equal(uncapped.predict(batch()), capped.predict(batch()))
+    with pytest.raises(ValueError):
+        ModelConfig(max_steps=0)
+
+
+def test_training_time_subset_keeps_full_validation_and_correct_training_denominator(tmp_path):
+    from jinyiquant.config import RunConfig, load_config
+    from jinyiquant.io import read_json
+    from jinyiquant.runner import run
+    from scripts.tlob_fixture import create_fixture
+    path = create_fixture(tmp_path / "fixture")
+    for filename in ("bars.parquet", "labels.parquet", "instruments.parquet"):
+        original = pd.read_parquet(path.parent / filename)
+        later = original.copy()
+        later["date"] += pd.Timedelta(hours=4, minutes=30)
+        if "label_end" in later:
+            later["label_end"] += pd.Timedelta(hours=4, minutes=30)
+        pd.concat([original, later], ignore_index=True).to_parquet(path.parent / filename, index=False)
+    raw = load_config(path).snapshot()
+    raw["data"].update(sample_times=["10:00", "14:30"], training_sample_times=["14:30"])
+    raw["model"].update(device="cpu", max_steps=5, time_loss_weighting="train_variance")
+    config = RunConfig.model_validate(raw)
+    output, code = run(config)
+    assert code == 0, (output / "worker.log").read_text(encoding="utf-8")
+    training = pd.read_parquet(output / "train_history.parquet")
+    validation = pd.read_parquet(output / "evaluation_history.parquet")
+    assert len(training) == 10 and set(training.date.dt.strftime("%H:%M")) == {"14:30"}
+    assert len(validation) == 20 and set(validation.date.dt.strftime("%H:%M")) == {"10:00", "14:30"}
+    check = next(row for row in read_json(output / "checks.json")["checks"]
+                 if row["name"] == "train_expected_universe_coverage")
+    assert check["passed"] and check["details"]["expected_keys"] == 10
+    assert check["details"]["minimum"] == 1
+    summary = next(event["context"] for event in map(json.loads, (output / "events.jsonl").read_text().splitlines())
+                   if event["stage"] == "training" and event["event_type"] == "progress"
+                   and "epochs_completed" in event["context"])
+    assert summary["samples_seen"] > len(training)
+    assert summary["throughput_samples_per_second"] * summary["elapsed_seconds"] == pytest.approx(summary["samples_seen"])
+    from modified_tlob.diagnostics import _prepare
+    destination = tmp_path / "diagnostic-data"
+    recorder = SimpleNamespace(event=lambda *args, **kwargs: None)
+    _, _, targets, _, validation_batch, _ = _prepare(config, destination, recorder)
+    assert len(targets) == 10 and set(targets.date.dt.strftime("%H:%M")) == {"14:30"}
+    assert len(validation_batch.keys) == 20
+    coverage = next(row for row in read_json(destination / "checks.json")["checks"]
+                    if row["name"] == "train_answer_coverage")
+    assert coverage["passed"] and coverage["details"]["expected_keys"] == 10
+    for times in ([], ["11:00"], ["10:00", "10:00"]):
+        with pytest.raises(ValueError, match="training_sample_times"):
+            DataConfig.model_validate({**config.data.model_dump(), "training_sample_times": times})
+
+
 @pytest.mark.parametrize("levels", [3, 5])
 @pytest.mark.parametrize("count", [1, 4])
 def test_shapes_gradients_optimizer_and_constant_windows(levels, count):
@@ -182,6 +265,139 @@ def test_binary_and_text_roundtrip_frozen_preprocessing_and_history_fallback(tmp
     b.observed[1, 1:] = False
     assert m.predict(b)[0] == m.intercept
     assert m.predict(b)[1] == m.intercept
+
+
+def test_default_target_scaling_matches_raw_return_adam_update():
+    b = batch()
+    target = np.linspace(-.01, .01, len(b.x), dtype=np.float32)
+    cfg = ModelConfig(kind="modified_tlob", hidden_dim=8, num_layers=2, batch_size=len(b.x),
+                      epochs=1, device="cpu")
+    legacy = cfg.model_dump()
+    legacy.pop("target_scaling")
+    legacy.pop("time_loss_weighting")
+    m, reference = TLOBAdapter(legacy, data_config()), TLOBAdapter(cfg, data_config())
+    optimizer = torch.optim.Adam(reference.network.parameters(), lr=cfg.learning_rate)
+    order = torch.randperm(len(target), generator=torch.Generator().manual_seed(m.seed)).numpy()
+    loss = torch.nn.functional.mse_loss(reference.network(torch.from_numpy(b.x[order])),
+                                        torch.from_numpy(target[order]))
+    loss.backward()
+    optimizer.step()
+    progress = m.fit(b, target)
+    assert m.config["target_scaling"] == "none" and m.target_scale == 1.0
+    assert m.config["time_loss_weighting"] == "none" and m.time_loss_weighting_stats is None
+    assert progress["loss"] == pytest.approx(loss.item())
+    assert progress["loss"] == progress["weighted_loss"]
+    for name, parameter in m.network.state_dict().items():
+        torch.testing.assert_close(parameter, reference.network.state_dict()[name], atol=0, rtol=0)
+
+
+def test_target_scale_uses_only_selected_training_targets_and_logs_raw_units():
+    b = batch()
+    target = np.array([-.003, -.001, .001, .003, .004, .006, 900.], dtype=np.float32)
+    mask = np.arange(len(target)) < 6
+    cfg = {**adapter().config, "target_scaling": "train_std"}
+    events, observed_scales = [], []
+    recorder = SimpleNamespace(event=lambda stage, event, **context: events.append((stage, event, context)))
+    model = TLOBAdapter(cfg, data_config(), recorder=recorder)
+    validation_target = np.linspace(-.01, .01, len(target), dtype=np.float32)
+    progress = model.fit(b, target, sample_mask=mask, validation=(b, validation_target),
+                         observer=lambda m, *_: observed_scales.append(m.target_scale))
+    expected_scale = float(target[mask].astype(np.float64).std())
+    assert model.target_scale == expected_scale
+    assert observed_scales == [expected_scale] * (cfg["epochs"] + 1)
+    changed = target.copy()
+    changed[~mask] = -900.
+    other = TLOBAdapter(cfg, data_config())
+    other.fit(b, changed, sample_mask=mask, validation=(b, validation_target * 1000))
+    assert other.target_scale == model.target_scale and other.intercept == model.intercept
+    for name, parameter in model.network.state_dict().items():
+        torch.testing.assert_close(parameter, other.network.state_dict()[name], atol=0, rtol=0)
+    assert progress["loss"] == pytest.approx(progress["optimization_loss"] * expected_scale ** 2)
+    training_events = [context for stage, _, context in events if stage == "training" and "loss" in context]
+    assert training_events
+    for context in training_events:
+        assert context["loss"] == pytest.approx(context["optimization_loss"] * expected_scale ** 2)
+    validation_events = [context for stage, event, context in events
+                         if stage == "validation" and event == "epoch_completed"]
+    assert validation_events[-1]["loss"] == pytest.approx(
+        np.square(model.predict(b) - validation_target).mean(), rel=1e-6)
+
+
+@pytest.mark.parametrize("filename", ["model.pt", "weights.json"])
+def test_scaled_predictions_observers_diagnostics_and_checkpoints_share_raw_units(tmp_path, filename):
+    from modified_tlob.diagnostics import _network_scores
+
+    b = batch()
+    m = TLOBAdapter({**adapter().config, "target_scaling": "train_std"}, data_config())
+    observations = []
+
+    def observe(model, epoch, steps):
+        with torch.inference_mode():
+            expected = model.network(torch.from_numpy(b.x)).double().numpy() * model.target_scale
+        np.testing.assert_allclose(model._predict(b), expected, atol=1e-8, rtol=1e-6)
+        np.testing.assert_array_equal(_network_scores(model, b), model._predict(b))
+        observations.append(epoch)
+
+    m.fit(b, np.linspace(-.01, .02, len(b.x)), observer=observe)
+    assert observations == [0, 1, 2]
+    b.observed[0] = False
+    expected = m.predict(b)
+    assert expected[0] == m.intercept
+    path = tmp_path / filename
+    m.save(path) if path.suffix == ".pt" else m.export_text(path)
+    payload = json.loads(path.read_text()) if path.suffix == ".json" else torch.load(path, weights_only=True)
+    assert payload["schema_version"] == 2  # The old loader accepts only v1, so cannot misread scaled units.
+    restored = TLOBAdapter.load(path)
+    assert restored.target_scale == m.target_scale
+    np.testing.assert_array_equal(restored.predict(b), expected)
+    np.testing.assert_array_equal(_network_scores(restored, b), expected)
+
+
+@pytest.mark.parametrize("filename", ["model.pt", "weights.json"])
+def test_legacy_checkpoint_without_target_scale_keeps_unit_scale(tmp_path, filename):
+    m, b = adapter(), batch()
+    m.fit(b, np.linspace(-.01, .01, len(b.x)))
+    path = tmp_path / filename
+    m.save(path) if path.suffix == ".pt" else m.export_text(path)
+    payload = json.loads(path.read_text()) if path.suffix == ".json" else torch.load(path, weights_only=True)
+    assert payload["schema_version"] == 1
+    payload.pop("target_scale")
+    payload["model_config"].pop("target_scaling")
+    if path.suffix == ".json":
+        path.write_text(json.dumps(payload), encoding="utf-8")
+    else:
+        torch.save(payload, path)
+    restored = TLOBAdapter.load(path)
+    assert restored.target_scale == 1.0 and restored.config["target_scaling"] == "none"
+    np.testing.assert_array_equal(restored.predict(b), m.predict(b))
+
+
+def test_scaled_checkpoint_rejects_invalid_or_missing_scale_and_downgraded_version(tmp_path):
+    m, b = TLOBAdapter({**adapter().config, "target_scaling": "train_std"}, data_config()), batch()
+    m.fit(b, np.linspace(-.01, .01, len(b.x)))
+    path = tmp_path / "scaled.json"
+    m.export_text(path)
+    original = json.loads(path.read_text())
+    for changes in ({"target_scale": 0}, {"target_scale": -1}, {"target_scale": float("inf")},
+                    {"target_scale": float("nan")}, {"schema_version": 1}, {"target_scale": None}):
+        payload = {**original, **changes}
+        if payload["target_scale"] is None:
+            payload.pop("target_scale")
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ValueError, match="scale|scaling"):
+            TLOBAdapter.load(path)
+
+
+@pytest.mark.parametrize("constant", [0., .003])
+def test_constant_training_targets_have_finite_unit_scale_fallback(constant):
+    b = batch()
+    events = []
+    recorder = SimpleNamespace(event=lambda stage, event, **context: events.append((event, context)))
+    model = TLOBAdapter({**adapter().config, "target_scaling": "train_std"}, data_config(), recorder=recorder)
+    result = model.fit(b, np.full(len(b.x), constant))
+    assert model.target_scale == 1.0 and np.isfinite(result["loss"])
+    assert np.isfinite(model.predict(b)).all()
+    assert next(context for event, context in events if event == "target_scaling_fitted")["constant_target_fallback"]
 
 
 def test_missing_and_future_input_behaviors():

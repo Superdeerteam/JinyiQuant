@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "launch": {
+    "status": "finalized_for_execution",
+    "screen_decision": "D:\\JinyiQuant\\runs\\training-progression\\step5-book-decision.json",
+    "screen_decision_sha256": "5429b722bdd856bfc93ee617ae6a1ee9d1e5f2d6eeb0f60d5da9750c57bb7777",
+    "screen_gate_passed": true,
+    "purpose": "Complete the preregistered two-period, three-seed book representation comparison; four new candidate fits reuse the four explicitly bound raw controls.",
+    "fixed_time_loss_weighting": "none",
+    "fixed_trade_features": "zero",
+    "source_constraint": "Keep the verified core source unchanged through all four book replication runs; apply the pending trade-memory patch only after this stage.",
+    "user_budget": "Screen, required seed replication and archive candidate weights only; no extra full12 expanded-data training.",
+    "executor_note": "Root launches the sequential plan; this metadata is not an automatic promotion rule."
+  },
+  "decision": {
+    "screen": {
+      "periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "seed": 11,
+      "metrics": [
+        "rank_ic_mean",
+        "long_short_return_mean"
+      ],
+      "difference": "candidate minus explicitly paired control",
+      "rule": "All four period-by-metric differences must be finite and >= 0 before seed replication.",
+      "eligibility": "Runs must pass archived checks and reach exactly 1500 updates; prediction keys and labels must match exactly and both arms must have full target-eligible IC/RankIC coverage. Undefined or incomplete evidence does not pass."
+    },
+    "replication": {
+      "seeds": [
+        29,
+        47
+      ],
+      "periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "rule": "If the seed11 screen passes, freeze the same recipe and evaluate both declared additional seeds. Record all attempts; do not choose the best seed or retune on these windows."
+    },
+    "risk_review": [
+      "rank_ic_ir",
+      "long_short_sharpe",
+      "extreme_return",
+      "min_daily_long_short_return",
+      "turnover_mean",
+      "score_change_mae",
+      "mse",
+      "wall_seconds",
+      "peak_rss_mb"
+    ],
+    "promotion": "No automatic promotion. A passing screen is only an improvement lead; retain the frozen accepted model until the paired 2-period/3-seed evidence and return, tail-risk, turnover and resource tradeoffs are reviewed.",
+    "failed_screen": "Archive mixed/failed evidence and keep the control; do not add an unregistered LR, representation, loss-weight or smoothing search.",
+    "selection_limits": "These research windows have already informed previous stages. Repeated selection limits generalization claims; two-day block intervals over four validation dates per period remain weak evidence.",
+    "final_views": 0
+  },
+  "statistics": {
+    "paired_unit": "trading_day",
+    "seed_aggregation": "average paired seed differences within each day",
+    "bootstrap": "period-stratified moving contiguous two-day blocks",
+    "block_days": 2,
+    "confidence_level": 0.95,
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20261015,
+    "incomplete_grid": "insufficient evidence; no automatic validation intersection"
+  },
+  "fixed_budget": {
+    "optimizer_updates": 1500,
+    "batch_size": 32,
+    "maximum_sample_exposures": 48000,
+    "note": "All-eight-time training defines the eligible pool, not a guarantee that every row receives a gradient. Do not increase updates to finish an epoch."
+  },
+  "comparison": {
+    "entry": "scripts/compare_training_round.py",
+    "binding": "After successful runs, materialize explicit baseline/candidate run-directory pairs by period and seed; never select the newest directory implicitly.",
+    "identity": "Require identical effective settings outside change.factor, core execution source hashes, environment, source-file identity, exact train/evaluation keys and target values."
+  },
+  "experiment_id": "training-step5-book-replication",
+  "output_root": "../runs/training-progression/step5-book-replication",
+  "total_wall_seconds": 6000,
+  "change": {
+    "factor": "model.book_representation",
+    "baseline": "raw",
+    "candidate": "relative_mid_bps",
+    "hypothesis": "At fixed ten training dates, all eight training/evaluation times, train-only target scaling and 1500 Adam updates, replace only the six price channels by 10000 * (historical_price / trailing_window_end_mid - 1). Preserve six book-volume channels, 12-dimensional architecture, labels, keys and chronological splits; test subsequent-date ranking and long-short information."
+  },
+  "references": [
+    {
+      "url": "https://arxiv.org/html/1810.09965",
+      "use": "Mid-relative price representation; this experiment does not reproduce the full paper feature set."
+    },
+    {
+      "url": "https://arxiv.org/html/2110.05479",
+      "use": "Current-mid anchoring across a historical window; retain existing 12 fields rather than implementing the paper price grid."
+    }
+  ],
+  "baseline_reuse": [
+    {
+      "arm": "baseline",
+      "manifest_sha256": "d7e0aa8da58692e550771bdde389a434d1a33b20f45355fdc3a1b4558f4cb6f2",
+      "period": "july_18_21",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed29\\20261015T104546.078520Z_f3baa4c2614b\\july_18_21_s29_d10_t8\\20261015T104929.264752Z_c97f3329581e",
+      "seed": 29,
+      "source_arm": "candidate",
+      "source_plan": "training_step3c_seed29_plan.json",
+      "source_run_name": "july_18_21_s29_d10_t8",
+      "config": "training_step3c_seed29/july_18_21_s29_d10_t8.json",
+      "manifest": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed29\\20261015T104546.078520Z_f3baa4c2614b\\july_18_21_s29_d10_t8\\20261015T104929.264752Z_c97f3329581e\\manifest.json",
+      "config_sha256": "a776edf583a04d0986fe5879ed6446773f3b907c4f4970371b21ffbc65b17f16",
+      "core_files_verified": 30,
+      "candidate_config": "training_step5_book_replication/july_18_21_s29_relative_mid_bps.json",
+      "candidate_config_sha256": "94a2231b52edebce85ef989727a03f4356ffa0daff8b7fc5fe0db03dfa3568d8"
+    },
+    {
+      "arm": "baseline",
+      "manifest_sha256": "845b420599ee81cc65feb9d394bce4010d68e00deb25a1f2664727ed5fc5c918",
+      "period": "july_25_28",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed29\\20261015T104546.078520Z_f3baa4c2614b\\july_25_28_s29_d10_t8\\20261015T105709.914655Z_a611a5108e66",
+      "seed": 29,
+      "source_arm": "candidate",
+      "source_plan": "training_step3c_seed29_plan.json",
+      "source_run_name": "july_25_28_s29_d10_t8",
+      "config": "training_step3c_seed29/july_25_28_s29_d10_t8.json",
+      "manifest": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed29\\20261015T104546.078520Z_f3baa4c2614b\\july_25_28_s29_d10_t8\\20261015T105709.914655Z_a611a5108e66\\manifest.json",
+      "config_sha256": "2b309484aad8bfd4a5dba49f556b3f012810298b0c4eb5f8e8c717f0bae742ca",
+      "core_files_verified": 30,
+      "candidate_config": "training_step5_book_replication/july_25_28_s29_relative_mid_bps.json",
+      "candidate_config_sha256": "73e5a93ce8a27cb4b5e5ce162407de7da8f8fbf0977d076d4ff2b1e38030f698"
+    },
+    {
+      "arm": "baseline",
+      "manifest_sha256": "7b1d8dd72431b29ade1603f52271ef3ec67b6d0355abed77668c8fcd26bd3c37",
+      "period": "july_18_21",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed47\\20261015T110304.802914Z_f6069d81d322\\july_18_21_s47_d10_t8\\20261015T110644.904591Z_e29c87051917",
+      "seed": 47,
+      "source_arm": "candidate",
+      "source_plan": "training_step3c_seed47_plan.json",
+      "source_run_name": "july_18_21_s47_d10_t8",
+      "config": "training_step3c_seed47/july_18_21_s47_d10_t8.json",
+      "manifest": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed47\\20261015T110304.802914Z_f6069d81d322\\july_18_21_s47_d10_t8\\20261015T110644.904591Z_e29c87051917\\manifest.json",
+      "config_sha256": "4437ed974e804d335e6f67a424d3990849abccfa3551f3f42b95f4943a07df72",
+      "core_files_verified": 30,
+      "candidate_config": "training_step5_book_replication/july_18_21_s47_relative_mid_bps.json",
+      "candidate_config_sha256": "4265e2a408c9a66562dfd27cc1f04812d026349f6777f9909c8790d57f1fb899"
+    },
+    {
+      "arm": "baseline",
+      "manifest_sha256": "724fde4654f851a1b6eb28436858dcc6d4f30f36d0b217e250f17ff19af0a54e",
+      "period": "july_25_28",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed47\\20261015T110304.802914Z_f6069d81d322\\july_25_28_s47_d10_t8\\20261015T111432.795419Z_751b622a74f7",
+      "seed": 47,
+      "source_arm": "candidate",
+      "source_plan": "training_step3c_seed47_plan.json",
+      "source_run_name": "july_25_28_s47_d10_t8",
+      "config": "training_step3c_seed47/july_25_28_s47_d10_t8.json",
+      "manifest": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times-seed47\\20261015T110304.802914Z_f6069d81d322\\july_25_28_s47_d10_t8\\20261015T111432.795419Z_751b622a74f7\\manifest.json",
+      "config_sha256": "bd731458631db516f2737e44de3c0167d0082a65e7b6c261ac1ff61dd0d4adb3",
+      "core_files_verified": 30,
+      "candidate_config": "training_step5_book_replication/july_25_28_s47_relative_mid_bps.json",
+      "candidate_config_sha256": "ab000303fa416b5f266d4ff4b2fb650a6c2e43c6e7b20980891173b31146b206"
+    }
+  ],
+  "runs": [
+    {
+      "name": "july_18_21_s29_relative_mid_bps",
+      "period": "july_18_21",
+      "seed": 29,
+      "arm": "candidate",
+      "config": "training_step5_book_replication/july_18_21_s29_relative_mid_bps.json"
+    },
+    {
+      "name": "july_25_28_s29_relative_mid_bps",
+      "period": "july_25_28",
+      "seed": 29,
+      "arm": "candidate",
+      "config": "training_step5_book_replication/july_25_28_s29_relative_mid_bps.json"
+    },
+    {
+      "name": "july_18_21_s47_relative_mid_bps",
+      "period": "july_18_21",
+      "seed": 47,
+      "arm": "candidate",
+      "config": "training_step5_book_replication/july_18_21_s47_relative_mid_bps.json"
+    },
+    {
+      "name": "july_25_28_s47_relative_mid_bps",
+      "period": "july_25_28",
+      "seed": 47,
+      "arm": "candidate",
+      "config": "training_step5_book_replication/july_25_28_s47_relative_mid_bps.json"
+    }
+  ],
+  "budget_summary": {
+    "run_count": 4,
+    "per_run_wall_seconds": 1200,
+    "max_rss_mb": 6144,
+    "sum_run_caps_seconds": 4800,
+    "stage_overhead_allowance_seconds": 1200,
+    "stage_wall_seconds": 6000
+  },
+  "prelaunch_validation": {
+    "passed": true,
+    "core_source_files": 30,
+    "shared_control_environment": true,
+    "grid": [
+      29,
+      47
+    ],
+    "periods": [
+      "july_18_21",
+      "july_25_28"
+    ],
+    "runs": [
+      {
+        "period": "july_18_21",
+        "seed": 29,
+        "passed": true,
+        "completed_control": true,
+        "control_manifest_verified": true,
+        "current_core_hashes_equal_control": true,
+        "source_config_equals_saved_effective_config": true,
+        "only_factor_change": "model.book_representation",
+        "fixed_updates": 1500
+      },
+      {
+        "period": "july_25_28",
+        "seed": 29,
+        "passed": true,
+        "completed_control": true,
+        "control_manifest_verified": true,
+        "current_core_hashes_equal_control": true,
+        "source_config_equals_saved_effective_config": true,
+        "only_factor_change": "model.book_representation",
+        "fixed_updates": 1500
+      },
+      {
+        "period": "july_18_21",
+        "seed": 47,
+        "passed": true,
+        "completed_control": true,
+        "control_manifest_verified": true,
+        "current_core_hashes_equal_control": true,
+        "source_config_equals_saved_effective_config": true,
+        "only_factor_change": "model.book_representation",
+        "fixed_updates": 1500
+      },
+      {
+        "period": "july_25_28",
+        "seed": 47,
+        "passed": true,
+        "completed_control": true,
+        "control_manifest_verified": true,
+        "current_core_hashes_equal_control": true,
+        "source_config_equals_saved_effective_config": true,
+        "only_factor_change": "model.book_representation",
+        "fixed_updates": 1500
+      }
+    ],
+    "stage_budget_covers_four_caps": true,
+    "data_validation_after_execution": "The existing strict comparison must verify exact keys, targets, data identity, environment, resource limits and output coverage for every candidate; this config preparation does not predeclare their results."
+  }
+}

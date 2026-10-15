@@ -137,7 +137,8 @@ def permute_training_targets(keys, targets, seed):
 def subset_batch(batch, indices):
     indices = np.asarray(indices)
     return Batch(batch.keys.iloc[indices].reset_index(drop=True), batch.x[indices].copy(),
-                 batch.observed[indices].copy(), batch.history_dates[indices].copy(), dict(batch.coverage))
+                 batch.observed[indices].copy(), batch.history_dates[indices].copy(), dict(batch.coverage),
+                 batch.history_feature_count)
 
 
 def _prepare(config, destination, recorder, *, training_only=False):
@@ -148,15 +149,17 @@ def _prepare(config, destination, recorder, *, training_only=False):
     for event in bundle.cache_events + bundle.data_events:
         recorder.event("data", event["event"], **{key: value for key, value in event.items() if key != "event"})
     write_json(destination / "data.json", bundle.metadata)
+    training_times = config.data.training_sample_times or config.data.sample_times
     targets = select_targets(bundle.labels, config.splits.train, config.data.label_horizon_minutes,
-                             sample_times=config.data.sample_times)
+                             sample_times=training_times)
     if not len(targets) or len(targets) > config.budget.max_train_samples:
         raise ValueError("Empty or over-budget training selection")
     train = build_batch(bundle.bars, targets[KEYS], config.data)
     targets = _aligned_targets(train, targets)
-    train_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
+    train_mask = train.effective_rows.sum(axis=1) >= config.data.min_history
     checks = batch_checks(train, targets, config.splits.train, config.acceptance.min_coverage)
-    checks.append(_answer_coverage_check(inference_keys(bundle, config.splits.train, config.data), targets,
+    checks.append(_answer_coverage_check(inference_keys(bundle, config.splits.train, config.data,
+                                        sample_times=training_times), targets,
                   config.acceptance.min_coverage, "train_answer_coverage", "instruments"))
     history_diagnostics(train).to_parquet(destination / "train_history.parquet", index=False)
     validation, eval_targets = None, None
@@ -178,17 +181,7 @@ def _prepare(config, destination, recorder, *, training_only=False):
 
 
 def _network_scores(model, batch):
-    inputs = model._input(batch)
-    model.network.eval()
-    scores = []
-    with torch.inference_mode():
-        for offset in range(0, len(inputs), model.config["batch_size"]):
-            tensor = torch.from_numpy(inputs[offset:offset + model.config["batch_size"]]).to(model.device)
-            scores.extend(model.network(tensor).cpu().double().tolist())
-    result = np.asarray(scores)
-    missing = batch.observed.any(axis=2).sum(axis=1) < model.preprocessing["min_history"]
-    result[missing] = model.intercept
-    return result
+    return model._predict(batch)
 
 
 def _parameter_changes(network, before):
@@ -212,13 +205,17 @@ def _fit(config, train, target, mask, validation, eval_targets, destination, sou
     started = time.monotonic()
     try:
         model = TLOBAdapter(config.model, config.data, seed=config.seed, recorder=recorder)
-        model.intercept = float(np.asarray(target)[mask].mean())
         before = {name: parameter.detach().cpu().double().clone()
                   for name, parameter in model.network.named_parameters()}
         trace = []
-        initial = _network_scores(model, validation)
+        initial = None
 
         def observe(adapter, epoch, steps):
+            nonlocal initial
+            if epoch == 0:
+                initial = _network_scores(adapter, validation)
+            if tiny is None:
+                return
             if epoch not in (0, config.model.epochs) and epoch % tiny.record_every:
                 return
             row = {"epoch": epoch, "steps": steps,
@@ -228,7 +225,7 @@ def _fit(config, train, target, mask, validation, eval_targets, destination, sou
             recorder.event("training", "fixed_batch_evaluation", **row)
 
         recorder.event("training", "started", samples=int(mask.sum()), optimizer="Adam", loss="raw_return_MSE")
-        progress = model.fit(train, target, sample_mask=mask, observer=observe if tiny else None)
+        progress = model.fit(train, target, sample_mask=mask, observer=observe)
         if tiny:
             write_json(run_dir / "learning_curve.json", trace)
         recorder.event("training", "completed", **progress)
@@ -287,7 +284,7 @@ def _fit(config, train, target, mask, validation, eval_targets, destination, sou
 
 def _small_sample(plan, config, destination, recorder):
     bundle, train, targets, _, _, _ = _prepare(config, destination / "tiny_data", recorder, training_only=True)
-    full = train.observed.all(axis=2).sum(axis=1) == config.data.lookback
+    full = train.observed[..., :train.history_feature_count].all(axis=2).sum(axis=1) == config.data.lookback
     eligible = np.flatnonzero(full)
     if len(eligible) < plan.small_sample.samples:
         raise ValueError("Insufficient fully observed real samples for fixed-batch diagnostic")

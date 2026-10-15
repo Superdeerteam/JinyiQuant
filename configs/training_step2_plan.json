@@ -1,0 +1,53 @@
+{
+  "change": {
+    "baseline": "none",
+    "candidate": "train_std",
+    "factor": "model.target_scaling",
+    "hypothesis": "At fixed 1500 Adam updates and learning rate 1e-4, scale training labels by training-only standard deviation and restore scores to return units. Test whether raw-scale optimization explains remaining excess MSE; sorting evidence is evaluated separately."
+  },
+  "decision": {
+    "final_views": 0,
+    "fixed_updates": 1500,
+    "promotion": "No promotion from MSE alone; paired dates, other seeds and return/turnover tradeoffs required.",
+    "scale_diagnostic": "Validation MSE relative to training-mean constant must fall below one in both windows to count as resolving excess squared error.",
+    "screen": "Replicate seeds 29 and 47 only if candidate RankIC and long-short mean do not decline in both research periods; otherwise record mixed or failed evidence and retain control for subsequent research."
+  },
+  "experiment_id": "training-step2-target-scale",
+  "output_root": "../runs/training-progression/step2-screen",
+  "references": [
+    "https://arxiv.org/html/2502.15757v3",
+    "https://docs.pytorch.org/docs/main/generated/torch.optim.Adam.html"
+  ],
+  "runs": [
+    {
+      "arm": "baseline",
+      "config": "training_step2\\july_18_21_s11_none.json",
+      "name": "july_18_21_s11_none",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step2\\july_18_21_s11_train_std.json",
+      "name": "july_18_21_s11_train_std",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "baseline",
+      "config": "training_step2\\july_25_28_s11_none.json",
+      "name": "july_25_28_s11_none",
+      "period": "july_25_28",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step2\\july_25_28_s11_train_std.json",
+      "name": "july_25_28_s11_train_std",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 6000
+}

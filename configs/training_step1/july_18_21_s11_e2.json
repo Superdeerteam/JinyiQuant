@@ -1,0 +1,87 @@
+{
+  "acceptance": {
+    "min_coverage": 0.99,
+    "repro_atol": 1e-06,
+    "repro_rtol": 1e-05
+  },
+  "budget": {
+    "max_rss_mb": 6144,
+    "max_train_samples": 100000,
+    "wall_seconds": 1200
+  },
+  "data": {
+    "bars_path": "../../data/research-july-20261015/bars",
+    "cache_dir": "../../cache/training-progression",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "history_days": 10,
+    "instrument_map_path": "../../cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "instruments_path": "../../cpt_jyc_2026_instruments.parquet",
+    "labels_path": "../../cpt_jyc_2026_vwap.rar",
+    "lookback": 128,
+    "max_ffill_steps": 5,
+    "min_history": 1,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "outside_universe_labels": "exclude",
+    "price_scale": 100,
+    "sample_times": [
+      "09:30",
+      "14:30"
+    ],
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026"
+  },
+  "evaluation": {
+    "constant_portfolios": "undefined"
+  },
+  "evaluation_split": "validation",
+  "experiment_id": "training-step1-epochs",
+  "hypothesis": "Only increase epochs from 2 to 12 at fixed Adam learning rate 1e-4, inputs, data and evaluation. Determine whether optimization is step-limited; MSE alone is not alpha evidence.",
+  "logging": {
+    "learning_curves": true,
+    "resource_interval_seconds": 5
+  },
+  "model": {
+    "batch_size": 32,
+    "cpu_threads": 1,
+    "device": "cuda",
+    "epochs": 2,
+    "hidden_dim": 40,
+    "is_sin_emb": true,
+    "kind": "modified_tlob",
+    "learning_rate": 0.0001,
+    "log_every_steps": 10,
+    "num_heads": 1,
+    "num_layers": 4
+  },
+  "output_root": "../../runs/training-progression/step1",
+  "schema_version": 1,
+  "seed": 11,
+  "splits": {
+    "final": {
+      "end": "2023-08-04",
+      "start": "2023-08-03"
+    },
+    "train": {
+      "end": "2023-07-18",
+      "start": "2023-07-14"
+    },
+    "validation": {
+      "end": "2023-07-22",
+      "start": "2023-07-18"
+    }
+  }
+}

@@ -41,10 +41,22 @@ def _aligned_targets(batch, targets):
     return result
 
 
-def inference_keys(bundle, split, data_config):
+def _curve_diagnostics(scores, targets, training_mean):
+    """Return original-return units and a fixed training-mean reference."""
+    scores, targets = np.asarray(scores), np.asarray(targets)
+    mse = float(np.square(scores - targets).mean())
+    constant_mse = float(np.square(training_mean - targets).mean())
+    return {"mse": mse, "constant_mse": constant_mse,
+            "mse_over_constant": mse / constant_mse if constant_mse > 0 else None,
+            "target_std": float(targets.std()), "prediction_std": float(scores.std()),
+            "prediction_mean": float(scores.mean())}
+
+
+def inference_keys(bundle, split, data_config, *, sample_times=None):
     universe = bundle.universe if bundle.universe is not None else bundle.bars[["date", "instrument"]]
     expected = universe.loc[(universe.date >= split.start) & (universe.date < split.end)]
-    expected = expected.loc[expected.date.dt.strftime("%H:%M").isin(data_config.sample_times)]
+    times = data_config.sample_times if sample_times is None else sample_times
+    expected = expected.loc[expected.date.dt.strftime("%H:%M").isin(times)]
     # A dummy constant permits reuse of the trading-clock boundary selector; no answers are consulted.
     return select_targets(expected.assign(target=0.0), split, data_config.label_horizon_minutes)[["date", "instrument"]]
 
@@ -72,10 +84,10 @@ def _prepare_evaluation(config, bundle, train, train_targets, run_dir, checks):
     if eval_targets.empty:
         raise ValueError("Evaluation must contain eligible targets")
     validation = build_batch(bundle.bars, inference_keys(bundle, split, config.data), config.data)
-    no_history = ~validation.observed.any(axis=(1, 2))
-    fallback_mask = (validation.observed.any(axis=2).sum(axis=1) < config.data.min_history
+    no_history = ~validation.effective_rows.any(axis=1)
+    fallback_mask = (validation.effective_rows.sum(axis=1) < config.data.min_history
                      if config.model.kind == "modified_tlob" else no_history)
-    fit_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
+    fit_mask = train.effective_rows.sum(axis=1) >= config.data.min_history
     coverage_report = {"train": train.coverage, "evaluation": validation.coverage,
                        "training_samples_used": int(fit_mask.sum()),
                        "training_samples_excluded_insufficient_history": int((~fit_mask).sum()),
@@ -113,8 +125,9 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     for event in bundle.data_events:
         rec.event("data", event["event"], level="WARNING", **{k: v for k, v in event.items() if k != "event"})
     write_json(run_dir / "data.json", bundle.metadata)
+    training_times = config.data.training_sample_times or config.data.sample_times
     train_targets = select_targets(bundle.labels, config.splits.train, config.data.label_horizon_minutes,
-                                   sample_times=config.data.sample_times)
+                                   sample_times=training_times)
     if train_targets.empty:
         raise ValueError("Training must contain eligible targets")
     if len(train_targets) > config.budget.max_train_samples:
@@ -124,12 +137,13 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     selection = train_targets.attrs.get("selection", {})
     train_targets = _aligned_targets(train, train_targets)
     train_targets.attrs["selection"] = selection
-    fit_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
+    fit_mask = train.effective_rows.sum(axis=1) >= config.data.min_history
     history_diagnostics(train).to_parquet(run_dir / "train_history.parquet", index=False)
     checks += [dict(c, name="train_" + c["name"]) for c in
                batch_checks(train, train_targets, config.splits.train, config.acceptance.min_coverage)]
     universe_source = "instruments" if bundle.universe is not None else "observed_bars"
-    checks.append(_answer_coverage_check(inference_keys(bundle, config.splits.train, config.data), train_targets,
+    checks.append(_answer_coverage_check(inference_keys(bundle, config.splits.train, config.data,
+                  sample_times=training_times), train_targets,
                   config.acceptance.min_coverage, "train_expected_universe_coverage", universe_source))
     checks.append(check("nonempty_training_history", fit_mask.any(), usable_samples=int(fit_mask.sum())))
     write_json(run_dir / "coverage.json", {"train": train.coverage})
@@ -159,13 +173,18 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
 
     def observe_curve(adapter, epoch, steps):
         scores = adapter._predict(train)
-        row = {"epoch": epoch, "steps": steps,
-               "train_mse": float(np.square(scores[fit_mask] - train_targets.target.to_numpy()[fit_mask]).mean()),
-               "validation_mse": None, "elapsed_seconds": time.monotonic() - started}
+        targets = train_targets.target.to_numpy()[fit_mask]
+        training_mean = float(targets.mean())
+        row = {"epoch": epoch, "steps": steps, "validation_mse": None,
+               "error_aggregation": "sample_weighted", "constant_reference": "training_mean",
+               "elapsed_seconds": time.monotonic() - started}
+        row.update({"train_" + key: value for key, value in
+                    _curve_diagnostics(scores[fit_mask], targets, training_mean).items()})
         if curve_targets is not None:
             valid = curve_targets.notna().to_numpy()
             scores = adapter._predict(validation)
-            row["validation_mse"] = float(np.square(scores[valid] - curve_targets.to_numpy()[valid]).mean())
+            row.update({"validation_" + key: value for key, value in
+                        _curve_diagnostics(scores[valid], curve_targets.to_numpy()[valid], training_mean).items()})
         curve.append(row)
         write_json(run_dir / "learning_curve.json", curve)
         rec.event("validation", "curve_checkpoint", checkpoint_selection=False, **row)
@@ -179,7 +198,8 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)
     elapsed = time.monotonic() - started
     rec.event("training", "progress", **progress, elapsed_seconds=elapsed,
-              throughput_samples_per_second=int(fit_mask.sum()) / max(elapsed, 1e-9), resources=resource_usage())
+              throughput_samples_per_second=progress.get("samples_seen", int(fit_mask.sum())) / max(elapsed, 1e-9),
+              resources=resource_usage())
     if config.logging.learning_curves:
         if config.model.kind != "modified_tlob":
             constant = float(train_targets.target.to_numpy()[fit_mask].mean())

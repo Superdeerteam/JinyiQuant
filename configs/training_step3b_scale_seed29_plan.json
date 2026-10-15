@@ -1,0 +1,44 @@
+{
+  "change": {
+    "baseline": "none",
+    "candidate": "train_std",
+    "factor": "model.target_scaling",
+    "hypothesis": "A single bounded follow-up: target scaling severely overfits two training days; test whether ten training days mitigate that failure at identical 1500 updates. This is not a repetition on the same data or a claim that scaling is already accepted."
+  },
+  "decision": "Fixed seed29 replication, no hyperparameter selection. All four period-by-metric differences must be nonnegative to proceed to seed47; otherwise record failed replication and retain the original two-day raw-return reference.",
+  "experiment_id": "training-step3b-scale-interaction-replicate-seed29",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3b-scale-seed29",
+  "runs": [
+    {
+      "arm": "baseline",
+      "config": "training_step3b_scale_seed29\\july_18_21_s29_d10_none.json",
+      "name": "july_18_21_s29_d10_none",
+      "period": "july_18_21",
+      "seed": 29
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale_seed29\\july_18_21_s29_d10_train_std.json",
+      "name": "july_18_21_s29_d10_train_std",
+      "period": "july_18_21",
+      "seed": 29
+    },
+    {
+      "arm": "baseline",
+      "config": "training_step3b_scale_seed29\\july_25_28_s29_d10_none.json",
+      "name": "july_25_28_s29_d10_none",
+      "period": "july_25_28",
+      "seed": 29
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale_seed29\\july_25_28_s29_d10_train_std.json",
+      "name": "july_25_28_s29_d10_train_std",
+      "period": "july_25_28",
+      "seed": 29
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 6000
+}

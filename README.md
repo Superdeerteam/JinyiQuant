@@ -1,10 +1,10 @@
 # JinyiQuant 研究工程入口
 
-新增可选 [modified_tlob 回归模型](modified_tlob/README.md)：固定上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11/PyTorch 2.5.0 环境；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU 验收和平台提交包清单见该模块说明。
+可选 [modified_tlob 回归模型](modified_tlob/README.md) 使用上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11 环境，CPU 基础锁为 PyTorch 2.5.0，当前 RTX 5060 研究环境为 2.7.1+cu128；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU/GPU 验收状态和平台提交包清单见模块说明。
 
 TLOB 本地训练入口为 `python -m modified_tlob.train <配置>`，本地只推理入口为 `python -m modified_tlob.infer --weights ... --bars ... --keys ... --output-root ...`；提交材料用 `python -m modified_tlob.package <训练运行目录> <新提交目录>` 生成。完整可复制命令、CPU/GPU 选择和输入输出说明见模块 README 的对应章节。
 
-七个模块已统一为可复跑的本地 CPU 工作流。本轮以工程正确性验收；内置岭回归仅用于贯通接口。生成数据上的指标不能作为模型有效性或比赛成绩证据。
+七个模块已统一为可复跑的本地工作流。2023年7月真实数据已完成 CUDA 训练对照及 CPU/GPU 保存加载检查；官方平台、全区间 ≤3 小时和最终检查仍未验收。生成数据上的指标不能作为模型有效性或比赛成绩证据。
 
 ## 安装与首次运行
 
@@ -62,7 +62,7 @@ uv run jinyi prepare-data cpt_jyc_2026_e2e_bar1m.tar.gz --member cpt_jyc_2026_e2
 
 是否继续由**每个截面**的历史覆盖率和答案覆盖率决定，训练/验证都用独立股票池作分母。低于 `acceptance.min_coverage` 或整个截面不可用会失败，重复/歧义映射、时间越界、非有限预测和标签泄漏仍会失败。默认覆盖阈值0.6对应资料中的最多40%缺失上限；真实工程小切片另声明0.99，最多容忍1%缺失，不因结果事后降低。极少数缺失记录的通过不代表全量质量或模型收益已验收。
 
-当前已解压的真实数据位于 `数据/`。两份真实示例配置直接使用行情月度目录、标签月度目录、股票池 `cpt_jyc_2026_instruments(1).parquet` 和映射CSV，无需再次解压。运行前先检查路径：
+原真实示例配置使用 `数据/` 下的行情月度目录、标签月度目录、股票池 `cpt_jyc_2026_instruments(1).parquet` 和映射CSV；当前7月研究行情位于 `data/research-july-20261015/bars/`，对应来源与校验值随运行归档。运行示例前先检查路径：
 
 ```powershell
 uv run jinyi validate-config configs/real_smoke.json --check-inputs
@@ -77,6 +77,21 @@ uv run jinyi rerun <上一步输出的运行目录>
 默认只评价 validation。评价 final 必须配置 `evaluation_split=final`、非空 `final_access.purpose` 和查看上限，SQLite 账本记录访问次数，改实验名称不能绕过同数据/同区间的限制；对照模块拒绝用 final 结果选模。此账本是本地治理措施，不是防止用户更改文件或配置的安全边界。
 
 ## 公平对照
+
+### 当前7月训练对照
+
+使用独立 `.venv-tlob-cuda` 环境，依赖锁为 `modified_tlob/requirements-blackwell.lock.txt`（安装步骤及研究选项见模块 README）：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-tlob-cuda/Scripts/python.exe scripts/run_training_plan.py configs/training_step1_plan.json
+```
+
+本轮五步筛选及按预定门槛触发的复验已完成。结果、保留/回退依据与运行档案见[结构化研究记录](modified_tlob/training_progression_20261015.json)和[最终研究报告](runs/training-progression/final-report-20261015/summary_zh.txt)；配对结果见[训练时点对照图](runs/training-progression/figures/step3c_training_times_paired.png)及[训练轮数对照图](runs/training-progression/figures/step1_epochs_validation_mse.png)。数据、模型与完整运行档案留在本地。
+
+研究主候选为十个训练日、全部8时点、原始12列盘口、`target_scaling=train_std`、`time_loss_weighting=none`，不做信号平滑。本地参考固定使用最新研究验证窗（2023-07-25至07-28）的 seed 11，保存在[本地研究参考包](dist/local-research-reference-20261015-raw12-all8-s11-july25/)，并非正式冠军。
+
+首轮2→12轮对照已完整执行；扩展数据后的十日/八时点实验固定1500次更新、batch_size=32，约为0.6个 epoch，不等于在扩展数据上完整训练12轮。证据仅覆盖8个研究日，仍有09:30开盘退化和反复筛选的局限；最终检查区间未打开，官方平台及全区间时限尚未验收。
 
 ### 真实后续日期三参照基线
 
@@ -202,7 +217,7 @@ $env:PYTHONPATH = 'src;.'
 min_history达标与完整128条历史分别报告，不把有限前填后的数值当成观测。有限值是当前有效口径，零价不自动改写为缺失。
 最终检查模式只在训练结束且权重保存后读取final数据，final答案不进入逐轮验证；行为测试检查实际加载顺序。
 独立解释器执行只推理入口并禁止读取答案源/字段，比较预测和档案校验。本地CPU小切片通过仅证明工程流程，
-不证明模型收益改善、GPU、全量预算或官方平台已验收。每次运行原始预测、近似指标及源码快照长期保留。
+不证明模型收益改善、全量预算或官方平台已验收；当前 CUDA 研究运行另见 `runs/training-progression/`。每次运行原始预测、近似指标及源码快照长期保留。
 
 ```powershell
 uv run ruff check .
@@ -213,7 +228,7 @@ uv run python scripts/acceptance.py --output runs/engineering-acceptance
 
 验收脚本从头生成固定种子数据，执行正常运行、相同配置复验、超时、超内存、缺文件、无效配置脱敏、基线波动测量及多种子/多时段对照。候选故意与基线相同，完成充分证据后必须得出“回退”，用于检查系统不会把零改善误判为成功。脚本不覆盖已有输出；重复运行须换新目录。当前系统临时目录权限有限，因此测试明确使用工作区内的新临时目录。
 
-`audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。Ridge/Mean 不使用 GPU；modified_tlob 已完成 CPU 神经网络工程闭环，GPU 实际计算仍未验收，详细证据见模块说明。
+`audit.sqlite3` 是事务化运行/最终查看索引，`index.jsonl` 为便利索引。每次运行的日志、配置、源码、指标、检查和模型持久保留；无自动删除历史/最佳版本策略。大数据压缩包、派生缓存和 runs 不纳入 Git，保留源数据校验信息；需要长期异地归档时应整体复制验收通过的运行目录及匹配数据。Ridge/Mean 不使用 GPU；modified_tlob 的 CPU/GPU 本地工程检查与真实7月训练记录见模块说明。
 
 具体本地指标口径保存在每次运行的 `metrics.json/conventions`。公开实现核对参考 [SciPy 的常数输入相关性约定](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html)与 [NumPy 的缺失值均值说明](https://numpy.org/doc/stable/reference/generated/numpy.nanmean.html)；对照额外要求固定的标签可评价截面集合。工程记录保留在独立运行档案中。
 

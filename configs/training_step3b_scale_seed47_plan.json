@@ -1,0 +1,44 @@
+{
+  "change": {
+    "baseline": "none",
+    "candidate": "train_std",
+    "factor": "model.target_scaling",
+    "hypothesis": "A single bounded follow-up: target scaling severely overfits two training days; test whether ten training days mitigate that failure at identical 1500 updates. This is not a repetition on the same data or a claim that scaling is already accepted."
+  },
+  "decision": "Complete the third seed, summarize all six paired cases and daily blocks. Retain train_std as a research configuration only if gains remain positive in each research period and guard metrics do not show material deterioration; no claim of independent final validation.",
+  "experiment_id": "training-step3b-scale-interaction-replicate-seed47",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3b-scale-seed47",
+  "runs": [
+    {
+      "arm": "baseline",
+      "config": "training_step3b_scale_seed47\\july_18_21_s47_d10_none.json",
+      "name": "july_18_21_s47_d10_none",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale_seed47\\july_18_21_s47_d10_train_std.json",
+      "name": "july_18_21_s47_d10_train_std",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "arm": "baseline",
+      "config": "training_step3b_scale_seed47\\july_25_28_s47_d10_none.json",
+      "name": "july_25_28_s47_d10_none",
+      "period": "july_25_28",
+      "seed": 47
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b_scale_seed47\\july_25_28_s47_d10_train_std.json",
+      "name": "july_25_28_s47_d10_train_std",
+      "period": "july_25_28",
+      "seed": 47
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 6000
+}

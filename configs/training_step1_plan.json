@@ -1,0 +1,111 @@
+{
+  "change": {
+    "baseline": 2,
+    "candidate": 12,
+    "factor": "model.epochs",
+    "hypothesis": "Only increase epochs from 2 to 12 at fixed Adam learning rate 1e-4, inputs, data and evaluation. Determine whether optimization is step-limited; MSE alone is not alpha evidence."
+  },
+  "decision": "Report MSE versus training-mean reference plus paired daily RankIC/IC/long-short/turnover; no model promotion from MSE alone; weak eight-date evidence, preserve frozen prior weights.",
+  "experiment_id": "training-step1-epochs",
+  "fixed": {
+    "batch_size": 32,
+    "device": "cuda",
+    "final_views": 0,
+    "learning_rate": 0.0001,
+    "sample_times": [
+      "09:30",
+      "14:30"
+    ],
+    "torch": "2.7.1+cu128"
+  },
+  "output_root": "../runs/training-progression/step1-grid",
+  "reproduction": "One seed-11 July18-21 run of each arm after all cells; compare same source/config within atol1e-6 rtol1e-5; record failures without changing tolerance.",
+  "runs": [
+    {
+      "config": "training_step1/july_18_21_s11_e2.json",
+      "epochs": 2,
+      "name": "july_18_21_s11_e2",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "config": "training_step1/july_18_21_s11_e12.json",
+      "epochs": 12,
+      "name": "july_18_21_s11_e12",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "config": "training_step1/july_18_21_s29_e2.json",
+      "epochs": 2,
+      "name": "july_18_21_s29_e2",
+      "period": "july_18_21",
+      "seed": 29
+    },
+    {
+      "config": "training_step1/july_18_21_s29_e12.json",
+      "epochs": 12,
+      "name": "july_18_21_s29_e12",
+      "period": "july_18_21",
+      "seed": 29
+    },
+    {
+      "config": "training_step1/july_18_21_s47_e2.json",
+      "epochs": 2,
+      "name": "july_18_21_s47_e2",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "config": "training_step1/july_18_21_s47_e12.json",
+      "epochs": 12,
+      "name": "july_18_21_s47_e12",
+      "period": "july_18_21",
+      "seed": 47
+    },
+    {
+      "config": "training_step1/july_25_28_s11_e2.json",
+      "epochs": 2,
+      "name": "july_25_28_s11_e2",
+      "period": "july_25_28",
+      "seed": 11
+    },
+    {
+      "config": "training_step1/july_25_28_s11_e12.json",
+      "epochs": 12,
+      "name": "july_25_28_s11_e12",
+      "period": "july_25_28",
+      "seed": 11
+    },
+    {
+      "config": "training_step1/july_25_28_s29_e2.json",
+      "epochs": 2,
+      "name": "july_25_28_s29_e2",
+      "period": "july_25_28",
+      "seed": 29
+    },
+    {
+      "config": "training_step1/july_25_28_s29_e12.json",
+      "epochs": 12,
+      "name": "july_25_28_s29_e12",
+      "period": "july_25_28",
+      "seed": 29
+    },
+    {
+      "config": "training_step1/july_25_28_s47_e2.json",
+      "epochs": 2,
+      "name": "july_25_28_s47_e2",
+      "period": "july_25_28",
+      "seed": 47
+    },
+    {
+      "config": "training_step1/july_25_28_s47_e12.json",
+      "epochs": 12,
+      "name": "july_25_28_s47_e12",
+      "period": "july_25_28",
+      "seed": 47
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 15000
+}

@@ -56,6 +56,7 @@ class DataConfig(StrictModel):
     max_ffill_steps: int = Field(default=5, ge=0)
     label_horizon_minutes: Literal[30] = 30
     sample_times: tuple[str, ...] = ("09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30")
+    training_sample_times: tuple[str, ...] | None = None
     price_scale: float = Field(default=1.0, gt=0)
     missing_sentinel: float | None = -1.0
     source: str = Field(min_length=1)
@@ -74,6 +75,10 @@ class DataConfig(StrictModel):
             raise ValueError("min_history exceeds lookback")
         if not self.sample_times or len(set(self.sample_times)) != len(self.sample_times):
             raise ValueError("sample_times must be nonempty and unique")
+        if self.training_sample_times is not None and (
+                not self.training_sample_times or len(set(self.training_sample_times)) != len(self.training_sample_times)
+                or not set(self.training_sample_times).issubset(self.sample_times)):
+            raise ValueError("training_sample_times must be a nonempty unique subset of sample_times")
         for t in self.sample_times:
             if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", t):
                 raise ValueError("sample_times requires HH:MM")
@@ -92,14 +97,21 @@ class ModelConfig(StrictModel):
     num_heads: int = Field(default=1, ge=1, le=8)
     is_sin_emb: bool = True
     epochs: int = Field(default=2, ge=1, le=1000)
+    max_steps: int | None = Field(default=None, ge=1)
     batch_size: int = Field(default=32, ge=1)
     learning_rate: float = Field(default=0.0001, gt=0)
+    target_scaling: Literal["none", "train_std"] = "none"
+    time_loss_weighting: Literal["none", "train_variance"] = "none"
+    book_representation: Literal["raw", "relative_mid_bps"] = "raw"
+    trade_features: Literal["zero", "log1p"] = "zero"
     device: Literal["auto", "cpu", "cuda"] = "auto"
     cpu_threads: int = Field(default=1, ge=1, le=64)
     log_every_steps: int = Field(default=10, ge=1)
 
     @model_validator(mode="after")
     def valid_embedding(self):
+        if self.kind != "modified_tlob" and (self.book_representation != "raw" or self.trade_features != "zero"):
+            raise ValueError("LOB input transformations require modified_tlob")
         if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
             raise ValueError("Sinusoidal embedding requires even hidden_dim")
         return self
@@ -153,9 +165,10 @@ class RunConfig(StrictModel):
     @model_validator(mode="after")
     def final_is_deliberate(self):
         if self.model.kind == "modified_tlob":
-            from modified_tlob.schema import lob_columns
-            if self.data.lookback < 4 or self.data.feature_columns not in (lob_columns(3), lob_columns(5)):
-                raise ValueError("modified_tlob requires lookback >= 4 and ordered three/five-level price-volume fields")
+            from modified_tlob.schema import validate_input_schema
+            validate_input_schema(self.data.feature_columns, self.model.book_representation, self.model.trade_features)
+            if self.data.lookback < 4:
+                raise ValueError("modified_tlob requires lookback >= 4")
         if self.splits.train.start < self.data.allowed_start or self.splits.final.end > self.data.allowed_end:
             raise ValueError("All splits must stay within the declared allowed development interval")
         if self.evaluation_split == "final" and not self.final_access.purpose.strip():

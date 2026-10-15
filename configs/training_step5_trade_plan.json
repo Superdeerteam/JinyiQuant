@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "launch": {
+    "status": "finalized_for_execution",
+    "phase4_decision": "D:\\JinyiQuant\\runs\\training-progression\\step4-decision.json",
+    "phase4_decision_sha256": "6ea837d76a3913f05859b0364b2c9c56952d7d7c7d6f69187b711cdc2a8214af",
+    "phase4_resolution": "The preregistered screen failed; retain time_loss_weighting=none for all four trade runs.",
+    "fixed_time_loss_weighting": "none",
+    "fixed_book_representation": "raw",
+    "independent_trade_contrast": "Train both 15-dimensional zero and log1p arms on the same observed trade fields; do not substitute a 12-dimensional or relative-book checkpoint for the zero control.",
+    "book_selection_does_not_change_trade_baseline": "Complete the independent raw-book trade contrast regardless of the relative-book replication outcome; no unregistered combined candidate.",
+    "source_prerequisite": {
+      "after": "Complete book seed29/47 replication and archive its comparisons before changing core source.",
+      "patch": "D:\\JinyiQuant\\.tmp\\trade-memory-worktree\\runs\\trade-input-memory.patch",
+      "patch_sha256": "9c505ab7702e465d6d2e4f40851bcc08f5f293bdb5c4c618a56736c2c29f03fb",
+      "application_status": "applied_and_validated_before_trade_stage",
+      "requirement": "Root applies and validates the reviewed behavior-preserving memory patch once, then freezes identical source and environment for all four trade runs. No historical run is overwritten or declared to share the new source.",
+      "execution_clarification": "runs/training-progression/step5-trade-launch-clarification.json"
+    },
+    "resource_policy": "Keep each run at 6144 MiB. Actual whole-pipeline RSS, including final behavioral checks, decides compliance; a resource failure is archived before any revised plan. Do not raise the cap automatically.",
+    "user_budget": "Five-step screening, required replication and preserved weights; no extra full12 expanded-data training.",
+    "executor_note": "run_training_plan executes only runs; root must resolve these launch prerequisites. Metadata does not enforce a gate or promote any model.",
+    "book_replication_completed": "runs/training-progression/step5-book-replication/20261015T114231.580571Z_fd35edde7b16",
+    "applied_patches": [
+      {
+        "path": ".tmp/trade-memory-worktree/runs/trade-input-memory.patch",
+        "sha256": "9c505ab7702e465d6d2e4f40851bcc08f5f293bdb5c4c618a56736c2c29f03fb"
+      },
+      {
+        "path": ".tmp/package-cli-worktree/runs/package-cli-protocol.patch",
+        "sha256": "f45e10bf91fea6f1d2c9765b032ce59f39ea65c921af83b16fc2c3a7edb06666"
+      }
+    ],
+    "validation_record": "D:\\JinyiQuant\\runs\\training-progression\\final-validation.json",
+    "validation_record_sha256": "aea5cf0b7696a01a5192d684062e3464976d8fcdb887ce3150edf14640f7d2aa",
+    "frozen_core_files": {
+      "src/jinyiquant/baselines.py": "bc491cacb5e311a505b878bfa66b3379d58c810e308186d3712a73f5e7541c35",
+      "src/jinyiquant/checks.py": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+      "src/jinyiquant/cli.py": "9c035a869ef666f7f1fa4bd51f7b5b4f05bb85ba0bfc6bbc9772e3558279139c",
+      "src/jinyiquant/comparison.py": "acdb4bba5f5dbabab4acfd8366bc62ebaa738d9792d8ee35c5fd71b7828d2974",
+      "src/jinyiquant/config.py": "134eb3b28bd800ca653ec7c4a191051d706c845d1b017677a63be2a29c68eafd",
+      "src/jinyiquant/data.py": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+      "src/jinyiquant/demo.py": "17ad6f1998234622971ea0e9818f2ef5847ee35fac7c15473c7e916886fa4e21",
+      "src/jinyiquant/diagnosis.py": "3dce01f5149cfc4d18157c0cbe26ca65116ad8644d50b668783b2334424e805c",
+      "src/jinyiquant/evaluation.py": "74344a9242458148bb08adef6ab3d71fc47c3d31e9672d084b53b2922377b521",
+      "src/jinyiquant/experiments.py": "10946be8bba5ed5f58a7c0c54e2200b9782cb4b555674321570aa522d954f6a9",
+      "src/jinyiquant/io.py": "cc6e5259ed1cddfe12a6b7728ab298c756ea2e22da54497caf3ecceea48adecd",
+      "src/jinyiquant/models.py": "a24b5e83096ebe2040d023c6a883574b6c01ea4df3397bf34b0e5497cdb6e4af",
+      "src/jinyiquant/preparation.py": "b0e76fa220784e8edf88fec0224c7a82ee40f4eeede59d0bca36ebe951c0e26a",
+      "src/jinyiquant/protocol.py": "3c6c1249302b81b0dab38f127d7f721d54ba552148455b88fc6f942071691100",
+      "src/jinyiquant/research_plots.py": "3610e3da8239e9fcc9c66bfe7b9ae76cd150a8bfb54e9f967ca2aa2058bf835b",
+      "src/jinyiquant/runner.py": "5436868afe72e1f4a3c60c984fec8a64e63150ddbf67c9f130d68a8b3672c8c8",
+      "src/jinyiquant/tracking.py": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+      "src/jinyiquant/__init__.py": "522de3bf9c76b0356dc9ee15d0e3ec16584e0179c70cbe0876b553e8aba4a4f9",
+      "src/jinyiquant/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+      "modified_tlob/adapter.py": "9251aa6b74326d5a739a1113a3127578bab317d16974cd24d4b433764a81d6eb",
+      "modified_tlob/device.py": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+      "modified_tlob/diagnostics.py": "c0878583e690c9b2c9a3b5eff36d0d2c84a9c483d191bf13212cffa98aec43c4",
+      "modified_tlob/infer.py": "6ba46130a70a1aabdf47716e1f5090ec34eaedcca71e9803bf6215c2add799d5",
+      "modified_tlob/model.py": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+      "modified_tlob/normalization.py": "ee0aeebf6acfbea30c6c6c498b4db857bd568e88b7bf7fefe2866a4933dcbbe7",
+      "modified_tlob/package.py": "459fbc56bbed80f1889c4c97ec7cedb7b5423f2653a82c88c16786c8c69eb783",
+      "modified_tlob/schema.py": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+      "modified_tlob/submission.py": "bfd23bab7b31732c0721b21dd6b5eefcbdad73a3a155aed3155a0057111f4228",
+      "modified_tlob/train.py": "76088c0b13f9613793c2f5114f9d76dee5e5fc9fbfb21981c9422ef157868401",
+      "modified_tlob/__init__.py": "617f795f4e681870dede15f186ae267f6dce9efa039671ad3bcaff4b1b5dfbe3"
+    }
+  },
+  "decision": {
+    "screen": {
+      "periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "seed": 11,
+      "metrics": [
+        "rank_ic_mean",
+        "long_short_return_mean"
+      ],
+      "difference": "candidate minus explicitly paired control",
+      "rule": "All four period-by-metric differences must be finite and >= 0 before seed replication.",
+      "eligibility": "Runs must pass archived checks and reach exactly 1500 updates; prediction keys and labels must match exactly and both arms must have full target-eligible IC/RankIC coverage. Undefined or incomplete evidence does not pass."
+    },
+    "replication": {
+      "seeds": [
+        29,
+        47
+      ],
+      "periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "rule": "If the seed11 screen passes, freeze the same recipe and evaluate both declared additional seeds. Record all attempts; do not choose the best seed or retune on these windows."
+    },
+    "risk_review": [
+      "rank_ic_ir",
+      "long_short_sharpe",
+      "extreme_return",
+      "min_daily_long_short_return",
+      "turnover_mean",
+      "score_change_mae",
+      "mse",
+      "wall_seconds",
+      "peak_rss_mb"
+    ],
+    "promotion": "No automatic promotion. A passing screen is only an improvement lead; retain the frozen accepted model until the paired 2-period/3-seed evidence and return, tail-risk, turnover and resource tradeoffs are reviewed.",
+    "failed_screen": "Archive mixed/failed evidence and keep the control; do not add an unregistered LR, representation, loss-weight or smoothing search.",
+    "selection_limits": "These research windows have already informed previous stages. Repeated selection limits generalization claims; two-day block intervals over four validation dates per period remain weak evidence.",
+    "final_views": 0
+  },
+  "statistics": {
+    "paired_unit": "trading_day",
+    "seed_aggregation": "average paired seed differences within each day",
+    "bootstrap": "period-stratified moving contiguous two-day blocks",
+    "block_days": 2,
+    "confidence_level": 0.95,
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20261015,
+    "incomplete_grid": "insufficient evidence; no automatic validation intersection"
+  },
+  "fixed_budget": {
+    "optimizer_updates": 1500,
+    "batch_size": 32,
+    "maximum_sample_exposures": 48000,
+    "note": "All-eight-time training defines the eligible pool, not a guarantee that every row receives a gradient. Do not increase updates to finish an epoch."
+  },
+  "comparison": {
+    "entry": "scripts/compare_training_round.py",
+    "binding": "After successful runs, materialize explicit baseline/candidate run-directory pairs by period and seed; never select the newest directory implicitly.",
+    "identity": "Require identical effective settings outside change.factor, core execution source hashes, environment, source-file identity, exact train/evaluation keys and target values."
+  },
+  "experiment_id": "training-step5-trade",
+  "output_root": "../runs/training-progression/step5-trade",
+  "total_wall_seconds": 6000,
+  "change": {
+    "factor": "model.trade_features",
+    "baseline": "zero",
+    "candidate": "log1p",
+    "hypothesis": "At fixed ten training dates, all eight training/evaluation times, raw book representation and 1500 Adam updates, compare zero versus log1p of bar volume, canonical-yuan amount and deal_number. Both arms have identical 15-dimensional architecture, projected source fields, observation masks, LOB-only eligibility, target scaling, labels and splits; isolate trade-activity information from input-width/BiN changes."
+  },
+  "references": [
+    {
+      "url": "https://arxiv.org/html/1904.05384",
+      "use": "Prior study of message/event volume and intensity features motivates testing activity information. Three minute-bar aggregates are a local candidate, not a replication of event-side or order-flow imbalance features."
+    }
+  ],
+  "input_contract": {
+    "field_order": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3",
+      "volume",
+      "amount",
+      "deal_number"
+    ],
+    "book_representation": "raw",
+    "flows": "Use only market-bar volume, amount, deal_number; same-named future-label fields are excluded.",
+    "units": "Shared preprocessing divides amount by price_scale once; log1p then uses canonical yuan.",
+    "missing": "No forward fill for interval flows. Both arms preserve true observed masks, and eligibility/fallback uses only the original 12 LOB fields.",
+    "control": "The 15-dimensional zero control must be trained separately; a 12-dimensional raw model is not a fair trade-information control."
+  },
+  "runs": [
+    {
+      "name": "july_18_21_s11_trade_zero",
+      "period": "july_18_21",
+      "seed": 11,
+      "arm": "baseline",
+      "config": "training_step5_trade/july_18_21_s11_trade_zero.json"
+    },
+    {
+      "name": "july_18_21_s11_trade_log1p",
+      "period": "july_18_21",
+      "seed": 11,
+      "arm": "candidate",
+      "config": "training_step5_trade/july_18_21_s11_trade_log1p.json"
+    },
+    {
+      "name": "july_25_28_s11_trade_zero",
+      "period": "july_25_28",
+      "seed": 11,
+      "arm": "baseline",
+      "config": "training_step5_trade/july_25_28_s11_trade_zero.json"
+    },
+    {
+      "name": "july_25_28_s11_trade_log1p",
+      "period": "july_25_28",
+      "seed": 11,
+      "arm": "candidate",
+      "config": "training_step5_trade/july_25_28_s11_trade_log1p.json"
+    }
+  ],
+  "budget_summary": {
+    "run_count": 4,
+    "per_run_wall_seconds": 1200,
+    "per_run_max_rss_mb": 6144,
+    "sum_run_caps_seconds": 4800,
+    "stage_overhead_allowance_seconds": 1200,
+    "stage_wall_seconds": 6000,
+    "same_budget_both_arms": true,
+    "actual_resources_must_be_compared": true
+  },
+  "prelaunch_configuration_validation": {
+    "passed": true,
+    "unique_factor": "model.trade_features",
+    "two_windows": true,
+    "seed": 11,
+    "unchanged_configs": [
+      {
+        "name": "july_18_21_s11_trade_zero",
+        "config_sha256": "a9b792323f4858dc8cce45582680a3a8690a77098acd0fa3a94680e35489eb2e",
+        "passed": true
+      },
+      {
+        "name": "july_18_21_s11_trade_log1p",
+        "config_sha256": "f74ced81a92d3b26bb2ead3827270cdcae14ad33cd331dcb29ba9b1f3cf47cbf",
+        "passed": true
+      },
+      {
+        "name": "july_25_28_s11_trade_zero",
+        "config_sha256": "6f371b39fc33a8224fea70429cd5d46b9ad3c14e6a8d183e822ab5880584ac1b",
+        "passed": true
+      },
+      {
+        "name": "july_25_28_s11_trade_log1p",
+        "config_sha256": "e815f1efb7314b4107801620582fb843330dbb640d6225bfaff3caef80aaddf1",
+        "passed": true
+      }
+    ],
+    "stage_budget_covers_all_four_caps": true,
+    "final_views": 0,
+    "source_validation_pending_until_patch_applied": false
+  }
+}

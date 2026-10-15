@@ -1,12 +1,12 @@
 # modified_tlob：TLOB 主干与官方收益回归
 
-本轮完成结构迁移和工程闭环，未开展调参或收益改善研究。原论文为十档事件盘口三分类；本项目使用三档/五档分钟盘口、官方 `vwap_return` 和 MSE。原论文 F1 不能当作本比赛的收益预测证据。
+已完成结构迁移和工程闭环，并在2023年7月真实数据开展有预算的训练对照。原论文为十档事件盘口三分类；本项目使用三档/五档分钟盘口、官方 `vwap_return` 和 MSE。原论文 F1 不能当作本比赛的收益预测证据。
 
 已阅读 [原论文 v3 的正文与附录 A/B](https://arxiv.org/pdf/2502.15757v3)，实现以 [官方固定提交 f1c0af4](https://github.com/LeonardoBerti00/TLOB/tree/f1c0af4d81067978914361766db0457a7d8b6a46) 为准。`provenance.json` 保存论文与源码 SHA256、保留结构、必要修复和证据边界；`upstream/*.py.txt` 是行为对照的原始参照，`LICENSE` 原样保留上游 MIT 许可。论文示意图对 BiN 的描述与实现存在粒度差异，这里遵循固定代码的单次输入 BiN。
 
 ## 环境与依赖
 
-原项目仍使用 Python 3.13、原 `uv.lock` 和 Ridge/Mean；导入基线路径不加载 PyTorch。TLOB 使用独立 Python 3.11 环境，保持上游 PyTorch **2.5.0** 基础版本。下面命令从仓库根目录执行，假定已安装 uv（可用 `python -m pip install uv==0.8.22` 安装）。
+原项目仍使用 Python 3.13、原 `uv.lock` 和 Ridge/Mean；导入基线路径不加载 PyTorch。TLOB 使用独立 Python 3.11 环境：CPU 基础锁保留 PyTorch **2.5.0**，当前 RTX 5060 研究使用 **2.7.1+cu128**。下面命令从仓库根目录执行，假定已安装 uv（可用 `python -m pip install uv==0.8.22` 安装）。
 
 CPU：
 
@@ -22,14 +22,14 @@ $tlobPython = '.venv-tlob/Scripts/python.exe'
 
 CPU 锁使用 `torch==2.5.0+cpu`，不需要 CUDA 驱动、Toolkit 或 ONNX。默认运行命令可继续使用 `uv run jinyi ...`；TLOB 在独立环境中用同一 CLI：`& $tlobPython -m jinyiquant ...`。不要在 Python 3.13 环境中安装这份 PyTorch 锁。
 
-CUDA（在另一个新环境中执行，不能同时安装 CPU/CUDA 锁）：
+RTX 5060 / Blackwell CUDA（在另一个新环境中执行，不能同时安装 CPU/CUDA 锁）：
 
 ```powershell
 uv venv --python 3.11 .venv-tlob-cuda
-uv pip sync --python .venv-tlob-cuda modified_tlob/requirements-cuda.lock.txt modified_tlob/requirements-dev.lock.txt
+uv pip sync --python .venv-tlob-cuda modified_tlob/requirements-blackwell.lock.txt modified_tlob/requirements-dev.lock.txt modified_tlob/requirements-research.lock.txt
 ```
 
-CUDA 锁使用 `torch==2.5.0+cu121`，包含 Linux x86_64 所需的条件依赖；Windows 不安装这些独立 CUDA 库。两平台依赖闭包已解析验证，实际 GPU 计算仍未验收。运行需要兼容的 NVIDIA 驱动，不要求本地编译 Toolkit。`model.device` 支持 `auto/cpu/cuda`：auto 在 CUDA 不可见或矩阵运算/反向预检失败时记录原因并回退 CPU；cpu 强制 CPU；显式 cuda 不可用会失败。首次 CUDA 预检前统一设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，也允许显式 `:16:8`；非法值会报错，CUDA 已初始化后才发现缺失配置时要求重启进程，日志记录实际值。训练时的 OOM 等异常传播并保留失败档案，不自动续跑 CPU；重新尝试必须使用新运行目录和记录的种子。
+Blackwell 锁使用 `torch==2.7.1+cu128`，已在本机 Windows / RTX 5060 完成真实7月 CUDA 训练与保存加载检查；旧 `requirements-cuda.lock.txt` 的 2.5.0+cu121 不是本次研究环境。运行需要兼容的 NVIDIA 驱动，不要求本地编译 Toolkit。`model.device` 支持 `auto/cpu/cuda`：auto 在 CUDA 不可见或矩阵运算/反向预检失败时记录原因并回退 CPU；cpu 强制 CPU；显式 cuda 不可用会失败。首次 CUDA 预检前统一设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，也允许显式 `:16:8`；非法值会报错，CUDA 已初始化后才发现缺失配置时要求重启进程，日志记录实际值。训练时的 OOM 等异常传播并保留失败档案，不自动续跑 CPU；重新尝试必须使用新运行目录和记录的种子。
 
 依赖文件按用途分开：
 
@@ -37,7 +37,8 @@ CUDA 锁使用 `torch==2.5.0+cu121`，包含 Linux x86_64 所需的条件依赖�
 |---|---|
 | `upstream/requirements.txt` | 固定提交的完整原始清单；除 torch 外上游未锁版本 |
 | `requirements-cpu.lock.txt` | 当前实装验证后的核心运行闭包，全部固定版本 |
-| `requirements-cuda.lock.txt` | 相同核心版本与 CUDA PyTorch；实际 GPU 验收待完成 |
+| `requirements-cuda.lock.txt` | 原 2.5.0+cu121 环境锁，非当前 RTX 5060 研究环境 |
+| `requirements-blackwell.lock.txt` | Windows Python 3.11 / 2.7.1+cu128，已实际用于 RTX 5060 训练 |
 | `requirements-dev.lock.txt` | pytest、ruff 与上游对照需要的 einops |
 | `requirements-upstream-optional.lock.txt` | 当前实装过的上游 CPU 研究工具，包含训练框架、绘图、跟踪与 CPU ONNX；核心运行不需要 |
 | `requirements-onnx-gpu.txt`、`requirements-onnx-gpu.lock.txt` | 可选 GPU ONNX 工具及完整实装锁，禁止作为 CPU 的必需依赖 |
@@ -63,7 +64,7 @@ PyTorch wheel 通过限定到 torch 包的 find-links 提供，其余包从常�
 
 共享 `jinyiquant.data.preprocess_bars/build_batch` 完成缺失哨兵、有限前向填充、补零和因果窗口。训练只选达到 min_history 的样本；推理不足 min_history 的窗口返回训练样本标签均值。BiN 仅使用当前历史窗口的统计，无跨样本归一化拟合。下载价格单位为分、scale=100；平台行情为元、scale=1；两端最终都是元。平台单位转换明确保存在提交配置，缺失策略与字段/窗口参数随权重保存。
 
-真实行情、股票池、官方答案及映射文件已位于仓库 `数据/` 下。示例配置指向这些文件；真实模型训练、实际 GPU 计算和线上平台流程仍须分别验收：
+下面保留 `数据/` 下的 CPU 工程示例；当前7月 CUDA 对照使用 `data/research-july-20261015/bars/` 行情及配置中显式指定的官方标签、股票池和映射，来源与校验值随运行保存：
 
 ```powershell
 $env:PYTHONPATH = 'src;.'
@@ -78,9 +79,31 @@ $tlobPython = '.venv-tlob/Scripts/python.exe'
 
 配置使用 2023-08-01 训练、08-02 研究验证，08-03 最终区间不读取；预算 300 秒/4096 MiB，epochs=2。这是工程试跑预算，不是已通过的真实数据性能/耗时承诺。正式训练需要由研究方向明确的数据区间和预算，不应把示例工程配置当成最优模型。
 
-运行独立保存 `manifest.json`、`events.jsonl`、`config.json`、`source.zip`、数据版本、覆盖/边界检查、`metrics.json`、`daily.csv`、预测与提交三列、`report.txt`。权重为 `model.pt` 和 **`modified_tlob_weights.json`**；二者均保存结构、字段顺序、预处理口径、种子、训练均值及权重。二进制使用 `map_location`，文本按 dtype/shape 重建并移动到所选设备。模型更新、损失、学习率、验证 MSE、耗时、吞吐、CPU/GPU 资源按配置频率记录。验证只记录、不挑选检查点；固定最后 epoch 权重用于本轮验收。
+运行独立保存 `manifest.json`、`events.jsonl`、`config.json`、`source.zip`、数据版本、覆盖/边界检查、`metrics.json`、`daily.csv`、预测与提交三列、`report.txt`。权重为 `model.pt` 和 **`modified_tlob_weights.json`**；二者均保存结构、字段顺序、预处理口径、种子、训练均值及权重。二进制使用 `map_location`，文本按 dtype/shape 重建并移动到所选设备。模型更新、损失、学习率、验证 MSE、耗时、吞吐、CPU/GPU 资源按配置频率记录。验证只记录、不挑选检查点；保存达到预定 epochs 或 max_steps 时的最后权重。
 
-误差容差预先固定 `atol=1e-6, rtol=1e-5`，包括保存加载、复跑及跨设备检查；GPU 尚未实测。失败/中断保留堆栈与恢复状态，配置和结果不覆盖历史。所有成功、失败和预算超限的 run 进入 SQLite/JSONL 索引；完整目录与匹配数据应持久归档。缓存可重建，不能用缓存替代复现材料；没有自动清理最佳模型或历史档案的策略。
+误差容差预先固定 `atol=1e-6, rtol=1e-5`，包括保存加载、复跑及跨设备检查；本机 CPU/GPU 保存加载已通过。失败/中断保留堆栈与恢复状态，配置和结果不覆盖历史。所有成功、失败和预算超限的 run 进入 SQLite/JSONL 索引；完整目录与匹配数据应持久归档。缓存可重建，不能用缓存替代复现材料；没有自动清理最佳模型或历史档案的策略。
+
+当前训练对照从冻结计划启动：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-tlob-cuda/Scripts/python.exe scripts/run_training_plan.py configs/training_step1_plan.json
+```
+
+| 研究选项 | 口径 |
+|---|---|
+| `model.target_scaling=none/train_std` | 仅以有效训练标签拟合尺度；预测还原为原始收益尺度，原始 MSE 按未加权收益误差计算 |
+| `model.max_steps`、`data.training_sample_times` | 限制更新数、选择训练时点；评价仍使用固定的 `data.sample_times` |
+| `model.time_loss_weighting=none/train_variance` | 仅用训练标签的分时方差确定损失权重，推理不用权重 |
+| `model.book_representation=raw/relative_mid_bps` | 原价格或相对窗口末端中间价的基点表示 |
+| `model.trade_features=zero/log1p` | 15列输入须配置三档盘口加 `volume/amount/deal_number`，以同维度的补零/对数成交特征作对照 |
+| 离线平滑 | `scripts/compare_signal_smoothing.py <plan.json> --output <新目录>`，固定 α=0.5，当前截面标准化后按股逐日因果 EWMA，再还原尺度 |
+
+本轮五步筛选及按预定门槛触发的复验已完成，结果与保留/回退依据见[结构化研究记录](training_progression_20261015.json)及[最终研究报告](../runs/training-progression/final-report-20261015/summary_zh.txt)。[训练时点配对图](../runs/training-progression/figures/step3c_training_times_paired.png)与[训练轮数对照图](../runs/training-progression/figures/step1_epochs_validation_mse.png)分别展示各自对照，不把不同实验串成一条提升曲线。模型、数据与完整运行档案留在本地。
+
+研究主候选采用十个训练日、全部8时点、原始12列盘口、`target_scaling=train_std`、`time_loss_weighting=none`，不做信号平滑。本地参考固定使用最新研究验证窗（2023-07-25至07-28）的 seed 11，位于[本地研究参考包](../dist/local-research-reference-20261015-raw12-all8-s11-july25/)，并非正式冠军。
+
+首轮2→12轮对照已完整执行；扩展数据后的十日/八时点实验固定1500次更新、batch_size=32，约为0.6个 epoch，不等于在扩展数据上完整训练12轮。时点扩展对照两臂均评价全部8时点。研究证据仅来自8个研究日，09:30开盘风险仍未解决；最终检查区间未打开，不能据本轮研究宣称官方成绩或完整区间稳定性。
 
 生成合成数据并走同一入口：
 
@@ -143,7 +166,7 @@ CPU/GPU 使用同一文件。GPU 推理时将解释器改为 CUDA 环境的 Pyth
 
 上传 `dist/modified-tlob-upload-001` **内的文件与两个包目录**，保持同级结构；在该目录中打开唯一的 `inference.ipynb`。平台环境预先提供 Python 3.11、匹配的 PyTorch、核心依赖和 `dai`；Notebook 不执行 pip、不下载文件。缺依赖、模块、权重或校验失败均直接报错，不训练兜底。
 
-以下为打包器实际生成的完整清单，共 33 个文件：
+以下为默认打包器生成的标准包清单，共 34 个文件。本轮本地研究参考包另归档 `requirements-blackwell.lock.txt`；实际文件及校验值以各包的 `package_manifest.json` 为准：
 
 | 相对路径 | 用途 | 必需性 |
 |---|---|---|
@@ -172,7 +195,7 @@ CPU/GPU 使用同一文件。GPU 推理时将解释器改为 CUDA 环境的 Pyth
 | `jinyiquant/runner.py`、`jinyiquant/checks.py` | 训练调度、独立预算监控与验收 | 私榜重训必需 |
 | `jinyiquant/models.py`、`jinyiquant/evaluation.py` | 模型创建与本地评价 | 私榜重训必需 |
 | `jinyiquant/cli.py`、`jinyiquant/preparation.py`、`jinyiquant/demo.py` | 完整 CLI 的依赖闭包 | 私榜重训必需 |
-| `jinyiquant/experiments.py`、`jinyiquant/comparison.py` | CLI 的复跑/对照依赖闭包 | 私榜重训必需 |
+| `jinyiquant/experiments.py`、`jinyiquant/comparison.py`、`jinyiquant/protocol.py` | CLI 的复跑/对照依赖闭包 | 私榜重训必需 |
 
 不要上传源码参照 `upstream/`、测试、scripts、开发用依赖/记录、原始数据、缓存、历史 runs、二进制 `model.pt`、其它 Notebook 或 `.venv`。打包器只复制白名单；运行过程生成的 inference_runs/training_runs 也不属于初始提交材料。
 
@@ -200,4 +223,4 @@ weights_path = train_and_save({"bar1m": "cpt_jyc_2026_stock_bar1m"})
 
 本地 CPU 训练/复跑、上游中间表示对照、三档/五档梯度、常数/缺失窗口、因果性、错误设备、文本权重与断网包检查均有脚本或行为测试。原 Python 3.13 基线环境也独立验证。CI 增加可选 CPU 后端检查，尚未执行远端 CI。
 
-没有目标平台运行权限和真实数据文件，因此真实字段/数据质量试跑、实际上传导入、目标平台全区间 ≤3 小时及官方评价均**未验收**。无 GPU，因此 GPU 实际训练、GPU 权重 CPU 加载的跨设备容差、CUDA 运行预算均**未验证**。完整复验记录见本地 `runs/*/acceptance.json`；结构化开发记录见 `development_log.json`。本轮不接触最终检查区间、不晋升或覆盖最佳模型。
+真实7月数据与 RTX 5060 CUDA 训练、CPU/GPU 保存加载已完成本地检查，证据保留在 `runs/training-progression/` 和相应验收档案。官方平台上传运行、全区间 ≤3 小时、官方评价与最终检查仍**未验收**；当前短周期研究不能代替这些验收。本轮五步研究的保留/回退依据见[结构化研究记录](training_progression_20261015.json)，原始参考与全部候选档案均保留。

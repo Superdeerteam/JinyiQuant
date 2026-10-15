@@ -1,0 +1,37 @@
+{
+  "baseline_reuse": "Completed six-day arms from step3a, same source and fixed recipe except earlier train.start. Also compare against original two-day control for cumulative interpretation.",
+  "change": {
+    "baseline": {
+      "july_18_21": "2023-07-10",
+      "july_25_28": "2023-07-17"
+    },
+    "candidate": {
+      "july_18_21": "2023-07-04",
+      "july_25_28": "2023-07-11"
+    },
+    "factor": "splits.train.start",
+    "hypothesis": "Increase six to ten training trading days at fixed 1500 updates, original return scale, two sampling times and unchanged subsequent validation dates. Test another predeclared increase in historical diversity without extending optimization."
+  },
+  "decision": "Run only after six-day real peak RSS passes 6144 MiB. Replicate other seeds only when both windows have nonnegative RankIC and long-short gains against the two-day reference. Record unpromising candidates without replacing controls.",
+  "experiment_id": "training-step3b-dates-ten",
+  "final_views": 0,
+  "output_root": "../runs/training-progression/step3b-ten-days",
+  "runs": [
+    {
+      "arm": "candidate",
+      "config": "training_step3b\\july_18_21_s11_d10.json",
+      "name": "july_18_21_s11_d10",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step3b\\july_25_28_s11_d10.json",
+      "name": "july_25_28_s11_d10",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 4000
+}

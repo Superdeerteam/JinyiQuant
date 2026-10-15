@@ -1,0 +1,157 @@
+{
+  "budget_note": "Two new seed11 candidates only. Each: at most1500 Adam updates, batch32, epochs ceiling12, at most48000 sample exposures,1200s,6144MiB. Reuse two step3c t8 controls. Approximately80000 training rows receive about0.6passes, so not every row necessarily receives an update.",
+  "change": {
+    "baseline": "none",
+    "candidate": "train_variance",
+    "factor": "model.time_loss_weighting",
+    "hypothesis": "At fixed ten training days, all eight training/evaluation times, train_std, inputs, seed and1500 updates, use train-only intraday variance weights to reduce high-variance time dominance without sacrificing validation RankIC and long-short returns."
+  },
+  "configuration_checks": [
+    {
+      "batch_size": 32,
+      "config_schema_passed": true,
+      "evaluation_times": 8,
+      "factor": "model.time_loss_weighting",
+      "fair_single_factor_config_passed": true,
+      "final_split_unchanged": true,
+      "max_steps": 1500,
+      "period": "july_18_21",
+      "seed": 11,
+      "training_times": 8
+    },
+    {
+      "batch_size": 32,
+      "config_schema_passed": true,
+      "evaluation_times": 8,
+      "factor": "model.time_loss_weighting",
+      "fair_single_factor_config_passed": true,
+      "final_split_unchanged": true,
+      "max_steps": 1500,
+      "period": "july_25_28",
+      "seed": 11,
+      "training_times": 8
+    }
+  ],
+  "controls_to_reuse": [
+    {
+      "arm": "baseline",
+      "manifest_sha256": "532f747cb7fb70497bbf78d54d32f0f63daa1c3f86adb7266019b1d79e3e71d5",
+      "period": "july_18_21",
+      "resolution": "Resolved from completed step3c t8 archive; compare only after normal source/environment/data/keys fairness checks. No baseline retraining.",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times\\20261015T102928.407830Z_3a362b6622dc\\july_18_21_s11_d10_t8\\20261015T103314.842559Z_a2b6f7dee01f",
+      "seed": 11,
+      "source_arm": "candidate",
+      "source_config": "training_step3c/july_18_21_s11_d10_t8.json",
+      "source_config_sha256": "145d27dbe406e9545a774346ba2f045575122fff25d44d4a42ba87eaa0db7725",
+      "source_name": "july_18_21_s11_d10_t8",
+      "source_plan": "training_step3c_plan.json",
+      "status": "completed"
+    },
+    {
+      "arm": "baseline",
+      "manifest_sha256": "6a57fe1088f6966598a3f63f2f6fc85858115fcfe36b71287b1379cc213b8f34",
+      "period": "july_25_28",
+      "resolution": "Resolved from completed step3c t8 archive; compare only after normal source/environment/data/keys fairness checks. No baseline retraining.",
+      "run": "D:\\JinyiQuant\\runs\\training-progression\\step3c-all-times\\20261015T102928.407830Z_3a362b6622dc\\july_25_28_s11_d10_t8\\20261015T104057.017178Z_41fc2c056943",
+      "seed": 11,
+      "source_arm": "candidate",
+      "source_config": "training_step3c/july_25_28_s11_d10_t8.json",
+      "source_config_sha256": "9fe31884335bed56bda334b8d9c957ecc3ce2177cac05b6878530947782d206e",
+      "source_name": "july_25_28_s11_d10_t8",
+      "source_plan": "training_step3c_plan.json",
+      "status": "completed"
+    }
+  ],
+  "experiment_id": "training-step4-time-variance",
+  "final_views": 0,
+  "model_promoted": false,
+  "opening_diagnostics": {
+    "absolute_guards": "Also compare09:30 and the remaining seven times separately in absolute MSE, RankIC, long-short returns and daily/tail risk. A smaller opening share caused by worsening other times is not evidence of success.",
+    "limitation": "Existing logs do not contain per-time gradients; do not claim observed relief of gradient dominance.",
+    "timestamp_column": "Parse by_timestamp.csv timestamp for HH:MM; date is the normalized trading day and must not be used to identify intraday slots.",
+    "training_proxy": "From frozen stats.by_time, report09:30 share of sum_t n_t*v_t and sum_t n_t*w_t*v_t. These are target-variance emphasis proxies, not measured gradient shares.",
+    "validation_error_share": "From by_timestamp, compute09:30 share of total sample_count*mse using original-unit unweighted MSE; compare the same keys and dates."
+  },
+  "output_root": "../runs/training-progression/step4-time-variance",
+  "prerequisites": [
+    "Complete/review step3c. Its all-time branch may remain unaccepted; step4 is bounded diagnostic continuation.",
+    "Reuse only completed passing step3c t8 controls with identical core source, environment, data/splits, train/evaluation keys and1500 actual updates. Freeze exact archive and manifest hashes before comparison."
+  ],
+  "references": [
+    {
+      "title": "Batch Inverse-Variance Weighting: Deep Heteroscedastic Regression",
+      "url": "https://arxiv.org/abs/2107.04497",
+      "use": "Stabilized inverse-variance regression and batch weight normalization. Our slot-level target variance is an adaptation, not the paper's known label-noise variance."
+    },
+    {
+      "title": "On the Pitfalls of Heteroscedastic Uncertainty Estimation with Probabilistic Neural Networks",
+      "url": "https://arxiv.org/abs/2203.09168",
+      "use": "Variance-dependent regression objectives can have optimization pitfalls. Its learned-variance setting differs from our fixed train-only weights."
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "use": "Microstructure motivation to inspect intraday volatility/depth heterogeneity; no evidence of gains for this A-share competition weighting."
+    }
+  ],
+  "risks": [
+    "Per-time target variance is a proxy, not conditional label-noise variance; useful high-volatility signals may be downweighted.",
+    "Ten-day training estimates can drift; only two four-day validation windows are available.",
+    "Reweighting changes the objective despite normalization; weighted loss is not the evaluation metric.",
+    "Train_std already worsens second-window worst-day returns; report whether weighting repairs or worsens them.",
+    "Repeated research selection limits confidence; final interval stays frozen."
+  ],
+  "runs": [
+    {
+      "arm": "candidate",
+      "config": "training_step4/july_18_21_s11_d10_t8_train_variance.json",
+      "name": "july_18_21_s11_d10_t8_train_variance",
+      "period": "july_18_21",
+      "seed": 11
+    },
+    {
+      "arm": "candidate",
+      "config": "training_step4/july_25_28_s11_d10_t8_train_variance.json",
+      "name": "july_25_28_s11_d10_t8_train_variance",
+      "period": "july_25_28",
+      "seed": 11
+    }
+  ],
+  "schema_version": 1,
+  "screening": {
+    "contrast": "candidate minus same-period seed11 step3c t8 control; daily-derived unweighted local metrics",
+    "failure": "Record failed/inconclusive branch and retain the reference; weighted training loss reduction alone cannot pass.",
+    "primary_metrics": [
+      "rank_ic",
+      "long_short_return"
+    ],
+    "promotion": "No automatic champion promotion; point gains require uncertainty, tail-risk and resource review.",
+    "replication": "After this necessary gate and risk review, preregister matched seeds29 then47 in a separate bounded plan. No epsilon, LR or date search.",
+    "required": "Both metrics must be defined and nonnegative in each of july_18_21 and july_25_28 before any seed replication.",
+    "risk_review": [
+      "minimum daily and tail long-short returns",
+      "by-time IC/RankIC and long-short, especially09:30",
+      "turnover",
+      "raw MSE versus constant",
+      "wall time and peakRSS",
+      "correlation coverage"
+    ]
+  },
+  "status": "prepared_not_started",
+  "total_wall_seconds": 3000,
+  "train_only_formula": {
+    "batch_objective": "sum_i w_t(i)*(f_theta(x_i)-y_i/target_scale)^2 / sum_i w_t(i)",
+    "constant_target": "If v_all=0, all weights=1; log fallback.",
+    "epsilon": "0.05*v_all",
+    "epsilon_factor": 0.05,
+    "fit_scope": "Original-unit labels selected by training split and fit_mask only; no validation/final labels. Freeze before optimizer updates.",
+    "global_variance": "v_all=population variance(y_train), ddof=0",
+    "inverse": "a_t=1/(v_t+epsilon)",
+    "missing_slot": "Fail if any configured training time is absent after fit_mask.",
+    "normalization": "w_t=a_t/(sum_u n_u*a_u/sum_u n_u); training sample-weighted mean weight=1",
+    "provenance": "Persist global/per-time variance, epsilon, weights and sample/day counts in logs/checkpoints; inference never uses weights.",
+    "reporting": "loss and validation loss stay unweighted in original return-squared units; weighted_loss and optimization_loss are separate.",
+    "slot_variance": "v_t=population variance(y_train at HH:MM=t), ddof=0"
+  },
+  "working_recipe": "Ten-day train_std diagnostic branch; prior accepted/reference model remains unchanged."
+}
