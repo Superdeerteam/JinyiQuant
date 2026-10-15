@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from jinyiquant.checks import check
-from jinyiquant.data import build_batch, load_data
+from jinyiquant.data import build_batch, history_diagnostics, load_data
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir
 from modified_tlob.adapter import TLOBAdapter
@@ -75,9 +75,10 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
             raise ValueError("Prediction keys must be nonempty")
         rec.event("data", "validated", rows=len(bundle.bars), prediction_keys=len(prediction_keys))
         rec.event("inference", "started", training=False, label_input=False)
-        predictions, coverage = [], []
+        predictions, coverage, history = [], [], []
         for date, section in prediction_keys.groupby("date", sort=True):
             batch = build_batch(bundle.bars, section, config)
+            history.append(history_diagnostics(batch))
             coverage.append(batch.coverage)
             write_json(run_dir / "coverage.json", coverage)
             if batch.coverage["min_section_coverage"] < min_coverage:
@@ -97,6 +98,7 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
         if not passed:
             raise ValueError("Inference acceptance checks failed")
         result.to_parquet(run_dir / "predictions.parquet", index=False)
+        pd.concat(history, ignore_index=True).to_parquet(run_dir / "evaluation_history.parquet", index=False)
         rec.event("saving", "predictions_saved", path="predictions.parquet", samples=len(result))
         rec.event("inference", "completed", samples=len(result), resources=device_resources(model.device))
         finish(run_dir, "completed", 0, resources={"wall_seconds": time.monotonic() - started,

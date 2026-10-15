@@ -542,4 +542,51 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
                 "history_min": int(history_count.min()) if len(keys) else 0,
                 "history_max": int(history_count.max()) if len(keys) else 0,
                 "by_section": sections}
-    return Batch(keys, x, observed, history_dates, coverage)
+    batch = Batch(keys, x, observed, history_dates, coverage)
+    quality = history_diagnostics(batch)
+    coverage["history_quality"] = {
+        "definition": "Observed means finite before filling; effective rows have any observed feature; complete rows have all",
+        "age_unit": "elapsed calendar minutes (includes lunch, overnight and holidays); null means no history",
+        "full_observed_window_samples": int(quality.full_observed_window.sum()),
+        "statistics": {column: {"min": _finite_stat(quality[column], "min"),
+                                "median": _finite_stat(quality[column], "median"),
+                                "max": _finite_stat(quality[column], "max")}
+                       for column in ("effective_history_length", "complete_history_length", "missing_fraction",
+                                      "latest_effective_age_minutes", "history_span_minutes")}}
+    return batch
+
+
+def _finite_stat(values, operation):
+    values = values.dropna()
+    if values.empty:
+        return None
+    value = getattr(values, operation)()
+    return float(value) if pd.notna(value) else None
+
+
+def history_diagnostics(batch: Batch) -> pd.DataFrame:
+    """Per-key source quality, measured before ffill/zero padding; never inferred from coverage."""
+    dates, observed = batch.history_dates, batch.observed
+    present = ~np.isnat(dates)
+    effective = observed.any(axis=2)
+    complete = observed.all(axis=2)
+    count = present.sum(axis=1)
+    cutoff = batch.keys.date.to_numpy(dtype="datetime64[ns]")
+    # Integer extrema avoid NaT propagation in max/min, including all-missing windows.
+    integer = dates.astype(np.int64)
+    last_effective = np.where(effective, integer, np.iinfo(np.int64).min).max(axis=1).astype("datetime64[ns]")
+    first = np.where(present, integer, np.iinfo(np.int64).max).min(axis=1).astype("datetime64[ns]")
+    last = dates[:, -1]
+    span = (last - first) / np.timedelta64(1, "m")
+    span[count == 0] = np.nan
+    feature_count = observed.shape[2]
+    source_slots = count * feature_count
+    return batch.keys.assign(
+        history_row_count=count, effective_history_length=effective.sum(axis=1),
+        complete_history_length=complete.sum(axis=1),
+        missing_fraction=1 - observed.mean(axis=(1, 2)),
+        source_missing_fraction=1 - np.divide(observed.sum(axis=(1, 2)), source_slots,
+                                              out=np.full(len(count), np.nan), where=source_slots > 0),
+        latest_bar_age_minutes=(cutoff - last) / np.timedelta64(1, "m"),
+        latest_effective_age_minutes=(cutoff - last_effective) / np.timedelta64(1, "m"),
+        history_span_minutes=span, full_observed_window=complete.all(axis=1))

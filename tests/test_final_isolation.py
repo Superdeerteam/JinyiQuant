@@ -20,6 +20,26 @@ def test_training_receives_only_research_validation(tmp_path, monkeypatch, evalu
     config = RunConfig.model_validate(raw)
     original_fit = TLOBAdapter.fit
     calls = []
+    from jinyiquant import runner
+
+    original_load = runner.load_data
+    original_save = TLOBAdapter.save
+    checkpoint_saved = False
+    reads = []
+
+    def guarded_load(data, start=None, end=None):
+        reads.append((end, checkpoint_saved))
+        if evaluation_split == "final" and not checkpoint_saved:
+            assert end <= config.splits.train.end
+        return original_load(data, start=start, end=end)
+
+    def tracked_save(self, path):
+        nonlocal checkpoint_saved
+        original_save(self, path)
+        checkpoint_saved = True
+
+    monkeypatch.setattr(runner, "load_data", guarded_load)
+    monkeypatch.setattr(TLOBAdapter, "save", tracked_save)
 
     def tracked_fit(self, batch, target, **options):
         calls.append(options.get("validation"))
@@ -33,6 +53,7 @@ def test_training_receives_only_research_validation(tmp_path, monkeypatch, evalu
     assert len(calls) == 1
     if evaluation_split == "final":
         assert calls == [None]
+        assert reads == [(config.splits.train.end, False), (config.splits.final.end, True)]
     else:
         batch, targets = calls[0]
         assert len(batch.keys) == len(targets) > 0

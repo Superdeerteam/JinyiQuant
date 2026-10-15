@@ -107,6 +107,27 @@ Suite 先冻结策略、假设和预算，再为每个种子/时段分别执行�
 
 ## 自动验收与证据
 
+冻结真实小切片验收版本为 `tlob-real-engineering-v1`，配置见 `configs/frozen_tlob_real_v1.json`：
+12 个盘口字段、128 条历史、min_history=1、历史预取10天、seed=42、CPU两轮训练，
+2023-08-01训练、08-02研究验证，仅抽取09:30和14:30两个完整股票池截面；08-03最终区间不打开。
+保存/加载及同配置复跑预先声明 `atol=1e-6, rtol=1e-5`，数据校验值和预测键必须完全一致。
+训练单次限300秒/4096MiB，两次训练及独立无标签预测合计限900秒；不据指标修改配置或晋升模型。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-tlob/Scripts/python.exe scripts/real_data_acceptance.py --output runs/frozen-tlob-real-v1/acceptance-001
+```
+
+输出 `freeze.json` 固定有效配置、代码提交、可恢复源码及校验、环境和验收规则，
+`acceptance.json` 汇总结果，`alignment.json`核对独立股票池、原始官方答案和覆盖；失败档案保留，重跑需新目录。
+每个训练档案额外保存 `train_history.parquet/evaluation_history.parquet`：逐键记录填充前有效历史条数（任一特征有效）、
+完整历史条数（所有特征有效）、含补齐位置的缺失比例、源记录缺失比例、最近有效行情年龄和窗口跨度。
+年龄按自然分钟计，包含午休/隔夜；无历史用null。`coverage.json/history_quality`给出汇总，
+min_history达标与完整128条历史分别报告，不把有限前填后的数值当成观测。有限值是当前有效口径，零价不自动改写为缺失。
+最终检查模式只在训练结束且权重保存后读取final数据，final答案不进入逐轮验证；行为测试检查实际加载顺序。
+独立解释器执行只推理入口并禁止读取答案源/字段，比较预测和档案校验。本地CPU小切片通过仅证明工程流程，
+不证明模型收益改善、GPU、全量预算或官方平台已验收。每次运行原始预测、近似指标及源码快照长期保留。
+
 ```powershell
 uv run ruff check .
 New-Item -ItemType Directory -Force scratch | Out-Null

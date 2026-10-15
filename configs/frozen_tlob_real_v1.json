@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "experiment_id": "tlob-real-engineering-v1",
+  "hypothesis": "Freeze TLOB and verify real-data correctness and reproducibility only; no alpha claim or final access",
+  "seed": 42,
+  "output_root": "../runs/frozen-tlob-real-v1/training",
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "price_scale": 100,
+    "missing_policy": "ffill",
+    "max_ffill_steps": 5,
+    "missing_sentinel": -1,
+    "outside_universe_labels": "exclude",
+    "sample_times": [
+      "09:30",
+      "14:30"
+    ],
+    "cache_dir": "../cache/frozen-tlob-real-v1"
+  },
+  "splits": {
+    "train": {
+      "start": "2023-08-01",
+      "end": "2023-08-02"
+    },
+    "validation": {
+      "start": "2023-08-02",
+      "end": "2023-08-03"
+    },
+    "final": {
+      "start": "2023-08-03",
+      "end": "2023-08-04"
+    }
+  },
+  "model": {
+    "kind": "modified_tlob",
+    "hidden_dim": 40,
+    "num_layers": 4,
+    "num_heads": 1,
+    "is_sin_emb": true,
+    "device": "cpu",
+    "epochs": 2,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "cpu_threads": 1,
+    "log_every_steps": 10
+  },
+  "budget": {
+    "wall_seconds": 300,
+    "max_rss_mb": 4096,
+    "max_train_samples": 100000
+  },
+  "acceptance": {
+    "min_coverage": 0.99,
+    "repro_atol": 1e-06,
+    "repro_rtol": 1e-05
+  },
+  "logging": {
+    "resource_interval_seconds": 5
+  },
+  "evaluation_split": "validation"
+}

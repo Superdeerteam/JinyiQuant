@@ -13,7 +13,7 @@ import psutil
 
 from .checks import batch_checks, check, numerical_equal, prediction_checks, verify_artifacts
 from .config import RunConfig, load_config
-from .data import build_batch, load_data, select_targets
+from .data import build_batch, history_diagnostics, load_data, select_targets
 from .evaluation import evaluate
 from .io import read_json, redact, utc_now, write_json
 from .models import create_model, load_model, model_filename
@@ -63,13 +63,51 @@ def _answer_coverage_check(expected, targets, minimum, name, universe_source):
                                                for date, value in coverage.items()])
 
 
+def _prepare_evaluation(config, bundle, train, train_targets, run_dir, checks):
+    split = getattr(config.splits, config.evaluation_split)
+    eval_targets = select_targets(bundle.labels, split, config.data.label_horizon_minutes,
+                                  sample_times=config.data.sample_times)
+    write_json(run_dir / "selection.json", {"train": train_targets.attrs.get("selection", {}),
+               "evaluation": eval_targets.attrs.get("selection", {})})
+    if eval_targets.empty:
+        raise ValueError("Evaluation must contain eligible targets")
+    validation = build_batch(bundle.bars, inference_keys(bundle, split, config.data), config.data)
+    no_history = ~validation.observed.any(axis=(1, 2))
+    fallback_mask = (validation.observed.any(axis=2).sum(axis=1) < config.data.min_history
+                     if config.model.kind == "modified_tlob" else no_history)
+    fit_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
+    coverage_report = {"train": train.coverage, "evaluation": validation.coverage,
+                       "training_samples_used": int(fit_mask.sum()),
+                       "training_samples_excluded_insufficient_history": int((~fit_mask).sum()),
+                       "no_history_prediction_samples": int(no_history.sum()),
+                       "training_mean_fallback_samples": int(fallback_mask.sum()),
+                       "no_history_prediction_policy": "training_mean"}
+    checks += batch_checks(validation, eval_targets, split, config.acceptance.min_coverage)
+    universe_source = "instruments" if bundle.universe is not None else "observed_bars"
+    checks.append(_answer_coverage_check(validation.keys, eval_targets, config.acceptance.min_coverage,
+                                        "expected_universe_coverage", universe_source))
+    coverage_report["answers"] = {c["name"]: c["details"] for c in checks if "universe_coverage" in c["name"]}
+    write_json(run_dir / "coverage.json", coverage_report)
+    if (no_history.any() or (~fit_mask).any()
+            or any(item["missing_answers"] for item in coverage_report["answers"].values())):
+        Recorder(run_dir, config.experiment_id).event(
+            "preprocessing", "partial_coverage_accepted", level="WARNING", coverage=coverage_report)
+    history_diagnostics(validation).to_parquet(run_dir / "evaluation_history.parquet", index=False)
+    if not save_checks(run_dir, checks):
+        raise ValueError("Data acceptance failed; see checks.json")
+    return eval_targets, validation, no_history, fallback_mask
+
+
 def execute_pipeline(config: RunConfig, run_dir: Path):
     rec = Recorder(run_dir, config.experiment_id)
     checks = []
     split = getattr(config.splits, config.evaluation_split)
     np.random.seed(config.seed)
     rec.event("data", "loading", source=config.data.source, version=config.data.version)
-    bundle = load_data(config.data, start=config.splits.train.start, end=split.end)
+    # Final rows and answers are not even loaded until training and checkpoint saving finish.
+    sealed_final = config.evaluation_split == "final"
+    bundle = load_data(config.data, start=config.splits.train.start,
+                       end=config.splits.train.end if sealed_final else split.end)
     for event in bundle.cache_events:
         rec.event("data_cache", event["event"], **{k: v for k, v in event.items() if k != "event"})
     for event in bundle.data_events:
@@ -77,51 +115,30 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     write_json(run_dir / "data.json", bundle.metadata)
     train_targets = select_targets(bundle.labels, config.splits.train, config.data.label_horizon_minutes,
                                    sample_times=config.data.sample_times)
-    eval_targets = select_targets(bundle.labels, split, config.data.label_horizon_minutes,
-                                  sample_times=config.data.sample_times)
-    selection = {"train": train_targets.attrs.get("selection", {}),
-                 "evaluation": eval_targets.attrs.get("selection", {})}
-    write_json(run_dir / "selection.json", selection)
-    if train_targets.empty or eval_targets.empty:
-        raise ValueError("Training and evaluation must each contain eligible targets")
+    if train_targets.empty:
+        raise ValueError("Training must contain eligible targets")
     if len(train_targets) > config.budget.max_train_samples:
         raise ValueError("Training sample budget exceeded; choose a smaller declared time range")
-    rec.event("data", "validated", training_samples=len(train_targets), evaluation_samples=len(eval_targets))
     rec.event("preprocessing", "started")
     train = build_batch(bundle.bars, train_targets[["date", "instrument"]], config.data)
-    validation = build_batch(bundle.bars, inference_keys(bundle, split, config.data), config.data)
+    selection = train_targets.attrs.get("selection", {})
     train_targets = _aligned_targets(train, train_targets)
+    train_targets.attrs["selection"] = selection
     fit_mask = train.observed.any(axis=2).sum(axis=1) >= config.data.min_history
-    no_history = ~validation.observed.any(axis=(1, 2))
-    fallback_mask = (validation.observed.any(axis=2).sum(axis=1) < config.data.min_history
-                     if config.model.kind == "modified_tlob" else no_history)
-    coverage_report = {"train": train.coverage, "evaluation": validation.coverage,
-                       "training_samples_used": int(fit_mask.sum()),
-                       "training_samples_excluded_insufficient_history": int((~fit_mask).sum()),
-                       "no_history_prediction_samples": int(no_history.sum()),
-                       "training_mean_fallback_samples": int(fallback_mask.sum()),
-                       "no_history_prediction_policy": "training_mean"}
-    write_json(run_dir / "coverage.json", coverage_report)
+    history_diagnostics(train).to_parquet(run_dir / "train_history.parquet", index=False)
     checks += [dict(c, name="train_" + c["name"]) for c in
                batch_checks(train, train_targets, config.splits.train, config.acceptance.min_coverage)]
-    checks += batch_checks(validation, eval_targets, split, config.acceptance.min_coverage)
     universe_source = "instruments" if bundle.universe is not None else "observed_bars"
     checks.append(_answer_coverage_check(inference_keys(bundle, config.splits.train, config.data), train_targets,
                   config.acceptance.min_coverage, "train_expected_universe_coverage", universe_source))
-    checks.append(_answer_coverage_check(validation.keys, eval_targets, config.acceptance.min_coverage,
-                                        "expected_universe_coverage", universe_source))
     checks.append(check("nonempty_training_history", fit_mask.any(), usable_samples=int(fit_mask.sum())))
-    coverage_report["answers"] = {c["name"]: c["details"] for c in checks if "universe_coverage" in c["name"]}
-    write_json(run_dir / "coverage.json", coverage_report)
+    write_json(run_dir / "coverage.json", {"train": train.coverage})
     if not save_checks(run_dir, checks):
         raise ValueError("Data acceptance failed; see checks.json")
-    missing_answers = sum(value["missing_answers"] for value in coverage_report["answers"].values())
-    if no_history.any() or (~fit_mask).any() or missing_answers:
-        rec.event("preprocessing", "partial_coverage_accepted", level="WARNING",
-                  no_history_prediction_samples=int(no_history.sum()),
-                  training_samples_excluded=int((~fit_mask).sum()),
-                  missing_answers=missing_answers,
-                  no_history_prediction_policy="training_mean")
+    if not sealed_final:
+        eval_targets, validation, no_history, fallback_mask = _prepare_evaluation(
+            config, bundle, train, train_targets, run_dir, checks)
+    rec.event("data", "validated", training_samples=len(train_targets), final_loaded=False)
     rec.event("preprocessing", "completed", resources=resource_usage())
     model = create_model(config, recorder=rec)
     if config.model.kind == "modified_tlob":
@@ -149,10 +166,25 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
         model.export_text(run_dir / "modified_tlob_weights.json")
         rec.event("saving", "text_model_saved", path="modified_tlob_weights.json")
     rec.event("saving", "model_saved", path=filename)
+    if sealed_final:
+        rec.event("data", "final_loading_after_checkpoint", checkpoint=filename)
+        bundle = load_data(config.data, start=config.splits.train.start, end=split.end)
+        for event in bundle.cache_events:
+            rec.event("data_cache", event["event"], **{k: v for k, v in event.items() if k != "event"})
+        for event in bundle.data_events:
+            rec.event("data", event["event"], level="WARNING", **{k: v for k, v in event.items() if k != "event"})
+        write_json(run_dir / "data.json", bundle.metadata)
+        eval_targets, validation, no_history, fallback_mask = _prepare_evaluation(
+            config, bundle, train, train_targets, run_dir, checks)
+    checks.append(check("final_training_isolation", True,
+                        final_used_for_epoch_validation=False, final_loaded_after_checkpoint=sealed_final))
     loaded = load_model(run_dir / filename, config, recorder=rec)
     rec.event("loading", "model_loaded", path=filename)
-    checks.append(check("save_load_predictions", np.allclose(model.predict(validation), loaded.predict(validation),
-                        atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol)))
+    before_save, after_load = model.predict(validation), loaded.predict(validation)
+    checks.append(check("save_load_predictions", np.allclose(before_save, after_load,
+                        atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol),
+                        max_abs_difference=float(np.max(np.abs(before_save - after_load))),
+                        atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol))
     normalization = model.validate_training_preprocessing(train, fit_mask)
     checks.append(check("training_only_normalization", **normalization))
     if config.model.kind == "modified_tlob":
@@ -161,12 +193,16 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
                             text_model.predict(validation), atol=config.acceptance.repro_atol,
                             rtol=config.acceptance.repro_rtol)))
     rec.event("inference", "started", label_input=False)
+    inference_started = time.monotonic()
     predictions = validation.keys.copy()
     predictions["score"] = loaded.predict(validation)
     predictions.to_parquet(run_dir / "predictions.parquet", index=False)
     predictions.rename(columns={"score": "factor"}).to_parquet(run_dir / "submission.parquet", index=False)
     eval_targets.to_parquet(run_dir / "targets.parquet", index=False)
-    rec.event("inference", "completed", samples=len(predictions))
+    inference_seconds = time.monotonic() - inference_started
+    rec.event("inference", "completed", samples=len(predictions), elapsed_seconds=inference_seconds,
+              throughput_samples_per_second=len(predictions) / max(inference_seconds, 1e-9),
+              resources=resource_usage())
     checks += prediction_checks(loaded, validation, bundle.bars, config.data,
                                 config.acceptance.repro_atol, config.acceptance.repro_rtol)
     rec.event("validation", "completed", passed=all(c["passed"] for c in checks))
