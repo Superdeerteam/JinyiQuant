@@ -2,6 +2,7 @@
 
 import json
 import os
+import random
 import time
 from pathlib import Path
 
@@ -122,7 +123,10 @@ class TLOBAdapter:
         self._event("training", "time_loss_weighting_fitted", **self.time_loss_weighting_stats)
         return np.asarray([by_time[sample_time]["weight"] for sample_time in times], dtype=np.float32)
 
-    def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None):
+    def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None,
+            observer_every_steps=None):
+        if observer_every_steps is not None and (type(observer_every_steps) is not int or observer_every_steps < 1):
+            raise ValueError("observer_every_steps must be a positive integer or None")
         y = np.asarray(target, dtype=np.float32)
         if y.shape != (len(batch.keys),) or not len(y) or not np.isfinite(y).all():
             raise ValueError("Training requires nonempty aligned finite targets")
@@ -152,8 +156,27 @@ class TLOBAdapter:
         optimizer = torch.optim.Adam(self.network.parameters(), lr=self.config["learning_rate"])
         generator = torch.Generator().manual_seed(self.seed)
         started, steps, samples_seen, epochs_completed = time.monotonic(), 0, 0, 0
-        if observer is not None:
-            observer(self, 0, steps)
+        last_observed_step = None
+
+        def observe(epoch):
+            nonlocal last_observed_step
+            if observer is None or last_observed_step == steps:
+                return
+            modes = [(module, module.training) for module in self.network.modules()]
+            numpy_state, python_state = np.random.get_state(), random.getstate()
+            devices = [self.device.index if self.device.index is not None else torch.cuda.current_device()
+                       ] if self.device.type == "cuda" else []
+            try:
+                with torch.random.fork_rng(devices=devices):
+                    observer(self, epoch, steps)
+            finally:
+                for module, training in modes:
+                    module.training = training
+                np.random.set_state(numpy_state)
+                random.setstate(python_state)
+            last_observed_step = steps
+
+        observe(0)
         for epoch in range(self.config["epochs"]):
             self.network.train()
             order = torch.randperm(len(y), generator=generator).numpy()
@@ -204,6 +227,8 @@ class TLOBAdapter:
                                 samples_seen=samples_seen,
                                 throughput_samples_per_second=samples_seen /
                                 max(time.monotonic() - started, 1e-9), resources=device_resources(self.device))
+                if observer_every_steps is not None and steps % observer_every_steps == 0:
+                    observe(epoch + epoch_samples / len(y))
                 if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
                     break
             complete_epoch = epoch_samples == len(y)
@@ -215,8 +240,7 @@ class TLOBAdapter:
                         optimization_loss=optimization_total / epoch_samples,
                         epoch_samples=epoch_samples, samples_seen=samples_seen, complete_epoch=complete_epoch,
                         learning_rate=optimizer.param_groups[0]["lr"], resources=device_resources(self.device))
-            if observer is not None:
-                observer(self, epoch + 1 if complete_epoch else actual_epochs, steps)
+            observe(epoch + 1 if complete_epoch else actual_epochs)
             if validation_inputs is not None:
                 vx, vy = validation_inputs
                 self.network.eval()

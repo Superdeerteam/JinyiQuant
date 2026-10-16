@@ -14,7 +14,7 @@ import psutil
 from .checks import batch_checks, check, numerical_equal, prediction_checks, verify_artifacts
 from .config import RunConfig, load_config
 from .data import build_batch, history_diagnostics, load_data, select_targets
-from .evaluation import evaluate
+from .evaluation import METRIC_SPEC, aggregate_metric, evaluate
 from .io import read_json, redact, utc_now, write_json
 from .models import create_model, load_model, model_filename
 from .tracking import (
@@ -50,6 +50,27 @@ def _curve_diagnostics(scores, targets, training_mean):
             "mse_over_constant": mse / constant_mse if constant_mse > 0 else None,
             "target_std": float(targets.std()), "prediction_std": float(scores.std()),
             "prediction_mean": float(scores.mean())}
+
+
+def _curve_evaluation(predictions, targets, evaluation_config):
+    """Use the final evaluator after full-universe inference, retaining opening diagnostics."""
+    scored = predictions.merge(targets[["date", "instrument"]], on=["date", "instrument"],
+                               how="inner", validate="one_to_one")
+    metrics, _, sections = evaluate(scored, targets, evaluation_config, return_sections=True,
+        undefined_constant_portfolios=evaluation_config.constant_portfolios == "undefined")
+    names = ("rank_ic_mean", "ic_mean", "long_short_return_mean", "turnover_mean",
+             "min_daily_long_short_return")
+    result = {"validation_" + name: metrics[name] for name in names}
+    result.update(validation_metric_scope=metrics["metric_scope"],
+                  validation_evaluation_mse=metrics["mse"],
+                  validation_scored_samples=metrics["sample_count"])
+    opening = sections.loc[pd.to_datetime(sections.timestamp).dt.strftime("%H:%M").eq("09:30")]
+    result["validation_opening_0930_sections"] = len(opening)
+    for name in names:
+        column, method, _ = METRIC_SPEC[name]
+        daily = opening.groupby("date")[column].mean()
+        result["validation_opening_0930_" + name] = aggregate_metric(daily.to_numpy(), method)
+    return result
 
 
 def inference_keys(bundle, split, data_config, *, sample_times=None):
@@ -185,6 +206,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
             scores = adapter._predict(validation)
             row.update({"validation_" + key: value for key, value in
                         _curve_diagnostics(scores[valid], curve_targets.to_numpy()[valid], training_mean).items()})
+            row.update(_curve_evaluation(validation.keys.assign(score=scores), eval_targets, config.evaluation))
         curve.append(row)
         write_json(run_dir / "learning_curve.json", curve)
         rec.event("validation", "curve_checkpoint", checkpoint_selection=False, **row)
@@ -195,6 +217,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
             fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
     if config.logging.learning_curves and config.model.kind == "modified_tlob":
         fit_options["observer"] = observe_curve
+        fit_options["observer_every_steps"] = config.logging.learning_curve_every_steps
     progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)
     elapsed = time.monotonic() - started
     rec.event("training", "progress", **progress, elapsed_seconds=elapsed,

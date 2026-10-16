@@ -105,6 +105,8 @@ $env:PYTHONPATH = 'src;.'
 
 首轮2→12轮对照已完整执行；扩展数据后的十日/八时点实验固定1500次更新、batch_size=32，约为0.6个 epoch，不等于在扩展数据上完整训练12轮。时点扩展对照两臂均评价全部8时点。研究证据仅来自8个研究日，09:30开盘风险仍未解决；最终检查区间未打开，不能据本轮研究宣称官方成绩或完整区间稳定性。
 
+当前配方另完成1500/5000/10000步训练时长对照（约0.6/2/4轮），两种长预算均未通过初筛，继续保留1500步研究参考。详情见[结构化记录](training_duration_20261015.json)、[本地报告](../runs/training-duration-20261015/screen-analysis/summary.txt)和[学习曲线](../runs/training-duration-20261015/screen-analysis/training_duration.png)。`logging.learning_curve_every_steps` 可按更新步数记录完整验证指标；观察过程保存并恢复随机数状态与训练模式，不改变优化轨迹，中途检查点只用于诊断。
+
 生成合成数据并走同一入口：
 
 ```powershell

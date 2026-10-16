@@ -1,0 +1,113 @@
+{
+  "change": {
+    "baseline": 1500,
+    "candidates": [
+      5000,
+      10000
+    ],
+    "factor": "model.max_steps",
+    "hypothesis": "At fixed ten-day/all-eight-time raw12/train_std recipe and learning rate 1e-4, compare 1500, 5000 and 10000 optimizer updates to determine whether longer training improves later-date ranking and gross long-short results."
+  },
+  "experiment_id": "training-duration-20261015",
+  "final_views": 0,
+  "hypothesis": "At fixed ten-day/all-eight-time raw12/train_std recipe and learning rate 1e-4, compare 1500, 5000 and 10000 optimizer updates to determine whether longer training improves later-date ranking and gross long-short results.",
+  "model_promoted": false,
+  "output_root": "../runs/training-duration-20261015/recovery",
+  "preregistration": "../runs/training-duration-20261015/preregistration.json",
+  "rules": {
+    "delta": "candidate minus same-period same-seed 1500-step baseline",
+    "final_decision": "Passing supports a replacement research candidate only; no formal champion promotion",
+    "intermediate_validation": "Diagnostic only; do not select unregistered intermediate steps or alter LR",
+    "noise_threshold_source": "calibration.pooled_seed_std; multiplier=1.0 fixed before screening",
+    "primary_metrics": [
+      "rank_ic",
+      "long_short_return"
+    ],
+    "replication": {
+      "additional_seeds": [
+        29,
+        47
+      ],
+      "aggregate_improvement": "At least one primary mean delta >= its pooled_seed_std and the same metric has paired-day block 95% interval lower bound > 0",
+      "baseline": "Rerun 1500 steps with the identical new core source for both additional seeds",
+      "complete_pairs": 6,
+      "every_pair_primary_delta_min": 0.0,
+      "failure_action": "Keep the 1500-step reference, report failed or inconclusive evidence",
+      "periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "risk_gate": "Every period-seed pair: each risk metric regression <= its own pooled_seed_std",
+      "uncertainty": {
+        "block_days": 2,
+        "bootstrap_samples": 2000,
+        "bootstrap_seed": 20261015,
+        "confidence": 0.95,
+        "method": "Average seeds within each day; moving two-day blocks within each period"
+      }
+    },
+    "risk_directions": {
+      "opening_long_short_return": "maximize",
+      "opening_rank_ic": "maximize",
+      "turnover": "minimize",
+      "worst_day_long_short_return": "maximize"
+    },
+    "screen": {
+      "aggregate_improvement": "Equal-period mean delta of at least one primary >= its pooled_seed_std",
+      "every_period_primary_delta_min": 0.0,
+      "failed_action": "Do not expand seeds for a failed budget",
+      "required_periods": [
+        "july_18_21",
+        "july_25_28"
+      ],
+      "risk_gate": "In every period, each risk metric regression <= its own pooled_seed_std",
+      "seed": 11
+    },
+    "selection": {
+      "eligible": "Only budgets passing the complete screen including risk gate",
+      "none_pass": "Keep the 1500-step reference; stop without seed expansion",
+      "priority": "Higher equal-period mean RankIC; exact RankIC ties choose fewer steps",
+      "replication_limit": "Replicate only the selected budget, not both screened budgets",
+      "shorter_budget_tie": "If absolute differences between eligible budgets are below both primary pooled_seed_std thresholds, select the shorter budget"
+    },
+    "stopping": "Only 1500/5000/10000 screen; stop at declared caps or failures. No extra budgets, LR search, or final-split access. Preserve all attempts and reference weights."
+  },
+  "run_order": "Budget first: 1500, 5000, 10000; within budget July18-21 then July25-28; seed11 only",
+  "runs": [
+    {
+      "arm": "candidate_10000",
+      "config": "training_duration_20261015/july_18_21_s11_steps10000.json",
+      "name": "july_18_21_s11_steps10000",
+      "period": "july_18_21",
+      "seed": 11,
+      "steps": 10000
+    },
+    {
+      "arm": "candidate_10000",
+      "config": "training_duration_20261015/july_25_28_s11_steps10000.json",
+      "name": "july_25_28_s11_steps10000",
+      "period": "july_25_28",
+      "seed": 11,
+      "steps": 10000
+    }
+  ],
+  "schema_version": 1,
+  "total_wall_seconds": 7800,
+  "recovery": {
+    "original_stage": "D:\\JinyiQuant\\runs\\training-duration-20261015\\screen\\20261015T132818.285813Z_d3edd66073d7",
+    "original_stage_status": "failed",
+    "original_manifest_sha256": "5dfb1bda14245c8bf55c3759739f0a7b348c598408430641a65da1f27560f23f",
+    "original_attempts_sha256": "4b11c8d2acb8070979a90a24096ce86b65d8a91632172bb79502571602a2bcc7",
+    "reason": "Worker exited with 1073807364 at approximately step 3300, without Python traceback. Windows boot time observed as 2026-10-15 22:38:05 Asia/Shanghai after the interruption; exact termination cause is unknown.",
+    "mode": "Restart incomplete 10000-step cells from original seeds with unchanged configurations; successful prior cells are reused only after artifact verification.",
+    "created_at_utc": "2026-10-15T14:43:53.750919+00:00",
+    "original_archives_unchanged": true,
+    "core_sources_unchanged": true,
+    "completed_runs_reused": [
+      "D:\\JinyiQuant\\runs\\training-duration-20261015\\screen\\20261015T132818.285813Z_d3edd66073d7\\july_18_21_s11_steps1500\\20261015T132819.036885Z_9f7bfdbfddfd",
+      "D:\\JinyiQuant\\runs\\training-duration-20261015\\screen\\20261015T132818.285813Z_d3edd66073d7\\july_25_28_s11_steps1500\\20261015T133802.448364Z_fe8bcd9ede84",
+      "D:\\JinyiQuant\\runs\\training-duration-20261015\\screen\\20261015T132818.285813Z_d3edd66073d7\\july_18_21_s11_steps5000\\20261015T134728.380183Z_277906be95d9",
+      "D:\\JinyiQuant\\runs\\training-duration-20261015\\screen\\20261015T132818.285813Z_d3edd66073d7\\july_25_28_s11_steps5000\\20261015T140801.157852Z_ef1a5e36a41a"
+    ]
+  }
+}

@@ -1,0 +1,871 @@
+{
+  "schema_version": 1,
+  "experiment_id": "training-duration-20261015",
+  "created_at_utc": "2026-10-15T16:22:25.177777+00:00",
+  "status": "completed_screen_no_candidate_passed",
+  "question_zh": "固定当前十日、八时点配方，需要训练多少步？",
+  "hypothesis": "At fixed ten-day/all-eight-time raw12/train_std recipe and learning rate 1e-4, compare 1500, 5000 and 10000 optimizer updates to determine whether longer training improves later-date ranking and gross long-short results.",
+  "factor": "model.max_steps",
+  "recipe": {
+    "batch_size": 32,
+    "epochs_ceiling": 12,
+    "input": "raw12",
+    "learning_rate": 0.0001,
+    "smoothing": false,
+    "target_scaling": "train_std",
+    "time_loss_weighting": "none",
+    "trade_features": "zero",
+    "training_and_evaluation_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_days": 10
+  },
+  "budgets": [
+    1500,
+    5000,
+    10000
+  ],
+  "periods": [
+    "july_18_21",
+    "july_25_28"
+  ],
+  "screen_seed": 11,
+  "preregistration": {
+    "path": "runs/training-duration-20261015/preregistration.json",
+    "sha256": "0d4533dd29151a79956e1a0d2edd7f251d6bedcb4b4d2175bc8938d793b90927"
+  },
+  "recovery_registration": {
+    "path": "runs/training-duration-20261015/recovery-registration.json",
+    "sha256": "77a44a9e658ccd52d44301ad5bbc5878b1f113fc913db9e63ff4e6ce39b51011"
+  },
+  "conclusion_zh": "本轮保留1500步（约0.6轮）。5000与10000步均未通过预注册初筛；10000步在第一窗口改善，但第二窗口排序、多空差退化且换手增加。当前证据不支持单靠延长训练改善泛化，未触发额外种子复验；不代表1500步是所有日期、种子或更细预算中的全局最优。",
+  "means_by_budget": [
+    {
+      "budget": 1500,
+      "epochs": 0.6007509763143213,
+      "rank_ic": 0.0735910738704103,
+      "long_short_return": 0.00048695882330625,
+      "turnover": 1.431184942569993,
+      "train_mse": 1.0204427664595766e-05,
+      "validation_mse": 9.827880185286995e-06,
+      "total_wall_seconds": 1148.405999999999,
+      "max_peak_rss_mb": 3316.03515625
+    },
+    {
+      "budget": 5000,
+      "epochs": 2.002002603504857,
+      "rank_ic": 0.06316684984082276,
+      "long_short_return": 0.00046271928900215,
+      "turnover": 1.4391264357501794,
+      "train_mse": 9.888337016561079e-06,
+      "validation_mse": 9.754551682308906e-06,
+      "total_wall_seconds": 1854.7190000000007,
+      "max_peak_rss_mb": 3890.73046875
+    },
+    {
+      "budget": 10000,
+      "epochs": 4.004005207009714,
+      "rank_ic": 0.06872960551497265,
+      "long_short_return": 0.00047179310895440005,
+      "turnover": 1.4993830760947595,
+      "train_mse": 8.829344132560118e-06,
+      "validation_mse": 1.004373070379878e-05,
+      "total_wall_seconds": 5780.0,
+      "max_peak_rss_mb": 2865.09375
+    }
+  ],
+  "terminal_metrics": [
+    {
+      "budget": 1500,
+      "period": "july_18_21",
+      "seed": 11,
+      "rank_ic": 0.0685479871523765,
+      "long_short_return": 0.000514081801422,
+      "turnover": 1.4255204594400577,
+      "worst_day_long_short_return": 0.0004725400128622,
+      "opening_rank_ic": 0.0133128509270793,
+      "opening_long_short_return": 0.0003142373900679,
+      "mse": 9.223979975971188e-06,
+      "ic_mean": 0.0690177846339338,
+      "training_samples": 79880,
+      "steps": 1500,
+      "epochs": 0.6009013520280421,
+      "train_mse": 1.0697556137218592e-05,
+      "validation_mse": 9.223979975971188e-06,
+      "validation_mse_over_constant": 0.9934292228129648,
+      "cpu_seconds": 555.265625,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 3244.546875,
+      "wall_seconds": 582.875
+    },
+    {
+      "budget": 5000,
+      "period": "july_18_21",
+      "seed": 11,
+      "rank_ic": 0.0680420405375315,
+      "long_short_return": 0.0005670325485906,
+      "turnover": 1.3023600143575018,
+      "worst_day_long_short_return": 0.000421330380837,
+      "opening_rank_ic": 0.044189113963663,
+      "opening_long_short_return": 0.0007999308898699,
+      "mse": 9.065146498647323e-06,
+      "ic_mean": 0.0692899583297957,
+      "training_samples": 79880,
+      "steps": 5000,
+      "epochs": 2.002403605408112,
+      "train_mse": 1.0435401740991749e-05,
+      "validation_mse": 9.065146498647323e-06,
+      "validation_mse_over_constant": 0.9763227440103684,
+      "cpu_seconds": 1173.234375,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 3157.64453125,
+      "wall_seconds": 1232.328000000001
+    },
+    {
+      "budget": 1500,
+      "period": "july_25_28",
+      "seed": 11,
+      "rank_ic": 0.0786341605884441,
+      "long_short_return": 0.0004598358451905,
+      "turnover": 1.4368494256999282,
+      "worst_day_long_short_return": 0.0003236355858056,
+      "opening_rank_ic": -0.0027137127107067,
+      "opening_long_short_return": -0.0001025857263405,
+      "mse": 1.04317803946028e-05,
+      "ic_mean": 0.0721362166270158,
+      "training_samples": 79920,
+      "steps": 1500,
+      "epochs": 0.6006006006006006,
+      "train_mse": 9.71129919197294e-06,
+      "validation_mse": 1.0431780394602802e-05,
+      "validation_mse_over_constant": 1.0241953021891064,
+      "cpu_seconds": 538.34375,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 3316.03515625,
+      "wall_seconds": 565.530999999999
+    },
+    {
+      "budget": 5000,
+      "period": "july_25_28",
+      "seed": 11,
+      "rank_ic": 0.058291659144114,
+      "long_short_return": 0.0003584060294137,
+      "turnover": 1.5758928571428572,
+      "worst_day_long_short_return": 0.0002470686208309,
+      "opening_rank_ic": -0.0014782237146966,
+      "opening_long_short_return": 5.879153590915001e-05,
+      "mse": 1.044395686597049e-05,
+      "ic_mean": 0.0472940698715909,
+      "training_samples": 79920,
+      "steps": 5000,
+      "epochs": 2.0016016016016014,
+      "train_mse": 9.34127229213041e-06,
+      "validation_mse": 1.0443956865970488e-05,
+      "validation_mse_over_constant": 1.0253907917700102,
+      "cpu_seconds": 588.765625,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 3890.73046875,
+      "wall_seconds": 622.3909999999996
+    },
+    {
+      "budget": 10000,
+      "period": "july_18_21",
+      "seed": 11,
+      "rank_ic": 0.0817105767493722,
+      "long_short_return": 0.0006040719042826,
+      "turnover": 1.4571069633883704,
+      "worst_day_long_short_return": 0.0005364440533019,
+      "opening_rank_ic": 0.0441510558654847,
+      "opening_long_short_return": 0.000681789000175,
+      "mse": 9.340208378770616e-06,
+      "ic_mean": 0.0794870840147974,
+      "training_samples": 79880,
+      "steps": 10000,
+      "epochs": 4.0048072108162245,
+      "train_mse": 9.380796510333472e-06,
+      "validation_mse": 9.340208378770616e-06,
+      "validation_mse_over_constant": 1.005947104699376,
+      "cpu_seconds": 2720.015625,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 2661.7734375,
+      "wall_seconds": 2949.875
+    },
+    {
+      "budget": 10000,
+      "period": "july_25_28",
+      "seed": 11,
+      "rank_ic": 0.0557486342805731,
+      "long_short_return": 0.0003395143136262,
+      "turnover": 1.5416591888011486,
+      "worst_day_long_short_return": 0.0002814982066483,
+      "opening_rank_ic": 0.0140288745659486,
+      "opening_long_short_return": 0.0002798013073334,
+      "mse": 1.0747253028826945e-05,
+      "ic_mean": 0.0471826784369116,
+      "training_samples": 79920,
+      "steps": 10000,
+      "epochs": 4.003203203203203,
+      "train_mse": 8.277891754786766e-06,
+      "validation_mse": 1.0747253028826945e-05,
+      "validation_mse_over_constant": 1.055168499258013,
+      "cpu_seconds": 2685.625,
+      "gpu_used": true,
+      "monitor_interval_seconds": 0.05,
+      "peak_rss_mb": 2865.09375,
+      "wall_seconds": 2830.125
+    }
+  ],
+  "metric_units": {
+    "returns": "Fractional future-label returns; multiply by 10000 for basis points. Local gross top-minus-bottom metric, not realized net P&L.",
+    "wall_seconds": "Whole run including processing, curve validation, saving and checks; variable concurrent machine load, not an isolated throughput benchmark.",
+    "epochs": "Actual optimizer updates divided by training batches per pass."
+  },
+  "screening": {
+    "10000": {
+      "complete_grid": true,
+      "mean_delta": {
+        "long_short_return": -1.5165714351844558e-05,
+        "rank_ic": -0.0048614683554376766
+      },
+      "model_promoted": false,
+      "passed": false,
+      "phase": "screen",
+      "practical_improvement": [
+        {
+          "interval": [
+            -0.01397660356393408,
+            0.006147235521423967
+          ],
+          "mean_delta": -0.0048614683554376766,
+          "metric": "rank_ic",
+          "passed": false,
+          "positive_interval": false,
+          "threshold": 0.006892229127977333
+        },
+        {
+          "interval": [
+            -8.051038878811264e-05,
+            4.8668364361871514e-05
+          ],
+          "mean_delta": -1.5165714351844558e-05,
+          "metric": "long_short_return",
+          "passed": false,
+          "positive_interval": false,
+          "threshold": 4.406828999395643e-05
+        }
+      ],
+      "rows": [
+        {
+          "delta": 0.01316258959699565,
+          "lower_bound": 0,
+          "metric": "rank_ic",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 8.999010286059024e-05,
+          "lower_bound": 0,
+          "metric": "long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 6.390404043962565e-05,
+          "lower_bound": -7.36562083663615e-05,
+          "metric": "worst_day_long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.030838204938405347,
+          "lower_bound": -0.007081696598821177,
+          "metric": "opening_rank_ic",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.00036755161010704884,
+          "lower_bound": -6.797896467406935e-05,
+          "metric": "opening_long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.03158650394831297,
+          "lower_bound": null,
+          "metric": "turnover",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": 0.08667042757843477
+        },
+        {
+          "delta": -0.022885526307871003,
+          "lower_bound": 0,
+          "metric": "rank_ic",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -0.00012032153156427936,
+          "lower_bound": 0,
+          "metric": "long_short_return",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -4.2137379157327964e-05,
+          "lower_bound": -7.36562083663615e-05,
+          "metric": "worst_day_long_short_return",
+          "passed": true,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.01674258727665542,
+          "lower_bound": -0.007081696598821177,
+          "metric": "opening_rank_ic",
+          "passed": true,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.00038238703367392496,
+          "lower_bound": -6.797896467406935e-05,
+          "metric": "opening_long_short_return",
+          "passed": true,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.10480976310122037,
+          "lower_bound": null,
+          "metric": "turnover",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": 0.08667042757843477
+        }
+      ]
+    },
+    "5000": {
+      "complete_grid": true,
+      "mean_delta": {
+        "long_short_return": -2.4239534304142037e-05,
+        "rank_ic": -0.010424224029587578
+      },
+      "model_promoted": false,
+      "passed": false,
+      "phase": "screen",
+      "practical_improvement": [
+        {
+          "interval": [
+            -0.018164364220382114,
+            -0.004890116023786185
+          ],
+          "mean_delta": -0.010424224029587578,
+          "metric": "rank_ic",
+          "passed": false,
+          "positive_interval": false,
+          "threshold": 0.006892229127977333
+        },
+        {
+          "interval": [
+            -0.0001025762261638402,
+            1.6506157270894862e-05
+          ],
+          "mean_delta": -2.4239534304142037e-05,
+          "metric": "long_short_return",
+          "passed": false,
+          "positive_interval": false,
+          "threshold": 4.406828999395643e-05
+        }
+      ],
+      "rows": [
+        {
+          "delta": -0.000505946614845057,
+          "lower_bound": 0,
+          "metric": "rank_ic",
+          "passed": false,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 5.2950747168535985e-05,
+          "lower_bound": 0,
+          "metric": "long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -5.1209632025218217e-05,
+          "lower_bound": -7.36562083663615e-05,
+          "metric": "worst_day_long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.030876263036583675,
+          "lower_bound": -0.007081696598821177,
+          "metric": "opening_rank_ic",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.0004856934998019987,
+          "lower_bound": -6.797896467406935e-05,
+          "metric": "opening_long_short_return",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -0.12316044508255564,
+          "lower_bound": null,
+          "metric": "turnover",
+          "passed": true,
+          "period": "july_18_21",
+          "seed": 11,
+          "upper_bound": 0.08667042757843477
+        },
+        {
+          "delta": -0.0203425014443301,
+          "lower_bound": 0,
+          "metric": "rank_ic",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -0.00010142981577682006,
+          "lower_bound": 0,
+          "metric": "long_short_return",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": -7.656696497475714e-05,
+          "lower_bound": -7.36562083663615e-05,
+          "metric": "worst_day_long_short_return",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.0012354889960100972,
+          "lower_bound": -0.007081696598821177,
+          "metric": "opening_rank_ic",
+          "passed": true,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.00016137726224965,
+          "lower_bound": -6.797896467406935e-05,
+          "metric": "opening_long_short_return",
+          "passed": true,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": null
+        },
+        {
+          "delta": 0.13904343144292897,
+          "lower_bound": null,
+          "metric": "turnover",
+          "passed": false,
+          "period": "july_25_28",
+          "seed": 11,
+          "upper_bound": 0.08667042757843477
+        }
+      ]
+    }
+  },
+  "replication": {
+    "triggered": false,
+    "reason": "Neither longer budget passed the preregistered screen; no additional seed runs."
+  },
+  "retained_budget": 1500,
+  "retained_weight_source": {
+    "budget": 1500,
+    "period": "july_25_28",
+    "run": "runs/training-progression/step3c-all-times/20261015T102928.407830Z_3a362b6622dc/july_25_28_s11_d10_t8/20261015T104057.017178Z_41fc2c056943",
+    "seed": 11,
+    "source": "historical_1500_reference",
+    "weights": {
+      "model.pt": {
+        "path": "runs/training-progression/step3c-all-times/20261015T102928.407830Z_3a362b6622dc/july_25_28_s11_d10_t8/20261015T104057.017178Z_41fc2c056943/model.pt",
+        "sha256": "031bbfe298e71e06b4f5290d94c5dfdaec4be3dd54f87298f5f3a5e4f0bfd08f"
+      },
+      "modified_tlob_weights.json": {
+        "path": "runs/training-progression/step3c-all-times/20261015T102928.407830Z_3a362b6622dc/july_25_28_s11_d10_t8/20261015T104057.017178Z_41fc2c056943/modified_tlob_weights.json",
+        "sha256": "eb4d6ffbd6e1458e7b75101adf88c7df05636fb742c666a220731ad72506c389"
+      }
+    }
+  },
+  "historical_reference_drift": {
+    "passed": true,
+    "rows": [
+      {
+        "atol": 1e-06,
+        "keys_equal": true,
+        "max_abs_prediction_difference": 0.0,
+        "passed": true,
+        "period": "july_18_21",
+        "reference": "runs/training-progression/step3c-all-times/20261015T102928.407830Z_3a362b6622dc/july_18_21_s11_d10_t8/20261015T103314.842559Z_a2b6f7dee01f",
+        "rtol": 1e-05,
+        "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps1500/20261015T132819.036885Z_9f7bfdbfddfd",
+        "seed": 11,
+        "strict_comparison_arm": false
+      },
+      {
+        "atol": 1e-06,
+        "keys_equal": true,
+        "max_abs_prediction_difference": 0.0,
+        "passed": true,
+        "period": "july_25_28",
+        "reference": "runs/training-progression/step3c-all-times/20261015T102928.407830Z_3a362b6622dc/july_25_28_s11_d10_t8/20261015T104057.017178Z_41fc2c056943",
+        "rtol": 1e-05,
+        "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_25_28_s11_steps1500/20261015T133802.448364Z_fe8bcd9ede84",
+        "seed": 11,
+        "strict_comparison_arm": false
+      }
+    ]
+  },
+  "recovery_audit": {
+    "complete_unique_runs": 6,
+    "enabled": true,
+    "excluded_failed_attempts": 1,
+    "stopped_stages": [
+      "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7"
+    ],
+    "unexecuted_original_cells": 1
+  },
+  "attempts": [
+    {
+      "arm": "baseline",
+      "config": "training_duration_20261015/july_18_21_s11_steps1500.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "ae8d45f60b8f5bfc4103f26606c754d71b60349a053c653336c98d837cb095e4",
+      "name": "july_18_21_s11_steps1500",
+      "period": "july_18_21",
+      "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps1500/20261015T132819.036885Z_9f7bfdbfddfd",
+      "seed": 11,
+      "status": "completed",
+      "steps": 1500
+    },
+    {
+      "arm": "baseline",
+      "config": "training_duration_20261015/july_25_28_s11_steps1500.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "18fa9f37c01c02478040c21cae709e5c58e17ff9664068cb9bbcea4465ba6c64",
+      "name": "july_25_28_s11_steps1500",
+      "period": "july_25_28",
+      "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_25_28_s11_steps1500/20261015T133802.448364Z_fe8bcd9ede84",
+      "seed": 11,
+      "status": "completed",
+      "steps": 1500
+    },
+    {
+      "arm": "candidate_5000",
+      "config": "training_duration_20261015/july_18_21_s11_steps5000.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "dc27f40ac1bc70a026194142774f8b2e1fa8679b1dffbed2cdcc0714f239e16f",
+      "name": "july_18_21_s11_steps5000",
+      "period": "july_18_21",
+      "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps5000/20261015T134728.380183Z_277906be95d9",
+      "seed": 11,
+      "status": "completed",
+      "steps": 5000
+    },
+    {
+      "arm": "candidate_5000",
+      "config": "training_duration_20261015/july_25_28_s11_steps5000.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "7f3038725d8c0792f504dd416991a0f44e8411ac56ffe56d8fcde96d1f362fb2",
+      "name": "july_25_28_s11_steps5000",
+      "period": "july_25_28",
+      "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_25_28_s11_steps5000/20261015T140801.157852Z_ef1a5e36a41a",
+      "seed": 11,
+      "status": "completed",
+      "steps": 5000
+    },
+    {
+      "arm": "candidate_10000",
+      "config": "training_duration_20261015/july_18_21_s11_steps10000.json",
+      "error": null,
+      "evidence_sha256": {
+        "checks.json": "88b85803e677c1d2963005be866afb50b85c03ef955b503fdf3f797ddd3aab9b",
+        "config.json": "4fe9790ef37292d9b6b0146e633acc25b2a43297d3cb341ae5a829eecaf0821e",
+        "events.jsonl": "bb77bf849b1b1ee2d404a56f5612ae74481b3b22014f8a616cbadfcb33bda817",
+        "learning_curve.json": "b5bf062f259301cdd41203f1c2e89b74f49d9b49daff847994d04edd3d898d9a",
+        "manifest.json": "6e952f288ab70d2e9f874100be39965ae210be945db0e8cd4d98114ca615c857"
+      },
+      "exit_code": 1073807364,
+      "included_in_comparison": false,
+      "name": "july_18_21_s11_steps10000",
+      "period": "july_18_21",
+      "resources": {
+        "cpu_seconds": 321.453125,
+        "gpu_used": true,
+        "monitor_interval_seconds": 0.05,
+        "peak_rss_mb": 3462.87109375,
+        "wall_seconds": 340.03099999999904
+      },
+      "run": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps10000/20261015T141823.850612Z_d20f0073e4ff",
+      "seed": 11,
+      "status": "failed",
+      "steps": 10000
+    },
+    {
+      "arm": "candidate_10000",
+      "config": "training_duration_20261015/july_18_21_s11_steps10000.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "36ac39f52d84bffde05a84e6a4be26988b9c58456a85396fbfe878c423b4a6e7",
+      "name": "july_18_21_s11_steps10000",
+      "period": "july_18_21",
+      "run": "runs/training-duration-20261015/recovery/20261015T144405.742826Z_0ba5020816cc/july_18_21_s11_steps10000/20261015T144408.580428Z_a5fdd625c3e4",
+      "seed": 11,
+      "status": "completed",
+      "steps": 10000
+    },
+    {
+      "arm": "candidate_10000",
+      "config": "training_duration_20261015/july_25_28_s11_steps10000.json",
+      "exit_code": 0,
+      "included_in_comparison": true,
+      "manifest_sha256": "72a9aafbca385df2214901d27b51c7acce8e22248f958cb05e7e16ac88e915f3",
+      "name": "july_25_28_s11_steps10000",
+      "period": "july_25_28",
+      "run": "runs/training-duration-20261015/recovery/20261015T144405.742826Z_0ba5020816cc/july_25_28_s11_steps10000/20261015T153319.032896Z_7d49cf47f459",
+      "seed": 11,
+      "status": "completed",
+      "steps": 10000
+    }
+  ],
+  "costs": {
+    "successful_run_seconds": 8783.125,
+    "failed_run_seconds": 340.03099999999904,
+    "excludes": "System downtime, preparation, tests and analysis."
+  },
+  "evidence": {
+    "decision.json": {
+      "path": "runs/training-duration-20261015/screen-analysis/decision.json",
+      "sha256": "65d6fd5f67f888878f6ddb957d72d40702d0b256794c444662b75f896d826993"
+    },
+    "summary.txt": {
+      "path": "runs/training-duration-20261015/screen-analysis/summary.txt",
+      "sha256": "f45fb4a7df381ab66c75622d0d3209cdbc757806a859b3fe5bb7f2099ee34914"
+    },
+    "terminal_metrics.csv": {
+      "path": "runs/training-duration-20261015/screen-analysis/terminal_metrics.csv",
+      "sha256": "c6d93d60c0d8c9ecb09e326e38a519ee5e58d563dfc9b3e9ec6650f11e995a26"
+    },
+    "learning_curves.json": {
+      "path": "runs/training-duration-20261015/screen-analysis/learning_curves.json",
+      "sha256": "396c432a7c043b7358ccabf8b4b4c1e1ad8fdafe524ea32d8eff227d34e2524a"
+    },
+    "training_duration.png": {
+      "path": "runs/training-duration-20261015/screen-analysis/training_duration.png",
+      "sha256": "428b19c76cd420b1828c9bc74ed0d563053f1d0c13628033c9f9284c0abf7a31"
+    }
+  },
+  "comparisons": {
+    "comparison_1500_5000": {
+      "path": "runs/training-duration-20261015/screen-analysis/comparison_1500_5000/comparison.json",
+      "sha256": "86df127e338c5b3670a4085e9562111541b4f69c548c7e4d0b56e3903f4b7b86"
+    },
+    "comparison_1500_10000": {
+      "path": "runs/training-duration-20261015/screen-analysis/comparison_1500_10000/comparison.json",
+      "sha256": "339e4f5ec92e0ad0e44ef998b03a2ebf460360ab06abeed5adf759683a434f3a"
+    },
+    "comparison_5000_10000": {
+      "path": "runs/training-duration-20261015/screen-analysis/comparison_5000_10000/comparison.json",
+      "sha256": "70a034701da633374cfd4d73d9a47036ce4e9d96c342836022ddb33f710bbcaa"
+    }
+  },
+  "source": {
+    "base_commit": "b0dc169232fa3519782a3668a84f9f67b109d8c7",
+    "core_unchanged_since_prelaunch": true,
+    "prelaunch_validation": {
+      "path": "runs/training-duration-20261015/prelaunch-validation.json",
+      "sha256": "08596a7c166c29cddb8d9381d23df2cc08d1e2cc4d89000fe10e6c49b97f73b4"
+    },
+    "analysis_script": {
+      "path": "scripts/analyze_training_duration.py",
+      "sha256": "7fb065e138f390bf4a333b3881f7d08a7a2e30153e9eb2a5bde5dc33131933ae"
+    },
+    "preparation_script": {
+      "path": "scripts/prepare_training_duration.py",
+      "sha256": "ac7747adbeb282e1b853fb3848088da9350acf047bd62271628ce99ebe7bd839"
+    },
+    "training_snapshots": [
+      {
+        "path": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps1500/20261015T132819.036885Z_9f7bfdbfddfd/source.zip",
+        "sha256": "ae2416a44d725f97c87af40a7ea76032506949bd3d15bd76410dace20deb7e41"
+      },
+      {
+        "path": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_25_28_s11_steps1500/20261015T133802.448364Z_fe8bcd9ede84/source.zip",
+        "sha256": "ae2416a44d725f97c87af40a7ea76032506949bd3d15bd76410dace20deb7e41"
+      },
+      {
+        "path": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_18_21_s11_steps5000/20261015T134728.380183Z_277906be95d9/source.zip",
+        "sha256": "ae2416a44d725f97c87af40a7ea76032506949bd3d15bd76410dace20deb7e41"
+      },
+      {
+        "path": "runs/training-duration-20261015/screen/20261015T132818.285813Z_d3edd66073d7/july_25_28_s11_steps5000/20261015T140801.157852Z_ef1a5e36a41a/source.zip",
+        "sha256": "ae2416a44d725f97c87af40a7ea76032506949bd3d15bd76410dace20deb7e41"
+      },
+      {
+        "path": "runs/training-duration-20261015/recovery/20261015T144405.742826Z_0ba5020816cc/july_18_21_s11_steps10000/20261015T144408.580428Z_a5fdd625c3e4/source.zip",
+        "sha256": "a2b1c4b27b042bb5aaf8c35e92372312d116e1826362647770b062649c881ed3"
+      },
+      {
+        "path": "runs/training-duration-20261015/recovery/20261015T144405.742826Z_0ba5020816cc/july_25_28_s11_steps10000/20261015T153319.032896Z_7d49cf47f459/source.zip",
+        "sha256": "88e38727951b3a9be8040ce569b8bb1a87dda103400c8e0ce4ee175ec2d2d287"
+      }
+    ]
+  },
+  "configs": [
+    {
+      "path": "configs/training_duration_20261015/july_18_21_s11_steps10000.json",
+      "sha256": "e7bc0c2fc1b162b7a05df151b8da68b88c94f36ee4a0b82c50b40494c7327a2d"
+    },
+    {
+      "path": "configs/training_duration_20261015/july_18_21_s11_steps1500.json",
+      "sha256": "1d2d51e8fcd43cc1e0f0970a584bec3f66f531eebdb196eec9d0317d2b0759d3"
+    },
+    {
+      "path": "configs/training_duration_20261015/july_18_21_s11_steps5000.json",
+      "sha256": "f8733d7fdd17aba7bd1595231e6918deeb8abef3c2dba04cdd2a4149c51fc678"
+    },
+    {
+      "path": "configs/training_duration_20261015/july_25_28_s11_steps10000.json",
+      "sha256": "14dcbb06c8d44c475f4e78aa2eeccdcabac714006c1668b5eeacdd54e1c9aeec"
+    },
+    {
+      "path": "configs/training_duration_20261015/july_25_28_s11_steps1500.json",
+      "sha256": "fe8fc5c35c101d6e84d6c71ddb8ca3bb60fc1cccd34df4570b48d41a9c217424"
+    },
+    {
+      "path": "configs/training_duration_20261015/july_25_28_s11_steps5000.json",
+      "sha256": "a0676b980ec07b58547a64bd133c9374cf84f7ac50587a13e75dd791faef869a"
+    }
+  ],
+  "plans": [
+    {
+      "path": "configs/training_duration_20261015_plan.json",
+      "sha256": "d18884bf4bbca6d12e9fd21b7555dd192eaee900bf4eb78c066d1c82a08d5989"
+    },
+    {
+      "path": "configs/training_duration_20261015_recovery_plan.json",
+      "sha256": "8cd7ab2ff99fb91ae53e330b79f26ee88fd0f7c2a5a17bff55c5237423c5e938"
+    }
+  ],
+  "validation": {
+    "test_reports": [
+      {
+        "path": "runs/training-duration-20261015/full-tests.xml",
+        "sha256": "ea354ab15b7096833a56467d1ede8eba3621839fdbcee61e2ec381ab409d986f",
+        "tests": 352,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "path": "runs/training-duration-20261015/recovery-analysis-tests.xml",
+        "sha256": "0875ad97d3d997fc084f5813063257335625cd21b6a46e41a9fa896f2d6caacb",
+        "tests": 23,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "path": "runs/training-duration-20261015/summary-tests.xml",
+        "sha256": "c4b73f4412a5803b37b463d8fdc8da447b5a59c954bc9b31271bdf7a3d44055a",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "note": "Summary tests overlap with recovery-analysis tests; do not add report counts.",
+    "strict_comparison_checks": {
+      "comparison_1500_5000": {
+        "complete_target_eligible_correlation_coverage": true,
+        "complete_two_period_three_seed_grid": false,
+        "paired_keys_labels_data_and_single_factor": true,
+        "passed": true
+      },
+      "comparison_1500_10000": {
+        "complete_target_eligible_correlation_coverage": true,
+        "complete_two_period_three_seed_grid": false,
+        "paired_keys_labels_data_and_single_factor": true,
+        "passed": true
+      },
+      "comparison_5000_10000": {
+        "complete_target_eligible_correlation_coverage": true,
+        "complete_two_period_three_seed_grid": false,
+        "paired_keys_labels_data_and_single_factor": true,
+        "passed": true
+      }
+    }
+  },
+  "limitations": [
+    "Only eight distinct research validation days; previous screening creates selection bias.",
+    "Local approximate gross metrics exclude fees and slippage; no official score claim.",
+    "Longer budgets may overfit; lower training MSE alone is not an improvement.",
+    "No formal promotion and no final-split data access.",
+    "Longer budgets screened using seed11 only. Gates failed, so no new multi-seed replication was performed.",
+    "10000-step aggregate RankIC and gross long-short paired day-block intervals include zero; no statistically certain universal degradation claim."
+  ],
+  "final_views": 0,
+  "model_promoted": false,
+  "prior_research_index": "modified_tlob/training_progression_20261015.json"
+}

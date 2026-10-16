@@ -139,6 +139,7 @@ class AcceptanceConfig(StrictModel):
 class LoggingConfig(StrictModel):
     resource_interval_seconds: float = Field(default=5, gt=0)
     learning_curves: bool = False
+    learning_curve_every_steps: int | None = Field(default=None, ge=1, strict=True)
 
 
 class FinalAccess(StrictModel):
