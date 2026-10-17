@@ -245,6 +245,20 @@ $env:PYTHONPATH = 'src;.'
 & .venv-ensemble-cuda/Scripts/python.exe -m scripts.audit_seed_ensemble runs/fixed-seed-ensemble-20261017/analysis-recovery/20261017T091219.300500Z_7c40b5b5d26d --output runs/fixed-seed-ensemble-20261017/offline-audit
 ```
 
+## 2022 全年诊断与云端运行
+
+全年诊断固定当前 seed11、十个交易日、八时点、1500 次更新配方。固定方案使用 2021 年末训练的同一份权重预测 2022；月度方案每月只用此前十个交易日训练并预测随后一个月，一月份共享训练与预测，共 12 次训练。现有 2023/2024 权重不用于回测更早日期；2024 年 7 月、第四季度及旧 final 保留。
+
+`scripts/prepare_annual_data.py --archives-dir <原包目录> --output-dir <新数据目录>` 只展开 2021-12 和 2022 年所需月份，保留来源与产物校验值。Linux 需要 `bsdtar` 或 `unrar`。先运行 `python scripts/cloud_preflight.py --output <新的检查文件.json>`，CUDA 前向与反向检查成功后再启动训练：
+
+```bash
+PYTHONPATH=src:. python -m scripts.annual_baseline run <新的运行目录> \
+  --data-root <新数据目录> --cache-dir <缓存目录> \
+  --max-rss-mb 40960 --job-wall-seconds 3600 --total-wall-seconds 28800
+```
+
+`prepare` 子命令可只冻结数据日历和配置，不训练；创建计划前须部署最终源码，续跑会核对源码、数据、权重和预测摘要。结果包含逐日×八时点 RankIC、IC、多空、换手、误差、覆盖率、权重日龄及两种方案配对差；每月 HTML 与月×时点分布可定位失败，**不输出全年平均数**。跨月换手保持连续，收益为未计费的本地标签近似口径。云端准备状态与实际检查见 [结构化运行索引](modified_tlob/annual_baseline_cloud_20261017.json)。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁和说明，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

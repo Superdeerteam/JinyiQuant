@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "experiment_id": "annual-baseline-2022-20261017",
+  "status": "prepared_awaiting_cuda_recovery",
+  "updated_at_utc": "2026-10-17T10:03:05.097Z",
+  "research_year": 2022,
+  "training_fits_completed": 0,
+  "inference_months_completed": 0,
+  "metrics_available": false,
+  "annual_aggregates_exported": false,
+  "recipe": {
+    "seed": 11,
+    "training_trading_days": 10,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "updates": 1500,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "lookback": 128,
+    "representation": "raw12",
+    "target_scaling": "train_std",
+    "structure_changed": false
+  },
+  "policies": {
+    "fixed": "Train before 2022 and use the same weight for all 2022 dates",
+    "monthly": "Train on the last ten trading days before each month and predict only that month",
+    "january_shared": true,
+    "maximum_fits": 12
+  },
+  "boundaries": {
+    "confirmation_2024_07_views": 0,
+    "locked_2024_q4_views": 0,
+    "legacy_final_views": 0,
+    "existing_weights_modified": 0,
+    "backward_evaluation_of_2023_or_2024_weights": false
+  },
+  "storage": {
+    "source": "Local files verified against existing persistent-storage copies; small-file upload verified from compute mount",
+    "source_files": [
+      {
+        "name": "cpt_jyc_2026_e2e_bar1m.tar.gz",
+        "bytes": 11605295987,
+        "sha256": "325c17e9b4ebe440af16deacaa1f5184fb8f3f21d37010b6fec6d10df44130b3"
+      },
+      {
+        "name": "cpt_jyc_2026_vwap.rar",
+        "bytes": 216890654,
+        "sha256": "1aad85753120e6d5b29dbab57a5a5faabc7059e4e47556b7a801811197a2f2f4"
+      },
+      {
+        "name": "cpt_jyc_2026_instruments.parquet",
+        "bytes": 3576466,
+        "sha256": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3"
+      },
+      {
+        "name": "cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+        "bytes": 28281,
+        "sha256": "e41f0a8db4a76d356d6e2b29d69852e360f78983308c66f98956e2b2484255e5"
+      }
+    ],
+    "all_four_remote_hashes_match": true,
+    "bytes_total": 11825791388,
+    "mount": "/root/shared-nvme",
+    "workspace": "/root/shared-nvme/jinyi-annual-2022-20261017"
+  },
+  "data_preparation": {
+    "status": "succeeded",
+    "months": [
+      "202112",
+      "202201",
+      "202202",
+      "202203",
+      "202204",
+      "202205",
+      "202206",
+      "202207",
+      "202208",
+      "202209",
+      "202210",
+      "202211",
+      "202212"
+    ],
+    "artifacts": 28,
+    "manifest": "runs/annual-cloud-20261017/data-preparation-manifest.json",
+    "remote_manifest": "/root/shared-nvme/jinyi-annual-2022-20261017/data/manifest.json",
+    "reserved_label_members_extracted": 0
+  },
+  "cloud_preflight": {
+    "schema_version": 1,
+    "timestamp_utc": "2026-10-17T09:59:43.049456+00:00",
+    "python": "3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]",
+    "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.39",
+    "executable": "/root/JinyiQuant/.venv-tlob-cuda/bin/python",
+    "status": "failed",
+    "training_started": false,
+    "labels_read": false,
+    "dependencies": {
+      "torch": "2.7.1+cu128",
+      "numpy": "2.2.6",
+      "pandas": "2.2.3",
+      "pyarrow": "21.0.0",
+      "pydantic": "2.12.3",
+      "psutil": "7.1.0",
+      "einops": "0.8.1"
+    },
+    "cpu.max": "1000000 100000",
+    "memory.max": "64424509440",
+    "nvidia_smi": {
+      "exit_code": 0,
+      "stdout": "NVIDIA GeForce RTX 4090, 24564 MiB, 1 MiB, 550.54.14",
+      "stderr": ""
+    },
+    "driver_initialization": {
+      "code": 3,
+      "message": "initialization error"
+    },
+    "torch_cuda_version": "12.8",
+    "torch_cuda_available": false,
+    "error": {
+      "type": "RuntimeError",
+      "message": "CUDA driver initialization failed; training must not fall back to CPU"
+    },
+    "elapsed_seconds": 1.689
+  },
+  "validation": {
+    "local_behavior_tests_passed": 27,
+    "local_test_report": "runs/annual-cloud-20261017/tests-retry.xml",
+    "initial_test_environment_error": "Windows default pytest temporary directory denied access; explicit workspace temporary directory passed",
+    "static_check": "passed",
+    "cloud_behavior_tests": "pending"
+  },
+  "next_action": "Recover instance CUDA, pass the actual device forward/backward probe, then execute the frozen annual plan. No model-quality conclusion is available.",
+  "references": [
+    "https://docs.scc.paratera.com/eci/v1rc1/api/",
+    "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html",
+    "https://qlib.readthedocs.io/en/stable/component/report.html"
+  ]
+}
