@@ -190,6 +190,67 @@ def test_old_source_reference_is_only_a_drift_check_and_reports_changed_keys(tmp
     assert all(not row["strict_comparison_arm"] for row in result["rows"])
 
 
+def fine_stage(tmp_path):
+    """A grid whose minimum (500) is below the explicit 1500-step baseline anchor."""
+    reg, attempts = registration(), []
+    reg["experiment"]["budgets"] = [500, 750, 1000, 1500]
+    reg["experiment"]["baseline_budget"] = 1500
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    for period, start in (("first", "2023-07-18"), ("second", "2023-07-25")):
+        for steps in reg["experiment"]["budgets"]:
+            path = archive(tmp_path / f"{period}_{steps}", epochs=12, start=start, times=("09:30", "14:30"))
+            config = read_json(path / "config.json")
+            config["model"]["max_steps"] = steps
+            config["acceptance"] = {"repro_atol": 1e-6, "repro_rtol": 1e-5}
+            write_json(path / "config.json", config)
+            curve = [{"epoch": .1, "steps": 250, "validation_rank_ic_mean": 100, "diagnostic_extra": "kept"},
+                     {"epoch": 1, "steps": steps, "train_mse": .01, "validation_mse": .01,
+                      "validation_rank_ic_mean": 1, "validation_long_short_return_mean": .01}]
+            write_json(path / "learning_curve.json", curve)
+            manifest = read_json(path / "manifest.json")
+            manifest["started_at"] = "2026-01-02T00:00:00Z"
+            write_json(path / "manifest.json", manifest)
+            reseal(path)
+            attempts.append({"name": path.name, "period": period, "seed": 11, "steps": steps,
+                             "run": str(path), "exit_code": 0})
+            if steps == 1500:
+                reg["references"].append({"period": period, "seed": 11, "run": str(path),
+                                          "sha256": {"manifest.json": file_sha256(path / "manifest.json")}})
+    write_json(stage / "attempts.json", attempts)
+    write_json(stage / "plan.json", {"runs": attempts})
+    write_json(stage / "manifest.json", {"status": "completed"})
+    reg_path = tmp_path / "preregistration.json"
+    write_json(reg_path, reg)
+    return reg_path, stage
+
+
+def test_explicit_baseline_below_grid_minimum_stays_the_comparison_anchor(tmp_path):
+    reg_path, stage = fine_stage(tmp_path)
+    result = analyze(reg_path, [stage], tmp_path / "analysis")
+    assert result["baseline_budget"] == 1500 and result["retained_budget"] == 1500
+    assert result["historical_reference_drift"]["passed"]
+    for candidate in (500, 750, 1000):
+        comparison = read_json(tmp_path / f"analysis/comparison_1500_{candidate}/comparison.json")
+        assert comparison["plan"]["change"]["baseline"] == 1500
+        assert comparison["plan"]["change"]["candidate"] == candidate
+    assert not (tmp_path / "analysis/comparison_500_1500").exists()
+    assert result["retained_weight_source"]["run"] == str(tmp_path / "second_1500")
+    assert result["retained_weight_source"]["source"] == "historical_1500_reference"
+    brief = (tmp_path / "analysis/summary.txt").read_text(encoding="utf-8")
+    assert "旧 1500 步参考预测一致性：通过" in brief
+    assert "500 对 1500 步初筛" in brief and "1000 对 1500 步初筛" in brief
+
+
+def test_baseline_budget_must_be_one_of_the_registered_budgets(tmp_path):
+    reg_path, stage = fine_stage(tmp_path)
+    reg = read_json(reg_path)
+    reg["experiment"]["baseline_budget"] = 999
+    write_json(reg_path, reg)
+    with pytest.raises(ValueError, match="baseline_budget"):
+        analyze(reg_path, [stage], tmp_path / "analysis")
+
+
 def recovery_stages(tmp_path, *, status="failed"):
     reg_path, stopped = fixture_stage(tmp_path)
     ordered = sorted(read_json(stopped / "attempts.json"), key=lambda row: (row["steps"], row["period"]))

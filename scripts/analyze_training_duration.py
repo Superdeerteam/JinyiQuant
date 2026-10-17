@@ -22,6 +22,14 @@ def _finite(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and np.isfinite(value)
 
 
+def baseline_budget(experiment):
+    """Fine grids may extend below the retained reference; never infer it from the minimum."""
+    baseline = experiment.get("baseline_budget", min(experiment["budgets"]))
+    if baseline not in experiment["budgets"]:
+        raise ValueError("baseline_budget must be one of the preregistered budgets")
+    return baseline
+
+
 def duration_gate(rows, intervals, registration, *, replication=False):
     """Require each paired window/seed to pass; a pooled gain cannot hide a failing cell."""
     experiment = registration["experiment"]
@@ -196,7 +204,7 @@ def reference_drift(records, registration):
         if not verify_artifacts(old)["passed"]:
             raise ValueError(f"Historical reference artifacts changed: {old}")
     rows = []
-    baseline = min(registration["experiment"]["budgets"])
+    baseline = baseline_budget(registration["experiment"])
     for (period, seed, steps), record in sorted(records.items()):
         if steps != baseline:
             continue
@@ -277,10 +285,11 @@ def _summary_lines(decision, terminal, screen_seed):
         return f"{value * scale:.{digits}f}" if _finite(value) else "未记录/未定义"
 
     audit = decision["recovery_audit"]
+    baseline = decision["baseline_budget"]
     lines = ["固定配方训练步数实验",
              f"已完成 {len(terminal)} 次训练；仅使用研究验证区间，最终区间查看次数为 0。",
              "所有结论仅比较预注册训练终点；中途曲线用于诊断，不据其挑选模型。",
-             f"旧 1500 步参考预测一致性：{'通过' if decision['historical_reference_drift']['passed'] else '未通过，阻塞替换结论'}。",
+             f"旧 {baseline} 步参考预测一致性：{'通过' if decision['historical_reference_drift']['passed'] else '未通过，阻塞替换结论'}。",
              "", f"初筛两窗口等权均值（seed {screen_seed}；毛收益未扣交易成本）：",
              "预算步数 | 实际轮数均值 | RankIC | 毛多空 bp | 换手 | 两次运行合计分钟 | 峰值 RSS MiB"]
     screen = terminal[terminal.seed == screen_seed]
@@ -315,7 +324,7 @@ def _summary_lines(decision, terminal, screen_seed):
               "opening_long_short_return": "开盘毛多空", "turnover": "换手"}
     for phase, gates in (("初筛", decision["screening"]), ("复验", decision["replication"])):
         for budget, gate in gates.items():
-            lines += ["", f"{budget} 对 1500 步{phase}：{'通过' if gate['passed'] else '未通过'}；"
+            lines += ["", f"{budget} 对 {baseline} 步{phase}：{'通过' if gate['passed'] else '未通过'}；"
                       f"平均 ΔRankIC {number(gate['mean_delta']['rank_ic'])}，"
                       f"平均 Δ毛多空 {number(gate['mean_delta']['long_short_return'], scale=10000)} bp。"]
             for check in gate["rows"]:
@@ -365,7 +374,7 @@ def analyze(registration_path, stage_paths, output, *, recover_failed_stages=Fal
     drift = reference_drift(records, registration)
     output.mkdir(parents=True, exist_ok=False)
     experiment = registration["experiment"]
-    baseline = min(experiment["budgets"])
+    baseline = baseline_budget(experiment)
     comparisons, screening, replication = {}, {}, {}
     table = []
     for budget in sorted(set(experiment["budgets"]) - {baseline}):
@@ -404,6 +413,7 @@ def analyze(registration_path, stage_paths, output, *, recover_failed_stages=Fal
                     "unexecuted_original_cells": sum(len(s["unexecuted"]) for s in stages),
                     "complete_unique_runs": len(records)},
                 "screening": screening, "replication": replication, "historical_reference_drift": drift,
+                "baseline_budget": baseline,
                 "selected_screen_budget": selected, "accepted_research_budget": accepted,
                 "recommend_replication_budget": selected if selected is not None and drift["passed"]
                 and str(selected) not in replication else None,
@@ -415,7 +425,7 @@ def analyze(registration_path, stage_paths, output, *, recover_failed_stages=Fal
         r["run"] for r in registration["references"] if r["period"] == period and r["seed"] == seed)))
     decision["retained_weight_source"] = {
         "run": str(retained), "period": period, "seed": seed, "budget": decision["retained_budget"],
-        "source": "replicated_research_candidate" if accepted else "historical_1500_reference",
+        "source": "replicated_research_candidate" if accepted else f"historical_{baseline}_reference",
         "weights": {name: {"path": str(retained / name), "sha256": file_sha256(retained / name)}
                     for name in ("model.pt", "modified_tlob_weights.json") if (retained / name).is_file()}}
     curve_records = [{"period": p, "seed": s, "budget": b, "run": str(r["path"]), "curve": r["curve"]}

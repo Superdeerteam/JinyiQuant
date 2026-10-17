@@ -31,6 +31,8 @@ uv pip sync --python .venv-tlob-cuda modified_tlob/requirements-blackwell.lock.t
 
 Blackwell 锁使用 `torch==2.7.1+cu128`，已在本机 Windows / RTX 5060 完成真实7月 CUDA 训练与保存加载检查；旧 `requirements-cuda.lock.txt` 的 2.5.0+cu121 不是本次研究环境。运行需要兼容的 NVIDIA 驱动，不要求本地编译 Toolkit。`model.device` 支持 `auto/cpu/cuda`：auto 在 CUDA 不可见或矩阵运算/反向预检失败时记录原因并回退 CPU；cpu 强制 CPU；显式 cuda 不可用会失败。首次 CUDA 预检前统一设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，也允许显式 `:16:8`；非法值会报错，CUDA 已初始化后才发现缺失配置时要求重启进程，日志记录实际值。训练时的 OOM 等异常传播并保留失败档案，不自动续跑 CPU；重新尝试必须使用新运行目录和记录的种子。
 
+Linux 服务器（RTX 4090 / Python 3.12）：`cu128` 轮子同样覆盖 Ada 架构，驱动 ≥525 即可。无 uv 时直接 `python3 -m venv .venv-tlob-cuda` 并用 pip 按同一组锁安装（锁内 `--find-links` 指向 download.pytorch.org，其余依赖可走内网镜像）。归档配置记录的是原机器的 `D:\` 绝对路径；`scripts/prepare_training_duration_fine.py --remap OLD=NEW`（可重复，精确匹配优先于前缀）将其改写为本机路径、核验改写后的行情/标签/股票池/映射存在，并把规则记入预注册。RAR 标签在 Linux 上建议先解出所需月份的 Parquet 目录，再用 --remap 把 `.rar` 路径映射到该目录；GNU tar 不能读 RAR。
+
 依赖文件按用途分开：
 
 | 文件 | 用途与状态 |
@@ -106,6 +108,8 @@ $env:PYTHONPATH = 'src;.'
 首轮2→12轮对照已完整执行；扩展数据后的十日/八时点实验固定1500次更新、batch_size=32，约为0.6个 epoch，不等于在扩展数据上完整训练12轮。时点扩展对照两臂均评价全部8时点。研究证据仅来自8个研究日，09:30开盘风险仍未解决；最终检查区间未打开，不能据本轮研究宣称官方成绩或完整区间稳定性。
 
 当前配方另完成1500/5000/10000步训练时长对照（约0.6/2/4轮），两种长预算均未通过初筛，继续保留1500步研究参考。详情见[结构化记录](training_duration_20261015.json)、[本地报告](../runs/training-duration-20261015/screen-analysis/summary.txt)和[学习曲线](../runs/training-duration-20261015/screen-analysis/training_duration.png)。`logging.learning_curve_every_steps` 可按更新步数记录完整验证指标；观察过程保存并恢复随机数状态与训练模式，不改变优化轨迹，中途检查点只用于诊断。
+
+2026-10-17 在 Linux 服务器（RTX 4090、torch 2.7.1+cu128）补做了500–3000步细网格（2窗口×3种子×7档=42运行，探索性、无预注册）：1500步仍最优，短步长差距超噪声、2000平手但波动更大、2500/3000换手超风险门。记录见[细网格研究记录](training_duration_fine_20261016.json)；归档在服务器 `/root/grid-fine-20261016/`，未随仓库分发。
 
 生成合成数据并走同一入口：
 
