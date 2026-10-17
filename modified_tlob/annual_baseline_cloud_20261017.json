@@ -2,7 +2,7 @@
   "schema_version": 1,
   "experiment_id": "annual-baseline-2022-20261017",
   "status": "prepared_awaiting_cuda_recovery",
-  "updated_at_utc": "2026-10-17T10:03:05.097Z",
+  "updated_at_utc": "2026-10-17T10:04:50.997Z",
   "research_year": 2022,
   "training_fits_completed": 0,
   "inference_months_completed": 0,
@@ -135,12 +135,287 @@
     "local_test_report": "runs/annual-cloud-20261017/tests-retry.xml",
     "initial_test_environment_error": "Windows default pytest temporary directory denied access; explicit workspace temporary directory passed",
     "static_check": "passed",
-    "cloud_behavior_tests": "pending"
+    "cloud_behavior_tests": {
+      "passed": 27,
+      "report": "runs/annual-cloud-20261017/cloud-tests.xml"
+    },
+    "actual_training_input_check": {
+      "status": "passed",
+      "dates": [
+        "2021-12-20",
+        "2021-12-21",
+        "2021-12-22",
+        "2021-12-23",
+        "2021-12-24",
+        "2021-12-27",
+        "2021-12-28",
+        "2021-12-29",
+        "2021-12-30",
+        "2021-12-31"
+      ],
+      "samples": 79896,
+      "sections": 80,
+      "min_timestamp_labels": 998,
+      "report": "runs/annual-cloud-20261017/training-data-preflight.json"
+    },
+    "gpu_launch_gate": {
+      "passed": true,
+      "launch_exit_code": 1,
+      "reason": "CUDA not ready: stopped before creating any fit job"
+    }
   },
   "next_action": "Recover instance CUDA, pass the actual device forward/backward probe, then execute the frozen annual plan. No model-quality conclusion is available.",
   "references": [
     "https://docs.scc.paratera.com/eci/v1rc1/api/",
     "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html",
     "https://qlib.readthedocs.io/en/stable/component/report.html"
-  ]
+  ],
+  "deployed_code_commit": "483cfd61ffa62584149acb4bbd885bc1d545f1ce",
+  "source_bundle_sha256": "113cc08c457c5212b0836d6ad1f6f69afbae66ebd0c0ec6d1415aee5683e104c",
+  "frozen_plan": {
+    "path": "/root/shared-nvme/jinyi-annual-2022-20261017/runs/annual-001/plan.json",
+    "trading_dates": 242,
+    "timestamps_per_policy": 1936,
+    "monthly_days": [
+      {
+        "month": "202201",
+        "trading_days": 19
+      },
+      {
+        "month": "202202",
+        "trading_days": 16
+      },
+      {
+        "month": "202203",
+        "trading_days": 23
+      },
+      {
+        "month": "202204",
+        "trading_days": 19
+      },
+      {
+        "month": "202205",
+        "trading_days": 19
+      },
+      {
+        "month": "202206",
+        "trading_days": 21
+      },
+      {
+        "month": "202207",
+        "trading_days": 21
+      },
+      {
+        "month": "202208",
+        "trading_days": 23
+      },
+      {
+        "month": "202209",
+        "trading_days": 21
+      },
+      {
+        "month": "202210",
+        "trading_days": 16
+      },
+      {
+        "month": "202211",
+        "trading_days": 22
+      },
+      {
+        "month": "202212",
+        "trading_days": 22
+      }
+    ],
+    "training_start_dates": [
+      {
+        "month": "202201",
+        "train_dates": [
+          "2021-12-20",
+          "2021-12-21",
+          "2021-12-22",
+          "2021-12-23",
+          "2021-12-24",
+          "2021-12-27",
+          "2021-12-28",
+          "2021-12-29",
+          "2021-12-30",
+          "2021-12-31"
+        ]
+      },
+      {
+        "month": "202202",
+        "train_dates": [
+          "2022-01-17",
+          "2022-01-18",
+          "2022-01-19",
+          "2022-01-20",
+          "2022-01-21",
+          "2022-01-24",
+          "2022-01-25",
+          "2022-01-26",
+          "2022-01-27",
+          "2022-01-28"
+        ]
+      },
+      {
+        "month": "202203",
+        "train_dates": [
+          "2022-02-15",
+          "2022-02-16",
+          "2022-02-17",
+          "2022-02-18",
+          "2022-02-21",
+          "2022-02-22",
+          "2022-02-23",
+          "2022-02-24",
+          "2022-02-25",
+          "2022-02-28"
+        ]
+      },
+      {
+        "month": "202204",
+        "train_dates": [
+          "2022-03-18",
+          "2022-03-21",
+          "2022-03-22",
+          "2022-03-23",
+          "2022-03-24",
+          "2022-03-25",
+          "2022-03-28",
+          "2022-03-29",
+          "2022-03-30",
+          "2022-03-31"
+        ]
+      },
+      {
+        "month": "202205",
+        "train_dates": [
+          "2022-04-18",
+          "2022-04-19",
+          "2022-04-20",
+          "2022-04-21",
+          "2022-04-22",
+          "2022-04-25",
+          "2022-04-26",
+          "2022-04-27",
+          "2022-04-28",
+          "2022-04-29"
+        ]
+      },
+      {
+        "month": "202206",
+        "train_dates": [
+          "2022-05-18",
+          "2022-05-19",
+          "2022-05-20",
+          "2022-05-23",
+          "2022-05-24",
+          "2022-05-25",
+          "2022-05-26",
+          "2022-05-27",
+          "2022-05-30",
+          "2022-05-31"
+        ]
+      },
+      {
+        "month": "202207",
+        "train_dates": [
+          "2022-06-17",
+          "2022-06-20",
+          "2022-06-21",
+          "2022-06-22",
+          "2022-06-23",
+          "2022-06-24",
+          "2022-06-27",
+          "2022-06-28",
+          "2022-06-29",
+          "2022-06-30"
+        ]
+      },
+      {
+        "month": "202208",
+        "train_dates": [
+          "2022-07-18",
+          "2022-07-19",
+          "2022-07-20",
+          "2022-07-21",
+          "2022-07-22",
+          "2022-07-25",
+          "2022-07-26",
+          "2022-07-27",
+          "2022-07-28",
+          "2022-07-29"
+        ]
+      },
+      {
+        "month": "202209",
+        "train_dates": [
+          "2022-08-18",
+          "2022-08-19",
+          "2022-08-22",
+          "2022-08-23",
+          "2022-08-24",
+          "2022-08-25",
+          "2022-08-26",
+          "2022-08-29",
+          "2022-08-30",
+          "2022-08-31"
+        ]
+      },
+      {
+        "month": "202210",
+        "train_dates": [
+          "2022-09-19",
+          "2022-09-20",
+          "2022-09-21",
+          "2022-09-22",
+          "2022-09-23",
+          "2022-09-26",
+          "2022-09-27",
+          "2022-09-28",
+          "2022-09-29",
+          "2022-09-30"
+        ]
+      },
+      {
+        "month": "202211",
+        "train_dates": [
+          "2022-10-18",
+          "2022-10-19",
+          "2022-10-20",
+          "2022-10-21",
+          "2022-10-24",
+          "2022-10-25",
+          "2022-10-26",
+          "2022-10-27",
+          "2022-10-28",
+          "2022-10-31"
+        ]
+      },
+      {
+        "month": "202212",
+        "train_dates": [
+          "2022-11-17",
+          "2022-11-18",
+          "2022-11-21",
+          "2022-11-22",
+          "2022-11-23",
+          "2022-11-24",
+          "2022-11-25",
+          "2022-11-28",
+          "2022-11-29",
+          "2022-11-30"
+        ]
+      }
+    ],
+    "source_commit": "483cfd61ffa62584149acb4bbd885bc1d545f1ce",
+    "budget": {
+      "chunk_days": 5,
+      "fits_max": 12,
+      "job_wall_seconds": 3600,
+      "max_rss_mb": 40960,
+      "total_wall_seconds": 28800
+    }
+  },
+  "start_command": "bash /root/shared-nvme/jinyi-annual-2022-20261017/start-annual.sh"
 }
