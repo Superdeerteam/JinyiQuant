@@ -2,7 +2,7 @@
   "schema_version": 1,
   "experiment_id": "annual-baseline-2022-20261017",
   "status": "prepared_awaiting_cuda_recovery",
-  "updated_at_utc": "2026-10-17T10:04:50.997Z",
+  "updated_at_utc": "2026-10-17T12:43:49.017Z",
   "research_year": 2022,
   "training_fits_completed": 0,
   "inference_months_completed": 0,
@@ -164,7 +164,7 @@
       "reason": "CUDA not ready: stopped before creating any fit job"
     }
   },
-  "next_action": "Recover instance CUDA, pass the actual device forward/backward probe, then execute the frozen annual plan. No model-quality conclusion is available.",
+  "next_action": "Platform or host administrator must restore the allocated GPU registration/access; then rerun the CUDA forward/backward gate and the pinned annual plan.",
   "references": [
     "https://docs.scc.paratera.com/eci/v1rc1/api/",
     "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html",
@@ -417,5 +417,33 @@
       "total_wall_seconds": 28800
     }
   },
-  "start_command": "bash /root/shared-nvme/jinyi-annual-2022-20261017/start-annual.sh"
+  "start_command": "bash /root/shared-nvme/jinyi-annual-2022-20261017/start-annual.sh",
+  "gpu_diagnosis": {
+    "native_powershell_ssh_reproduced": true,
+    "driver_module_version": "550.54.14",
+    "uvm_module_version": "550.54.14",
+    "cuda_cuInit_return": 3,
+    "uvm_register_gpu_rmStatus": 38,
+    "uvm_register_gpu_status": "NV_ERR_INVALID_DEVICE",
+    "registered_uuid_matches_assigned_gpu": true,
+    "explicit_uuid_selection_same_failure": true,
+    "kernel_log_read": "Operation not permitted",
+    "container_uid_zero_maps_to_host_uid": 1000,
+    "reset_attempt": {
+      "condition": "Assigned GPU verified idle with no compute processes",
+      "return_code": 4,
+      "message": "Insufficient Permissions",
+      "device_reset_succeeded": false
+    },
+    "post_attempt_cuda_available": false,
+    "evidence": [
+      "runs/annual-cloud-20261017/cuda-ioctl-probe.json",
+      "runs/annual-cloud-20261017/gpu-reset-attempt.json"
+    ],
+    "scope": "Failure localized to UVM GPU registration; internal driver root cause not established. No shared host module reload was attempted.",
+    "references": [
+      "https://raw.githubusercontent.com/NVIDIA/open-gpu-kernel-modules/550.54.14/src/common/sdk/nvidia/inc/nvstatuscodes.h",
+      "https://docs.nvidia.com/deploy/nvidia-smi/index.html"
+    ]
+  }
 }
