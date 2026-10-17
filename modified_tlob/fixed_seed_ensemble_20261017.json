@@ -1,0 +1,726 @@
+{
+  "actual_training_fits": 6,
+  "artifacts": [
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\manifest.json",
+      "sha256": "cb1266cec4c7aba3fbb5b7486971ef53bb3ac65b5e53efc4bc73060c3c7ff461"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\weights_frozen.json",
+      "sha256": "49d80a01fdce80548181ff9e7e34a02115d08eeddf0164f6da2c269d95483af6"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\predictions_frozen.json",
+      "sha256": "9e636f4e750f99ead7f8c54b6c573530b48320366b90000a1238b89a556b10f4"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\manifest.json",
+      "sha256": "c4e912914a5a41a22bbd907d008234d5fa4c006af5d673b3ff9dc6a615ee4453"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\decision.json",
+      "sha256": "28ea064e116a8143f1adb58efa40eb6809432d52417688c246b8568435393fa1"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\paired_daily.csv",
+      "sha256": "690356c98a42fb1777d388547a8359bb8da2c1abaa8fc02264011eec08e053e3"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\paired_intervals.json",
+      "sha256": "530c784d0497eee451e6b28a719ae1d7b6c8dda953948fdc2b30dfbf242e9e5a"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\metrics.json",
+      "sha256": "8137cf332686d562d9e2cf3153e597f45a3f9ee10b78880cd13ff9252c4c8bdd"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\offline-audit\\20261017T091309.831511Z_4f32042678f5\\manifest.json",
+      "sha256": "f8296eae3ac90fcafb889c1b473680bc36b4ba0ece1354469c5f3b54e63201c5"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\offline-audit\\20261017T091309.831511Z_4f32042678f5\\checks.json",
+      "sha256": "ba6fb9bcfb0cea7cad1e1a54b00aed44cb784a5bb5dd63b46c4bc930f5db694d"
+    },
+    {
+      "path": "runs\\fixed-seed-ensemble-20261017\\runtime_provenance.json",
+      "sha256": "e37002c92520efbcc791fe05375cdf2c7c6fe719edc6362d3b07c4feb905a255"
+    }
+  ],
+  "confirmation_views": 0,
+  "decision": {
+    "action": "retain_seed11_reference",
+    "checks": {
+      "both_windows_improve": true,
+      "gross_mean_nondecreasing": true,
+      "inference_cost_measured": true,
+      "minimum_mean_gain": true,
+      "turnover_mean_nonincreasing": false,
+      "worst_day_guardrail": true
+    },
+    "final_views": 0,
+    "interval_checks": [
+      {
+        "block_days": 5,
+        "gross_lower_above_negative_noise": true,
+        "positive_rank_ic_lower": true,
+        "turnover_upper_below_noise": true
+      },
+      {
+        "block_days": 2,
+        "gross_lower_above_negative_noise": true,
+        "positive_rank_ic_lower": true,
+        "turnover_upper_below_noise": true
+      }
+    ],
+    "limitations": "Old eight-day calibration is uncertain; research selection is not independent confirmation. Gross local metrics exclude fees/slippage. Full platform time/memory remains unverified.",
+    "mean_rank_ic_delta": 0.007928232164254706,
+    "minimum_mean_gain": 0.007070079418559813,
+    "model_promoted": false,
+    "period_mean_deltas": {
+      "research_a": 0.006324197573023618,
+      "research_b": 0.009532266755485793
+    },
+    "platform_verified": false,
+    "result": "reject",
+    "schema_version": 1,
+    "scope": "local_research_only"
+  },
+  "experiment_id": "fixed-seed-ensemble-20261017",
+  "failures_and_recovery": [
+    {
+      "archive": "runs\\fixed-seed-ensemble-20261017\\20261017T064731.229671Z_acf2cacde4fa",
+      "fix": "process-tree resource count and termination; tested; new archive retained",
+      "reason": "Windows launcher descendant missing from resource count; interrupted before optimizer initialization",
+      "training_steps": 0
+    },
+    {
+      "additional_inference": 0,
+      "additional_training": 0,
+      "archive": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff",
+      "fix": "explicit ic/rank_ic fields; regression test; all six models and both frozen inference archives reused in separate scoring recovery",
+      "reason": "scoring coverage schema_version integer was treated as correlation record"
+    },
+    {
+      "reason": "verification command omitted documented PYTHONPATH; one subprocess could not import package",
+      "resolution": "rerun with documented PYTHONPATH=src;. ; no model/data changes",
+      "test_report": "runs/fixed-seed-ensemble-20261017-final-tests.xml"
+    }
+  ],
+  "final_views": 0,
+  "hypothesis": "Averaging seed-specific errors improves subsequent-date ordering and stability at acceptable inference cost.",
+  "inference_cost": {
+    "research_a": {
+      "baseline_seconds": 44.169232899992494,
+      "ensemble_seconds": 137.23574000000372,
+      "ensemble_to_baseline_ratio": 3.107043772092022,
+      "samples": 80000,
+      "shared_preprocessing_seconds": 53.62410620000446
+    },
+    "research_b": {
+      "baseline_seconds": 42.34614530002,
+      "ensemble_seconds": 126.64840700002969,
+      "ensemble_to_baseline_ratio": 2.9907895064056724,
+      "samples": 80000,
+      "shared_preprocessing_seconds": 52.839431200001854
+    }
+  },
+  "inference_cost_total": {
+    "baseline_seconds": 86.51537820001249,
+    "ensemble_seconds": 263.8841470000334,
+    "ensemble_to_baseline_ratio": 3.05014151807748,
+    "shared_preprocessing_seconds": 106.46353740000632
+  },
+  "interpretation_zh": "全天RankIC平均改善超过预定门槛，两窗均改善且5日块/2日块区间下界均为正；毛多空和最差日改善。但平均换手上升，违反前瞻护栏，因此不采纳集成，保留seed11参考。第二窗口集成RankIC仍为负。不得据本轮结果放宽门槛或挑选种子。",
+  "limitations": [
+    "Old calibration covers eight exploratory July days and has substantial uncertainty.",
+    "Current selection evidence covers 20 research days in two windows; no independent confirmation.",
+    "Second-window ensemble RankIC remains negative despite relative improvement.",
+    "Local gross metrics omit fees/slippage and are not official competition scores.",
+    "Measured RTX2060 inference is not a platform full-pipeline time or memory acceptance.",
+    "All six new fits share Python3.13/Torch2.11+cu128; historic July runtime only supplies threshold calibration.",
+    "Original generic manifest environment reports CPU default; actual CUDA deterministic execution is established by immutable per-fit events and offline-audit/actual_determinism.json."
+  ],
+  "locked_views": 0,
+  "model_promoted": false,
+  "next_step_zh": "保留六份权重及预测供复算；后续研究方向由用户确定。本轮不启动开盘条件化、确认或锁定检查。",
+  "paired_intervals": [
+    {
+      "block_days": 5,
+      "confidence": 0.95,
+      "rows": [
+        {
+          "days": 10,
+          "interval": [
+            0.005928155859060374,
+            0.01310978759809848
+          ],
+          "mean": 0.0063241975730236166,
+          "metric": "rank_ic",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            8.699899108770562e-06,
+            0.00010325801825107443
+          ],
+          "mean": 4.863965286107486e-05,
+          "metric": "long_short_return",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.008919597989949724,
+            0.022307968413496047
+          ],
+          "mean": 0.019633883704235446,
+          "metric": "turnover",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.003996864705163382,
+            0.012161069977509896
+          ],
+          "mean": 0.009532266755485793,
+          "metric": "rank_ic",
+          "period": "research_b"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.00012109383360669292,
+            0.00015802709739027768
+          ],
+          "mean": 0.00012752538399259482,
+          "metric": "long_short_return",
+          "period": "research_b"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.0006281407035176212,
+            0.019301507537688466
+          ],
+          "mean": 0.005823402727925364,
+          "metric": "turnover",
+          "period": "research_b"
+        },
+        {
+          "days": 20,
+          "interval": [
+            0.006150955918365157,
+            0.011038041710026283
+          ],
+          "mean": 0.007928232164254706,
+          "metric": "rank_ic",
+          "period": "all"
+        },
+        {
+          "days": 20,
+          "interval": [
+            7.279448460516704e-05,
+            0.00011815159265484655
+          ],
+          "mean": 8.808251842683484e-05,
+          "metric": "long_short_return",
+          "period": "all"
+        },
+        {
+          "days": 20,
+          "interval": [
+            0.007979899497487453,
+            0.018896827889447222
+          ],
+          "mean": 0.012728643216080405,
+          "metric": "turnover",
+          "period": "all"
+        }
+      ],
+      "samples": 20000,
+      "seed": 20261017
+    },
+    {
+      "block_days": 2,
+      "confidence": 0.95,
+      "rows": [
+        {
+          "days": 10,
+          "interval": [
+            0.00380810389547864,
+            0.011377806220532038
+          ],
+          "mean": 0.0063241975730236166,
+          "metric": "rank_ic",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            2.398784602574316e-07,
+            0.00010051249759306586
+          ],
+          "mean": 4.863965286107486e-05,
+          "metric": "long_short_return",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.0038675520459439785,
+            0.03749999999999996
+          ],
+          "mean": 0.019633883704235446,
+          "metric": "turnover",
+          "period": "research_a"
+        },
+        {
+          "days": 10,
+          "interval": [
+            0.0032625590218737207,
+            0.015219064325852053
+          ],
+          "mean": 0.009532266755485793,
+          "metric": "rank_ic",
+          "period": "research_b"
+        },
+        {
+          "days": 10,
+          "interval": [
+            9.540935186934499e-05,
+            0.00019731748257866433
+          ],
+          "mean": 0.00012752538399259482,
+          "metric": "long_short_return",
+          "period": "research_b"
+        },
+        {
+          "days": 10,
+          "interval": [
+            -0.00014895908111987045,
+            0.01801224874371863
+          ],
+          "mean": 0.005823402727925364,
+          "metric": "turnover",
+          "period": "research_b"
+        },
+        {
+          "days": 20,
+          "interval": [
+            0.005054392250374608,
+            0.01214857825080782
+          ],
+          "mean": 0.007928232164254706,
+          "metric": "rank_ic",
+          "period": "all"
+        },
+        {
+          "days": 20,
+          "interval": [
+            6.165660862279358e-05,
+            0.0001337290045799723
+          ],
+          "mean": 8.808251842683484e-05,
+          "metric": "long_short_return",
+          "period": "all"
+        },
+        {
+          "days": 20,
+          "interval": [
+            0.004968592964824136,
+            0.02408348494705671
+          ],
+          "mean": 0.012728643216080405,
+          "metric": "turnover",
+          "period": "all"
+        }
+      ],
+      "samples": 20000,
+      "seed": 20261017
+    }
+  ],
+  "policy": {
+    "minimum_mean_gain": 0.007070079418559813,
+    "noise": {
+      "long_short_return_mean": 4.7063819666226216e-05,
+      "min_daily_long_short_return": 6.8876782277395e-05,
+      "opening_ls_bp": 0.7657370389255621,
+      "opening_rank_ic": 0.006693201874944081,
+      "rank_ic_mean": 0.007070079418559813,
+      "turnover_mean": 0.08705670063888571
+    }
+  },
+  "public_method": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
+  "recipe": {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "lob_fields": "original three-level 12 fields",
+    "lookback": 128,
+    "loss": "MSE",
+    "max_steps": 1500,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "smoothing": false,
+    "target_scaling": "train_std",
+    "time_loss_weighting": "none",
+    "training_days": 10
+  },
+  "recorded_at_utc": "2026-10-17T09:14:57.798939+00:00",
+  "runs": [
+    {
+      "manifest_sha256": "d597874e5f240bf32e4900bbb6d7b814cc183e80a8fe369615eeec1247a64a2f",
+      "model_sha256": "79b4729d5ba82d615d045f9d9d1ec7f1dc35f3780fcb3ece91a7178e1bef1ca5",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s11",
+      "period": "research_a",
+      "resources": {
+        "peak_rss_mb": 2796.9296875,
+        "wall_seconds": 200.81740460000583
+      },
+      "samples": 79920,
+      "seed": 11,
+      "steps": 1500,
+      "target_scale": 0.0038659661156313857,
+      "training_identity": {
+        "dates": [
+          "2023-10-18",
+          "2023-10-19",
+          "2023-10-20",
+          "2023-10-23",
+          "2023-10-24",
+          "2023-10-25",
+          "2023-10-26",
+          "2023-10-27",
+          "2023-10-30",
+          "2023-10-31"
+        ],
+        "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+        "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+        "samples": 79920
+      }
+    },
+    {
+      "manifest_sha256": "41beeff40073829ae4cb9d23703855b270bcc08e9abb18144d57c7d84e952a9e",
+      "model_sha256": "db2fedb708930371c127234bc3f27f04154af8d3b3c8b88f0a133a59d7cc06da",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s29",
+      "period": "research_a",
+      "resources": {
+        "peak_rss_mb": 2795.24609375,
+        "wall_seconds": 200.05073799999082
+      },
+      "samples": 79920,
+      "seed": 29,
+      "steps": 1500,
+      "target_scale": 0.0038659661156313857,
+      "training_identity": {
+        "dates": [
+          "2023-10-18",
+          "2023-10-19",
+          "2023-10-20",
+          "2023-10-23",
+          "2023-10-24",
+          "2023-10-25",
+          "2023-10-26",
+          "2023-10-27",
+          "2023-10-30",
+          "2023-10-31"
+        ],
+        "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+        "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+        "samples": 79920
+      }
+    },
+    {
+      "manifest_sha256": "92c63d2ba3db48d443ffd8f3fb7cd81c8e7837ee8750163f3b4eb58b3c46f632",
+      "model_sha256": "4bed435a2b7cdbe9fc50a2c56f95749af669ef9dc174fbfa17222b4e0bf5f7e4",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s47",
+      "period": "research_a",
+      "resources": {
+        "peak_rss_mb": 2827.16015625,
+        "wall_seconds": 200.12201699998695
+      },
+      "samples": 79920,
+      "seed": 47,
+      "steps": 1500,
+      "target_scale": 0.0038659661156313857,
+      "training_identity": {
+        "dates": [
+          "2023-10-18",
+          "2023-10-19",
+          "2023-10-20",
+          "2023-10-23",
+          "2023-10-24",
+          "2023-10-25",
+          "2023-10-26",
+          "2023-10-27",
+          "2023-10-30",
+          "2023-10-31"
+        ],
+        "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+        "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+        "samples": 79920
+      }
+    },
+    {
+      "manifest_sha256": "0d96562ef2352ec87b3f8b7ce579b87f02bb7c061dc0ee206e55307a06fa52d6",
+      "model_sha256": "5448cbf9e1513ac4f67aa18347aa5c10255f094f070b9551cf1bcb402fa92261",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s11",
+      "period": "research_b",
+      "resources": {
+        "peak_rss_mb": 2806.05859375,
+        "wall_seconds": 205.25131620001048
+      },
+      "samples": 80000,
+      "seed": 11,
+      "steps": 1500,
+      "target_scale": 0.004753065955907003,
+      "training_identity": {
+        "dates": [
+          "2024-02-08",
+          "2024-02-19",
+          "2024-02-20",
+          "2024-02-21",
+          "2024-02-22",
+          "2024-02-23",
+          "2024-02-26",
+          "2024-02-27",
+          "2024-02-28",
+          "2024-02-29"
+        ],
+        "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+        "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+        "samples": 80000
+      }
+    },
+    {
+      "manifest_sha256": "f15f092fb6adac8e2cfd90ce2a924b54559d5fbef43ec62a4c7693772df4705e",
+      "model_sha256": "4466ee681cb0f82162572bc797b4f0dfe4a39871140570afe431f6b00d305a26",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s29",
+      "period": "research_b",
+      "resources": {
+        "peak_rss_mb": 2872.62890625,
+        "wall_seconds": 199.36680089999572
+      },
+      "samples": 80000,
+      "seed": 29,
+      "steps": 1500,
+      "target_scale": 0.004753065955907003,
+      "training_identity": {
+        "dates": [
+          "2024-02-08",
+          "2024-02-19",
+          "2024-02-20",
+          "2024-02-21",
+          "2024-02-22",
+          "2024-02-23",
+          "2024-02-26",
+          "2024-02-27",
+          "2024-02-28",
+          "2024-02-29"
+        ],
+        "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+        "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+        "samples": 80000
+      }
+    },
+    {
+      "manifest_sha256": "e7c624b7cea535148f407779cad6b4a6e3c8232f680c62a186d38b819cbe5677",
+      "model_sha256": "7a33e18b5e98b20aa335ac83458172486a9628c3c296247c4129c7aff3260217",
+      "path": "runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s47",
+      "period": "research_b",
+      "resources": {
+        "peak_rss_mb": 2873.078125,
+        "wall_seconds": 196.68357860000106
+      },
+      "samples": 80000,
+      "seed": 47,
+      "steps": 1500,
+      "target_scale": 0.004753065955907003,
+      "training_identity": {
+        "dates": [
+          "2024-02-08",
+          "2024-02-19",
+          "2024-02-20",
+          "2024-02-21",
+          "2024-02-22",
+          "2024-02-23",
+          "2024-02-26",
+          "2024-02-27",
+          "2024-02-28",
+          "2024-02-29"
+        ],
+        "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+        "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+        "samples": 80000
+      }
+    }
+  ],
+  "schema_version": 1,
+  "seed11_reused_as_reference": true,
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "single_factor": "seed11 -> arithmetic mean of seed11/29/47 original-label-scale predictions; no normalization, seed selection or weight search",
+  "source_files_sha256": {
+    "modified_tlob\\ensemble.py": "d21f1efa9f86bda89f96f7d2d32a76b624938256b8b16e5be64f6fb379f21525",
+    "modified_tlob\\requirements-ensemble-cuda.lock.txt": "b6d53d341f8a66103cf952d660ec83ac7629bfbe6e6e6d03045a22b4bed3a920",
+    "scripts\\audit_seed_ensemble.py": "4847dcdec3af90a2160ba1bf7d5cef84f682ffd38856b4ad593e1866cf587aeb",
+    "scripts\\run_seed_ensemble.py": "1c630bb456cc42c4766187139a635ce4f5c66c2cbbe2c30b8a77850e99a2267d",
+    "tests\\test_seed_ensemble.py": "a720354f209e0b1f0b7c7ee6976b0cd4eaf8ab0afe4225cc94be11ea6b2f0846"
+  },
+  "statistics": {
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20261017,
+    "confidence": 0.95,
+    "paired": true,
+    "primary_block_days": 5,
+    "sensitivity_block_days": 2,
+    "sensitivity_rule": "Report both; do not choose whichever makes the candidate pass. Conflicting conclusions are inconclusive.",
+    "stress_groups": "Fixed eight prediction times and weight-age groups. Additional high/low volatility or liquidity thresholds fitted from the fitting period only, and applied using only as-of data. No result-driven subgroup selection.",
+    "unit": "trading day; average prediction timestamps within day, never count stocks or seeds as independent market days",
+    "window_stratified": true
+  },
+  "status": "completed_reject_turnover_guardrail",
+  "summary": [
+    {
+      "baseline": {
+        "long_short_return_mean": 2.6874494434336837e-05,
+        "min_daily_long_short_return": -0.000289176947171676,
+        "rank_ic_mean": 0.006586304813130069,
+        "turnover_mean": 1.6669149318018666
+      },
+      "delta": {
+        "long_short_return_mean": 4.863965286107484e-05,
+        "min_daily_long_short_return": 1.3461532568921674e-05,
+        "rank_ic_mean": 0.006324197573023614,
+        "turnover_mean": 0.019633883704235355
+      },
+      "ensemble": {
+        "long_short_return_mean": 7.551414729541168e-05,
+        "min_daily_long_short_return": -0.0002757154146027543,
+        "rank_ic_mean": 0.012910502386153683,
+        "turnover_mean": 1.686548815506102
+      },
+      "period": "research_a"
+    },
+    {
+      "baseline": {
+        "long_short_return_mean": -4.959520376825679e-05,
+        "min_daily_long_short_return": -0.00030116088435618087,
+        "rank_ic_mean": -0.010599396609749807,
+        "turnover_mean": 1.572472631012204
+      },
+      "delta": {
+        "long_short_return_mean": 0.00012752538399259482,
+        "min_daily_long_short_return": 0.00018002894969854546,
+        "rank_ic_mean": 0.009532266755485793,
+        "turnover_mean": 0.005823402727925364
+      },
+      "ensemble": {
+        "long_short_return_mean": 7.793018022433804e-05,
+        "min_daily_long_short_return": -0.0001211319346576354,
+        "rank_ic_mean": -0.0010671298542640137,
+        "turnover_mean": 1.5782960337401293
+      },
+      "period": "research_b"
+    }
+  ],
+  "validation": {
+    "offline_audit_check_count": 18,
+    "offline_audit_passed": true,
+    "static_check": {
+      "passed": true,
+      "path": "runs\\fixed-seed-ensemble-20261017-ruff.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "test_report": "runs/fixed-seed-ensemble-20261017-final-verified.xml",
+    "test_report_sha256": "19b73170a6a64d542bd6694058f9db4f81515109c66698329997038ea019eccd",
+    "tests": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 115
+    }
+  },
+  "windows": [
+    {
+      "evaluation_dates": [
+        "2023-11-01",
+        "2023-11-02",
+        "2023-11-03",
+        "2023-11-06",
+        "2023-11-07",
+        "2023-11-08",
+        "2023-11-09",
+        "2023-11-10",
+        "2023-11-13",
+        "2023-11-14"
+      ],
+      "evaluation_days": 10,
+      "evaluation_end_exclusive": "2023-11-15",
+      "evaluation_start": "2023-11-01",
+      "fit_once_before_evaluation": true,
+      "name": "research_a",
+      "role": "research",
+      "train_dates": [
+        "2023-10-18",
+        "2023-10-19",
+        "2023-10-20",
+        "2023-10-23",
+        "2023-10-24",
+        "2023-10-25",
+        "2023-10-26",
+        "2023-10-27",
+        "2023-10-30",
+        "2023-10-31"
+      ],
+      "train_end_exclusive": "2023-11-01",
+      "train_start": "2023-10-18"
+    },
+    {
+      "evaluation_dates": [
+        "2024-03-01",
+        "2024-03-04",
+        "2024-03-05",
+        "2024-03-06",
+        "2024-03-07",
+        "2024-03-08",
+        "2024-03-11",
+        "2024-03-12",
+        "2024-03-13",
+        "2024-03-14"
+      ],
+      "evaluation_days": 10,
+      "evaluation_end_exclusive": "2024-03-15",
+      "evaluation_start": "2024-03-01",
+      "fit_once_before_evaluation": true,
+      "name": "research_b",
+      "role": "research",
+      "train_dates": [
+        "2024-02-08",
+        "2024-02-19",
+        "2024-02-20",
+        "2024-02-21",
+        "2024-02-22",
+        "2024-02-23",
+        "2024-02-26",
+        "2024-02-27",
+        "2024-02-28",
+        "2024-02-29"
+      ],
+      "train_end_exclusive": "2024-03-01",
+      "train_start": "2024-02-08"
+    }
+  ]
+}

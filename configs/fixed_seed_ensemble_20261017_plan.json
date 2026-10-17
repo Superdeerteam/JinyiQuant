@@ -1,0 +1,816 @@
+{
+  "budget": {
+    "confirmation_fits_max": 4,
+    "confirmation_stage_wall_cap_seconds": 14400,
+    "evaluation_chunk_days": 5,
+    "fit_reuse_rule": "If final is unconditioned ensemble, three fits include seed11 reference; conditioned ensemble needs three candidate fits plus one seed11 reference; conditioned single-seed needs two fits. No separate fit is spent for a reference already present.",
+    "local_peak_rss_cap_mib": 6144,
+    "locked_fits_max": 4,
+    "locked_stage_wall_cap_seconds": 14400,
+    "notes": "Caps are proposed resource limits, not measured forecasts. Start with a label-free resource pilot. Train and save once, release training tensors, then infer in causal five-day chunks to avoid materializing all later months. Timeout/OOM stops and records failure; no silent budget extension or quality-based retries.",
+    "old_four_day_eval_mean_seconds_per_fit": 710.3359392682711,
+    "per_fit_wall_cap_seconds": 3600,
+    "research_fits_max": 12,
+    "research_stage_wall_cap_seconds": 14400
+  },
+  "configs": {
+    "research_a": {
+      "acceptance": {
+        "min_coverage": 0.99,
+        "repro_atol": 1e-06,
+        "repro_rtol": 1e-05
+      },
+      "budget": {
+        "max_rss_mb": 6144.0,
+        "max_train_samples": 100000,
+        "wall_seconds": 3600.0
+      },
+      "data": {
+        "allowed_end": "2025-01-01T00:00:00",
+        "allowed_start": "2020-01-01T00:00:00",
+        "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+        "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+        "feature_columns": [
+          "ask_price1",
+          "ask_volume1",
+          "bid_price1",
+          "bid_volume1",
+          "ask_price2",
+          "ask_volume2",
+          "bid_price2",
+          "bid_volume2",
+          "ask_price3",
+          "ask_volume3",
+          "bid_price3",
+          "bid_volume3"
+        ],
+        "history_days": 10,
+        "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+        "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+        "label_horizon_minutes": 30,
+        "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+        "lookback": 128,
+        "max_ffill_steps": 5,
+        "min_history": 1,
+        "missing_policy": "ffill",
+        "missing_sentinel": -1.0,
+        "outside_universe_labels": "exclude",
+        "price_scale": 100.0,
+        "sample_times": [
+          "09:30",
+          "10:00",
+          "10:30",
+          "11:00",
+          "11:30",
+          "13:30",
+          "14:00",
+          "14:30"
+        ],
+        "source": "official_local_download_with_explicit_mapping",
+        "training_sample_times": [
+          "09:30",
+          "10:00",
+          "10:30",
+          "11:00",
+          "11:30",
+          "13:30",
+          "14:00",
+          "14:30"
+        ],
+        "version": "cpt_jyc_2026"
+      },
+      "evaluation": {
+        "constant_portfolios": "undefined",
+        "min_cross_section": 3,
+        "periods_per_year": 252,
+        "quantile": 0.2
+      },
+      "evaluation_split": "validation",
+      "experiment_id": "fixed-seed-ensemble-20261017",
+      "final_access": {
+        "max_views": 1,
+        "purpose": ""
+      },
+      "hypothesis": "Averaging seed-specific errors improves subsequent-date ordering and stability at acceptable inference cost.",
+      "logging": {
+        "learning_curve_every_steps": 1500,
+        "learning_curves": false,
+        "resource_interval_seconds": 5.0
+      },
+      "model": {
+        "alpha": 1.0,
+        "batch_size": 32,
+        "book_representation": "raw",
+        "cpu_threads": 1,
+        "device": "cuda",
+        "epochs": 12,
+        "hidden_dim": 40,
+        "is_sin_emb": true,
+        "kind": "modified_tlob",
+        "learning_rate": 0.0001,
+        "log_every_steps": 100,
+        "max_steps": 1500,
+        "num_heads": 1,
+        "num_layers": 4,
+        "target_scaling": "train_std",
+        "time_loss_weighting": "none",
+        "trade_features": "zero"
+      },
+      "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+      "schema_version": 1,
+      "seed": 11,
+      "splits": {
+        "final": {
+          "end": "2025-01-01T00:00:00",
+          "start": "2024-10-08T00:00:00"
+        },
+        "train": {
+          "end": "2023-11-01T00:00:00",
+          "start": "2023-10-18T00:00:00"
+        },
+        "validation": {
+          "end": "2023-11-15T00:00:00",
+          "start": "2023-11-01T00:00:00"
+        }
+      }
+    },
+    "research_b": {
+      "acceptance": {
+        "min_coverage": 0.99,
+        "repro_atol": 1e-06,
+        "repro_rtol": 1e-05
+      },
+      "budget": {
+        "max_rss_mb": 6144.0,
+        "max_train_samples": 100000,
+        "wall_seconds": 3600.0
+      },
+      "data": {
+        "allowed_end": "2025-01-01T00:00:00",
+        "allowed_start": "2020-01-01T00:00:00",
+        "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+        "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+        "feature_columns": [
+          "ask_price1",
+          "ask_volume1",
+          "bid_price1",
+          "bid_volume1",
+          "ask_price2",
+          "ask_volume2",
+          "bid_price2",
+          "bid_volume2",
+          "ask_price3",
+          "ask_volume3",
+          "bid_price3",
+          "bid_volume3"
+        ],
+        "history_days": 10,
+        "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+        "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+        "label_horizon_minutes": 30,
+        "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+        "lookback": 128,
+        "max_ffill_steps": 5,
+        "min_history": 1,
+        "missing_policy": "ffill",
+        "missing_sentinel": -1.0,
+        "outside_universe_labels": "exclude",
+        "price_scale": 100.0,
+        "sample_times": [
+          "09:30",
+          "10:00",
+          "10:30",
+          "11:00",
+          "11:30",
+          "13:30",
+          "14:00",
+          "14:30"
+        ],
+        "source": "official_local_download_with_explicit_mapping",
+        "training_sample_times": [
+          "09:30",
+          "10:00",
+          "10:30",
+          "11:00",
+          "11:30",
+          "13:30",
+          "14:00",
+          "14:30"
+        ],
+        "version": "cpt_jyc_2026"
+      },
+      "evaluation": {
+        "constant_portfolios": "undefined",
+        "min_cross_section": 3,
+        "periods_per_year": 252,
+        "quantile": 0.2
+      },
+      "evaluation_split": "validation",
+      "experiment_id": "fixed-seed-ensemble-20261017",
+      "final_access": {
+        "max_views": 1,
+        "purpose": ""
+      },
+      "hypothesis": "Averaging seed-specific errors improves subsequent-date ordering and stability at acceptable inference cost.",
+      "logging": {
+        "learning_curve_every_steps": 1500,
+        "learning_curves": false,
+        "resource_interval_seconds": 5.0
+      },
+      "model": {
+        "alpha": 1.0,
+        "batch_size": 32,
+        "book_representation": "raw",
+        "cpu_threads": 1,
+        "device": "cuda",
+        "epochs": 12,
+        "hidden_dim": 40,
+        "is_sin_emb": true,
+        "kind": "modified_tlob",
+        "learning_rate": 0.0001,
+        "log_every_steps": 100,
+        "max_steps": 1500,
+        "num_heads": 1,
+        "num_layers": 4,
+        "target_scaling": "train_std",
+        "time_loss_weighting": "none",
+        "trade_features": "zero"
+      },
+      "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+      "schema_version": 1,
+      "seed": 11,
+      "splits": {
+        "final": {
+          "end": "2025-01-01T00:00:00",
+          "start": "2024-10-08T00:00:00"
+        },
+        "train": {
+          "end": "2024-03-01T00:00:00",
+          "start": "2024-02-08T00:00:00"
+        },
+        "validation": {
+          "end": "2024-03-15T00:00:00",
+          "start": "2024-03-01T00:00:00"
+        }
+      }
+    }
+  },
+  "experiment_id": "fixed-seed-ensemble-20261017",
+  "inputs_sha256": {
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202310.0.feather": "1b6601d25a41911c0763908a82f4274c57d55b79a9db56dcb500f3cbfefbeff4",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202311.0.feather": "718c13c2e6973552eead40e896ab09e050445f7700b7927fbcf3c5cab421267c",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202401.0.feather": "678c89071ecd09ed8cd1360d38b68a5e55b003000c97fc3c55a5567fc9ff2d8e",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202402.0.feather": "ec53b61b80cd4c42ba75972a45d90741c9b6c319b338adc6b2a073c1e768660d",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202403.0.feather": "5dd0b55d9acd0257eda122f1fd76fcefb0d330ad9b604b763707b15aa1c57652",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv": "e41f0a8db4a76d356d6e2b29d69852e360f78983308c66f98956e2b2484255e5",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-10.parquet": "4519bdfd566e82c2190991aa06795bd812bdb0490bd0ced4db4e99e9be576bba",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-11.parquet": "5f2a4b5c4ceddf8174822cec61e806fa35eb34fc12e01236021c7a42c706ddc3",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-01.parquet": "bae8766ee9de5a6843cf819887ea371455dd41d2d8c2424d934e4f99d9e7b0f3",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-02.parquet": "edf842434d26fa03432b86fbab93c1aa735276b08cb2a60b6df0dfb94f0c056a",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-03.parquet": "83a5e837cf9b7f5adb5b3c08dcbf8ccf2a478617c3c41bb6bac1153c3a16c449"
+  },
+  "max_training_attempts": 6,
+  "policy": {
+    "minimum_mean_gain": 0.007070079418559813,
+    "noise": {
+      "long_short_return_mean": 4.7063819666226216e-05,
+      "min_daily_long_short_return": 6.8876782277395e-05,
+      "opening_ls_bp": 0.7657370389255621,
+      "opening_rank_ic": 0.006693201874944081,
+      "rank_ic_mean": 0.007070079418559813,
+      "turnover_mean": 0.08705670063888571
+    }
+  },
+  "protocol": {
+    "artifacts": [
+      "protocol.json with hash",
+      "run_id/experiment_id",
+      "manifest.json",
+      "events.jsonl",
+      "frozen config and recoverable source",
+      "data/key/label hashes",
+      "all per-seed predictions",
+      "daily and fixed-group metrics",
+      "paired differences and intervals",
+      "decision.json with accept/reject/inconclusive",
+      "measured inference time/memory"
+    ],
+    "calibration": {
+      "file": "runs\\cloud-review-20261017\\runs.csv",
+      "formula": "sqrt(mean over periods of sample variance across seeds)), baseline=1500 steps",
+      "limitations": "Only two four-day July windows. Uncertain noise scale, not an official scoring tradeoff. Thresholds apply prospectively to this proposal and must be frozen before new candidate outcomes.",
+      "seed_noise": {
+        "long_short_return_mean": 4.7063819666226216e-05,
+        "min_daily_long_short_return": 6.8876782277395e-05,
+        "opening_ls_bp": 0.7657370389255621,
+        "opening_rank_ic": 0.006693201874944081,
+        "rank_ic_mean": 0.007070079418559813,
+        "turnover_mean": 0.08705670063888571
+      },
+      "sha256": "9f87fd037a719d34d26665a77f38a112b84bca6244846d13b3c5d05ff8db387d"
+    },
+    "candidate_windows": [
+      {
+        "evaluation_dates": [
+          "2023-11-01",
+          "2023-11-02",
+          "2023-11-03",
+          "2023-11-06",
+          "2023-11-07",
+          "2023-11-08",
+          "2023-11-09",
+          "2023-11-10",
+          "2023-11-13",
+          "2023-11-14"
+        ],
+        "evaluation_days": 10,
+        "evaluation_end_exclusive": "2023-11-15",
+        "evaluation_start": "2023-11-01",
+        "fit_once_before_evaluation": true,
+        "name": "research_a",
+        "role": "research",
+        "train_dates": [
+          "2023-10-18",
+          "2023-10-19",
+          "2023-10-20",
+          "2023-10-23",
+          "2023-10-24",
+          "2023-10-25",
+          "2023-10-26",
+          "2023-10-27",
+          "2023-10-30",
+          "2023-10-31"
+        ],
+        "train_end_exclusive": "2023-11-01",
+        "train_start": "2023-10-18"
+      },
+      {
+        "evaluation_dates": [
+          "2024-03-01",
+          "2024-03-04",
+          "2024-03-05",
+          "2024-03-06",
+          "2024-03-07",
+          "2024-03-08",
+          "2024-03-11",
+          "2024-03-12",
+          "2024-03-13",
+          "2024-03-14"
+        ],
+        "evaluation_days": 10,
+        "evaluation_end_exclusive": "2024-03-15",
+        "evaluation_start": "2024-03-01",
+        "fit_once_before_evaluation": true,
+        "name": "research_b",
+        "role": "research",
+        "train_dates": [
+          "2024-02-08",
+          "2024-02-19",
+          "2024-02-20",
+          "2024-02-21",
+          "2024-02-22",
+          "2024-02-23",
+          "2024-02-26",
+          "2024-02-27",
+          "2024-02-28",
+          "2024-02-29"
+        ],
+        "train_end_exclusive": "2024-03-01",
+        "train_start": "2024-02-08"
+      },
+      {
+        "evaluation_dates": [
+          "2024-07-01",
+          "2024-07-02",
+          "2024-07-03",
+          "2024-07-04",
+          "2024-07-05",
+          "2024-07-08",
+          "2024-07-09",
+          "2024-07-10",
+          "2024-07-11",
+          "2024-07-12",
+          "2024-07-15",
+          "2024-07-16",
+          "2024-07-17",
+          "2024-07-18",
+          "2024-07-19",
+          "2024-07-22",
+          "2024-07-23",
+          "2024-07-24",
+          "2024-07-25",
+          "2024-07-26"
+        ],
+        "evaluation_days": 20,
+        "evaluation_end_exclusive": "2024-07-27",
+        "evaluation_start": "2024-07-01",
+        "fit_once_before_evaluation": true,
+        "name": "confirmation",
+        "role": "confirmation",
+        "train_dates": [
+          "2024-06-17",
+          "2024-06-18",
+          "2024-06-19",
+          "2024-06-20",
+          "2024-06-21",
+          "2024-06-24",
+          "2024-06-25",
+          "2024-06-26",
+          "2024-06-27",
+          "2024-06-28"
+        ],
+        "train_end_exclusive": "2024-06-29",
+        "train_start": "2024-06-17"
+      },
+      {
+        "evaluation_dates": [
+          "2024-10-08",
+          "2024-10-09",
+          "2024-10-10",
+          "2024-10-11",
+          "2024-10-14",
+          "2024-10-15",
+          "2024-10-16",
+          "2024-10-17",
+          "2024-10-18",
+          "2024-10-21",
+          "2024-10-22",
+          "2024-10-23",
+          "2024-10-24",
+          "2024-10-25",
+          "2024-10-28",
+          "2024-10-29",
+          "2024-10-30",
+          "2024-10-31",
+          "2024-11-01",
+          "2024-11-04",
+          "2024-11-05",
+          "2024-11-06",
+          "2024-11-07",
+          "2024-11-08",
+          "2024-11-11",
+          "2024-11-12",
+          "2024-11-13",
+          "2024-11-14",
+          "2024-11-15",
+          "2024-11-18",
+          "2024-11-19",
+          "2024-11-20",
+          "2024-11-21",
+          "2024-11-22",
+          "2024-11-25",
+          "2024-11-26",
+          "2024-11-27",
+          "2024-11-28",
+          "2024-11-29",
+          "2024-12-02",
+          "2024-12-03",
+          "2024-12-04",
+          "2024-12-05",
+          "2024-12-06",
+          "2024-12-09",
+          "2024-12-10",
+          "2024-12-11",
+          "2024-12-12",
+          "2024-12-13",
+          "2024-12-16",
+          "2024-12-17",
+          "2024-12-18",
+          "2024-12-19",
+          "2024-12-20",
+          "2024-12-23",
+          "2024-12-24",
+          "2024-12-25",
+          "2024-12-26",
+          "2024-12-27",
+          "2024-12-30",
+          "2024-12-31"
+        ],
+        "evaluation_days": 61,
+        "evaluation_end_exclusive": "2025-01-01",
+        "evaluation_start": "2024-10-08",
+        "fit_once_before_evaluation": true,
+        "name": "locked",
+        "role": "locked_test",
+        "train_dates": [
+          "2024-09-13",
+          "2024-09-18",
+          "2024-09-19",
+          "2024-09-20",
+          "2024-09-23",
+          "2024-09-24",
+          "2024-09-25",
+          "2024-09-26",
+          "2024-09-27",
+          "2024-09-30"
+        ],
+        "train_end_exclusive": "2024-10-01",
+        "train_start": "2024-09-13"
+      }
+    ],
+    "cannot_guarantee_private_performance": true,
+    "created_at_utc": "2026-10-17T06:29:09.596184+00:00",
+    "data_roles": {
+      "legacy_final": "2023-08-03 through 2023-08-04 remains reserved and is not accessed by this protocol. One day is insufficient evidence for deployment.",
+      "official_training_data": "Available 2020-2024 data. Internally partition by time into fitting, research, confirmation and locked-test roles.",
+      "old_july_eight_days": "Exploratory only, already repeatedly used for selection; no longer independent confirmation.",
+      "private_leaderboard": "External final test; no tuning or fitting on its labels.",
+      "public_leaderboard": "External feedback and platform compatibility check after internal recipe freeze; never daily hyperparameter search."
+    },
+    "deployment": {
+      "confirmation": "Refit the frozen recipe once on the listed June dates, then use exactly those weights for all twenty July dates.",
+      "locked_test": "After confirmation passes without recipe changes, refit that same recipe once on listed September dates; freeze those weights for all 61 Q4 trading days. Score the entire test only after prediction artifacts and hashes are fixed.",
+      "mode": "static_weights",
+      "research": "Each research origin fits its preceding ten trading days once, then freezes those weights for the full following ten-day window. This measures transfer of the training recipe across origins.",
+      "retraining_during_evaluation": false,
+      "rolling_updates": "Out of scope unless platform rules explicitly permit labels becoming available and online retraining. Such a policy needs its own matched chronological simulation.",
+      "weight_age_groups_trading_days": [
+        [
+          1,
+          10
+        ],
+        [
+          11,
+          20
+        ],
+        [
+          21,
+          40
+        ],
+        [
+          41,
+          61
+        ]
+      ]
+    },
+    "execution_budget": {
+      "confirmation_fits_max": 4,
+      "confirmation_stage_wall_cap_seconds": 14400,
+      "evaluation_chunk_days": 5,
+      "fit_reuse_rule": "If final is unconditioned ensemble, three fits include seed11 reference; conditioned ensemble needs three candidate fits plus one seed11 reference; conditioned single-seed needs two fits. No separate fit is spent for a reference already present.",
+      "local_peak_rss_cap_mib": 6144,
+      "locked_fits_max": 4,
+      "locked_stage_wall_cap_seconds": 14400,
+      "notes": "Caps are proposed resource limits, not measured forecasts. Start with a label-free resource pilot. Train and save once, release training tensors, then infer in causal five-day chunks to avoid materializing all later months. Timeout/OOM stops and records failure; no silent budget extension or quality-based retries.",
+      "old_four_day_eval_mean_seconds_per_fit": 710.3359392682711,
+      "per_fit_wall_cap_seconds": 3600,
+      "research_fits_max": 12,
+      "research_stage_wall_cap_seconds": 14400
+    },
+    "experiment_1": {
+      "hypothesis": "Averaging seed-specific errors improves subsequent-date ordering and stability at acceptable inference cost.",
+      "minimum_mean_gain": 0.007070079418559813,
+      "no_search": [
+        "ensemble weights",
+        "best seed",
+        "score normalization alternatives",
+        "training steps",
+        "learning rate"
+      ],
+      "only_factor": "fixed seed11 prediction -> (seed11+seed29+seed47)/3 in original label units",
+      "primary_metric": "paired daily all-eight-time RankIC",
+      "rationale": "Require gain larger than one measured same-window baseline seed standard deviation to justify executing three models, in addition to a positive paired interval. This is a proposed decision policy before any new results, not a retroactive claim about the July experiment.",
+      "research_fits_max": 6,
+      "reuse": "Seed11 is the reference and is trained only once per origin. All per-seed predictions are retained.",
+      "seeds": [
+        11,
+        29,
+        47
+      ]
+    },
+    "experiment_2": {
+      "additional_parameters": 80,
+      "comparison": "Hold the deployment aggregation chosen in experiment 1 fixed. Compare old vs conditioned model with the same seeds and aggregation; never attribute ensemble gains to the opening branch.",
+      "condition_source": "Prediction key timestamp in Shanghai exchange time; never last observed bar time.",
+      "formula": "score = w^T h + b + I[prediction time == 09:30] * v^T h",
+      "hidden_dim": 80,
+      "hypothesis": "The opening needs a feature-dependent readout reflecting its distinct trading stage.",
+      "initialization": "v=zeros, constructed after all baseline parameters without consuming random draws; shared baseline parameters and sample order exactly paired by seed.",
+      "input_features_unchanged": true,
+      "loss_and_sampling_unchanged": true,
+      "minimum_mean_gain": 0.006693201874944081,
+      "no_search": [
+        "time embedding dimensions",
+        "separate opening backbone",
+        "history length",
+        "opening score reversal",
+        "loss reweighting"
+      ],
+      "only_factor": "opening_condition: none -> open0930_residual",
+      "primary_metric": "paired daily 09:30 RankIC",
+      "research_fits_max": 6,
+      "screen": "Run seed11 for both research origins first; if a preregistered guardrail clearly fails, stop. Otherwise complete seeds29/47 before selecting. No additional seed search."
+    },
+    "fixed_recipe": {
+      "batch_size": 32,
+      "learning_rate": 0.0001,
+      "lob_fields": "original three-level 12 fields",
+      "lookback": 128,
+      "loss": "MSE",
+      "max_steps": 1500,
+      "sample_times": [
+        "09:30",
+        "10:00",
+        "10:30",
+        "11:00",
+        "11:30",
+        "13:30",
+        "14:00",
+        "14:30"
+      ],
+      "smoothing": false,
+      "target_scaling": "train_std",
+      "time_loss_weighting": "none",
+      "training_days": 10
+    },
+    "leakage_controls": [
+      "Purge by the actual label-window end: training label end strictly before evaluation start; handle the 30 trading-minute lunch boundary explicitly.",
+      "Split full prediction timestamps/dates, not random stock rows.",
+      "Fit target scaling and every learned preprocessing parameter on fitting data only.",
+      "Historical lookback may overlap prior fitting dates: permitted causal information, not leakage by itself.",
+      "Never fit on public/private evaluation labels; no future stock membership, backward filling, or future-fitted preprocessing.",
+      "Pin data snapshots and cache identities to source hash, columns, role and time bounds; changing config names cannot reopen locked data.",
+      "Predictions and model hashes fixed before confirmation/locked scoring; same frozen weights across all evaluation chunks."
+    ],
+    "minimal_behavior_checks": [
+      "Zero-initialized opening branch equals baseline predictions and preserves existing parameter initialization/sample order.",
+      "A constructed feature example proves the opening branch can alter cross-sectional ordering; non-opening branch contribution is zero. Shared-trunk training may still change non-opening predictions and is measured by guardrails.",
+      "Existing causal-window and no-label-inference tests remain passing.",
+      "Checkpoint PT/JSON load and local/platform condition construction agree, with explicit error for missing context."
+    ],
+    "new_label_values_read": false,
+    "objective": "Test fixed-seed averaging and one opening-conditioned readout inside official development data, then assess a frozen candidate across later dates without using public/private leaderboard feedback to tune it.",
+    "protocol_id": "ensemble-opening-forward-protocol-20261017",
+    "public_sources": [
+      {
+        "title": "scikit-learn validation vs test roles",
+        "url": "https://scikit-learn.org/stable/modules/cross_validation.html"
+      },
+      {
+        "boundary": "Do not apply a row-based gap directly to mixed stock rows; purge actual label-end timestamps.",
+        "title": "TimeSeriesSplit and gap",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html"
+      },
+      {
+        "title": "DeepLOB temporal out-of-sample evaluation",
+        "url": "https://arxiv.org/html/1808.03668v5"
+      },
+      {
+        "boundary": "Motivates feature-dependent conditioning; does not prove this opening readout improves financial metrics.",
+        "title": "FiLM conditional feature modulation",
+        "url": "https://arxiv.org/abs/1709.07871"
+      }
+    ],
+    "schema_version": 1,
+    "selection": {
+      "confirmation": "One frozen candidate vs the original unconditioned seed11 reference, same label/key hashes and no candidate search. For all three candidate outcomes the primary is all-day RankIC: mean difference > 0 and 95% paired five-day-block lower bound > 0. Research noise-unit minimum-gain thresholds are NOT reused as an all-day opening-only confirmation threshold. Apply the explicit mean/interval/worst-day/cost guardrails; retain component-attribution claims only for research evidence.",
+      "cost_gate": "Measure inference on the exact same input keys; actual full platform pipeline <= 3 hours and within its documented memory limit. Three-model execution cost cannot be inferred from model count alone. Local 6144MiB run cap is not the platform memory limit.",
+      "failure_policy": "Do not expand searches or change gates after outcomes. Fix a verified implementation bug with a new run ID; record that viewed evaluation data are consumed. Changed research direction requires untouched later evidence.",
+      "final_reference": "Original unconditioned seed11 model, refit once using the same prescribed fitting dates and unchanged recipe. This reference identity is fixed for ensemble-only, opening-only and combined outcomes.",
+      "fixed_group_failure_flag": {
+        "groups": "Only the eight fixed prediction times and the four fixed weight-age groups, with >=5 complete days. Optional volatility/liquidity breakdowns remain descriptive.",
+        "interpretation": "The same old all-day tolerance is deliberately applied to each group as a conservative practical decision rule; it is not a group-specific noise estimate, a multiplicity-adjusted significance test, or a guarantee of private stability. No thresholds are chosen after results.",
+        "rule": "If any prespecified group mean RankIC difference < -calibration.seed_noise.rank_ic_mean, or gross long-short difference < -calibration.seed_noise.long_short_return_mean, downgrade overall accept to inconclusive."
+      },
+      "guardrails": "Gross long-short mean must not decline; turnover mean must not increase; for opening experiment full-day RankIC mean must not decline. For these means, paired interval lower bounds (or upper for turnover) must also exclude deterioration greater than one archived seed-noise unit. Observed worst-day deterioration must not exceed the archived worst-day seed noise. A failure retains the reference; ambiguous intervals mean inconclusive, not success.",
+      "locked": "Exactly one final comparison with that same reference and confirmation gates after all decisions are frozen. Predeclared age/time/stress groups are reported, not searched. Their noise was not separately calibrated: group intervals are descriptive; they cannot independently establish success. The explicitly defined common-tolerance diagnostic below can downgrade a putative overall acceptance to inconclusive. Failure does not permit tuning on this test.",
+      "primary_gate": "Mean paired gain >= the relevant preregistered minimum AND the 95% continuous-day-block interval lower bound > 0; each research window mean gain > 0.",
+      "shared_research_only": "Both experiments may use the two research windows. Their data are openly treated as selection data.",
+      "single_confirmation_opening": "Complete both research decisions and freeze one final recipe before opening the common confirmation labels/metrics. Do not use experiment1 confirmation results to redesign experiment2."
+    },
+    "statistics": {
+      "bootstrap_samples": 20000,
+      "bootstrap_seed": 20261017,
+      "confidence": 0.95,
+      "paired": true,
+      "primary_block_days": 5,
+      "sensitivity_block_days": 2,
+      "sensitivity_rule": "Report both; do not choose whichever makes the candidate pass. Conflicting conclusions are inconclusive.",
+      "stress_groups": "Fixed eight prediction times and weight-age groups. Additional high/low volatility or liquidity thresholds fitted from the fitting period only, and applied using only as-of data. No result-driven subgroup selection.",
+      "unit": "trading day; average prediction timestamps within day, never count stocks or seeds as independent market days",
+      "window_stratified": true
+    },
+    "status": "proposal_not_activated",
+    "training_started": false,
+    "window_status": {
+      "activation_required": true,
+      "historical_config_overlap_count": 0,
+      "historical_config_overlaps": [],
+      "scope_limit": "Scanning current configs does not prove absence of all historical/manual exposure. Before activation reconcile historical run/data provenance, check only schema/coverage and enforce the roles in a shared access registry. Never silently substitute windows after seeing performance.",
+      "selection_basis": "Calendar dates from stock-pool date column only; no new label or candidate metric values."
+    }
+  },
+  "protocol_sha256": "e82d741055d9643c6adb468d91c8c751c25be3322b4beebaa928219e45fd2600",
+  "public_method": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingRegressor.html",
+  "recipe_reference": {
+    "alpha": 1.0,
+    "batch_size": 32,
+    "book_representation": "raw",
+    "cpu_threads": 1,
+    "device": "cuda",
+    "epochs": 12,
+    "hidden_dim": 40,
+    "is_sin_emb": true,
+    "kind": "modified_tlob",
+    "learning_rate": 0.0001,
+    "log_every_steps": 10,
+    "max_steps": 1500,
+    "num_heads": 1,
+    "num_layers": 4,
+    "target_scaling": "train_std",
+    "time_loss_weighting": "none",
+    "trade_features": "zero"
+  },
+  "registered_at_utc": "2026-10-17T06:40:48.268768+00:00",
+  "registry_path": "D:\\进益资本杯\\runs\\data_roles.json",
+  "registry_sha256": "7c8fc10edd8b0f0e0dae506066c3f4aba8b3f136164f24499f4911971bd10f3d",
+  "schema_version": 1,
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "statistics": {
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20261017,
+    "confidence": 0.95,
+    "paired": true,
+    "primary_block_days": 5,
+    "sensitivity_block_days": 2,
+    "sensitivity_rule": "Report both; do not choose whichever makes the candidate pass. Conflicting conclusions are inconclusive.",
+    "stress_groups": "Fixed eight prediction times and weight-age groups. Additional high/low volatility or liquidity thresholds fitted from the fitting period only, and applied using only as-of data. No result-driven subgroup selection.",
+    "unit": "trading day; average prediction timestamps within day, never count stocks or seeds as independent market days",
+    "window_stratified": true
+  },
+  "windows": [
+    {
+      "evaluation_dates": [
+        "2023-11-01",
+        "2023-11-02",
+        "2023-11-03",
+        "2023-11-06",
+        "2023-11-07",
+        "2023-11-08",
+        "2023-11-09",
+        "2023-11-10",
+        "2023-11-13",
+        "2023-11-14"
+      ],
+      "evaluation_days": 10,
+      "evaluation_end_exclusive": "2023-11-15",
+      "evaluation_start": "2023-11-01",
+      "fit_once_before_evaluation": true,
+      "name": "research_a",
+      "role": "research",
+      "train_dates": [
+        "2023-10-18",
+        "2023-10-19",
+        "2023-10-20",
+        "2023-10-23",
+        "2023-10-24",
+        "2023-10-25",
+        "2023-10-26",
+        "2023-10-27",
+        "2023-10-30",
+        "2023-10-31"
+      ],
+      "train_end_exclusive": "2023-11-01",
+      "train_start": "2023-10-18"
+    },
+    {
+      "evaluation_dates": [
+        "2024-03-01",
+        "2024-03-04",
+        "2024-03-05",
+        "2024-03-06",
+        "2024-03-07",
+        "2024-03-08",
+        "2024-03-11",
+        "2024-03-12",
+        "2024-03-13",
+        "2024-03-14"
+      ],
+      "evaluation_days": 10,
+      "evaluation_end_exclusive": "2024-03-15",
+      "evaluation_start": "2024-03-01",
+      "fit_once_before_evaluation": true,
+      "name": "research_b",
+      "role": "research",
+      "train_dates": [
+        "2024-02-08",
+        "2024-02-19",
+        "2024-02-20",
+        "2024-02-21",
+        "2024-02-22",
+        "2024-02-23",
+        "2024-02-26",
+        "2024-02-27",
+        "2024-02-28",
+        "2024-02-29"
+      ],
+      "train_end_exclusive": "2024-03-01",
+      "train_start": "2024-02-08"
+    }
+  ]
+}

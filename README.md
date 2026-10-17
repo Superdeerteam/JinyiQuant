@@ -234,6 +234,17 @@ uv run python scripts/acceptance.py --output runs/engineering-acceptance
 
 具体本地指标口径保存在每次运行的 `metrics.json/conventions`。公开实现核对参考 [SciPy 的常数输入相关性约定](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html)与 [NumPy 的缺失值均值说明](https://numpy.org/doc/stable/reference/generated/numpy.nanmean.html)；对照额外要求固定的标签可评价截面集合。工程记录保留在独立运行档案中。
 
+## 固定三种子等权集成
+
+固定三种子等权集成研究已完成：两窗分别使用2023-11-01至11-14、2024-03-01至03-14，各训练seed11/29/47一次，共6次1500步训练。预测还原原始标签尺度后直接平均，seed11同时作为参考。全天RankIC平均差为+0.007928，超过旧校准门槛0.007070；两窗改善，5日块95%区间为[0.006151, 0.011038]，2日块敏感性分析同向。但平均换手增加0.012729，违反预登记的“平均换手不升”护栏，因此**不采纳集成，保留seed11参考**。毛多空与最差日均改善，不据此放宽换手要求。详细结果、失败恢复及档案索引见[结构化研究记录](modified_tlob/fixed_seed_ensemble_20261017.json)。只使用两个研究窗，确认、锁定及旧单日final未打开；本地近似指标不等于官方成绩。
+
+该轮使用独立`.venv-ensemble-cuda`环境和`modified_tlob/requirements-ensemble-cuda.lock.txt`。训练与推理入口为`python -m scripts.run_seed_ensemble run configs/fixed_seed_ensemble_20261017_plan.json`，会拒绝重复消费已登记训练次数；评分失败时用`recover-analysis <原执行档案> --output <新目录>`只恢复评分。对已完成的分析档案可只读复算，不训练、不读取原始行情/标签文件：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.audit_seed_ensemble runs/fixed-seed-ensemble-20261017/analysis-recovery/20261017T091219.300500Z_7c40b5b5d26d --output runs/fixed-seed-ensemble-20261017/offline-audit
+```
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁和说明，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

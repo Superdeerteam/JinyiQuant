@@ -9,6 +9,7 @@ cache/
 .venv/
 .venv-tlob/
 .venv-tlob-cuda/
+.venv-ensemble-cuda/
 inference_runs/
 training_runs/
 modified_tlob_weights.json
