@@ -15,6 +15,16 @@ NOISE_METRICS = ("rank_ic_mean", "long_short_return_mean", "turnover_mean", "min
 DELTA_METRICS = ("rank_ic", "long_short_return", "turnover")
 
 
+def arm_exposure(samples, *, steps, batch_size):
+    """Sample exposures one arm consumes; fixed steps are fixed compute, not fixed epochs."""
+    if type(steps) is not int or type(batch_size) is not int or steps < 1 or batch_size < 1:
+        raise ValueError("steps and batch_size must be positive integers")
+    if type(samples) is not int or samples < 1:
+        raise ValueError("Arm sample counts must be positive integers")
+    return {"samples": samples, "steps": steps, "sample_exposures": steps * batch_size,
+            "epochs": steps * batch_size / samples}
+
+
 def declared_exposure(samples_by_arm, *, steps, batch_size):
     """Sample exposures a fixed-step, fixed-batch fit actually consumes.
 
@@ -25,13 +35,7 @@ def declared_exposure(samples_by_arm, *, steps, batch_size):
     declared = {str(key): value for key, value in samples_by_arm.items()}
     if sorted(declared) != ["10", "40"]:
         raise ValueError("Declare exactly the 10-day and 40-day arms")
-    arms = {}
-    for key in ("10", "40"):
-        samples = declared[key]
-        if type(samples) is not int or samples < 1:
-            raise ValueError("Arm sample counts must be positive integers")
-        arms[key] = {"samples": samples, "sample_exposures": steps * batch_size,
-                     "epochs": steps * batch_size / samples}
+    arms = {key: arm_exposure(declared[key], steps=steps, batch_size=batch_size) for key in ("10", "40")}
     return {"steps": steps, "batch_size": batch_size, "sample_exposures": steps * batch_size, "arms": arms,
             "interpretation": "Equal optimizer compute; the 40-day pool is traversed fewer times, so this "
                               "round tests generalization at equal compute, not the value of more history."}
@@ -83,11 +87,14 @@ def minimum_mean_gain(noise, *, practical_improvement, noise_multiplier):
             "minimum_mean_gain": max(float(practical_improvement), measured)}
 
 
-def coverage_decision(paired, summaries, intervals, policy, *, cost_measured, exposure):
+def coverage_decision(paired, summaries, intervals, policy, *, cost_measured, exposure,
+                      only_factor=None, interpretation=None, limitations=None):
     """Predeclared accept/reject/inconclusive gates for the date-coverage comparison.
 
     ``paired`` holds one row per evaluation day with candidate-minus-baseline deltas,
     already averaged across the registered seeds; the seeds are not independent days.
+    The descriptive strings may be overridden by a round that reuses these gates for a
+    different treatment; the gates themselves are never parameters.
     """
     periods = set(paired.period)
     if (len(periods) != 2 or set(r["period"] for r in summaries) != periods or len(summaries) != 2
@@ -116,7 +123,8 @@ def coverage_decision(paired, summaries, intervals, policy, *, cost_measured, ex
     interval_pass = all(all(value for key, value in row.items() if key != "block_days") for row in interval_checks)
     result = "reject" if not point_pass else "accept" if interval_pass and cost_measured else "inconclusive"
     return {"schema_version": 1, "result": result, "scope": "local_research_only",
-            "only_factor": "training dates 10 -> 40 at fixed steps, batch, learning rate and recipe",
+            "only_factor": only_factor or
+            "training dates 10 -> 40 at fixed steps, batch, learning rate and recipe",
             "action": "retain_40_day_candidate_for_next_stage" if result == "accept"
                       else "retain_10_day_reference",
             "checks": checks, "interval_checks": interval_checks,
@@ -124,8 +132,10 @@ def coverage_decision(paired, summaries, intervals, policy, *, cost_measured, ex
             "period_mean_deltas": {str(k): float(v) for k, v in window_means.items()},
             "exposure": exposure, "cost_measured": bool(cost_measured),
             "platform_verified": False, "model_promoted": False, "final_views": 0,
-            "interpretation": "A non-accept result rejects an improvement claim at this fixed exposure, not the "
-                              "value of more history: the 40-day pool is only traversed for a fraction of an epoch, "
-                              "and step counts are frozen for this round.",
-            "limitations": "Two research windows and three seeds are selection data; local gross metrics exclude "
-                           "fees and slippage; platform time and memory limits remain unverified."}
+            "interpretation": interpretation or
+            "A non-accept result rejects an improvement claim at this fixed exposure, not the "
+            "value of more history: the 40-day pool is only traversed for a fraction of an epoch, "
+            "and step counts are frozen for this round.",
+            "limitations": limitations or
+            "Two research windows and three seeds are selection data; local gross metrics exclude "
+            "fees and slippage; platform time and memory limits remain unverified."}

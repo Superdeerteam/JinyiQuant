@@ -634,7 +634,7 @@ def fit_worker(plan, window, arm, config, output, rec):
     model = TLOBAdapter(config.model, config.data, seed=config.seed, recorder=rec)
     rec.event("training", "started", seed=config.seed, arm=arm, evaluation_labels_loaded=False)
     progress = model.fit(batch, targets.target.to_numpy(), sample_mask=mask)
-    if progress["steps"] != EXPOSURE_STEPS:
+    if config.model.max_steps is None or progress["steps"] != config.model.max_steps:
         raise ValueError("Did not complete exactly the frozen optimizer steps")
     rec.event("training", "completed", **progress)
     write_json(output / "training.json", {**progress, "target_scale": model.target_scale, "arm": arm,
@@ -670,7 +670,8 @@ def infer_worker(plan, window, arm, config, paths, output, rec):
         if config.model.device == "cuda" and torch.cuda.is_available():
             torch.cuda.synchronize()
 
-    checks, frames, costs = [], {seed: [] for seed in SEEDS}, []
+    seeds = tuple(sorted(paths))
+    checks, frames, costs = [], {seed: [] for seed in seeds}, []
     rec.event("loading", "started", arm=arm, paths={str(s): str(p) for s, p in paths.items()})
     models = {seed: TLOBAdapter.load(path, device=config.model.device, recorder=rec) for seed, path in paths.items()}
     weight_hashes = {str(seed): file_sha256(path) for seed, path in paths.items()}
@@ -691,10 +692,10 @@ def infer_worker(plan, window, arm, config, paths, output, rec):
         rec.event("data", "validated", chunk=index, labels_loaded=False, samples=len(keys))
         rec.event("preprocessing", "completed", chunk=index, elapsed_seconds=preprocessing_seconds)
         probe = small_batch(batch)
-        for seed in SEEDS:
+        for seed in seeds:
             models[seed].predict(probe)
         rec.event("inference", "started", chunk=index, samples=len(keys), label_input=False)
-        order = list(SEEDS) if index % 2 == 0 else list(SEEDS)[::-1]
+        order = list(seeds) if index % 2 == 0 else list(seeds)[::-1]
         scores, timings = {}, {}
         for seed in order:
             sync()
@@ -702,23 +703,23 @@ def infer_worker(plan, window, arm, config, paths, output, rec):
             scores[seed] = batch.keys.assign(score=models[seed].predict(batch))
             sync()
             timings[str(seed)] = time.monotonic() - started_seed
-        for seed in SEEDS:
+        for seed in seeds:
             frames[seed].append(scores[seed])
         checks.append(check(f"identical_prediction_keys_{index}",
-                            all(scores[seed][KEYS].equals(scores[SEEDS[0]][KEYS]) for seed in SEEDS)))
+                            all(scores[seed][KEYS].equals(scores[seeds[0]][KEYS]) for seed in seeds)))
         costs.append({"chunk": index, "dates": dates, "samples": len(keys), "timing_order": order,
                       "shared_preprocessing_seconds": preprocessing_seconds, "per_seed_seconds": timings,
                       "same_keys_sha256": frame_digest(batch.keys), "resources": resource_usage()})
         if index == 0:
             stocks = set(probe.keys.instrument)
-            checks.extend(prediction_checks(models[SEEDS[0]], probe,
+            checks.extend(prediction_checks(models[seeds[0]], probe,
                                             bundle.bars[bundle.bars.instrument.isin(stocks)], config.data,
                                             config.acceptance.repro_atol, config.acceptance.repro_rtol))
         rec.event("inference", "completed", **costs[-1])
         history_diagnostics(batch).to_parquet(output / f"evaluation_history_{index}.parquet", index=False)
         del batch, probe, bundle, scores
         gc.collect()
-    for seed in SEEDS:
+    for seed in seeds:
         pd.concat(frames[seed], ignore_index=True).to_parquet(output / f"seed{seed}_predictions.parquet", index=False)
     checks.append(check("weights_frozen_across_all_chunks",
                         weight_hashes == {str(seed): file_sha256(path) for seed, path in paths.items()}))
