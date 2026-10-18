@@ -101,7 +101,8 @@ class ModelConfig(StrictModel):
     batch_size: int = Field(default=32, ge=1)
     learning_rate: float = Field(default=0.0001, gt=0)
     target_scaling: Literal["none", "train_std"] = "none"
-    target_centering: Literal["none", "timestamp_mean_train"] = "none"
+    target_centering: Literal[
+        "none", "timestamp_mean_train", "timestamp_zscore_train_rms_matched"] = "none"
     time_loss_weighting: Literal["none", "train_variance", "date_decay_10d"] = "none"
     book_representation: Literal["raw", "relative_mid_bps"] = "raw"
     trade_features: Literal["zero", "log1p"] = "zero"

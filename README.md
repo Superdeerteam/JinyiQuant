@@ -358,6 +358,28 @@ $env:PYTHONPATH = 'src;.'
 
 **解释边界：** 本轮只回答“在当前10日、1500步、原始缩放和两个研究窗口下，完整时间戳去均值是否同时通过原门槛与最差日护栏”，答案是否定的；不否定其他截面标签变换、其他缩放口径或最差日容忍以外的评价方式。两个研究窗仍是已使用数据，确认、锁定和旧final未打开，平台时限与内存仍未验收。
 
+### 10日标签截面z-score并匹配中心化方差（20261018）
+
+上一轮的完整时间戳去均值把平均RankIC抬高约0.043，却因研究B最差日护栏回退。本轮只检验一条更窄的假设：同一完整时间戳内先做截面z-score，再用一个训练池常数`c=std(z)/std(q)`把目标方差匹配到中心化标签的全池方差，使各截面的目标幅度可比；`target_std`仍是原始训练标签标准差，网络、输入、1500步、batch顺序、MSE、三种子×两窗口均不变。按冻结公式，`r=float64(float32(y))`，`z=r−μ_t`，`q=z/σ_t`（`σ_t=0`时保留样本并令`q=0`），`c=std(z)/std(q)`，`y*=float32(c q)`，所有标准差`ddof=0`且先于随机批次和历史掩码一次计算。推理仍为`network(x)*target_scale`，不乘回`c`，不补未来`μ_t、σ_t`；缺历史回退值沿用中心化对照的截距。该截面z-score有[Qlib CSZScoreNorm](https://github.com/microsoft/qlib/blob/main/qlib/data/dataset/processor.py#L305)的公开先例，但“全池方差匹配”是本项目的对照设计，不能称为直接复刻Qlib配置。
+
+[冻结计划](configs/label_cszscore_20261018_plan.json)、[脚本](scripts/run_label_cszscore.py)与[行为测试](tests/test_label_cszscore.py)在首个训练前固定六次训练、原改善门槛0.011647、最差日容忍1.3897e-4、6次有效训练/最多12次启动和9000秒整轮上限；原始10日参考与中心化对照的六份权重、预测、训练键、原始标签和配置在准备阶段核对后复用，不重训。seed11只记录进度，六次全部完成后才判定。六个任务均一次完成，1500步、48,000次样本暴露，实际峰值RSS约2,930 MiB，训练与推理合计1,841秒，无重试。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_cszscore prepare
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_cszscore run configs/label_cszscore_20261018_plan.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_cszscore recover configs/label_cszscore_20261018_plan.json --execution <已有六份拟合目录>
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_cszscore record configs/label_cszscore_20261018_plan.json --execution <完成档案目录> --output modified_tlob/label_cszscore_20261018.json
+```
+
+**结论：回退，保留10日参考。** 三种子配对逐日全天RankIC差（CSZ减原始10日/1500，种子均值）+0.046347，高于未改门槛；研究A +0.064981、研究B +0.027713，`both_windows_improve`成立，逐种子也全部为正（A +0.0545/+0.0576/+0.0828，B +0.0187/+0.0516/+0.0129）。5日/2日连续日块RankIC区间[0.032514, 0.055247]和[0.030225, 0.058482]均不含零，多空均值+0.000340、换手均值−0.231877，点条件与两项区间条件均通过。但研究B最差日多空差−0.000275413（2024-03-07）超过1.3897e-4容忍，`worst_day_guardrail`失败，因此按预登记回退；研究A最差日差为+0.000412441。按本轮规则，不因3月7日是否修复单独决定成功，也不得针对该日追加规则。
+
+**相对中心化对照的另行报告（不新增门槛，不参与判定）：** CSZ减中心化，种子均值RankIC +0.003226（研究A +0.004271、研究B +0.002182），5日/2日区间[0.002600, 0.004496]和[0.001032, 0.005950]；多空均值+2.320e-5，换手均值−0.038482。但逐种子方向不一致：研究A为+0.006438/+0.004627/+0.001747，研究B为+0.016413/−0.009816/−0.000052，且2日块多空下界约−2.59e-7。因此“相对原始标签通过点条件”不等于“新增标准化优于中心化”；后者只有小幅度、非跨种子一致的方向性证据。
+
+误差分开报告（研究A/B，种子11）：原始标签MSE 1.033639e-5/1.545138e-5，中心化标签MSE 8.780151e-6/1.122348e-5，实际优化的变换目标损失1.259908e-5/1.479845e-5；三者度量不同目标，不能互相替代。逐种子结果、两组配对差、两种日块区间、长短侧、逐日指标、成本与决策见[结构化研究记录](modified_tlob/label_cszscore_20261018.json)和[完成档案](runs/label-cszscore-20261018/20261018T104425.466761Z_1b8039d5f4e1)。
+
+**解释边界：** 本轮只回答“在当前10日、1500步、原始缩放和两个研究窗口下，该方差匹配z-score目标是否同时通过原门槛与最差日护栏”，答案是否定的；不否定其他标准化强度、其他目标尺度、其他损失或最差日容忍以外的评价方式。确认、锁定和旧final未打开，平台时限与内存仍未验收；不覆盖现有参考权重。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

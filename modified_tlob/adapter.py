@@ -18,6 +18,109 @@ from .schema import validate_input_schema
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
                    "missing_sentinel", "price_scale", "history_days", "sample_times", "label_horizon_minutes")
 DATE_DECAY_HALF_LIFE_TRADING_DAYS = 10.0
+TARGET_CENTERING_MODES = ("none", "timestamp_mean_train", "timestamp_zscore_train_rms_matched")
+TARGET_LABELS = {
+    "none": "official_vwap_return",
+    "timestamp_mean_train": "official_vwap_return_minus_training_timestamp_mean",
+    "timestamp_zscore_train_rms_matched": "official_vwap_return_timestamp_zscore_train_rms_matched",
+}
+PREDICTION_UNITS = {"none": "original_label_return", "timestamp_mean_train": "relative_return_score",
+                    "timestamp_zscore_train_rms_matched": "relative_return_score"}
+TRAINING_LOSS_UNITS = {
+    "none": "original_return_squared",
+    "timestamp_mean_train": "centered_return_squared",
+    "timestamp_zscore_train_rms_matched": "rms_matched_transformed_return_squared",
+}
+PROGRESS_LOSS_UNITS = {"none": "raw_label_mse", "timestamp_mean_train": "centered_label_mse",
+                       "timestamp_zscore_train_rms_matched": "rms_matched_transformed_label_mse"}
+
+
+def timestamp_zscore_train_rms_matched(keys, target, mask):
+    """Cross-sectional z-score labels rescaled to the centered training-pool variance.
+
+    For every complete training timestamp ``t``, with ``r = float64(float32(y))``:
+    ``z = r - mean_t(r)``, ``sigma_t = sqrt(mean_t(z**2))`` (ddof=0), and
+    ``q = z / sigma_t`` (or ``0`` when ``sigma_t == 0``). One pool constant
+    ``c = std(z) / std(q)`` (ddof=0) makes ``y* = float32(c q)`` share the centered
+    labels' pool standard deviation. The fallback is the centered-label mean, matching
+    the centered control; it is never re-estimated from the transformed targets.
+    """
+    raw64 = np.asarray(target, dtype=np.float32).astype(np.float64)
+    if len(keys) != len(raw64):
+        raise ValueError("Target-transform keys and targets are not aligned")
+    if not np.isfinite(raw64).all():
+        raise ValueError("Target transform requires finite official labels")
+    timestamps = pd.to_datetime(keys["date"])
+    if timestamps.isna().any():
+        raise ValueError("Target transform requires a timestamp for every training row")
+    frame = pd.DataFrame({"timestamp": timestamps.to_numpy(), "raw": raw64})
+    grouped = frame.groupby("timestamp", sort=False)["raw"]
+    counts = grouped.size()
+    means = grouped.transform("mean").to_numpy(dtype=np.float64)
+    centered = raw64 - means
+    timestamp_means = grouped.mean()
+    squares = pd.DataFrame({"timestamp": frame["timestamp"], "square": centered ** 2}).groupby(
+        "timestamp", sort=False)["square"].sum().reindex(counts.index)
+    stds = np.sqrt(squares.to_numpy(dtype=np.float64) / counts.to_numpy(dtype=np.float64))
+    std_rows = pd.Series(stds, index=counts.index).reindex(frame["timestamp"]).to_numpy(dtype=np.float64)
+    q = np.divide(centered, std_rows, out=np.zeros_like(centered), where=std_rows > 0)
+    centered_std = float(centered.std())
+    q_std = float(q.std())
+    if not np.isfinite([centered_std, q_std]).all() or q_std <= 0:
+        raise ValueError("Timestamp-zscore training labels have zero or nonfinite pool q standard deviation")
+    c = centered_std / q_std
+    transformed64 = c * q
+    transformed = transformed64.astype(np.float32)
+    if not np.isfinite(transformed).all():
+        raise FloatingPointError("Nonfinite rms-matched training targets")
+    centered_means = pd.DataFrame({"timestamp": frame["timestamp"], "centered": centered}).groupby(
+        "timestamp", sort=False)["centered"].mean()
+    zero_variance = [str(timestamp) for timestamp, std in zip(counts.index, stds) if std == 0]
+    rows = [{"timestamp": str(timestamp), "samples": int(counts.loc[timestamp]),
+             "mean": float(timestamp_means.loc[timestamp]), "std": float(std)}
+            for timestamp, std in zip(counts.index, stds)]
+    selected = np.ones(len(raw64), dtype=bool) if mask is None else np.asarray(mask, dtype=bool)
+    stats = {
+        "method": "timestamp_zscore_train_rms_matched",
+        "formula": "q = (r - mean_t(r)) / std_t(r); y* = c q with c = std(z) / std(q), all ddof=0",
+        "label_source": "official training labels only",
+        "scope": "every row of each full training timestamp in the selected training pool; computed once before "
+                 "mini-batches and before the min-history mask",
+        "ddof": 0,
+        "timestamps": int(len(counts)), "rows": int(len(raw64)),
+        "min_rows_per_timestamp": int(counts.min()),
+        "mask_excluded_rows": int((~selected).sum()),
+        "raw_mean": float(raw64.mean()), "raw_std": float(raw64.std()),
+        "centered_mean": float(centered.mean()), "centered_std": centered_std,
+        "q_mean": float(q.mean()), "q_std": q_std,
+        "c": float(c),
+        "c_formula": "std(centered training labels, ddof=0) / std(q, ddof=0) over the complete training pool",
+        "transformed_mean": float(transformed64.mean()), "transformed_std": float(c * q_std),
+        "float32_transformed_mean": float(transformed.astype(np.float64).mean()),
+        "float32_transformed_std": float(transformed.astype(np.float64).std()),
+        "selected_centered_mean": float(centered[selected].mean()),
+        "selected_centered_std": float(centered[selected].std()),
+        "selected_transformed_std": float(transformed[selected].astype(np.float64).std()),
+        "fallback_mean": float(centered[selected].astype(np.float32).astype(np.float64).mean()),
+        "fallback_basis": "timestamp-centered training-label mean in the same float32 representation used by "
+                          "the centered control; never re-estimated from the transformed targets",
+        "zero_variance_timestamps": int(len(zero_variance)),
+        "zero_variance_timestamp_list": zero_variance,
+        "max_abs_centered_timestamp_mean": float(np.abs(centered_means.to_numpy()).max()),
+        "timestamp_means_sha256": hashlib.sha256(json.dumps(
+            [{"timestamp": str(timestamp), "mean": float(value)}
+             for timestamp, value in timestamp_means.items()], sort_keys=True, ensure_ascii=False,
+            separators=(",", ":")).encode("utf-8")).hexdigest(),
+        "per_timestamp_sha256": hashlib.sha256(json.dumps(
+            rows, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest(),
+        "per_timestamp": rows,
+    }
+    if stats["max_abs_centered_timestamp_mean"] > 1e-12:
+        raise ValueError("Timestamp-centered training labels are not zero-mean within a timestamp")
+    if abs(stats["transformed_std"] - centered_std) > 1e-12 * max(centered_std, 1.0):
+        raise ValueError("RMS-matched training labels do not match the centered pool standard deviation")
+    return transformed[selected], stats
+
 
 
 class TLOBAdapter:
@@ -31,7 +134,7 @@ class TLOBAdapter:
         self.config.setdefault("trade_features", "zero")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
-        if self.config["target_centering"] not in ("none", "timestamp_mean_train"):
+        if self.config["target_centering"] not in TARGET_CENTERING_MODES:
             raise ValueError("Unsupported target centering")
         if self.config["time_loss_weighting"] not in ("none", "train_variance", "date_decay_10d"):
             raise ValueError("Unsupported loss weighting")
@@ -172,6 +275,13 @@ class TLOBAdapter:
         self._event("training", "time_loss_weighting_fitted", **self.time_loss_weighting_stats)
         return np.asarray([by_time[sample_time]["weight"] for sample_time in times], dtype=np.float32)
 
+    def _csz_training_targets(self, keys, raw64, mask):
+        """Fit the frozen cross-sectional z-score transform and expose its statistics."""
+        selected, stats = timestamp_zscore_train_rms_matched(keys, raw64, mask)
+        self.target_centering_stats = stats
+        self._event("training", "target_centering_fitted", **stats)
+        return selected, stats
+
     def _training_targets(self, keys, target, mask):
         """Center official labels within each full training timestamp.
 
@@ -184,6 +294,8 @@ class TLOBAdapter:
         """
         raw = np.asarray(target, dtype=np.float32)
         raw64 = raw.astype(np.float64)
+        if self.config["target_centering"] == "timestamp_zscore_train_rms_matched":
+            return self._csz_training_targets(keys, raw64, mask)
         self.target_centering_stats = None
         if self.config["target_centering"] == "none":
             return raw[mask], None
@@ -253,7 +365,8 @@ class TLOBAdapter:
             validation_inputs = vx, vy
         raw_selected = np.asarray(target, dtype=np.float32)[mask].astype(np.float64)
         training_std = float(raw_selected.std())
-        self.intercept = float(y.astype(np.float64).mean())
+        self.intercept = (float(centering_stats["fallback_mean"]) if centering_stats is not None
+                          and "fallback_mean" in centering_stats else float(y.astype(np.float64).mean()))
         self.target_scale = training_std if self.config["target_scaling"] == "train_std" and training_std > 0 else 1.0
         optimization_targets = (y if self.target_scale == 1.0 else
                                 (y.astype(np.float64) / self.target_scale).astype(np.float32))
@@ -334,8 +447,7 @@ class TLOBAdapter:
                             if name.split(".")[0] == group and parameter.grad is not None]).sum().sqrt())
                         for group in ("norm_layer", "emb_layer", "layers", "final_layers")}
                     self._event("training", "progress", epoch=epoch + 1, step=steps, loss=raw_loss,
-                                loss_units=("centered_label_mse" if centering_stats is not None
-                                            else "raw_label_mse"),
+                                loss_units=PROGRESS_LOSS_UNITS[self.config["target_centering"]],
                                 weighted_loss=weighted_loss,
                                 optimization_loss=optimization_loss,
                                 gradient_norms=gradient_norms,
@@ -381,9 +493,10 @@ class TLOBAdapter:
                 "raw_target_std": training_std,
                 "centered_target_std": (None if centering_stats is None
                                         else centering_stats["selected_centered_std"]),
+                "transformed_target_std": (None if centering_stats is None
+                                           else centering_stats.get("selected_transformed_std")),
                 "mask_excluded": int((~mask).sum()),
-                "loss_units": ("centered_return_squared" if centering_stats is not None
-                               else "original_return_squared"),
+                "loss_units": TRAINING_LOSS_UNITS[self.config["target_centering"]],
                 "time_loss_weighting": self.config["time_loss_weighting"],
                 "optimizer": {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
                               "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]],
@@ -427,10 +540,8 @@ class TLOBAdapter:
                 "kind": "modified_tlob", "architecture": self.architecture,
                 "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
                 "training_mean": self.intercept,
-                "label": ("official_vwap_return_minus_training_timestamp_mean"
-                          if self.config["target_centering"] != "none" else "official_vwap_return"),
-                "prediction_units": ("relative_return_score" if self.config["target_centering"] != "none"
-                                     else "original_label_return"),
+                "label": TARGET_LABELS[self.config["target_centering"]],
+                "prediction_units": PREDICTION_UNITS[self.config["target_centering"]],
                 "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
                          "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
                 "target_scale": self.target_scale,
@@ -487,10 +598,11 @@ class TLOBAdapter:
         if result.config["target_scaling"] == "none" and result.target_scale != 1.0:
             raise ValueError("Unscaled checkpoint requires target_scale=1")
         result.target_centering_stats = payload.get("target_centering_stats")
-        if result.config["target_centering"] != "none" and (
+        expected_centering = result.config["target_centering"]
+        if expected_centering != "none" and (
                 not isinstance(result.target_centering_stats, dict)
-                or result.target_centering_stats.get("method") != "timestamp_mean_train"):
-            raise ValueError("Timestamp-centered checkpoint is missing its centering statistics")
+                or result.target_centering_stats.get("method") != expected_centering):
+            raise ValueError("Centered checkpoint is missing its target-transform statistics")
         result.time_loss_weighting_stats = payload.get("time_loss_weighting_stats")
         if result.config["time_loss_weighting"] == "train_variance":
             if not isinstance(result.time_loss_weighting_stats, dict):
