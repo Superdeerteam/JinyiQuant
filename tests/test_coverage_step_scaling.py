@@ -6,14 +6,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from jinyiquant.io import write_json
 from modified_tlob.ensemble import paired_block_intervals
+from scripts import run_coverage_step_scaling as step_scaling
 from scripts.run_coverage_step_scaling import (
     CANDIDATE,
     CONTROL,
+    PLAN,
     REFERENCE,
     STEPS,
     analysis,
     assert_steps_are_the_only_recipe_change,
+    claim_fit,
     screen_decision,
     step_effect,
     trajectory_report,
@@ -154,7 +158,7 @@ def test_trajectory_equivalence_compares_the_step_1500_loss(tmp_path):
                                                   encoding="utf-8")
             trajectory[seed] = {"step": 1500, "observed_loss": losses[(name, seed)]}
         plan["windows"].append({"name": name, "trajectory": trajectory})
-    rows, checks = trajectory_report(plan, tmp_path)
+    rows, checks = trajectory_report(plan, [tmp_path])
     assert len(rows) == 4 and all(row["matches"] for row in rows)
     assert checks[0]["name"] == "candidate_reproduces_the_control_trajectory_to_step_1500"
     assert checks[0]["passed"] is True
@@ -163,8 +167,30 @@ def test_trajectory_equivalence_compares_the_step_1500_loss(tmp_path):
     (broken / "events.jsonl").write_text(json.dumps(
         {"stage": "training", "event_type": "progress", "context": {"step": 1500, "loss": 0.0009}}),
         encoding="utf-8")
-    rows, checks = trajectory_report(plan, tmp_path)
+    rows, checks = trajectory_report(plan, [tmp_path])
     assert checks[0]["passed"] is False and any(not row["matches"] for row in rows)
+    # A second root is searched only when the first has no events for that seed.
+    assert len(trajectory_report(plan, [tmp_path / "empty", tmp_path])[0]) == 4
+
+
+def test_a_retry_is_allowed_only_while_no_attempt_saved_a_model(tmp_path, monkeypatch):
+    monkeypatch.setattr(step_scaling, "RUNS", tmp_path)
+    claims = tmp_path / "training_claims"
+    claims.mkdir()
+    archive = tmp_path / "fit_attempt1"
+    archive.mkdir()
+    write_json(claims / "research_a_st6000_s11.json",
+               {"period": "research_a", "seed": 11, "run": str(archive),
+                "claimed_at_utc": "2026-10-18T00:00:00+00:00", "plan_sha256": "x"})
+    attempt, prior = claim_fit(PLAN, "research_a", 11, tmp_path / "fit_attempt2")
+    assert attempt == 2 and prior[0]["complete"] is False
+    assert (claims / "research_a_st6000_s11_attempt2.json").is_file()
+    # Once an attempt saved a model it produced a result, so refitting would be selection.
+    write_json(archive / "model.pt", {"dummy": True})
+    write_json(archive / "training.json", {})
+    with pytest.raises(ValueError, match="already spent"):
+        claim_fit(PLAN, "research_a", 11, tmp_path / "fit_attempt3")
+    assert not (claims / "research_a_st6000_s11_attempt3.json").exists()
 
 
 def test_paired_intervals_require_the_registered_block_lengths():

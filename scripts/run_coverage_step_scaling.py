@@ -488,15 +488,17 @@ def step_effect(paired, summaries, intervals):
                     "data at equal compute."}
 
 
-def trajectory_report(plan, root, atol=1e-6, rtol=1e-5):
+def trajectory_report(plan, roots, atol=1e-6, rtol=1e-5):
     """Did the 6000-step refit reproduce the archived 1500-step trajectory up to its endpoint?"""
+    roots = [Path(root) for root in roots]
     rows = []
     for window in plan["windows"]:
         for seed, expected in window["trajectory"].items():
-            fitting = fit_dir(root, window["name"], seed)
-            if not (fitting / "events.jsonl").is_file():
+            events = next((fit_dir(root, window["name"], seed) / "events.jsonl" for root in roots
+                           if (fit_dir(root, window["name"], seed) / "events.jsonl").is_file()), None)
+            if events is None:
                 continue
-            actual = step_loss(fitting / "events.jsonl", STEPS[CONTROL])
+            actual = step_loss(events, STEPS[CONTROL])
             rows.append({"window": window["name"], "seed": int(seed), "step": STEPS[CONTROL],
                          "control_loss": expected["observed_loss"], "candidate_loss": actual,
                          "matches": bool(abs(actual - expected["observed_loss"])
@@ -538,18 +540,19 @@ def execute(plan_path, root):
                                                  for seed in SCREEN_SEEDS}}
         screen = run_screen(plan, root, candidate_paths, rec)
         write_json(root / "screen.json", screen)
-        if screen["result"] != "pass":
+        if screen["decision"]["result"] != "pass":
             write_json(root / "decision.json", {
                 "schema_version": 1, "stage": "screen", "result": "reject",
                 "action": "retain_10_day_reference", "reason": "screen_failed",
-                "failed_checks": [key for key, passed in screen["checks"].items() if not passed],
-                "mean_rank_ic_delta": screen["mean_rank_ic_delta"],
-                "period_mean_deltas": screen["period_mean_deltas"], "screen": screen,
+                "failed_checks": [key for key, passed in screen["decision"]["checks"].items() if not passed],
+                "mean_rank_ic_delta": screen["decision"]["mean_rank_ic_delta"],
+                "period_mean_deltas": screen["decision"]["period_mean_deltas"], "screen": screen,
                 "training_attempts": len(attempts), "final_views": 0, "model_promoted": False,
                 "note": "The round ends here by preregistration: no other step count is searched."})
             rec.event("run", "completed", stage="screen", result="reject", training_attempts=len(attempts))
             finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
-            print("screen reject", screen["mean_rank_ic_delta"], screen["period_mean_deltas"], flush=True)
+            print("screen reject", screen["decision"]["mean_rank_ic_delta"],
+                  screen["decision"]["period_mean_deltas"], flush=True)
             return
         for window in plan["windows"]:
             name = window["name"]
@@ -560,7 +563,10 @@ def execute(plan_path, root):
                    paths={str(seed): str(fit_dir(root, name, seed) / "model.pt") for seed in FULL_SEEDS})
             candidate_paths[name][CANDIDATE] = {seed: str(inference / f"seed{seed}_predictions.parquet")
                                                 for seed in FULL_SEEDS}
-        run_full(plan, root, candidate_paths, screen, rec)
+        run_full(plan, root, candidate_paths, screen, rec, {name: {seed: str(root / "inference" / name
+                                                                      / f"seed{seed}_predictions.parquet")
+                                                                   for seed in SCREEN_SEEDS}
+                                                             for name in candidate_paths})
         rec.event("run", "completed", stage="full", training_attempts=len(attempts), final_views=0)
         finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
     except BaseException as exc:
@@ -572,16 +578,47 @@ def execute(plan_path, root):
         raise
 
 
+def prior_claims(stem):
+    """Claimed fits for one arm; a claim whose archive holds no model produced no result."""
+    rows = []
+    for claim in sorted((RUNS / "training_claims").glob(stem + "*.json")):
+        record = read_json(claim)
+        archive = Path(record["run"])
+        rows.append({"claim": str(claim), "archive": str(archive),
+                     "claimed_at_utc": record.get("claimed_at_utc"),
+                     "complete": (archive / "model.pt").is_file() and (archive / "training.json").is_file()})
+    return rows
+
+
+def claim_fit(plan_path, name, seed, path):
+    """Claim one fit; retry an interrupted attempt but never refit one that produced a model."""
+    stem = f"{name}_st{STEPS[CANDIDATE]}_s{seed}"
+    prior = prior_claims(stem)
+    if any(row["complete"] for row in prior):
+        raise ValueError("Training claim already spent; no additional fits allowed")
+    attempt = len(prior) + 1
+    claim = RUNS / "training_claims" / (f"{stem}.json" if attempt == 1 else f"{stem}_attempt{attempt}.json")
+    claim_training(claim, path, name, seed, plan_path)
+    return attempt, prior
+
+
 def fit_candidate(plan_path, root, plan, window, seed, rec, attempts, started):
-    """One refitted 6000-step arm; the training claim makes a second fit impossible."""
+    """One refitted 6000-step arm; a retry is only possible while no attempt produced a model."""
     name = window["name"]
     if len(attempts) >= plan["budget"]["fit_attempts_max"]:
         raise RuntimeError("Training attempt cap exhausted")
     path = fit_dir(root, name, seed)
-    claim = RUNS / "training_claims" / f"{name}_st{STEPS[CANDIDATE]}_s{seed}.json"
-    claim_training(claim, path, name, seed, plan_path)
+    attempt, prior = claim_fit(plan_path, name, seed, path)
+    if prior:
+        write_json(root / "recoveries.json", {
+            "interrupted_archives": prior,
+            "reason": "an earlier attempt at this arm and seed was interrupted before it saved a model, so it "
+                      "left no result to select on"})
+        rec.event("training", "retry", window=name, seed=seed, attempt=attempt,
+                  interrupted_archives=[row["archive"] for row in prior])
     attempts.append({"window": name, "arm": CANDIDATE, "seed": seed, "steps": STEPS[CANDIDATE],
-                     "path": str(path), "status": "started"})
+                     "attempt": attempt, "path": str(path), "status": "started",
+                     "prior_interrupted_archives": [row["archive"] for row in prior]})
     write_json(root / "attempts.json", attempts)
     remaining = plan["budget"]["fit_stage_wall_cap_seconds"] - (time.monotonic() - started)
     if remaining <= 0:
@@ -597,6 +634,108 @@ def frozen_arm_paths(plan, window):
     """Reused arms of one window: the retained 10-day reference and the 40-day/1500 control."""
     return {arm: {int(seed): row["predictions"] for seed, row in window["arms"][arm]["per_seed"].items()}
             for arm in (REFERENCE, CONTROL)}
+
+
+def recorded_fits(root):
+    """Every completed fit behind this archive, including one reused from a screen archive."""
+    fits = []
+    if (Path(root) / "screen_source.json").is_file():
+        for row in read_json(Path(root) / "screen_source.json")["fits"].values():
+            fits.append({"window": row["window"], "seed": row["seed"], "steps": row["steps"], "run": row["run"],
+                         "resources": row.get("resources"), "weights_sha256": row["weights_sha256"],
+                         "reused_from_screen_archive": True})
+    if (Path(root) / "attempts.json").is_file():
+        for item in read_json(Path(root) / "attempts.json"):
+            if item["status"] != "completed":
+                continue
+            fits.append({"window": item["window"], "seed": item["seed"], "steps": item["steps"],
+                         "run": item["path"], "attempt": item.get("attempt"),
+                         "resources": read_json(Path(item["path"]) / "manifest.json").get("resources"),
+                         "weights_sha256": file_sha256(Path(item["path"]) / "model.pt")})
+    return fits
+
+
+def screen_source(plan, plan_path, source_run):
+    """Prove a passed screen came from this frozen plan and still owns its seed-11 models."""
+    source_run = Path(source_run).resolve()
+    if read_json(source_run / "manifest.json").get("plan_sha256") != file_sha256(plan_path):
+        raise ValueError("Screen archive was produced by a different frozen plan")
+    screen = read_json(source_run / "screen.json")
+    if screen["decision"]["result"] != "pass":
+        raise ValueError("The full stage requires a passed screen")
+    fits, predictions = {}, {}
+    for window in plan["windows"]:
+        name = window["name"]
+        fitting = fit_dir(source_run, name, SCREEN_SEEDS[0])
+        training = read_json(fitting / "training.json")
+        expected = {**window["arms"][CANDIDATE]["frozen_identity"],
+                    "dates": window["arms"][CANDIDATE]["train_dates"]}
+        identity = read_json(fitting / "training_identity.json")
+        if {key: identity.get(key) for key in expected} != expected:
+            raise ValueError(f"{name}: the screen fit used a different training set")
+        if training["steps"] != STEPS[CANDIDATE]:
+            raise ValueError(f"{name}: the screen fit did not run the declared steps")
+        weights = fitting / "model.pt"
+        prediction = source_run / "inference" / name / f"seed{SCREEN_SEEDS[0]}_predictions.parquet"
+        if not (weights.is_file() and prediction.is_file()):
+            raise FileNotFoundError(f"Screen artifacts are incomplete for {name}")
+        fits[name] = {"window": name, "seed": SCREEN_SEEDS[0], "steps": STEPS[CANDIDATE], "run": str(fitting),
+                      "resources": read_json(fitting / "manifest.json").get("resources"),
+                      "weights": str(weights), "weights_sha256": file_sha256(weights),
+                      "predictions": str(prediction), "predictions_sha256": file_sha256(prediction)}
+        predictions[name] = {SCREEN_SEEDS[0]: str(prediction)}
+    return {"run": str(source_run), "manifest_sha256": file_sha256(source_run / "manifest.json"),
+            "screen_path": str(source_run / "screen.json"),
+            "screen_sha256": file_sha256(source_run / "screen.json"),
+            "decision": screen["decision"], "fits": fits, "predictions": predictions}
+
+
+def execute_full(plan_path, root, source_run):
+    """Continue a passed screen in a new archive: keep its seed-11 fits, add seeds 29 and 47."""
+    plan = read_json(plan_path)
+    started = time.monotonic()
+    rec = Recorder(root, EXPERIMENT)
+    source = screen_source(plan, plan_path, source_run)
+    write_json(root / "manifest.json", {"schema_version": 1, "run_id": root.name, "experiment_id": EXPERIMENT,
+        "started_at": utc_now(), "status": "running", "stage": "full", "plan_sha256": file_sha256(plan_path),
+        "screen_source": source["run"], "screen_source_manifest_sha256": source["manifest_sha256"],
+        "code": capture_source(root), "environment": environment(), "final_views": 0})
+    write_json(root / "preregistration.json", plan)
+    attempts = []
+    try:
+        rec.event("run", "started", stage="full", screen_source=source["run"],
+                  screen_sha256=source["screen_sha256"])
+        if file_sha256(plan["registry_path"]) != plan["registry_sha256"]:
+            raise ValueError("Shared data-role registration changed")
+        for path, checksum in plan["inputs_sha256"].items():
+            if file_sha256(path) != checksum:
+                raise ValueError(f"Frozen input changed: {path}")
+        write_json(root / "screen_source.json", source)
+        write_json(root / "screen.json", {"decision": source["decision"], "source": source["run"],
+                                          "screen_sha256": source["screen_sha256"]})
+        candidate_paths = {}
+        for window in plan["windows"]:
+            name = window["name"]
+            for seed in [seed for seed in FULL_SEEDS if seed not in SCREEN_SEEDS]:
+                fit_candidate(plan_path, root, plan, window, seed, rec, attempts, started)
+            inference = root / "inference_full" / name
+            weights = {str(seed): str(fit_dir(root, name, seed) / "model.pt")
+                       for seed in FULL_SEEDS if seed not in SCREEN_SEEDS}
+            weights[str(SCREEN_SEEDS[0])] = source["fits"][name]["weights"]
+            launch(plan_path, inference, "infer", name, paths=weights)
+            candidate_paths[name] = {CANDIDATE: {seed: str(inference / f"seed{seed}_predictions.parquet")
+                                                 for seed in FULL_SEEDS}}
+        run_full(plan, root, candidate_paths, {"decision": source["decision"]}, rec, source["predictions"],
+                 fit_roots=[root, source["run"]])
+        rec.event("run", "completed", stage="full", training_attempts=len(attempts), final_views=0)
+        finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
+    except BaseException as exc:
+        rec.failure("experiment", exc)
+        write_json(root / "decision.json", {"result": "inconclusive", "action": "retain_10_day_reference",
+            "reason": str(exc), "training_attempts": len(attempts), "final_views": 0, "model_promoted": False})
+        finish(root, "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed", 1,
+               resources={"wall_seconds": time.monotonic() - started}, error={"reason": str(exc)})
+        raise
 
 
 def run_screen(plan, root, candidate_paths, rec):
@@ -624,9 +763,9 @@ def run_screen(plan, root, candidate_paths, rec):
             "steps": STEPS, "exposure": {window["name"]: window["exposure"] for window in plan["windows"]}}
 
 
-def run_full(plan, root, candidate_paths, screen, rec):
+def run_full(plan, root, candidate_paths, screen, rec, screen_predictions, fit_roots=None):
     checks = []
-    rows, trajectory_checks = trajectory_report(plan, root)
+    rows, trajectory_checks = trajectory_report(plan, fit_roots or [root])
     write_json(root / "trajectory.json", {"rows": rows, "atol": 1e-6, "rtol": 1e-5})
     checks.extend(trajectory_checks)
     paths = {}
@@ -637,13 +776,14 @@ def run_full(plan, root, candidate_paths, screen, rec):
     costs = {}
     for window in plan["windows"]:
         name = window["name"]
-        for seed in FULL_SEEDS:
-            screen_prediction = pd.read_parquet(root / "inference" / name / f"seed{seed}_predictions.parquet")
-            full_prediction = pd.read_parquet(paths[name][CANDIDATE][seed])
+        for seed, earlier in screen_predictions[name].items():
+            if seed not in paths[name][CANDIDATE]:
+                continue
+            made_earlier = pd.read_parquet(earlier)
+            made_now = pd.read_parquet(paths[name][CANDIDATE][seed])
             checks.append(check(f"{name}_s{seed}_separate_inference_processes_agree",
-                                len(screen_prediction) == len(full_prediction)
-                                and np.allclose(screen_prediction.score, full_prediction.score,
-                                                atol=1e-6, rtol=1e-5)))
+                                len(made_earlier) == len(made_now)
+                                and np.allclose(made_earlier.score, made_now.score, atol=1e-6, rtol=1e-5)))
         costs[name] = read_json(root / "inference_full" / name / "inference_cost.json")
     paired, intervals, summaries = analysis(plan, scored, CANDIDATE, REFERENCE, FULL_SEEDS)
     paired.to_csv(root / "paired_daily.csv", index=False)
@@ -665,8 +805,7 @@ def run_full(plan, root, candidate_paths, screen, rec):
         "calibration": plan["calibration"]["noise"], "minimum_mean_gain": plan["policy"]["minimum_mean_gain"],
         "costs": {"per_fit_wall_cap_seconds": plan["budget"]["per_fit_wall_cap_seconds"],
                   "local_peak_rss_cap_mib": plan["budget"]["local_peak_rss_cap_mib"],
-                  "fits": [{key: item[key] for key in ("window", "seed", "steps")} for item in
-                           read_json(root / "attempts.json")]}})
+                  "fits": recorded_fits(root)}})
     if not save_checks(root, checks):
         raise ValueError("Full scoring checks failed")
     rec.event("evaluation", "decision", result=decision["result"], action=decision["action"],
@@ -708,14 +847,12 @@ def record(plan_path, execution, output_path):
     if read_json(execution / "manifest.json")["status"] != "completed":
         raise ValueError("A research record requires a completed execution archive")
     decision = read_json(execution / "decision.json")
-    attempts = read_json(execution / "attempts.json")
     screen = read_json(execution / "screen.json")
     trajectory = read_json(execution / "trajectory.json")
     step = read_json(execution / "step_effect.json") if (execution / "step_effect.json").is_file() else None
-    fits = [{"window": item["window"], "seed": item["seed"], "steps": item["steps"], "run": item["path"],
-             "resources": read_json(Path(item["path"]) / "manifest.json").get("resources"),
-             "weights_sha256": file_sha256(Path(item["path"]) / "model.pt")}
-            for item in attempts if item["status"] == "completed"]
+    fits = recorded_fits(execution)
+    interrupted = [row for stem in {f"{item['window']}_st{STEPS[CANDIDATE]}_s{item['seed']}" for item in fits}
+                   for row in prior_claims(stem) if not row["complete"]]
     if step is not None:
         conclusion = conclusion_text(decision, step, plan)
     else:
@@ -744,7 +881,8 @@ def record(plan_path, execution, output_path):
         "execution": {"run_dir": str(execution), "manifest_sha256": file_sha256(execution / "manifest.json"),
                       "new_training_fits": len(fits), "fits": fits,
                       "trajectory_equivalence_to_step_1500": trajectory, "screen": screen["decision"],
-                      "screen_per_window": screen.get("per_window")},
+                      "screen_per_window": screen.get("per_window"),
+                      "interrupted_attempts": interrupted},
         "exposure": {window["name"]: window["exposure"] for window in plan["windows"]},
         "results": {"decision": decision, "step_effect": step,
                     "intervals": read_json(execution / "paired_intervals.json")},
@@ -776,7 +914,7 @@ def record(plan_path, execution, output_path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "worker", "run", "record"))
+    parser.add_argument("command", choices=("prepare", "worker", "run", "continue", "record"))
     parser.add_argument("path", type=Path, nargs="?")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--output-root", type=Path)
@@ -784,6 +922,7 @@ def main():
     parser.add_argument("--prior-execution", type=Path)
     parser.add_argument("--measurements-from", type=Path)
     parser.add_argument("--execution", type=Path)
+    parser.add_argument("--screen", type=Path, help="passed screen archive to continue")
     args = parser.parse_args()
     if args.command == "prepare":
         print(str(prepare(args.output or PLAN, frozen_path=args.frozen or FROZEN,
@@ -796,6 +935,12 @@ def main():
         root = new_run_dir(Path(args.output_root or RUNS).resolve())
         print(str(root), flush=True)
         execute(args.path.resolve(), root)
+    elif args.command == "continue":
+        if args.screen is None:
+            parser.error("continue requires --screen <passed screen archive>")
+        root = new_run_dir(Path(args.output_root or RUNS).resolve())
+        print(str(root), flush=True)
+        execute_full(args.path.resolve(), root, args.screen)
     else:
         if args.execution is None or args.output is None:
             parser.error("record requires --execution <completed run> and --output <record.json>")
