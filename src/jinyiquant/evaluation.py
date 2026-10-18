@@ -83,8 +83,9 @@ def _correlation(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.clip(np.dot(a, b) / denominator, -1.0, 1.0))
 
 
-def _tail_weights(scores: pd.Series, count: int, *, largest: bool) -> np.ndarray:
-    values = scores.to_numpy(dtype=float)
+def tail_weights(scores, count: int, *, largest: bool) -> np.ndarray:
+    """Equal weights on ``count`` extreme scores; boundary ties share the weight."""
+    values = np.asarray(scores, dtype=float)
     ordered = np.sort(values)
     boundary = ordered[-count] if largest else ordered[count - 1]
     strictly = values > boundary if largest else values < boundary
@@ -143,8 +144,8 @@ def evaluate(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation_config
         eligible_rank_ic = bool(np.isfinite(_correlation(target_ranks, target_ranks)))
         eligible_ic = bool(np.isfinite(_correlation(target_values, target_values)))
         tail_size = max(1, int(np.floor(quantile * len(section))))
-        long = _tail_weights(score, tail_size, largest=True)
-        short = _tail_weights(score, tail_size, largest=False)
+        long = tail_weights(score.to_numpy(dtype=float), tail_size, largest=True)
+        short = tail_weights(score.to_numpy(dtype=float), tail_size, largest=False)
         weights = pd.Series(long - short, index=section["instrument"].to_numpy())
         current_scores = pd.Series(score.to_numpy(dtype=float), index=weights.index)
         score_change = float("nan")

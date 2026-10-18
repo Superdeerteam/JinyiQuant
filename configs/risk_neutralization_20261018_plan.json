@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "experiment_id": "risk-neutralization-20261018",
+  "created_at_utc": "2026-10-18T14:40:00+00:00",
+  "path_resolution": "every path below is relative to the repository root (the parent directory of configs/)",
+  "hypothesis": "The ranking improvement of the centered and CSZ label schemes over the raw-label reference may be partly carried by style and industry exposure. Replaying all three schemes through one frozen approximation of the official preprocessing (winsorize, standardize, previous-day equal-weight BARRA residualization) shows whether the ranking edge, long-short performance and turnover survive, and what net exposures the long-short portfolios still carry.",
+  "scope": "diagnostic_only",
+  "decision": "none: this round is descriptive. No scheme, seed or threshold is selected or promoted, and no accept/reject gate is applied to any contrast.",
+  "official_reference": {
+    "module": "M.jyc_eval",
+    "status": "unavailable locally",
+    "evidence": [
+      "比赛说明.txt states only: 校验通过后，平台对原始因子统一处理：去极值 与 标准化。风格剔除：将因子对 BARRA 风险因子回归，取残差作为新因子，以评估其增量贡献。",
+      "No jyc_eval module, wheel or notebook exists in the workspace, the data-platform JSON or the official demo scripts.",
+      "The online notebook environment is not reachable from this offline checkout, and the configured web-search provider is unavailable, so the official winsorization parameters, standardization, exposure snapshot date, regression weighting and missing-value handling cannot be inspected."
+    ],
+    "consequence": "The pipeline below is a local approximation frozen before any result of this round was computed. It is not the official preprocessing and no official score is produced."
+  },
+  "risk_model": {
+    "exposure_table": "cpt_jyc_2026_exposure",
+    "style_factors": ["SIZE", "BETA", "MOMENTUM", "RESVOL", "SIZENL", "BTOP", "LIQUIDTY", "EARNYILD", "GROWTH", "LEVERAGE"],
+    "industry_variables": ["AGRIFOREST", "MINING", "CHEM", "IRONSTEEL", "NONFERMETAL", "ELECTRONICS", "AUTO", "HOUSEAPP", "FOODBEVER", "TEXTILE", "LIGHTINDUS", "HEALTH", "UTILITIES", "TRANSPORTATION", "REALESTATE", "COMMETRADE", "LEISERVICE", "BANK", "NONBANKFINAN", "CONGLOMERATES", "CONMAT", "BUILDDECO", "ELECEQP", "MACHIEQUIP", "AERODEF", "COMPUTER", "MEDIA", "TELECOM", "COAL", "PETRO", "ENVP", "BEAUTY"],
+    "exposure_date_rule": "use the most recent exposure date strictly before the signal date (previous trading day); every one of the eight timestamps of a day uses that same snapshot; same-day rows are never used and there is no forward fill",
+    "exposure_date_evidence": "the exposure table is daily at midnight and its ret column is the same day's return: ret(date t) equals the t-1 -> t float_market_cap ratio for 98.95% of 2023 observations with median absolute difference 0. A row is therefore an end-of-day snapshot whose intraday publication time is unverified, so the previous trading day is the conservative choice.",
+    "regression": {
+      "weighting": "equal (ordinary least squares); the official weights column is not used",
+      "intercept": false,
+      "industry_encoding": "all 32 industry dummies (they span the intercept)",
+      "excluded_columns": ["ret", "weights", "float_market_cap", "industry_level1_code"],
+      "label_use": "the training/evaluation label never enters the residualization; only the post-residual ranking metrics read target returns"
+    },
+    "weights_note": "the official weights column sums to about 0.209 per day over the 999 evaluation names, i.e. it is normalized over a broader universe than the evaluation pool; that is one more reason not to use it as a regression weight",
+    "score_preprocess": {
+      "winsorize": "per timestamp, clip at median +/- 3 * 1.4826 * MAD; if MAD is zero fall back to the population standard deviation; a constant section becomes zeros",
+      "standardize": "per timestamp z-score with ddof=0",
+      "invariance_note": "ranking metrics are invariant to monotone transforms, so winsorization and standardization affect only the regression fit"
+    },
+    "uncovered_stock": "a stock without a previous-day exposure row is dropped from that timestamp for every scheme, seed and variant; the same exclusion applies to the raw comparison variant"
+  },
+  "sample": {
+    "rule": "prediction keys from the frozen scoring run, intersected with official target keys and with the previous-day exposure snapshot; the residualization fit uses prediction keys intersected with the exposure snapshot (larger by the target-missing rows) so that the fit never reads labels; ranking metrics are then computed on the common evaluated sample",
+    "windows": {
+      "research_a": {
+        "dates": ["2023-11-01", "2023-11-02", "2023-11-03", "2023-11-06", "2023-11-07", "2023-11-08", "2023-11-09", "2023-11-10", "2023-11-13", "2023-11-14"],
+        "targets": {"path": "runs/fixed-seed-ensemble-20261017/analysis-recovery/20261017T091219.300500Z_7c40b5b5d26d/research_a_targets.parquet", "sha256": "3d5e5eb8743ee6f9462df6c91e7f71c89471bb03ac048c2d38144061b529c3ce"}
+      },
+      "research_b": {
+        "dates": ["2024-03-01", "2024-03-04", "2024-03-05", "2024-03-06", "2024-03-07", "2024-03-08", "2024-03-11", "2024-03-12", "2024-03-13", "2024-03-14"],
+        "targets": {"path": "runs/fixed-seed-ensemble-20261017/analysis-recovery/20261017T091219.300500Z_7c40b5b5d26d/research_b_targets.parquet", "sha256": "dff0a8f3af3ff99aa931c31b2a07f9320ead32f05fe3d698970f102fb8153c8a"}
+      }
+    },
+    "timestamps": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"],
+    "expected": {"windows": 2, "days": 20, "timestamps": 160, "schemes": 3, "seeds": 3, "variants": 2}
+  },
+  "schemes": {
+    "ref10": {
+      "label": "raw official vwap_return (10-day reference)",
+      "prediction_root": "runs/fixed-seed-ensemble-20261017/20261017T064944.073834Z_193b03ead7ff/inference"
+    },
+    "cand_centered": {
+      "label": "label centered by the full-timestamp training mean (control)",
+      "prediction_root": "runs/label-centering-20261018/20261018T085148.483602Z_e28ceedf078d/inference_full"
+    },
+    "cand_csz": {
+      "label": "label CSZ-scored and variance matched",
+      "prediction_root": "runs/label-cszscore-20261018/20261018T104425.466761Z_1b8039d5f4e1/inference"
+    }
+  },
+  "seeds": [11, 29, 47],
+  "inputs": {
+    "exposure": [
+      "数据/cpt_jyc_2026_exposure/cpt_jyc_2026_exposure_2023_part_0001.parquet",
+      "数据/cpt_jyc_2026_exposure/cpt_jyc_2026_exposure_2024_part_0001.parquet"
+    ],
+    "vwap": [
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-09.parquet",
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-10.parquet",
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-11.parquet",
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-01.parquet",
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-02.parquet",
+      "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-03.parquet"
+    ]
+  },
+  "evaluation": {
+    "source": "jinyiquant.evaluation local-v1, the same scorer that produced the archived research metrics",
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "undefined_constant_portfolios": true,
+    "reported": ["rank_ic_mean", "rank_ic_ir", "long_short_return_mean", "long_short_sharpe", "long_return_mean", "short_return_mean", "turnover_mean", "extreme_return", "min_daily_long_short_return"]
+  },
+  "stress": {
+    "window": 20,
+    "volatility": "a day is high-volatility when the previous trading day's cross-sectional median |ret| exceeds the median of that statistic over the 20 exposure dates strictly before that previous day",
+    "volume": "a day is high-volume when the previous trading day's sampled-window vwap volume exceeds the median of the daily total over the same 20 exposure dates",
+    "timestamps": "per-timestamp aggregates over all 20 days are reported as the different-time-of-day view"
+  },
+  "statistics": {
+    "paired": true,
+    "block_days": [5, 2],
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20261018,
+    "confidence": 0.95,
+    "rule": "daily differences are averaged across seeds, then resampled in contiguous day blocks within each window; both block lengths are reported and no block length is chosen after seeing results"
+  },
+  "budget": {"wall_cap_seconds": 1800, "peak_rss_cap_mib": 8192},
+  "access_policy": "research_a and research_b only; the confirmation, locked and legacy final ranges are not read. No model is trained or refitted; only frozen predictions are re-scored.",
+  "interpretation_rule": "Report raw and processed metrics side by side. A processed improvement over raw is a local signal-effect statement; a cross-scheme comparison is descriptive because these two research windows were already used for selection. Net-exposure tables are risk diagnostics, not a promotion criterion."
+}
