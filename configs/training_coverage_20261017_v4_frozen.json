@@ -1,0 +1,2811 @@
+{
+  "acceptance": {
+    "guardrail_tolerances": {
+      "long_short_return_mean": 0.00010387476657357637,
+      "min_daily_long_short_return": 0.00013896761043335348,
+      "rank_ic_mean": 0.01164665094206816,
+      "turnover_mean": 0.03706698237510122
+    },
+    "minimum_mean_gain": 0.01164665094206816,
+    "model_promoted": false,
+    "primary": "paired daily RankIC",
+    "replication_seeds": [
+      11,
+      29,
+      47
+    ],
+    "secondary": [
+      "long_short_return",
+      "turnover",
+      "worst_day"
+    ],
+    "seed_selection": "prohibited",
+    "thresholds_status": "calibrated from six archived 10-day baseline fits before any 40-day fit"
+  },
+  "access_policy": {
+    "confirmation": "One opening after complete recipe and thresholds freeze",
+    "evaluation_label_views_this_round": 0,
+    "locked": "One opening after confirmation passes without recipe changes",
+    "research": "A/B already used: screening/calibration/replication only"
+  },
+  "calendar_sha256": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3",
+  "calendar_source": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+  "calibration": {
+    "baseline_inference_cost": {
+      "research_a": {
+        "baseline_seconds": 44.169232899992494,
+        "chunks": [
+          {
+            "baseline_seconds": 22.703047099988908,
+            "chunk": 0,
+            "dates": [
+              "2023-11-01",
+              "2023-11-02",
+              "2023-11-03",
+              "2023-11-06",
+              "2023-11-07"
+            ],
+            "ensemble_seconds": 70.41283210000256,
+            "resources": {
+              "cpu_seconds": 66.15625,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1828.546875
+            },
+            "same_keys_sha256": "66a98f47d68a79a83c81bf75b115ab3bdf92f7136152fe7a92bc0563824fba43",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.63472329999786,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.466185800003586,
+            "chunk": 1,
+            "dates": [
+              "2023-11-08",
+              "2023-11-09",
+              "2023-11-10",
+              "2023-11-13",
+              "2023-11-14"
+            ],
+            "ensemble_seconds": 66.82290790000116,
+            "resources": {
+              "cpu_seconds": 137.859375,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1926.30859375
+            },
+            "same_keys_sha256": "524df875913f1fdd6f635741f7f2de982ace2806c88706139a6451c3f8d92316",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.989382900006603,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 137.23574000000372,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 53.62410620000446
+      },
+      "research_b": {
+        "baseline_seconds": 42.34614530002,
+        "chunks": [
+          {
+            "baseline_seconds": 21.248559200001182,
+            "chunk": 0,
+            "dates": [
+              "2024-03-01",
+              "2024-03-04",
+              "2024-03-05",
+              "2024-03-06",
+              "2024-03-07"
+            ],
+            "ensemble_seconds": 64.27404840002418,
+            "resources": {
+              "cpu_seconds": 91.1875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1840.49609375
+            },
+            "same_keys_sha256": "e5212f534d41bc0ce1416000348004407bcdd73b743198e879a4e85c2965b397",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.60473419999471,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.097586100018816,
+            "chunk": 1,
+            "dates": [
+              "2024-03-08",
+              "2024-03-11",
+              "2024-03-12",
+              "2024-03-13",
+              "2024-03-14"
+            ],
+            "ensemble_seconds": 62.37435860000551,
+            "resources": {
+              "cpu_seconds": 181.46875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1907.18359375
+            },
+            "same_keys_sha256": "d79b14dc7e56baaf1742c86be55847ce16d8e3ef87cfe577ed0dc55bf8baabf9",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.234697000007145,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 126.64840700002969,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 52.839431200001854
+      }
+    },
+    "basis": "Six archived 10-day baseline fits on research_a/research_b, re-scored from their frozen predictions and evaluation targets; frozen before any 40-day fit.",
+    "method": "sqrt(mean_over_windows(sample_variance_across_seeds)); baseline arm only",
+    "metric_scope": "local_approximation",
+    "minimum_mean_gain": {
+      "minimum_mean_gain": 0.01164665094206816,
+      "noise_multiplier": 1.0,
+      "noise_scaled": 0.01164665094206816,
+      "practical_improvement": 0.002,
+      "primary_metric": "rank_ic_mean"
+    },
+    "noise": {
+      "long_short_return_mean": 0.00010387476657357637,
+      "min_daily_long_short_return": 0.00013896761043335348,
+      "rank_ic_mean": 0.01164665094206816,
+      "turnover_mean": 0.03706698237510122
+    },
+    "per_window": {
+      "research_a": {
+        "long_short_return_mean": {
+          "seed_means": {
+            "11": 2.6874494434336837e-05,
+            "29": 0.00016633965425646627,
+            "47": -5.20712109134454e-05
+          },
+          "seed_std": 0.00011059404837915126,
+          "spread": 0.00021841086516991167
+        },
+        "min_daily_long_short_return": {
+          "seed_means": {
+            "11": -0.000289176947171676,
+            "29": -0.00012058092014646541,
+            "47": -0.0004839840530741022
+          },
+          "seed_std": 0.00018185904150393802,
+          "spread": 0.00036340313292763677
+        },
+        "rank_ic_mean": {
+          "seed_means": {
+            "11": 0.006586304813130069,
+            "29": 0.022500896088241247,
+            "47": -0.004235385263146735
+          },
+          "seed_std": 0.013448741775481015,
+          "spread": 0.026736281351387982
+        },
+        "turnover_mean": {
+          "seed_means": {
+            "11": 1.6669149318018666,
+            "29": 1.6689788226848528,
+            "47": 1.6000089734386218
+          },
+          "seed_std": 0.039237539455494526,
+          "spread": 0.06896984924623095
+        }
+      },
+      "research_b": {
+        "long_short_return_mean": {
+          "seed_means": {
+            "11": -4.959520376825679e-05,
+            "29": 0.0001408412688696285,
+            "47": 7.472860917355492e-05
+          },
+          "seed_std": 9.668966193207993e-05,
+          "spread": 0.00019043647263788528
+        },
+        "min_daily_long_short_return": {
+          "seed_means": {
+            "11": -0.00030116088435618087,
+            "29": -0.0002247071847882993,
+            "47": -0.00015216413146705219
+          },
+          "seed_std": 7.4506929358158e-05,
+          "spread": 0.00014899675288912868
+        },
+        "rank_ic_mean": {
+          "seed_means": {
+            "11": -0.010599396609749807,
+            "29": 0.008291866257409625,
+            "47": 0.0007438763680817247
+          },
+          "seed_std": 0.009508958985566507,
+          "spread": 0.018891262867159433
+        },
+        "turnover_mean": {
+          "seed_means": {
+            "11": 1.572472631012204,
+            "29": 1.548212311557789,
+            "47": 1.6167657932519741
+          },
+          "seed_std": 0.034761154501406294,
+          "spread": 0.06855348169418507
+        }
+      }
+    },
+    "seeds": [
+      11,
+      29,
+      47
+    ]
+  },
+  "created_at_utc": "2026-10-18T01:56:30.414468+00:00",
+  "deployment_seed": 11,
+  "diagnostic_budget": {
+    "baseline_fits_retrained": 0,
+    "fits_planned": 6,
+    "inference_windows": 2,
+    "new_training": 6,
+    "resource_pilot_steps": 100,
+    "resource_pilots": 4,
+    "seed_predictions": 6
+  },
+  "execution_status": "frozen_not_trained_budget_frozen",
+  "experiment_id": "training-coverage-20261017",
+  "fit_policy": "Once per origin, arm and prescribed seed; fixed weights afterward; no score-based retries.",
+  "hypothesis": "Expanding training dates from 10 to 40 reduces recent-window sensitivity and improves subsequent ranking and long-short stability.",
+  "inputs_sha256": {
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-08.parquet": "231de3a8de4928b48494d6b7f81ad043358bcb57d3d43b7d65f5b15821fa1bde",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-09.parquet": "fe517e44fd472ec5291042cc7ddce7e67c1f8ba6058d6879025627b43cbf2aea",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-10.parquet": "4519bdfd566e82c2190991aa06795bd812bdb0490bd0ced4db4e99e9be576bba",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-12.parquet": "186abc0bf4a48e62afeb4d2f4256aaf4d74f9c8700ec5b27828831ffb936eef8",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-01.parquet": "bae8766ee9de5a6843cf819887ea371455dd41d2d8c2424d934e4f99d9e7b0f3",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-02.parquet": "edf842434d26fa03432b86fbab93c1aa735276b08cb2a60b6df0dfb94f0c056a",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-04.parquet": "4d949531f85da8f0c78dd3e458b259d369d9492182c23905c04fe86d2459eb87",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-05.parquet": "74232c4b7f48527a87a9d5b672e3edb04be9c083651559892460b57a8dedaf1e",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-06.parquet": "41b17ec15e6d384650286c536ec2472be17c5bb3fb096f7dac0608394979fe67",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-08.parquet": "21c71de3cb60c45dc425a4fd4fb96727d55cc14214d281eee06ee47da6c1077c",
+    "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2024-09.parquet": "0e70f94ea59a04e34b92029f9c3437acfc5a744c917183165bfe4547cf3928a9",
+    "D:\\进益资本杯\\比赛说明\\可调用数据说明.txt": "8d7898b8b6af9f5a86d3b5627e80e8e6bbeff6c073251706df6aa6cd9018861d",
+    "D:\\进益资本杯\\比赛说明\\比赛说明.txt": "2485f99dcd5b50f3c10bdbdab42647484f86082f1daaf952ef8a9eda685bf7b3"
+  },
+  "literature": {
+    "backbone": "https://arxiv.org/html/2502.15757v3",
+    "distribution_shift": "https://arxiv.org/abs/2306.09862",
+    "restriction": "Classification scores do not establish returns; no causal weight-age claim."
+  },
+  "loss": "MSE",
+  "measured_budget": {
+    "limits": {
+      "basis": {
+        "declared_samples_seen": 48000,
+        "declared_training_steps": 1500,
+        "measured_peak_rss_mb": 7478.5234375,
+        "measured_preprocessing_seconds": 94.6512959000247,
+        "measured_seconds_per_step": 0.12143094800005201,
+        "rss_formula": "round_up_256(1.25 x measured peak host RSS)",
+        "wall_formula": "round_up_300(1.25 x (measured preprocessing + 1500 x measured seconds/step) + 300s save/check slack)",
+        "windows_measured": [
+          "research_a",
+          "research_b"
+        ]
+      },
+      "host": {
+        "measured_peak_below_system_memory": true,
+        "total_memory_mb": 16252.17578125
+      },
+      "max_rss_mb": 9472.0,
+      "wall_seconds": 900.0
+    },
+    "measurements": [
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.193949999986216,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 30.84638219999033,
+        "process_peak_rss_mb": 2834.5078125,
+        "samples": 79920,
+        "seconds_per_step": 0.12193949999986216,
+        "stages": [
+          {
+            "elapsed_seconds": 5.399982910603285e-06,
+            "peak_rss_mb": 581.17578125,
+            "rss_mb": 550.88671875,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 18.614587599993683,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1261.3046875,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 20.776206699985778,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1268.83203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 51.62270139998873,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1929.3203125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 52.72453749997658,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1942.7578125,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 52.81806459999643,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1487.8984375,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 67.93937720000395,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 2145.54296875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0038659661156313857,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_a"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.143094800005201,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 94.6512959000247,
+        "process_peak_rss_mb": 6200.828125,
+        "samples": 319632,
+        "seconds_per_step": 0.12143094800005201,
+        "stages": [
+          {
+            "elapsed_seconds": 4.4000043999403715e-06,
+            "peak_rss_mb": 707.13671875,
+            "rss_mb": 560.95703125,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 41.1058037999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2104.9765625,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 49.5824006999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2127.12109375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 144.23380439999164,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3523.53125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 147.83186380000552,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3562.4375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 148.10419069998898,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3396.625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 163.65573190001305,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 4054.4921875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0034071928545828484,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_a"
+      },
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 10.354336799995508,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 26.7081725000171,
+        "process_peak_rss_mb": 2929.2421875,
+        "samples": 80000,
+        "seconds_per_step": 0.10354336799995507,
+        "stages": [
+          {
+            "elapsed_seconds": 4.999979864805937e-06,
+            "peak_rss_mb": 580.25,
+            "rss_mb": 549.984375,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 16.996975699992618,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1316.21484375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 18.804284799989546,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1320.984375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 45.51256889998331,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1980.91796875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 46.40519499999937,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1996.0546875,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 46.51128039998002,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1512.7890625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 59.256307599978754,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 2170.05859375,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.004753065955907003,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_b"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 11.962087399995653,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 92.88846819999162,
+        "process_peak_rss_mb": 7478.5234375,
+        "samples": 319720,
+        "seconds_per_step": 0.11962087399995652,
+        "stages": [
+          {
+            "elapsed_seconds": 5.2000104915350676e-06,
+            "peak_rss_mb": 706.26953125,
+            "rss_mb": 560.16015625,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 49.30441549999523,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2108.234375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 56.43150370000512,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2130.58203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 149.32020390001708,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4777.07421875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 153.04723270001705,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4784.74609375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 153.2003639000177,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 3515.15625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 167.77821519999998,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4156.2890625,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.005300936212323662,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_b"
+      }
+    ],
+    "reused_measurements": {
+      "measurements_sha256": "80b76dfad67a5dab11171f3192007c726c2e6a93b67ce4fd5e38212598c270f6",
+      "source": "D:\\进益资本杯\\runs\\training-coverage-arms-20261018\\20261018T024634.978262Z_ea2f53860760"
+    }
+  },
+  "old_final": {
+    "end_exclusive": "2023-08-05",
+    "role": "reserved",
+    "start": "2023-08-03"
+  },
+  "policy": {
+    "direction": "maximize",
+    "exposure_policy": "Steps, batch size, learning rate and recipe stay fixed for this round; a larger pool gets no extra steps because that would confound coverage with compute.",
+    "guardrails": {
+      "both_windows_improve": true,
+      "gross_interval_lower_at_least": -0.00010387476657357637,
+      "gross_mean_nondecreasing": true,
+      "turnover_interval_upper_at_most": 0.03706698237510122,
+      "turnover_mean_nonincreasing": true,
+      "worst_day_delta_at_least": -0.00013896761043335348
+    },
+    "interpretation_rule": "A non-accept result bounds what equal-compute date expansion achieves; it does not establish that more history is uninformative.",
+    "minimum_mean_gain": 0.01164665094206816,
+    "minimum_mean_gain_basis": {
+      "minimum_mean_gain": 0.01164665094206816,
+      "noise_multiplier": 1.0,
+      "noise_scaled": 0.01164665094206816,
+      "practical_improvement": 0.002,
+      "primary_metric": "rank_ic_mean"
+    },
+    "noise": {
+      "long_short_return_mean": 0.00010387476657357637,
+      "min_daily_long_short_return": 0.00013896761043335348,
+      "rank_ic_mean": 0.01164665094206816,
+      "turnover_mean": 0.03706698237510122
+    },
+    "primary_metric": "paired daily all-eight-time RankIC, seed-mean per day before pairing",
+    "statistics": {
+      "block_days": [
+        5,
+        2
+      ],
+      "bootstrap_samples": 20000,
+      "bootstrap_seed": 20261017,
+      "confidence": 0.95,
+      "paired": true,
+      "sensitivity_rule": "Report both block lengths; conflicting conclusions are inconclusive, and neither is chosen after seeing results.",
+      "window_stratified": true
+    }
+  },
+  "protocol_sha256": "63a3b6c772a8722133f33a86cdca2e2b22715277464910803f1b5d4824b04b02",
+  "protocol_source": "D:\\进益资本杯\\configs\\fixed_seed_ensemble_20261017_plan.json",
+  "purge_policy": "Source label_end preferred; endpoint < training cutoff; frozen date membership. Without label_end, official no-overnight labels are conservatively bounded by same-day 15:00, strictly before the midnight cutoff. Existing intraday selection clock (11:30 -> 13:30) remains an unverified assumption, not actual endpoint verification.",
+  "registry_path": "D:\\进益资本杯\\runs\\data_roles.json",
+  "registry_sha256": "7c8fc10edd8b0f0e0dae506066c3f4aba8b3f136164f24499f4911971bd10f3d",
+  "research_seeds": [
+    11,
+    29,
+    47
+  ],
+  "run_dir": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8",
+  "schema_version": 2,
+  "smoothing": "none",
+  "supersedes": {
+    "prior_sha256": "23681399736003791df839851f99025e2860dadf677e8b8a6c55602d848101ea",
+    "reason": "Adds the measured executable budget (peak host memory, wall time, exact pool-sized sample caps) and the baseline-only decision gates required before any 40-day fit."
+  },
+  "training_selection": [
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\research_a_10_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2023-10-31T15:00:00",
+      "max_selected_label_end": "2023-10-31T15:00:00",
+      "missing_labels": 0,
+      "outside_official_universe": 80,
+      "outside_sample_times": 0,
+      "requested": 79920,
+      "selected": 79920,
+      "selected_key_label_sha256": "5993850d23ec6e3745f039759dbfb550c2fe26419f861dbe4195e5b211e9082e",
+      "sha256": "9b9eb1c4a643d9332e2c7890370dc8d6b0842ce0a73442bc31527c2e685ce07d",
+      "training_days": 10,
+      "unknown_session_horizon": 0,
+      "window": "research_a"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\research_a_40_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2023-10-31T15:00:00",
+      "max_selected_label_end": "2023-10-31T15:00:00",
+      "missing_labels": 48,
+      "outside_official_universe": 320,
+      "outside_sample_times": 0,
+      "requested": 319680,
+      "selected": 319632,
+      "selected_key_label_sha256": "906fc7409ea7595ab76ac4f19f161e446229247eab5b80855c67dc3c7063a927",
+      "sha256": "4cc931c7cfeb7d05a5dfe728b45e11a7ebe4af90a4aa3e3eb6544898e23e9041",
+      "training_days": 40,
+      "unknown_session_horizon": 0,
+      "window": "research_a"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\research_b_10_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-02-29T15:00:00",
+      "max_selected_label_end": "2024-02-29T15:00:00",
+      "missing_labels": 0,
+      "outside_official_universe": 80,
+      "outside_sample_times": 0,
+      "requested": 80000,
+      "selected": 80000,
+      "selected_key_label_sha256": "bd10aa22f1743db399020407ebe1e3a899c540e14258f5d15dce7a96cc04ac96",
+      "sha256": "d2d776f769b8b9be46ad3e1e67dddeaa9f46c9d44dcd1514309f5dcd631c9f7f",
+      "training_days": 10,
+      "unknown_session_horizon": 0,
+      "window": "research_b"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\research_b_40_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-02-29T15:00:00",
+      "max_selected_label_end": "2024-02-29T15:00:00",
+      "missing_labels": 280,
+      "outside_official_universe": 320,
+      "outside_sample_times": 0,
+      "requested": 320000,
+      "selected": 319720,
+      "selected_key_label_sha256": "6008b5e6a17b96743bf922c8ff26c7a820086ebc8fc7241e047100b4ea0e180f",
+      "sha256": "eb6b60acb7a57a2a11c97a23789fa77ea2fd4a53c47e80af64fd35128ea4d0d7",
+      "training_days": 40,
+      "unknown_session_horizon": 0,
+      "window": "research_b"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\confirmation_10_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-06-28T15:00:00",
+      "max_selected_label_end": "2024-06-28T15:00:00",
+      "missing_labels": 40,
+      "outside_official_universe": 80,
+      "outside_sample_times": 0,
+      "requested": 80000,
+      "selected": 79960,
+      "selected_key_label_sha256": "4138b5778affe2159b3b0e5d41467faf3d7216b1d0bdc5eac77ca4777595b213",
+      "sha256": "a1d7c8cde0979d21a91026844e234bf66f56207d694914a9140c6955d070eda8",
+      "training_days": 10,
+      "unknown_session_horizon": 0,
+      "window": "confirmation"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\confirmation_40_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-06-28T15:00:00",
+      "max_selected_label_end": "2024-06-28T15:00:00",
+      "missing_labels": 432,
+      "outside_official_universe": 320,
+      "outside_sample_times": 0,
+      "requested": 320000,
+      "selected": 319568,
+      "selected_key_label_sha256": "ca3303e652349f0225473eceb9b9458334137cac00bebf800357b6bf0d4c7597",
+      "sha256": "301190ab66dbc1191ea272df527b69963ad3d2647962a6b55ea52dc63d038f12",
+      "training_days": 40,
+      "unknown_session_horizon": 0,
+      "window": "confirmation"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\locked_10_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-09-30T15:00:00",
+      "max_selected_label_end": "2024-09-30T15:00:00",
+      "missing_labels": 235,
+      "outside_official_universe": 80,
+      "outside_sample_times": 0,
+      "requested": 79838,
+      "selected": 79603,
+      "selected_key_label_sha256": "fd681603d9686a6690cfdede53c2f1dcd71e8ee523201dec0949fb0c8256e407",
+      "sha256": "6799417958f083d73d37be9b3d42003b1b3ea6b693e33d59fbb33353ca249976",
+      "training_days": 10,
+      "unknown_session_horizon": 0,
+      "window": "locked"
+    },
+    {
+      "actual_label_end_available": false,
+      "artifact": "D:\\进益资本杯\\runs\\training-coverage-freeze\\20261018T015149.294885Z_3b09f5d052d8\\locked_40_training_targets.parquet",
+      "boundary_proof": "official_no_overnight_upper_bound_1500",
+      "boundary_purged": 0,
+      "label_clock": "assumed_trading_clock_1130_to_1330",
+      "max_conservative_label_end": "2024-09-30T15:00:00",
+      "max_selected_label_end": "2024-09-30T15:00:00",
+      "missing_labels": 459,
+      "outside_official_universe": 320,
+      "outside_sample_times": 0,
+      "requested": 319838,
+      "selected": 319379,
+      "selected_key_label_sha256": "6d242eb6d068f9772d593b10116ebd7531a0b9a3150e0c7eecdd75668aeb5bf7",
+      "sha256": "64bb9660b918554e250b653dba2a1f77f50b1af803b82b2a94e360c009f76a27",
+      "training_days": 40,
+      "unknown_session_horizon": 0,
+      "window": "locked"
+    }
+  ],
+  "windows": [
+    {
+      "arms": {
+        "10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2023-11-01T00:00:00",
+                "start": "2023-10-18T00:00:00"
+              },
+              "validation": {
+                "end": "2023-11-15T00:00:00",
+                "start": "2023-11-01T00:00:00"
+              }
+            }
+          },
+          "frozen_identity": {
+            "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+            "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+            "samples": 79920
+          },
+          "train_dates": [
+            "2023-10-18",
+            "2023-10-19",
+            "2023-10-20",
+            "2023-10-23",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-26",
+            "2023-10-27",
+            "2023-10-30",
+            "2023-10-31"
+          ],
+          "train_end_exclusive": "2023-11-01"
+        },
+        "40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319632,
+              "wall_seconds": 900.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2023-11-01T00:00:00",
+                "start": "2023-08-29T00:00:00"
+              },
+              "validation": {
+                "end": "2023-11-15T00:00:00",
+                "start": "2023-11-01T00:00:00"
+              }
+            }
+          },
+          "frozen_identity": {
+            "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+            "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+            "samples": 319632
+          },
+          "train_dates": [
+            "2023-08-29",
+            "2023-08-30",
+            "2023-08-31",
+            "2023-09-01",
+            "2023-09-04",
+            "2023-09-05",
+            "2023-09-06",
+            "2023-09-07",
+            "2023-09-08",
+            "2023-09-11",
+            "2023-09-12",
+            "2023-09-13",
+            "2023-09-14",
+            "2023-09-15",
+            "2023-09-18",
+            "2023-09-19",
+            "2023-09-20",
+            "2023-09-21",
+            "2023-09-22",
+            "2023-09-25",
+            "2023-09-26",
+            "2023-09-27",
+            "2023-09-28",
+            "2023-10-09",
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-16",
+            "2023-10-17",
+            "2023-10-18",
+            "2023-10-19",
+            "2023-10-20",
+            "2023-10-23",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-26",
+            "2023-10-27",
+            "2023-10-30",
+            "2023-10-31"
+          ],
+          "train_end_exclusive": "2023-11-01"
+        }
+      },
+      "baseline_inference_cost": {
+        "baseline_seconds": 44.169232899992494,
+        "chunks": [
+          {
+            "baseline_seconds": 22.703047099988908,
+            "chunk": 0,
+            "dates": [
+              "2023-11-01",
+              "2023-11-02",
+              "2023-11-03",
+              "2023-11-06",
+              "2023-11-07"
+            ],
+            "ensemble_seconds": 70.41283210000256,
+            "resources": {
+              "cpu_seconds": 66.15625,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1828.546875
+            },
+            "same_keys_sha256": "66a98f47d68a79a83c81bf75b115ab3bdf92f7136152fe7a92bc0563824fba43",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.63472329999786,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.466185800003586,
+            "chunk": 1,
+            "dates": [
+              "2023-11-08",
+              "2023-11-09",
+              "2023-11-10",
+              "2023-11-13",
+              "2023-11-14"
+            ],
+            "ensemble_seconds": 66.82290790000116,
+            "resources": {
+              "cpu_seconds": 137.859375,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1926.30859375
+            },
+            "same_keys_sha256": "524df875913f1fdd6f635741f7f2de982ace2806c88706139a6451c3f8d92316",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.989382900006603,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 137.23574000000372,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 53.62410620000446
+      },
+      "baseline_reuse": {
+        "11": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_baseline_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.000289176947171676,
+            "ic_mean": 0.008344993258457566,
+            "local_approximation": true,
+            "long_return_mean": -7.081056926290573e-05,
+            "long_short_return_mean": 2.6874494434336837e-05,
+            "long_short_sharpe": 1.8028457846549981,
+            "mae": 0.0021399955699479356,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.000289176947171676,
+            "mse": 1.07289917958255e-05,
+            "rank_ic_ir": 0.2697321300920331,
+            "rank_ic_mean": 0.006586304813130069,
+            "rank_persistence_mean": -0.11194116937110118,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79920,
+            "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+            "schema_version": 1,
+            "score_change_mae": 0.000917778865388225,
+            "short_return_mean": -9.768506369724257e-05,
+            "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+            "turnover_mean": 1.6669149318018666,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed11_predictions.parquet",
+          "prediction_sha256": "a52d29ac81557aaa2114d4334f631cfc19680016af2934960522b628537fddd5"
+        },
+        "29": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_seed29_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.00012058092014646541,
+            "ic_mean": 0.021167965746501566,
+            "local_approximation": true,
+            "long_return_mean": 2.979244793105832e-06,
+            "long_short_return_mean": 0.00016633965425646627,
+            "long_short_sharpe": 13.844694104745951,
+            "mae": 0.0021555838068809388,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.00012058092014646541,
+            "mse": 1.0771633672910435e-05,
+            "rank_ic_ir": 0.9471389551885309,
+            "rank_ic_mean": 0.022500896088241247,
+            "rank_persistence_mean": -0.08809457959065328,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79920,
+            "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+            "schema_version": 1,
+            "score_change_mae": 0.0008975534101105636,
+            "short_return_mean": -0.00016336040946336047,
+            "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+            "turnover_mean": 1.6689788226848528,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed29_predictions.parquet",
+          "prediction_sha256": "21a160c0a5d06125977aa013b72aa460ce7ec45d215fd6afdf1d24d4b1b9aaeb"
+        },
+        "47": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_seed47_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.0004839840530741022,
+            "ic_mean": -0.0068249600146304944,
+            "local_approximation": true,
+            "long_return_mean": -8.337734301128592e-05,
+            "long_short_return_mean": -5.20712109134454e-05,
+            "long_short_sharpe": -3.172703324805313,
+            "mae": 0.002107991207090032,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.0004839840530741022,
+            "mse": 1.052337143364709e-05,
+            "rank_ic_ir": -0.12787355216558613,
+            "rank_ic_mean": -0.004235385263146735,
+            "rank_persistence_mean": -0.00182238353783075,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79920,
+            "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+            "schema_version": 1,
+            "score_change_mae": 0.0005688623732452979,
+            "short_return_mean": -3.1306132097840534e-05,
+            "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+            "turnover_mean": 1.6000089734386218,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed47_predictions.parquet",
+          "prediction_sha256": "1caa8c354f4c3d2d037df339a881e02f65512ababbe6159961d9998a4309f89a"
+        }
+      },
+      "evaluation_dates": [
+        "2023-11-01",
+        "2023-11-02",
+        "2023-11-03",
+        "2023-11-06",
+        "2023-11-07",
+        "2023-11-08",
+        "2023-11-09",
+        "2023-11-10",
+        "2023-11-13",
+        "2023-11-14"
+      ],
+      "evaluation_end_exclusive": "2023-11-15",
+      "evaluation_label_views_this_round": 0,
+      "evaluation_start": "2023-11-01",
+      "exposure": {
+        "arms": {
+          "10": {
+            "epochs": 0.6006006006006006,
+            "sample_exposures": 48000,
+            "samples": 79920
+          },
+          "40": {
+            "epochs": 0.1501726986033939,
+            "sample_exposures": 48000,
+            "samples": 319632
+          }
+        },
+        "batch_size": 32,
+        "interpretation": "Equal optimizer compute; the 40-day pool is traversed fewer times, so this round tests generalization at equal compute, not the value of more history.",
+        "sample_exposures": 48000,
+        "steps": 1500
+      },
+      "fit_once_before_evaluation": true,
+      "name": "research_a",
+      "role": "research_used",
+      "scoring_targets": {
+        "path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_targets.parquet",
+        "sha256": "3d5e5eb8743ee6f9462df6c91e7f71c89471bb03ac048c2d38144061b529c3ce"
+      }
+    },
+    {
+      "arms": {
+        "10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-03-01T00:00:00",
+                "start": "2024-02-08T00:00:00"
+              },
+              "validation": {
+                "end": "2024-03-15T00:00:00",
+                "start": "2024-03-01T00:00:00"
+              }
+            }
+          },
+          "frozen_identity": {
+            "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+            "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+            "samples": 80000
+          },
+          "train_dates": [
+            "2024-02-08",
+            "2024-02-19",
+            "2024-02-20",
+            "2024-02-21",
+            "2024-02-22",
+            "2024-02-23",
+            "2024-02-26",
+            "2024-02-27",
+            "2024-02-28",
+            "2024-02-29"
+          ],
+          "train_end_exclusive": "2024-03-01"
+        },
+        "40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319720,
+              "wall_seconds": 900.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-03-01T00:00:00",
+                "start": "2023-12-27T00:00:00"
+              },
+              "validation": {
+                "end": "2024-03-15T00:00:00",
+                "start": "2024-03-01T00:00:00"
+              }
+            }
+          },
+          "frozen_identity": {
+            "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+            "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+            "samples": 319720
+          },
+          "train_dates": [
+            "2023-12-27",
+            "2023-12-28",
+            "2023-12-29",
+            "2024-01-02",
+            "2024-01-03",
+            "2024-01-04",
+            "2024-01-05",
+            "2024-01-08",
+            "2024-01-09",
+            "2024-01-10",
+            "2024-01-11",
+            "2024-01-12",
+            "2024-01-15",
+            "2024-01-16",
+            "2024-01-17",
+            "2024-01-18",
+            "2024-01-19",
+            "2024-01-22",
+            "2024-01-23",
+            "2024-01-24",
+            "2024-01-25",
+            "2024-01-26",
+            "2024-01-29",
+            "2024-01-30",
+            "2024-01-31",
+            "2024-02-01",
+            "2024-02-02",
+            "2024-02-05",
+            "2024-02-06",
+            "2024-02-07",
+            "2024-02-08",
+            "2024-02-19",
+            "2024-02-20",
+            "2024-02-21",
+            "2024-02-22",
+            "2024-02-23",
+            "2024-02-26",
+            "2024-02-27",
+            "2024-02-28",
+            "2024-02-29"
+          ],
+          "train_end_exclusive": "2024-03-01"
+        }
+      },
+      "baseline_inference_cost": {
+        "baseline_seconds": 42.34614530002,
+        "chunks": [
+          {
+            "baseline_seconds": 21.248559200001182,
+            "chunk": 0,
+            "dates": [
+              "2024-03-01",
+              "2024-03-04",
+              "2024-03-05",
+              "2024-03-06",
+              "2024-03-07"
+            ],
+            "ensemble_seconds": 64.27404840002418,
+            "resources": {
+              "cpu_seconds": 91.1875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1840.49609375
+            },
+            "same_keys_sha256": "e5212f534d41bc0ce1416000348004407bcdd73b743198e879a4e85c2965b397",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.60473419999471,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.097586100018816,
+            "chunk": 1,
+            "dates": [
+              "2024-03-08",
+              "2024-03-11",
+              "2024-03-12",
+              "2024-03-13",
+              "2024-03-14"
+            ],
+            "ensemble_seconds": 62.37435860000551,
+            "resources": {
+              "cpu_seconds": 181.46875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1907.18359375
+            },
+            "same_keys_sha256": "d79b14dc7e56baaf1742c86be55847ce16d8e3ef87cfe577ed0dc55bf8baabf9",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.234697000007145,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 126.64840700002969,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 52.839431200001854
+      },
+      "baseline_reuse": {
+        "11": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_baseline_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.00030116088435618087,
+            "ic_mean": -0.00790562542333589,
+            "local_approximation": true,
+            "long_return_mean": 0.00016035361737412815,
+            "long_short_return_mean": -4.959520376825679e-05,
+            "long_short_sharpe": -4.8355311719325895,
+            "mae": 0.0032291835946196964,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.00030116088435618087,
+            "mse": 1.9442401473140063e-05,
+            "rank_ic_ir": -0.567298676088852,
+            "rank_ic_mean": -0.010599396609749807,
+            "rank_persistence_mean": 0.03167852376798302,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79904,
+            "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+            "schema_version": 1,
+            "score_change_mae": 0.001817235484522939,
+            "short_return_mean": 0.00020994882114238494,
+            "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+            "turnover_mean": 1.572472631012204,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed11_predictions.parquet",
+          "prediction_sha256": "be846b9508a6bbbe690be1ac88d4009ae71877578149b2f86effa418b152fae7"
+        },
+        "29": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_seed29_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.0002247071847882993,
+            "ic_mean": 0.011875428372707256,
+            "local_approximation": true,
+            "long_return_mean": 0.00024877329557820247,
+            "long_short_return_mean": 0.0001408412688696285,
+            "long_short_sharpe": 8.757178718169866,
+            "mae": 0.0031314825323796925,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.0002247071847882993,
+            "mse": 1.8842647646949054e-05,
+            "rank_ic_ir": 0.34050325808738663,
+            "rank_ic_mean": 0.008291866257409625,
+            "rank_persistence_mean": 0.05153980258152539,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79904,
+            "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+            "schema_version": 1,
+            "score_change_mae": 0.001860678159842723,
+            "short_return_mean": 0.000107932026708574,
+            "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+            "turnover_mean": 1.548212311557789,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed29_predictions.parquet",
+          "prediction_sha256": "4956885fabd07fd15465386c8446d406859ca972eb6825a4a3070dcbcb09a644"
+        },
+        "47": {
+          "daily_archive": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_seed47_daily.csv",
+          "metrics": {
+            "conventions": {
+              "constant_portfolio": "undefined: signal cannot rank stocks",
+              "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+              "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+              "cross_section": "one prediction timestamp; average ranks for ties",
+              "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+              "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+              "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+              "official_score": "not implemented: official complete evaluation rules unavailable",
+              "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+              "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+              "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+              "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+              "version": "local-v1"
+            },
+            "correlation_coverage": {
+              "ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "rank_ic": {
+                "eligible_section_count": 80,
+                "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                "valid_section_count": 80,
+                "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+              },
+              "schema_version": 1
+            },
+            "cross_section_count": 80,
+            "day_count": 10,
+            "extreme_return": -0.00015216413146705219,
+            "ic_mean": 0.004357464110180943,
+            "local_approximation": true,
+            "long_return_mean": 0.00021742445826693481,
+            "long_short_return_mean": 7.472860917355492e-05,
+            "long_short_sharpe": 6.932107527035826,
+            "mae": 0.0031736460588843176,
+            "metric_scope": "local_approximation",
+            "min_daily_long_short_return": -0.00015216413146705219,
+            "mse": 1.8917010057820864e-05,
+            "rank_ic_ir": 0.03970662419731368,
+            "rank_ic_mean": 0.0007438763680817247,
+            "rank_persistence_mean": -0.026911669299501256,
+            "ranking_defined_section_count": 80,
+            "sample_count": 79904,
+            "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+            "schema_version": 1,
+            "score_change_mae": 0.0016447193379550851,
+            "short_return_mean": 0.0001426958490933799,
+            "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+            "turnover_mean": 1.6167657932519741,
+            "undefined_ic_count": 0,
+            "undefined_rank_ic_count": 0,
+            "valid_days": {
+              "ic": 10,
+              "long_return": 10,
+              "long_short_return": 10,
+              "mae": 10,
+              "mse": 10,
+              "rank_ic": 10,
+              "rank_persistence": 10,
+              "score_change_mae": 10,
+              "short_return": 10,
+              "turnover": 10
+            }
+          },
+          "metrics_reproduced_from_predictions": true,
+          "prediction_path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed47_predictions.parquet",
+          "prediction_sha256": "1509b4c69b041c41d7eb3b3e69a80d2b09ea50d07c86f2208e869f42f5a6dbd5"
+        }
+      },
+      "evaluation_dates": [
+        "2024-03-01",
+        "2024-03-04",
+        "2024-03-05",
+        "2024-03-06",
+        "2024-03-07",
+        "2024-03-08",
+        "2024-03-11",
+        "2024-03-12",
+        "2024-03-13",
+        "2024-03-14"
+      ],
+      "evaluation_end_exclusive": "2024-03-15",
+      "evaluation_label_views_this_round": 0,
+      "evaluation_start": "2024-03-01",
+      "exposure": {
+        "arms": {
+          "10": {
+            "epochs": 0.6,
+            "sample_exposures": 48000,
+            "samples": 80000
+          },
+          "40": {
+            "epochs": 0.15013136494432627,
+            "sample_exposures": 48000,
+            "samples": 319720
+          }
+        },
+        "batch_size": 32,
+        "interpretation": "Equal optimizer compute; the 40-day pool is traversed fewer times, so this round tests generalization at equal compute, not the value of more history.",
+        "sample_exposures": 48000,
+        "steps": 1500
+      },
+      "fit_once_before_evaluation": true,
+      "name": "research_b",
+      "role": "research_used",
+      "scoring_targets": {
+        "path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_targets.parquet",
+        "sha256": "dff0a8f3af3ff99aa931c31b2a07f9320ead32f05fe3d698970f102fb8153c8a"
+      }
+    },
+    {
+      "arms": {
+        "10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-06-29T00:00:00",
+                "start": "2024-06-17T00:00:00"
+              },
+              "validation": {
+                "end": "2024-07-27T00:00:00",
+                "start": "2024-07-01T00:00:00"
+              }
+            }
+          },
+          "train_dates": [
+            "2024-06-17",
+            "2024-06-18",
+            "2024-06-19",
+            "2024-06-20",
+            "2024-06-21",
+            "2024-06-24",
+            "2024-06-25",
+            "2024-06-26",
+            "2024-06-27",
+            "2024-06-28"
+          ],
+          "train_end_exclusive": "2024-06-29"
+        },
+        "40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-06-29T00:00:00",
+                "start": "2024-04-30T00:00:00"
+              },
+              "validation": {
+                "end": "2024-07-27T00:00:00",
+                "start": "2024-07-01T00:00:00"
+              }
+            }
+          },
+          "train_dates": [
+            "2024-04-30",
+            "2024-05-06",
+            "2024-05-07",
+            "2024-05-08",
+            "2024-05-09",
+            "2024-05-10",
+            "2024-05-13",
+            "2024-05-14",
+            "2024-05-15",
+            "2024-05-16",
+            "2024-05-17",
+            "2024-05-20",
+            "2024-05-21",
+            "2024-05-22",
+            "2024-05-23",
+            "2024-05-24",
+            "2024-05-27",
+            "2024-05-28",
+            "2024-05-29",
+            "2024-05-30",
+            "2024-05-31",
+            "2024-06-03",
+            "2024-06-04",
+            "2024-06-05",
+            "2024-06-06",
+            "2024-06-07",
+            "2024-06-11",
+            "2024-06-12",
+            "2024-06-13",
+            "2024-06-14",
+            "2024-06-17",
+            "2024-06-18",
+            "2024-06-19",
+            "2024-06-20",
+            "2024-06-21",
+            "2024-06-24",
+            "2024-06-25",
+            "2024-06-26",
+            "2024-06-27",
+            "2024-06-28"
+          ],
+          "train_end_exclusive": "2024-06-29"
+        }
+      },
+      "evaluation_dates": [
+        "2024-07-01",
+        "2024-07-02",
+        "2024-07-03",
+        "2024-07-04",
+        "2024-07-05",
+        "2024-07-08",
+        "2024-07-09",
+        "2024-07-10",
+        "2024-07-11",
+        "2024-07-12",
+        "2024-07-15",
+        "2024-07-16",
+        "2024-07-17",
+        "2024-07-18",
+        "2024-07-19",
+        "2024-07-22",
+        "2024-07-23",
+        "2024-07-24",
+        "2024-07-25",
+        "2024-07-26"
+      ],
+      "evaluation_end_exclusive": "2024-07-27",
+      "evaluation_label_views_this_round": 0,
+      "evaluation_start": "2024-07-01",
+      "fit_once_before_evaluation": true,
+      "name": "confirmation",
+      "role": "confirmation"
+    },
+    {
+      "arms": {
+        "10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "final",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": "Only after frozen confirmation passes"
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-10-01T00:00:00",
+                "start": "2024-09-13T00:00:00"
+              },
+              "validation": {
+                "end": "2024-10-08T00:00:00",
+                "start": "2024-10-01T00:00:00"
+              }
+            }
+          },
+          "train_dates": [
+            "2024-09-13",
+            "2024-09-18",
+            "2024-09-19",
+            "2024-09-20",
+            "2024-09-23",
+            "2024-09-24",
+            "2024-09-25",
+            "2024-09-26",
+            "2024-09-27",
+            "2024-09-30"
+          ],
+          "train_end_exclusive": "2024-10-01"
+        },
+        "40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "final",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": "Only after frozen confirmation passes"
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-10-01T00:00:00",
+                "start": "2024-08-02T00:00:00"
+              },
+              "validation": {
+                "end": "2024-10-08T00:00:00",
+                "start": "2024-10-01T00:00:00"
+              }
+            }
+          },
+          "train_dates": [
+            "2024-08-02",
+            "2024-08-05",
+            "2024-08-06",
+            "2024-08-07",
+            "2024-08-08",
+            "2024-08-09",
+            "2024-08-12",
+            "2024-08-13",
+            "2024-08-14",
+            "2024-08-15",
+            "2024-08-16",
+            "2024-08-19",
+            "2024-08-20",
+            "2024-08-21",
+            "2024-08-22",
+            "2024-08-23",
+            "2024-08-26",
+            "2024-08-27",
+            "2024-08-28",
+            "2024-08-29",
+            "2024-08-30",
+            "2024-09-02",
+            "2024-09-03",
+            "2024-09-04",
+            "2024-09-05",
+            "2024-09-06",
+            "2024-09-09",
+            "2024-09-10",
+            "2024-09-11",
+            "2024-09-12",
+            "2024-09-13",
+            "2024-09-18",
+            "2024-09-19",
+            "2024-09-20",
+            "2024-09-23",
+            "2024-09-24",
+            "2024-09-25",
+            "2024-09-26",
+            "2024-09-27",
+            "2024-09-30"
+          ],
+          "train_end_exclusive": "2024-10-01"
+        }
+      },
+      "evaluation_dates": [
+        "2024-10-08",
+        "2024-10-09",
+        "2024-10-10",
+        "2024-10-11",
+        "2024-10-14",
+        "2024-10-15",
+        "2024-10-16",
+        "2024-10-17",
+        "2024-10-18",
+        "2024-10-21",
+        "2024-10-22",
+        "2024-10-23",
+        "2024-10-24",
+        "2024-10-25",
+        "2024-10-28",
+        "2024-10-29",
+        "2024-10-30",
+        "2024-10-31",
+        "2024-11-01",
+        "2024-11-04",
+        "2024-11-05",
+        "2024-11-06",
+        "2024-11-07",
+        "2024-11-08",
+        "2024-11-11",
+        "2024-11-12",
+        "2024-11-13",
+        "2024-11-14",
+        "2024-11-15",
+        "2024-11-18",
+        "2024-11-19",
+        "2024-11-20",
+        "2024-11-21",
+        "2024-11-22",
+        "2024-11-25",
+        "2024-11-26",
+        "2024-11-27",
+        "2024-11-28",
+        "2024-11-29",
+        "2024-12-02",
+        "2024-12-03",
+        "2024-12-04",
+        "2024-12-05",
+        "2024-12-06",
+        "2024-12-09",
+        "2024-12-10",
+        "2024-12-11",
+        "2024-12-12",
+        "2024-12-13",
+        "2024-12-16",
+        "2024-12-17",
+        "2024-12-18",
+        "2024-12-19",
+        "2024-12-20",
+        "2024-12-23",
+        "2024-12-24",
+        "2024-12-25",
+        "2024-12-26",
+        "2024-12-27",
+        "2024-12-30",
+        "2024-12-31"
+      ],
+      "evaluation_end_exclusive": "2025-01-01",
+      "evaluation_label_views_this_round": 0,
+      "evaluation_start": "2024-10-08",
+      "fit_once_before_evaluation": true,
+      "name": "locked",
+      "role": "locked"
+    }
+  ]
+}

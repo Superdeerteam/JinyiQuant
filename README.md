@@ -270,7 +270,7 @@ PYTHONPATH=src:. python -m scripts.annual_baseline run <新的运行目录> \
 
 ## 10日与40日训练覆盖研究
 
-本轮冻结方案以 [v3配置](configs/training_coverage_20261017_v3_frozen.json) 为准；此前两版草稿方案已删除，其副本仍留在本地 `runs/training-coverage-freeze/` 的两份档案中。唯一研究变量是训练日期数10→40；raw12、八时点、128条输入、MSE、train_std、1500步、batch32、学习率1e-4、无平滑保持固定。研究种子11/29/47全部登记，部署种子固定11。训练矩阵为每个起点2方案×3种子=6次训练（全轮24次），同起点同方案的三份配置除`seed`外完全相同；每次训练完成后冻结权重、只做推理与评价，不按成绩重训或挑种子。此轮不启动模型训练，数值晋升门槛和40日训练资源预算留待基线校准后另行冻结。
+本轮冻结方案以 [v3配置](configs/training_coverage_20261017_v3_frozen.json) 为准；此前两版草稿方案已删除，其副本仍留在本地 `runs/training-coverage-freeze/` 的两份档案中。唯一研究变量是训练日期数10→40；raw12、八时点、128条输入、MSE、train_std、1500步、batch32、学习率1e-4、无平滑保持固定。研究种子11/29/47全部登记，部署种子固定11。训练矩阵为每个起点2方案×3种子=6次训练（全轮24次），同起点同方案的三份配置除`seed`外完全相同；每次训练完成后冻结权重、只做推理与评价，不按成绩重训或挑种子。此轮不启动模型训练，数值晋升门槛和40日训练资源预算留待基线校准后另行冻结（两项启动条件已在下一小节补齐）。
 
 训练清单由官方股票池日历生成，沿用原登记截止日：研究A为2023-11-01，研究B为2024-03-01，确认为2024-06-29，锁定检查为2024-10-01。研究A/B已被使用，只能用于初筛、校准和复验；2024年7月确认区、第四季度锁定区和旧final继续保留。锁定方案配置的validation段是国庆休市间隙，只用于配置结构，不作为额外评价区。
 
@@ -286,6 +286,26 @@ python -m scripts.publish_training_coverage --history-run <历史质量档案目
 ```
 
 季度诊断只使用与全年索引校验一致的1/4/7/10月原权重，复用6组原预测，补6组推理；不接受本机另一次训练产生的同名权重。`--resume-from` 只接受同一冻结索引、同一`jobs.json`的中断档案，并逐月校验日历、八时点、无重复和非有限得分后复用已保存预测，避免重复消耗补充分组合预算；复用月份及其校验值写入`checks.json`。历史诊断复用`history_diagnostics`；旧全年输出缺少逐时完整长度及年龄明细，因此仅重放无标签的历史窗口构建，不运行模型。结果按[逐月研究索引](modified_tlob/training_coverage_20261017/index.json)组织，包含逐时排序、多空、换手、配对差、128条完整性、缺失率和最近有效行情年龄，不输出全年平均数。单年单种子且训练起点、行情和权重日龄混杂，不作因果推断，不据此晋升40日方案。
+
+### 40日启动条件与研究A/B对照
+
+两个启动条件已用实测补齐，[v4冻结配置](configs/training_coverage_20261017_v4_frozen.json) 与[执行计划](configs/training_coverage_20261018_v4_plan.json) 保留原训练日期、评价窗口和配方，只替换执行预算与决策门槛：
+
+- 预算实测（4次真实预处理路径试点 + 100步优化探针）：10日池预处理31/27秒、峰值2,835/2,929MiB；40日池预处理95/93秒、峰值6,201/7,479MiB。原6,144MiB提案上限被实测证明不足，冻结为9,472MiB与每次训练900秒；样本上限按冻结清单精确设为319,632/319,720，原100,000会直接拒绝启动。六次候选训练实测304–320秒、6,907–7,587MiB，均在冻结预算内。
+- 门槛只用六个10日基线校准：窗口级RankIC跨种子标准差0.011647为最小改善量，退化容忍为多空1.0387e-5、换手0.037067、最差日1.3897e-4。冻结时没有任何40日结果。
+- 身份一致：六份基线的训练key/标签摘要与冻结清单逐一相同，配方差异仅`experiment_id`/`hypothesis`/`seed`，九个训练源码文件与归档快照逐字节一致，归档逐日指标可由其自身预测完全复算。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_training_coverage_arms budget configs/training_coverage_20261017_v3_frozen.json --prior configs/training_coverage_20261017_v3_frozen.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_training_coverage_arms prepare configs/training_coverage_20261017_v4_frozen.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_training_coverage_arms run configs/training_coverage_20261018_v4_plan.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_training_coverage_arms record configs/training_coverage_20261018_v4_plan.json --execution <运行目录> --output <新记录.json>
+```
+
+**结论：回退，保留10日参考。** 池化的配对逐日全天RankIC差（40日减10日，种子均值）+0.012727，形式上越过了0.011647的最小改善量，5日和2日连续日块95%区间分别为[0.003353, 0.016863]和[0.001094, 0.020646]；换手均值下降0.090472，多空均值未退化。但两个研究窗方向相反：研究A为+0.035772（三个种子分别为+0.0409/+0.0152/+0.0512），研究B为−0.010318（−0.0009/−0.0095/−0.0205），因此预登记的`both_windows_improve`与`worst_day_guardrail`（研究B最差日多空差−0.000261，超过1.3897e-4容忍）均未通过。池化改善完全由单一窗口驱动，属于复现失败，不是改善。
+
+**解释边界：** 1500步×32只提供48,000次样本暴露，约为10日池的0.60轮、40日池的0.15轮。本轮只回答"相同计算预算下扩大日期覆盖能否改善泛化"，答案是未得到可复现的稳定改善；这不等于"更多历史数据无效"——40日池在此步数下远未遍历，两个窗口的行情状态也不同，本轮未按规定追加步数或种子。完整成本、逐种子结果、门槛与档案见[结构化研究记录](modified_tlob/training_coverage_arms_20261018.json)。
 
 ## 仓库发布边界
 
