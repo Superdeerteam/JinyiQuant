@@ -2,17 +2,22 @@
   "schema_version": 1,
   "experiment_id": "risk-neutralization-20261018",
   "created_at_utc": "2026-10-18T14:40:00+00:00",
+  "revision": {
+    "note": "The official demo call `M.jyc_eval._latest` was found after the first replay; only the evidence text and status were corrected and the round was re-run. The frozen conventions, sample, statistics and budget are unchanged.",
+    "revised_at_utc": "2026-10-18T15:05:00+00:00"
+  },
   "path_resolution": "every path below is relative to the repository root (the parent directory of configs/)",
   "hypothesis": "The ranking improvement of the centered and CSZ label schemes over the raw-label reference may be partly carried by style and industry exposure. Replaying all three schemes through one frozen approximation of the official preprocessing (winsorize, standardize, previous-day equal-weight BARRA residualization) shows whether the ranking edge, long-short performance and turnover survive, and what net exposures the long-short portfolios still carry.",
   "scope": "diagnostic_only",
   "decision": "none: this round is descriptive. No scheme, seed or threshold is selected or promoted, and no accept/reject gate is applied to any contrast.",
   "official_reference": {
     "module": "M.jyc_eval",
-    "status": "unavailable locally",
+    "status": "interface observed, implementation unavailable locally",
     "evidence": [
       "比赛说明.txt states only: 校验通过后，平台对原始因子统一处理：去极值 与 标准化。风格剔除：将因子对 BARRA 风险因子回归，取残差作为新因子，以评估其增量贡献。",
-      "No jyc_eval module, wheel or notebook exists in the workspace, the data-platform JSON or the official demo scripts.",
-      "The online notebook environment is not reachable from this offline checkout, and the configured web-search provider is unavailable, so the official winsorization parameters, standardization, exposure snapshot date, regression weighting and missing-value handling cannot be inspected."
+      "官方推理 demo 的 main 之后调用 `M.jyc_eval._latest(factor_data=factor_data, show=True)`，并注明“分数经风格剔除后等价于每日单因子，show=True 画绩效图 (IC / 分组 / 压力期)”。这是官方接口存在的唯一本地证据，但没有给出参数、暴露时点或缺失规则。",
+      "该对象来自平台专有的 `bigmodule` 包：四个本地虚拟环境均无法导入 `bigmodule`，仓库内也没有 jyc_eval 源码；数据平台 JSON 只是表目录，不含评估实现。",
+      "在线 notebook 环境在本离线检出中不可达，且配置的搜索服务不可用，因此官方去极值参数、标准化、暴露快照日期、回归权重与缺失值处理都无法查看。"
     ],
     "consequence": "The pipeline below is a local approximation frozen before any result of this round was computed. It is not the official preprocessing and no official score is produced."
   },

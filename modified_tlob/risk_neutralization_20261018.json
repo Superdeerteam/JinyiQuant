@@ -1,15 +1,15 @@
 {
-  "created_at_utc": "2026-10-18T14:49:24.122738+00:00",
+  "created_at_utc": "2026-10-18T15:03:32.660751+00:00",
   "execution": {
     "byte_identical_reproduction": [
-      "20261018T144628.302399Z_025211bea4cb"
+      "20261018T150032.770946Z_6fe9c34fbe05"
     ],
     "inputs": 28,
-    "metrics_sha256": "764c6f26bc82fd4789ff3fd665f76b202e9b653ab4eb745b412edd84c9c6a2d0",
-    "plan_sha256": "1e0ea9f4444265762e29aeebc59a5977fb914d6aa563fa6782c5d60515cfda86",
-    "run_dir": "runs\\risk-neutralization-20261018\\20261018T144251.956015Z_654e88055b84",
-    "run_id": "20261018T144251.956015Z_654e88055b84",
-    "wall_seconds": 137.8
+    "metrics_sha256": "4da7c2c91a665f82025c7f2dd29895756f119b60c910aa50f7fe53e58851d5fd",
+    "plan_sha256": "0d57a4c7d423f856ef76ee4b84cbc261abb6fda9feb931f75276cce4a9824b0a",
+    "run_dir": "runs\\risk-neutralization-20261018\\20261018T145748.199454Z_ea4a79ac311e",
+    "run_id": "20261018T145748.199454Z_ea4a79ac311e",
+    "wall_seconds": 156.6
   },
   "experiment_id": "risk-neutralization-20261018",
   "guardrail_day_2024-03-07": {
@@ -38,11 +38,12 @@
     "consequence": "The pipeline below is a local approximation frozen before any result of this round was computed. It is not the official preprocessing and no official score is produced.",
     "evidence": [
       "比赛说明.txt states only: 校验通过后，平台对原始因子统一处理：去极值 与 标准化。风格剔除：将因子对 BARRA 风险因子回归，取残差作为新因子，以评估其增量贡献。",
-      "No jyc_eval module, wheel or notebook exists in the workspace, the data-platform JSON or the official demo scripts.",
-      "The online notebook environment is not reachable from this offline checkout, and the configured web-search provider is unavailable, so the official winsorization parameters, standardization, exposure snapshot date, regression weighting and missing-value handling cannot be inspected."
+      "官方推理 demo 的 main 之后调用 `M.jyc_eval._latest(factor_data=factor_data, show=True)`，并注明“分数经风格剔除后等价于每日单因子，show=True 画绩效图 (IC / 分组 / 压力期)”。这是官方接口存在的唯一本地证据，但没有给出参数、暴露时点或缺失规则。",
+      "该对象来自平台专有的 `bigmodule` 包：四个本地虚拟环境均无法导入 `bigmodule`，仓库内也没有 jyc_eval 源码；数据平台 JSON 只是表目录，不含评估实现。",
+      "在线 notebook 环境在本离线检出中不可达，且配置的搜索服务不可用，因此官方去极值参数、标准化、暴露快照日期、回归权重与缺失值处理都无法查看。"
     ],
     "module": "M.jyc_eval",
-    "status": "unavailable locally"
+    "status": "interface observed, implementation unavailable locally"
   },
   "risk_model": {
     "exposure_date_evidence": "the exposure table is daily at midnight and its ret column is the same day's return: ret(date t) equals the t-1 -> t float_market_cap ratio for 98.95% of 2023 observations with median absolute difference 0. A row is therefore an end-of-day snapshot whose intraday publication time is unverified, so the previous trading day is the conservative choice.",
