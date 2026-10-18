@@ -1,0 +1,2643 @@
+{
+  "access_policy": "research_a/research_b are already-used research data; confirmation, locked and legacy final ranges stay closed this round.",
+  "budget": {
+    "fit_attempts_max": 8,
+    "fit_stage_wall_cap_seconds": 15600.0,
+    "inference_chunk_days": 5,
+    "inference_windows": 2,
+    "local_peak_rss_cap_mib": 9472.0,
+    "per_fit_wall_cap_seconds": 1500.0
+  },
+  "calibration": {
+    "baseline_inference_cost": {
+      "research_a": {
+        "baseline_seconds": 44.169232899992494,
+        "chunks": [
+          {
+            "baseline_seconds": 22.703047099988908,
+            "chunk": 0,
+            "dates": [
+              "2023-11-01",
+              "2023-11-02",
+              "2023-11-03",
+              "2023-11-06",
+              "2023-11-07"
+            ],
+            "ensemble_seconds": 70.41283210000256,
+            "resources": {
+              "cpu_seconds": 66.15625,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1828.546875
+            },
+            "same_keys_sha256": "66a98f47d68a79a83c81bf75b115ab3bdf92f7136152fe7a92bc0563824fba43",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.63472329999786,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.466185800003586,
+            "chunk": 1,
+            "dates": [
+              "2023-11-08",
+              "2023-11-09",
+              "2023-11-10",
+              "2023-11-13",
+              "2023-11-14"
+            ],
+            "ensemble_seconds": 66.82290790000116,
+            "resources": {
+              "cpu_seconds": 137.859375,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1926.30859375
+            },
+            "same_keys_sha256": "524df875913f1fdd6f635741f7f2de982ace2806c88706139a6451c3f8d92316",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.989382900006603,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 137.23574000000372,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 53.62410620000446
+      },
+      "research_b": {
+        "baseline_seconds": 42.34614530002,
+        "chunks": [
+          {
+            "baseline_seconds": 21.248559200001182,
+            "chunk": 0,
+            "dates": [
+              "2024-03-01",
+              "2024-03-04",
+              "2024-03-05",
+              "2024-03-06",
+              "2024-03-07"
+            ],
+            "ensemble_seconds": 64.27404840002418,
+            "resources": {
+              "cpu_seconds": 91.1875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1840.49609375
+            },
+            "same_keys_sha256": "e5212f534d41bc0ce1416000348004407bcdd73b743198e879a4e85c2965b397",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.60473419999471,
+            "timing_order": [
+              "baseline",
+              "ensemble"
+            ]
+          },
+          {
+            "baseline_seconds": 21.097586100018816,
+            "chunk": 1,
+            "dates": [
+              "2024-03-08",
+              "2024-03-11",
+              "2024-03-12",
+              "2024-03-13",
+              "2024-03-14"
+            ],
+            "ensemble_seconds": 62.37435860000551,
+            "resources": {
+              "cpu_seconds": 181.46875,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1907.18359375
+            },
+            "same_keys_sha256": "d79b14dc7e56baaf1742c86be55847ce16d8e3ef87cfe577ed0dc55bf8baabf9",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 26.234697000007145,
+            "timing_order": [
+              "ensemble",
+              "baseline"
+            ]
+          }
+        ],
+        "ensemble_seconds": 126.64840700002969,
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 52.839431200001854
+      }
+    },
+    "basis": "Six archived 10-day baseline fits on research_a/research_b, re-scored from their frozen predictions and evaluation targets; frozen before any 40-day fit.",
+    "method": "sqrt(mean_over_windows(sample_variance_across_seeds)); baseline arm only",
+    "metric_scope": "local_approximation",
+    "minimum_mean_gain": {
+      "minimum_mean_gain": 0.01164665094206816,
+      "noise_multiplier": 1.0,
+      "noise_scaled": 0.01164665094206816,
+      "practical_improvement": 0.002,
+      "primary_metric": "rank_ic_mean"
+    },
+    "noise": {
+      "long_short_return_mean": 0.00010387476657357637,
+      "min_daily_long_short_return": 0.00013896761043335348,
+      "rank_ic_mean": 0.01164665094206816,
+      "turnover_mean": 0.03706698237510122
+    },
+    "per_window": {
+      "research_a": {
+        "long_short_return_mean": {
+          "seed_means": {
+            "11": 2.6874494434336837e-05,
+            "29": 0.00016633965425646627,
+            "47": -5.20712109134454e-05
+          },
+          "seed_std": 0.00011059404837915126,
+          "spread": 0.00021841086516991167
+        },
+        "min_daily_long_short_return": {
+          "seed_means": {
+            "11": -0.000289176947171676,
+            "29": -0.00012058092014646541,
+            "47": -0.0004839840530741022
+          },
+          "seed_std": 0.00018185904150393802,
+          "spread": 0.00036340313292763677
+        },
+        "rank_ic_mean": {
+          "seed_means": {
+            "11": 0.006586304813130069,
+            "29": 0.022500896088241247,
+            "47": -0.004235385263146735
+          },
+          "seed_std": 0.013448741775481015,
+          "spread": 0.026736281351387982
+        },
+        "turnover_mean": {
+          "seed_means": {
+            "11": 1.6669149318018666,
+            "29": 1.6689788226848528,
+            "47": 1.6000089734386218
+          },
+          "seed_std": 0.039237539455494526,
+          "spread": 0.06896984924623095
+        }
+      },
+      "research_b": {
+        "long_short_return_mean": {
+          "seed_means": {
+            "11": -4.959520376825679e-05,
+            "29": 0.0001408412688696285,
+            "47": 7.472860917355492e-05
+          },
+          "seed_std": 9.668966193207993e-05,
+          "spread": 0.00019043647263788528
+        },
+        "min_daily_long_short_return": {
+          "seed_means": {
+            "11": -0.00030116088435618087,
+            "29": -0.0002247071847882993,
+            "47": -0.00015216413146705219
+          },
+          "seed_std": 7.4506929358158e-05,
+          "spread": 0.00014899675288912868
+        },
+        "rank_ic_mean": {
+          "seed_means": {
+            "11": -0.010599396609749807,
+            "29": 0.008291866257409625,
+            "47": 0.0007438763680817247
+          },
+          "seed_std": 0.009508958985566507,
+          "spread": 0.018891262867159433
+        },
+        "turnover_mean": {
+          "seed_means": {
+            "11": 1.572472631012204,
+            "29": 1.548212311557789,
+            "47": 1.6167657932519741
+          },
+          "seed_std": 0.034761154501406294,
+          "spread": 0.06855348169418507
+        }
+      }
+    },
+    "seeds": [
+      11,
+      29,
+      47
+    ]
+  },
+  "created_at_utc": "2026-10-18T06:32:43.565568+00:00",
+  "deployment_seed": 11,
+  "experiment_id": "coverage-date-weighting-20261018",
+  "final_views": 0,
+  "hypothesis": "The 40-day pool failed its worst-day guardrail because old dates diluted the recent regime. Fixed exponential recency weights with a ten-trading-day half-life should keep the 40-day sample but restore the recent-date emphasis, clearing the unchanged promotion gates against the 10-day/1500 reference.",
+  "inputs_sha256": {
+    "D:\\进益资本杯\\runs\\coverage-date-weighting-20261018\\20261018T063229.600194Z_591413bcbfae\\source_delta.json": "71659e6bac315d466752cefb1375d62fa8716cad0203ef4e0269b4ca0129ebfd",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_a_st6000_s11\\model.pt": "ab619ad83731bcff82959b7198d7324ab4e181b668a99c86e0dea66bdf1356b5",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_b_st6000_s11\\model.pt": "2e1921f3d791a58d8f68c3398de67d7f59de0723929e92b790e68e626b91270c",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s29\\model.pt": "b1167b36cbdcec73573d65985a8fc0c7376c4f05b73ea39d4fc1896b731fa3c4",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s47\\model.pt": "2253bf2ac2fbe0e2d5c2f8cd9d055511d01a30d8d13dcf2fffe05fd0ca38170d",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s29\\model.pt": "691d1eb5e965b1794e434b14f2521a4ef9e7dfb45fd731e2e8217a628c12871f",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s47\\model.pt": "0746052d3725b02e3d721861b8e10f0b874636ab7f60ce86a77b68c174d048ad",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed11_predictions.parquet": "d242693e4688f406c75016f2bb3c12c9a7b375cfb188e9e979c1228c154e459e",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed29_predictions.parquet": "1dc4999cbd75ee5f1d89afed0c0acbb2ac67be01a3dcf0adab9f610df644a6a4",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed47_predictions.parquet": "7186b878f19c68a82a7254eff699ba953bc46cc243ebfcc5087ee23ba79daa93",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed11_predictions.parquet": "8194637abf1ba58458196d4c3316b67a563a6708e40ff52d888bf32cf7a25e8f",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed29_predictions.parquet": "605c51aee6ec574af545c6627ff17009772e59b3212c85eacf1e835f30a48927",
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed47_predictions.parquet": "28e03623778c713c3d2e3f99c788a1abd8054dcd852774442767ac84e5185a03",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s11\\model.pt": "79b4729d5ba82d615d045f9d9d1ec7f1dc35f3780fcb3ece91a7178e1bef1ca5",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s29\\model.pt": "db2fedb708930371c127234bc3f27f04154af8d3b3c8b88f0a133a59d7cc06da",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s47\\model.pt": "4bed435a2b7cdbe9fc50a2c56f95749af669ef9dc174fbfa17222b4e0bf5f7e4",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s11\\model.pt": "5448cbf9e1513ac4f67aa18347aa5c10255f094f070b9551cf1bcb402fa92261",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s29\\model.pt": "4466ee681cb0f82162572bc797b4f0dfe4a39871140570afe431f6b00d305a26",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s47\\model.pt": "7a33e18b5e98b20aa335ac83458172486a9628c3c296247c4129c7aff3260217",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed11_predictions.parquet": "a52d29ac81557aaa2114d4334f631cfc19680016af2934960522b628537fddd5",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed29_predictions.parquet": "21a160c0a5d06125977aa013b72aa460ce7ec45d215fd6afdf1d24d4b1b9aaeb",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed47_predictions.parquet": "1caa8c354f4c3d2d037df339a881e02f65512ababbe6159961d9998a4309f89a",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed11_predictions.parquet": "be846b9508a6bbbe690be1ac88d4009ae71877578149b2f86effa418b152fae7",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed29_predictions.parquet": "4956885fabd07fd15465386c8446d406859ca972eb6825a4a3070dcbcb09a644",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed47_predictions.parquet": "1509b4c69b041c41d7eb3b3e69a80d2b09ea50d07c86f2208e869f42f5a6dbd5",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_targets.parquet": "3d5e5eb8743ee6f9462df6c91e7f71c89471bb03ac048c2d38144061b529c3ce",
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_targets.parquet": "dff0a8f3af3ff99aa931c31b2a07f9320ead32f05fe3d698970f102fb8153c8a"
+  },
+  "measured_budget": {
+    "limits": {
+      "basis": {
+        "declared_samples_seen": 192000,
+        "declared_training_steps": 6000,
+        "measured_peak_rss_mb": 7478.5234375,
+        "measured_preprocessing_seconds": 94.6512959000247,
+        "measured_seconds_per_step": 0.12143094800005201,
+        "rss_formula": "round_up_256(1.25 x measured peak host RSS)",
+        "wall_formula": "round_up_300(1.25 x (measured preprocessing + 6000 x measured seconds/step) + 300s save/check slack)",
+        "windows_measured": [
+          "research_a",
+          "research_b"
+        ]
+      },
+      "host": {
+        "measured_peak_below_system_memory": true,
+        "total_memory_mb": 16252.17578125
+      },
+      "max_rss_mb": 9472.0,
+      "wall_seconds": 1500.0
+    },
+    "pilot_sha256": "80b76dfad67a5dab11171f3192007c726c2e6a93b67ce4fd5e38212598c270f6",
+    "pilot_source": "D:\\进益资本杯\\runs\\training-coverage-arms-20261018\\20261018T024634.978262Z_ea2f53860760",
+    "pilots": [
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.193949999986216,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 30.84638219999033,
+        "process_peak_rss_mb": 2834.5078125,
+        "samples": 79920,
+        "seconds_per_step": 0.12193949999986216,
+        "stages": [
+          {
+            "elapsed_seconds": 5.399982910603285e-06,
+            "peak_rss_mb": 581.17578125,
+            "rss_mb": 550.88671875,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 18.614587599993683,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1261.3046875,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 20.776206699985778,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1268.83203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 51.62270139998873,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1929.3203125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 52.72453749997658,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1942.7578125,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 52.81806459999643,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1487.8984375,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 67.93937720000395,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 2145.54296875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0038659661156313857,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_a"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.143094800005201,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 94.6512959000247,
+        "process_peak_rss_mb": 6200.828125,
+        "samples": 319632,
+        "seconds_per_step": 0.12143094800005201,
+        "stages": [
+          {
+            "elapsed_seconds": 4.4000043999403715e-06,
+            "peak_rss_mb": 707.13671875,
+            "rss_mb": 560.95703125,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 41.1058037999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2104.9765625,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 49.5824006999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2127.12109375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 144.23380439999164,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3523.53125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 147.83186380000552,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3562.4375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 148.10419069998898,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3396.625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 163.65573190001305,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 4054.4921875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0034071928545828484,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_a"
+      },
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 10.354336799995508,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 26.7081725000171,
+        "process_peak_rss_mb": 2929.2421875,
+        "samples": 80000,
+        "seconds_per_step": 0.10354336799995507,
+        "stages": [
+          {
+            "elapsed_seconds": 4.999979864805937e-06,
+            "peak_rss_mb": 580.25,
+            "rss_mb": 549.984375,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 16.996975699992618,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1316.21484375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 18.804284799989546,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1320.984375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 45.51256889998331,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1980.91796875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 46.40519499999937,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1996.0546875,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 46.51128039998002,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1512.7890625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 59.256307599978754,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 2170.05859375,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.004753065955907003,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_b"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 11.962087399995653,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 92.88846819999162,
+        "process_peak_rss_mb": 7478.5234375,
+        "samples": 319720,
+        "seconds_per_step": 0.11962087399995652,
+        "stages": [
+          {
+            "elapsed_seconds": 5.2000104915350676e-06,
+            "peak_rss_mb": 706.26953125,
+            "rss_mb": 560.16015625,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 49.30441549999523,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2108.234375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 56.43150370000512,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2130.58203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 149.32020390001708,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4777.07421875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 153.04723270001705,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4784.74609375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 153.2003639000177,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 3515.15625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 167.77821519999998,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4156.2890625,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.005300936212323662,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_b"
+      }
+    ]
+  },
+  "non_treatment_source": {
+    "modified_tlob/device.py": {
+      "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+      "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+      "identical": true,
+      "treatment_file": false
+    },
+    "modified_tlob/model.py": {
+      "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+      "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+      "identical": true,
+      "treatment_file": false
+    },
+    "modified_tlob/schema.py": {
+      "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+      "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+      "identical": true,
+      "treatment_file": false
+    },
+    "src/jinyiquant/checks.py": {
+      "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+      "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+      "identical": true,
+      "treatment_file": false
+    },
+    "src/jinyiquant/data.py": {
+      "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+      "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+      "identical": true,
+      "treatment_file": false
+    },
+    "src/jinyiquant/io.py": {
+      "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+      "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+      "identical": true,
+      "treatment_file": false
+    },
+    "src/jinyiquant/tracking.py": {
+      "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+      "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+      "identical": true,
+      "treatment_file": false
+    }
+  },
+  "notes": "Six mandatory 6000-step fits (seed 11 first for the recorded screen, then 29/47). The twelve reused fits are never refitted. The equal-weight control isolates the weighting effect; promotion is still decided against the 10-day reference.",
+  "only_factor": "per-sample MSE weight none -> 2**(-age/10), age 0 = newest training date, normalized to mean one on the full selected 40-day pool; sampler, batch order, steps, seeds, target_std, network and preprocessing fixed",
+  "policy": {
+    "direction": "maximize",
+    "exposure_policy": "Steps, batch size, learning rate and recipe stay fixed for this round; a larger pool gets no extra steps because that would confound coverage with compute.",
+    "guardrails": {
+      "both_windows_improve": true,
+      "gross_interval_lower_at_least": -0.00010387476657357637,
+      "gross_mean_nondecreasing": true,
+      "turnover_interval_upper_at_most": 0.03706698237510122,
+      "turnover_mean_nonincreasing": true,
+      "worst_day_delta_at_least": -0.00013896761043335348
+    },
+    "interpretation_rule": "A non-accept result bounds what equal-compute date expansion achieves; it does not establish that more history is uninformative.",
+    "minimum_mean_gain": 0.01164665094206816,
+    "minimum_mean_gain_basis": {
+      "minimum_mean_gain": 0.01164665094206816,
+      "noise_multiplier": 1.0,
+      "noise_scaled": 0.01164665094206816,
+      "practical_improvement": 0.002,
+      "primary_metric": "rank_ic_mean"
+    },
+    "noise": {
+      "long_short_return_mean": 0.00010387476657357637,
+      "min_daily_long_short_return": 0.00013896761043335348,
+      "rank_ic_mean": 0.01164665094206816,
+      "turnover_mean": 0.03706698237510122
+    },
+    "primary_metric": "paired daily all-eight-time RankIC, seed-mean per day before pairing",
+    "statistics": {
+      "block_days": [
+        5,
+        2
+      ],
+      "bootstrap_samples": 20000,
+      "bootstrap_seed": 20261017,
+      "confidence": 0.95,
+      "paired": true,
+      "sensitivity_rule": "Report both block lengths; conflicting conclusions are inconclusive, and neither is chosen after seeing results.",
+      "window_stratified": true
+    }
+  },
+  "prior_round": {
+    "action": "retain_10_day_reference",
+    "decision_sha256": "9d8bab3a64ba39e467d85409f1c49c2d156152a698cfc53384bea487afbc6ab5",
+    "equal_weight_execution": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85",
+    "failed_checks": [
+      "worst_day_guardrail"
+    ],
+    "mean_rank_ic_delta": 0.020428728075062182,
+    "period_mean_deltas": {
+      "research_a": 0.04049536889709788,
+      "research_b": 0.000362087253026489
+    },
+    "result": "reject"
+  },
+  "recipe_fixed": {
+    "batch_size": 32,
+    "date_weighting": "2**(-age/10), mean one, only loss weights",
+    "learning_rate": 0.0001,
+    "lookback": 128,
+    "loss": "MSE",
+    "raw12": true,
+    "sample_times": 8,
+    "sampler": "torch.randperm(seed) unchanged",
+    "smoothing": "none",
+    "steps": 6000,
+    "target_scaling": "train_std",
+    "target_std_fit": "all 40 selected training rows"
+  },
+  "registry_path": "D:\\进益资本杯\\runs\\data_roles.json",
+  "registry_sha256": "7c8fc10edd8b0f0e0dae506066c3f4aba8b3f136164f24499f4911971bd10f3d",
+  "schema_version": 1,
+  "screen": {
+    "gates": {
+      "rank_ic_delta_at_least": 0.0,
+      "worst_day_delta_at_least": -0.00013896761043335348
+    },
+    "mandatory_full_replay": true,
+    "rule": "Seed 11 is screened and reported first, but the round always completes seeds 29 and 47: the registered decision is the three-seed comparison, and seed 11 alone can neither accept nor reject an improvement.",
+    "seeds": [
+      11
+    ]
+  },
+  "seeds": {
+    "full": [
+      11,
+      29,
+      47
+    ],
+    "screen": [
+      11
+    ]
+  },
+  "source_delta": {
+    "note": "Only adapter.py and config.py differ from the equal-weight control snapshot; every other training file is byte-identical.",
+    "path": "D:\\进益资本杯\\runs\\coverage-date-weighting-20261018\\20261018T063229.600194Z_591413bcbfae\\source_delta.json",
+    "sha256": "71659e6bac315d466752cefb1375d62fa8716cad0203ef4e0269b4ca0129ebfd"
+  },
+  "source_frozen": {
+    "path": "D:\\进益资本杯\\configs\\training_coverage_20261017_v4_frozen.json",
+    "sha256": "5e55433ff6292e55d587d6c5cb090618fff5ef37f47dfc2e72d6c5c953f8b5fe"
+  },
+  "statistics": {
+    "block_days": [
+      5,
+      2
+    ],
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20261017,
+    "confidence": 0.95,
+    "paired": true,
+    "sensitivity_rule": "Report both block lengths; conflicting conclusions are inconclusive, and neither is chosen after seeing results.",
+    "window_stratified": true
+  },
+  "steps": {
+    "candidate": 6000,
+    "control": 6000,
+    "reference": 1500
+  },
+  "training_source_identity": {
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_a_st6000_s11\\source.zip": {
+      "archive_sha256": "1ba42dca0c93655f64341a8ed8c23b6394626ff5340faeeaf9f1a19e501e1124",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_b_st6000_s11\\source.zip": {
+      "archive_sha256": "1ba42dca0c93655f64341a8ed8c23b6394626ff5340faeeaf9f1a19e501e1124",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s29\\source.zip": {
+      "archive_sha256": "f90ef5d7095614a4fc9909d80ccdd1d13c6b904ec096ac67b855bb676d9e8f72",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s47\\source.zip": {
+      "archive_sha256": "f90ef5d7095614a4fc9909d80ccdd1d13c6b904ec096ac67b855bb676d9e8f72",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s29\\source.zip": {
+      "archive_sha256": "f90ef5d7095614a4fc9909d80ccdd1d13c6b904ec096ac67b855bb676d9e8f72",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s47\\source.zip": {
+      "archive_sha256": "f90ef5d7095614a4fc9909d80ccdd1d13c6b904ec096ac67b855bb676d9e8f72",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s11\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s29\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s47\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s11\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s29\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    },
+    "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s47\\source.zip": {
+      "archive_sha256": "242f5c058b7b67c1a59a34b8363502a29176769538f585cbf3a6eb6a0ae20ad5",
+      "files": {
+        "modified_tlob/adapter.py": {
+          "archived_sha256": "fa81bb370ac70438ead08a39602a8dc15658b1b139624ab1ac95f1b3bc150731",
+          "current_sha256": "c73e2254ecb1ad04d1b3f24c27915add122cf37a0e17496512fb14d5cdb6abbe",
+          "identical": false,
+          "treatment_file": true
+        },
+        "modified_tlob/device.py": {
+          "archived_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "current_sha256": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/model.py": {
+          "archived_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "current_sha256": "06225332b2741b89180dd73feb046313232b4a940370b0fabd612bb1dacf4a42",
+          "identical": true,
+          "treatment_file": false
+        },
+        "modified_tlob/schema.py": {
+          "archived_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "current_sha256": "68d605013562860005449a7fc157e9c62d14315ab543e1e701693ae65871dbf0",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/checks.py": {
+          "archived_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "current_sha256": "eb83a9718c920b7baf61da3b462424c48960ea9b1527af9249ead876ac53b98d",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/config.py": {
+          "archived_sha256": "6d9636171885e21747f868b5725ff76d2178f95259ab7250f463e4114a96d18b",
+          "current_sha256": "8b87f99863b17e82bced1ab2a4a65569eb8b9c666cc28bdcd40f7c24fa77a5f4",
+          "identical": false,
+          "treatment_file": true
+        },
+        "src/jinyiquant/data.py": {
+          "archived_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "current_sha256": "ecc1b1a51f66baf75b8da5331b38aa3bd5c14125c3d680ed76d3cbec1a7c79cf",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/io.py": {
+          "archived_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "current_sha256": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+          "identical": true,
+          "treatment_file": false
+        },
+        "src/jinyiquant/tracking.py": {
+          "archived_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "current_sha256": "b49f606212b3ba87bc642ea26dfe5416b3911677e4c6f132c23a741b19d2bebb",
+          "identical": true,
+          "treatment_file": false
+        }
+      }
+    }
+  },
+  "weighting": {
+    "research_a": {
+      "equal_weight_recent_10_day_share": 0.25,
+      "formula": "2 ** (-age_trading_days / 10), age 0 = newest training date",
+      "newest_date": "2023-10-31",
+      "normalization": "sample mean one over the selected 40-day training pool",
+      "oldest_date": "2023-08-29",
+      "recent_10_day_weight_share_expected": 0.533,
+      "train_dates": 40
+    },
+    "research_b": {
+      "equal_weight_recent_10_day_share": 0.25,
+      "formula": "2 ** (-age_trading_days / 10), age 0 = newest training date",
+      "newest_date": "2024-02-29",
+      "normalization": "sample mean one over the selected 40-day training pool",
+      "oldest_date": "2023-12-27",
+      "recent_10_day_weight_share_expected": 0.533,
+      "train_dates": 40
+    }
+  },
+  "windows": [
+    {
+      "arms": {
+        "cand40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319632,
+              "wall_seconds": 1500.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "coverage-date-weighting-20261018",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "Fixed ten-trading-day recency weights 2**(-age/10) on the 40-day pool improve the out-of-sample rank IC enough to clear the retained 10-day reference without degrading worst-day long-short, turnover or gross return.",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 6000,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "date_decay_10d",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2023-11-01T00:00:00",
+                "start": "2023-08-29T00:00:00"
+              },
+              "validation": {
+                "end": "2023-11-15T00:00:00",
+                "start": "2023-11-01T00:00:00"
+              }
+            }
+          },
+          "days": 40,
+          "frozen_identity": {
+            "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+            "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+            "samples": 319632
+          },
+          "samples": 319632,
+          "steps": 6000,
+          "train_dates": [
+            "2023-08-29",
+            "2023-08-30",
+            "2023-08-31",
+            "2023-09-01",
+            "2023-09-04",
+            "2023-09-05",
+            "2023-09-06",
+            "2023-09-07",
+            "2023-09-08",
+            "2023-09-11",
+            "2023-09-12",
+            "2023-09-13",
+            "2023-09-14",
+            "2023-09-15",
+            "2023-09-18",
+            "2023-09-19",
+            "2023-09-20",
+            "2023-09-21",
+            "2023-09-22",
+            "2023-09-25",
+            "2023-09-26",
+            "2023-09-27",
+            "2023-09-28",
+            "2023-10-09",
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-16",
+            "2023-10-17",
+            "2023-10-18",
+            "2023-10-19",
+            "2023-10-20",
+            "2023-10-23",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-26",
+            "2023-10-27",
+            "2023-10-30",
+            "2023-10-31"
+          ],
+          "train_end_exclusive": "2023-11-01"
+        },
+        "ctrl40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319632,
+              "wall_seconds": 1500.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 6000,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2023-11-01T00:00:00",
+                "start": "2023-08-29T00:00:00"
+              },
+              "validation": {
+                "end": "2023-11-15T00:00:00",
+                "start": "2023-11-01T00:00:00"
+              }
+            }
+          },
+          "days": 40,
+          "frozen_identity": {
+            "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+            "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+            "samples": 319632
+          },
+          "per_seed": {
+            "11": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_a_st6000_s11",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed11_predictions.parquet",
+              "predictions_sha256": "d242693e4688f406c75016f2bb3c12c9a7b375cfb188e9e979c1228c154e459e",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_a_st6000_s11\\model.pt",
+              "weights_sha256": "ab619ad83731bcff82959b7198d7324ab4e181b668a99c86e0dea66bdf1356b5"
+            },
+            "29": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s29",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed29_predictions.parquet",
+              "predictions_sha256": "1dc4999cbd75ee5f1d89afed0c0acbb2ac67be01a3dcf0adab9f610df644a6a4",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s29\\model.pt",
+              "weights_sha256": "b1167b36cbdcec73573d65985a8fc0c7376c4f05b73ea39d4fc1896b731fa3c4"
+            },
+            "47": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s47",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_a\\seed47_predictions.parquet",
+              "predictions_sha256": "7186b878f19c68a82a7254eff699ba953bc46cc243ebfcc5087ee23ba79daa93",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s47\\model.pt",
+              "weights_sha256": "2253bf2ac2fbe0e2d5c2f8cd9d055511d01a30d8d13dcf2fffe05fd0ca38170d"
+            }
+          },
+          "samples": 319632,
+          "steps": 6000,
+          "train_dates": [
+            "2023-08-29",
+            "2023-08-30",
+            "2023-08-31",
+            "2023-09-01",
+            "2023-09-04",
+            "2023-09-05",
+            "2023-09-06",
+            "2023-09-07",
+            "2023-09-08",
+            "2023-09-11",
+            "2023-09-12",
+            "2023-09-13",
+            "2023-09-14",
+            "2023-09-15",
+            "2023-09-18",
+            "2023-09-19",
+            "2023-09-20",
+            "2023-09-21",
+            "2023-09-22",
+            "2023-09-25",
+            "2023-09-26",
+            "2023-09-27",
+            "2023-09-28",
+            "2023-10-09",
+            "2023-10-10",
+            "2023-10-11",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-16",
+            "2023-10-17",
+            "2023-10-18",
+            "2023-10-19",
+            "2023-10-20",
+            "2023-10-23",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-26",
+            "2023-10-27",
+            "2023-10-30",
+            "2023-10-31"
+          ],
+          "train_end_exclusive": "2023-11-01"
+        },
+        "ref10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2023-11-01T00:00:00",
+                "start": "2023-10-18T00:00:00"
+              },
+              "validation": {
+                "end": "2023-11-15T00:00:00",
+                "start": "2023-11-01T00:00:00"
+              }
+            }
+          },
+          "days": 10,
+          "frozen_identity": {
+            "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+            "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+            "samples": 79920
+          },
+          "per_seed": {
+            "11": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s11",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed11_predictions.parquet",
+              "predictions_sha256": "a52d29ac81557aaa2114d4334f631cfc19680016af2934960522b628537fddd5",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s11\\model.pt",
+              "weights_sha256": "79b4729d5ba82d615d045f9d9d1ec7f1dc35f3780fcb3ece91a7178e1bef1ca5"
+            },
+            "29": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s29",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed29_predictions.parquet",
+              "predictions_sha256": "21a160c0a5d06125977aa013b72aa460ce7ec45d215fd6afdf1d24d4b1b9aaeb",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s29\\model.pt",
+              "weights_sha256": "db2fedb708930371c127234bc3f27f04154af8d3b3c8b88f0a133a59d7cc06da"
+            },
+            "47": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s47",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_a\\seed47_predictions.parquet",
+              "predictions_sha256": "1caa8c354f4c3d2d037df339a881e02f65512ababbe6159961d9998a4309f89a",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_a_s47\\model.pt",
+              "weights_sha256": "4bed435a2b7cdbe9fc50a2c56f95749af669ef9dc174fbfa17222b4e0bf5f7e4"
+            }
+          },
+          "samples": 79920,
+          "steps": 1500,
+          "train_dates": [
+            "2023-10-18",
+            "2023-10-19",
+            "2023-10-20",
+            "2023-10-23",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-26",
+            "2023-10-27",
+            "2023-10-30",
+            "2023-10-31"
+          ],
+          "train_end_exclusive": "2023-11-01"
+        }
+      },
+      "evaluation_dates": [
+        "2023-11-01",
+        "2023-11-02",
+        "2023-11-03",
+        "2023-11-06",
+        "2023-11-07",
+        "2023-11-08",
+        "2023-11-09",
+        "2023-11-10",
+        "2023-11-13",
+        "2023-11-14"
+      ],
+      "evaluation_end_exclusive": "2023-11-15",
+      "evaluation_start": "2023-11-01",
+      "exposure": {
+        "arms": {
+          "cand40": {
+            "epochs": 0.6006907944135756,
+            "sample_exposures": 192000,
+            "samples": 319632,
+            "steps": 6000
+          },
+          "ctrl40": {
+            "epochs": 0.6006907944135756,
+            "sample_exposures": 192000,
+            "samples": 319632,
+            "steps": 6000
+          },
+          "ref10": {
+            "epochs": 0.6006006006006006,
+            "sample_exposures": 48000,
+            "samples": 79920,
+            "steps": 1500
+          }
+        },
+        "batch_size": 32,
+        "interpretation": "The candidate and the equal-weight control both run 6000 x 32 = 192,000 sample exposures (0.60 epochs of the 40-day pool). Only the per-sample loss weights differ. The retained 10-day reference runs 1500 x 32 = 48,000 exposures."
+      },
+      "fit_once_before_evaluation": true,
+      "name": "research_a",
+      "targets": {
+        "path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_a_targets.parquet",
+        "sha256": "3d5e5eb8743ee6f9462df6c91e7f71c89471bb03ac048c2d38144061b529c3ce"
+      },
+      "train_end_exclusive": "2023-11-01",
+      "train_start": "2023-08-29"
+    },
+    {
+      "arms": {
+        "cand40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319720,
+              "wall_seconds": 1500.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "coverage-date-weighting-20261018",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "Fixed ten-trading-day recency weights 2**(-age/10) on the 40-day pool improve the out-of-sample rank IC enough to clear the retained 10-day reference without degrading worst-day long-short, turnover or gross return.",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 6000,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "date_decay_10d",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-03-01T00:00:00",
+                "start": "2023-12-27T00:00:00"
+              },
+              "validation": {
+                "end": "2024-03-15T00:00:00",
+                "start": "2024-03-01T00:00:00"
+              }
+            }
+          },
+          "days": 40,
+          "frozen_identity": {
+            "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+            "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+            "samples": 319720
+          },
+          "samples": 319720,
+          "steps": 6000,
+          "train_dates": [
+            "2023-12-27",
+            "2023-12-28",
+            "2023-12-29",
+            "2024-01-02",
+            "2024-01-03",
+            "2024-01-04",
+            "2024-01-05",
+            "2024-01-08",
+            "2024-01-09",
+            "2024-01-10",
+            "2024-01-11",
+            "2024-01-12",
+            "2024-01-15",
+            "2024-01-16",
+            "2024-01-17",
+            "2024-01-18",
+            "2024-01-19",
+            "2024-01-22",
+            "2024-01-23",
+            "2024-01-24",
+            "2024-01-25",
+            "2024-01-26",
+            "2024-01-29",
+            "2024-01-30",
+            "2024-01-31",
+            "2024-02-01",
+            "2024-02-02",
+            "2024-02-05",
+            "2024-02-06",
+            "2024-02-07",
+            "2024-02-08",
+            "2024-02-19",
+            "2024-02-20",
+            "2024-02-21",
+            "2024-02-22",
+            "2024-02-23",
+            "2024-02-26",
+            "2024-02-27",
+            "2024-02-28",
+            "2024-02-29"
+          ],
+          "train_end_exclusive": "2024-03-01"
+        },
+        "ctrl40": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 9472.0,
+              "max_train_samples": 319720,
+              "wall_seconds": 1500.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 6000,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-03-01T00:00:00",
+                "start": "2023-12-27T00:00:00"
+              },
+              "validation": {
+                "end": "2024-03-15T00:00:00",
+                "start": "2024-03-01T00:00:00"
+              }
+            }
+          },
+          "days": 40,
+          "frozen_identity": {
+            "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+            "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+            "samples": 319720
+          },
+          "per_seed": {
+            "11": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_b_st6000_s11",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed11_predictions.parquet",
+              "predictions_sha256": "8194637abf1ba58458196d4c3316b67a563a6708e40ff52d888bf32cf7a25e8f",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_b_st6000_s11\\model.pt",
+              "weights_sha256": "2e1921f3d791a58d8f68c3398de67d7f59de0723929e92b790e68e626b91270c"
+            },
+            "29": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s29",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed29_predictions.parquet",
+              "predictions_sha256": "605c51aee6ec574af545c6627ff17009772e59b3212c85eacf1e835f30a48927",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s29\\model.pt",
+              "weights_sha256": "691d1eb5e965b1794e434b14f2521a4ef9e7dfb45fd731e2e8217a628c12871f"
+            },
+            "47": {
+              "fit_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s47",
+              "predictions": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\inference_full\\research_b\\seed47_predictions.parquet",
+              "predictions_sha256": "28e03623778c713c3d2e3f99c788a1abd8054dcd852774442767ac84e5185a03",
+              "weights": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s47\\model.pt",
+              "weights_sha256": "0746052d3725b02e3d721861b8e10f0b874636ab7f60ce86a77b68c174d048ad"
+            }
+          },
+          "samples": 319720,
+          "steps": 6000,
+          "train_dates": [
+            "2023-12-27",
+            "2023-12-28",
+            "2023-12-29",
+            "2024-01-02",
+            "2024-01-03",
+            "2024-01-04",
+            "2024-01-05",
+            "2024-01-08",
+            "2024-01-09",
+            "2024-01-10",
+            "2024-01-11",
+            "2024-01-12",
+            "2024-01-15",
+            "2024-01-16",
+            "2024-01-17",
+            "2024-01-18",
+            "2024-01-19",
+            "2024-01-22",
+            "2024-01-23",
+            "2024-01-24",
+            "2024-01-25",
+            "2024-01-26",
+            "2024-01-29",
+            "2024-01-30",
+            "2024-01-31",
+            "2024-02-01",
+            "2024-02-02",
+            "2024-02-05",
+            "2024-02-06",
+            "2024-02-07",
+            "2024-02-08",
+            "2024-02-19",
+            "2024-02-20",
+            "2024-02-21",
+            "2024-02-22",
+            "2024-02-23",
+            "2024-02-26",
+            "2024-02-27",
+            "2024-02-28",
+            "2024-02-29"
+          ],
+          "train_end_exclusive": "2024-03-01"
+        },
+        "ref10": {
+          "config": {
+            "acceptance": {
+              "min_coverage": 0.99,
+              "repro_atol": 1e-06,
+              "repro_rtol": 1e-05
+            },
+            "budget": {
+              "max_rss_mb": 6144.0,
+              "max_train_samples": 100000,
+              "wall_seconds": 3600.0
+            },
+            "data": {
+              "allowed_end": "2025-01-01T00:00:00",
+              "allowed_start": "2020-01-01T00:00:00",
+              "bars_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m",
+              "cache_dir": "D:\\进益资本杯\\cache\\fixed-seed-ensemble-20261017",
+              "feature_columns": [
+                "ask_price1",
+                "ask_volume1",
+                "bid_price1",
+                "bid_volume1",
+                "ask_price2",
+                "ask_volume2",
+                "bid_price2",
+                "bid_volume2",
+                "ask_price3",
+                "ask_volume3",
+                "bid_price3",
+                "bid_volume3"
+              ],
+              "history_days": 10,
+              "instrument_map_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+              "instruments_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+              "label_horizon_minutes": 30,
+              "labels_path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap",
+              "lookback": 128,
+              "max_ffill_steps": 5,
+              "min_history": 1,
+              "missing_policy": "ffill",
+              "missing_sentinel": -1.0,
+              "outside_universe_labels": "exclude",
+              "price_scale": 100.0,
+              "sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "source": "official_local_download_with_explicit_mapping",
+              "training_sample_times": [
+                "09:30",
+                "10:00",
+                "10:30",
+                "11:00",
+                "11:30",
+                "13:30",
+                "14:00",
+                "14:30"
+              ],
+              "version": "cpt_jyc_2026"
+            },
+            "evaluation": {
+              "constant_portfolios": "undefined",
+              "min_cross_section": 3,
+              "periods_per_year": 252,
+              "quantile": 0.2
+            },
+            "evaluation_split": "validation",
+            "experiment_id": "training-coverage-20261017",
+            "final_access": {
+              "max_views": 1,
+              "purpose": ""
+            },
+            "hypothesis": "40 training dates improve subsequent ranking and long-short stability",
+            "logging": {
+              "learning_curve_every_steps": 1500,
+              "learning_curves": false,
+              "resource_interval_seconds": 5.0
+            },
+            "model": {
+              "alpha": 1.0,
+              "batch_size": 32,
+              "book_representation": "raw",
+              "cpu_threads": 1,
+              "device": "cuda",
+              "epochs": 12,
+              "hidden_dim": 40,
+              "is_sin_emb": true,
+              "kind": "modified_tlob",
+              "learning_rate": 0.0001,
+              "log_every_steps": 100,
+              "max_steps": 1500,
+              "num_heads": 1,
+              "num_layers": 4,
+              "target_scaling": "train_std",
+              "time_loss_weighting": "none",
+              "trade_features": "zero"
+            },
+            "output_root": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\fits",
+            "schema_version": 1,
+            "seed": 11,
+            "splits": {
+              "final": {
+                "end": "2025-01-01T00:00:00",
+                "start": "2024-10-08T00:00:00"
+              },
+              "train": {
+                "end": "2024-03-01T00:00:00",
+                "start": "2024-02-08T00:00:00"
+              },
+              "validation": {
+                "end": "2024-03-15T00:00:00",
+                "start": "2024-03-01T00:00:00"
+              }
+            }
+          },
+          "days": 10,
+          "frozen_identity": {
+            "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+            "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+            "samples": 80000
+          },
+          "per_seed": {
+            "11": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s11",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed11_predictions.parquet",
+              "predictions_sha256": "be846b9508a6bbbe690be1ac88d4009ae71877578149b2f86effa418b152fae7",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s11\\model.pt",
+              "weights_sha256": "5448cbf9e1513ac4f67aa18347aa5c10255f094f070b9551cf1bcb402fa92261"
+            },
+            "29": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s29",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed29_predictions.parquet",
+              "predictions_sha256": "4956885fabd07fd15465386c8446d406859ca972eb6825a4a3070dcbcb09a644",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s29\\model.pt",
+              "weights_sha256": "4466ee681cb0f82162572bc797b4f0dfe4a39871140570afe431f6b00d305a26"
+            },
+            "47": {
+              "fit_dir": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s47",
+              "predictions": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\inference\\research_b\\seed47_predictions.parquet",
+              "predictions_sha256": "1509b4c69b041c41d7eb3b3e69a80d2b09ea50d07c86f2208e869f42f5a6dbd5",
+              "weights": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff\\fits\\research_b_s47\\model.pt",
+              "weights_sha256": "7a33e18b5e98b20aa335ac83458172486a9628c3c296247c4129c7aff3260217"
+            }
+          },
+          "samples": 80000,
+          "steps": 1500,
+          "train_dates": [
+            "2024-02-08",
+            "2024-02-19",
+            "2024-02-20",
+            "2024-02-21",
+            "2024-02-22",
+            "2024-02-23",
+            "2024-02-26",
+            "2024-02-27",
+            "2024-02-28",
+            "2024-02-29"
+          ],
+          "train_end_exclusive": "2024-03-01"
+        }
+      },
+      "evaluation_dates": [
+        "2024-03-01",
+        "2024-03-04",
+        "2024-03-05",
+        "2024-03-06",
+        "2024-03-07",
+        "2024-03-08",
+        "2024-03-11",
+        "2024-03-12",
+        "2024-03-13",
+        "2024-03-14"
+      ],
+      "evaluation_end_exclusive": "2024-03-15",
+      "evaluation_start": "2024-03-01",
+      "exposure": {
+        "arms": {
+          "cand40": {
+            "epochs": 0.6005254597773051,
+            "sample_exposures": 192000,
+            "samples": 319720,
+            "steps": 6000
+          },
+          "ctrl40": {
+            "epochs": 0.6005254597773051,
+            "sample_exposures": 192000,
+            "samples": 319720,
+            "steps": 6000
+          },
+          "ref10": {
+            "epochs": 0.6,
+            "sample_exposures": 48000,
+            "samples": 80000,
+            "steps": 1500
+          }
+        },
+        "batch_size": 32,
+        "interpretation": "The candidate and the equal-weight control both run 6000 x 32 = 192,000 sample exposures (0.60 epochs of the 40-day pool). Only the per-sample loss weights differ. The retained 10-day reference runs 1500 x 32 = 48,000 exposures."
+      },
+      "fit_once_before_evaluation": true,
+      "name": "research_b",
+      "targets": {
+        "path": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d\\research_b_targets.parquet",
+        "sha256": "dff0a8f3af3ff99aa931c31b2a07f9320ead32f05fe3d698970f102fb8153c8a"
+      },
+      "train_end_exclusive": "2024-03-01",
+      "train_start": "2023-12-27"
+    }
+  ]
+}

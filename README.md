@@ -325,6 +325,21 @@ $env:PYTHONPATH = 'src;.'
 
 **解释边界：** 步数对照（同池同种子，6000减1500）为+0.007701（A +0.004723、B +0.010680），5日块区间[0.005161, 0.015322]不含零、2日块含零，B在10天中有7天改善——方向支持"0.15轮欠拟合"，但区间在两种块长下结论不一致，证据只到方向性。即使当初通过，也只能说明"额外计算让40日方案更有用"，不能说明长历史优于同计算近期数据；那需要10日/6000步对照。逐种子结果、门槛与档案见[结构化研究记录](modified_tlob/coverage_step_scaling_20261018.json)。
 
+### 40日方案日期衰减损失权重（半衰期10日）
+
+上一轮把40日方案加到6000步后仍只差`worst_day_guardrail`，本轮只检验“旧日期稀释近期状态”这一条假设。[冻结计划](configs/coverage_date_weighting_20261018_plan.json)与[脚本](scripts/run_coverage_date_weighting.py)在首个加权训练前固定：40日池、6000步、batch 32、种子11/29/47、原批次顺序、全40日`target_std`均不变，唯一变量是每个样本的MSE权重由1改为`2**(-交易日年龄/10)`，最新训练日年龄0，权重在所选训练池归一化为均值1；最近10日权重占比53.34%（等权为25%）。只改损失权重，不换采样器。等权40日/6000步归档作为机制对照；晋级仍对照10日/1500步，门槛、护栏和两种日块区间沿用归档值。种子11只用于记录初筛，三种子必须全部完成，不能据种子11认定改善。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_date_weighting prepare
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_date_weighting run configs/coverage_date_weighting_20261018_plan.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_date_weighting record configs/coverage_date_weighting_20261018_plan.json --execution <运行目录> --output modified_tlob/coverage_date_weighting_20261018.json
+```
+
+六次训练均完成6000步，权重均值为1、最近10日占比0.5334/0.5335，`target_scale`与全40日训练标准差一致。**结论：回退，保留10日参考。** 种子11初筛通过（研究A +0.038753、研究B +0.008696），但三种子配对逐日RankIC差（加权40日减10日/1500，种子均值）+0.010851，低于未改的0.011647门槛；研究A +0.027178、研究B −0.005476，`both_windows_improve`不成立；研究B最差日多空差从等权的−0.000277收窄到−0.000239，但仍超过1.3897e-4容忍，`minimum_mean_gain`与`worst_day_guardrail`同时失败。直接对照等权40日/6000步的加权效应为−0.009578（研究A −0.013318、研究B −0.005838）；6个种子×窗口单元中只有B seed11微正（+0.001040），A seed11和两个窗口的seed29/47均退化，说明本轮10日半衰期没有改善等权40日方案。按预注册未搜索其他半衰期。完整逐种子结果、权重统计、门槛与档案见[结构化研究记录](modified_tlob/coverage_date_weighting_20261018.json)。
+
+**解释边界：** 结果只否定“固定10日半衰期、mean-1、6000步”这一组合，不否定其他衰减强度或正则化方式；多数种子-窗口单元退化说明不能靠seed11的初筛通过认定改善，但两个研究窗仍是已使用数据，不能当作独立确认。最终检查区间未打开，平台时限与内存仍未验收。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

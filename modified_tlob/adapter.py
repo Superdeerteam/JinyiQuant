@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 
 from .device import device_resources, select_device
@@ -15,6 +16,7 @@ from .schema import validate_input_schema
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
                    "missing_sentinel", "price_scale", "history_days", "sample_times", "label_horizon_minutes")
+DATE_DECAY_HALF_LIFE_TRADING_DAYS = 10.0
 
 
 class TLOBAdapter:
@@ -27,8 +29,8 @@ class TLOBAdapter:
         self.config.setdefault("trade_features", "zero")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
-        if self.config["time_loss_weighting"] not in ("none", "train_variance"):
-            raise ValueError("Unsupported time loss weighting")
+        if self.config["time_loss_weighting"] not in ("none", "train_variance", "date_decay_10d"):
+            raise ValueError("Unsupported loss weighting")
         data = data_config.model_dump(mode="json") if hasattr(data_config, "model_dump") else dict(data_config)
         self.preprocessing = {k: data[k] for k in PREPROCESS_KEYS}
         self.training_sample_times = tuple(data.get("training_sample_times") or data["sample_times"])
@@ -95,11 +97,53 @@ class TLOBAdapter:
         if self.recorder:
             self.recorder.event(stage, event, **context)
 
+    def _fit_date_decay_weights(self, keys):
+        """Exponential recency weights by training-day age, normalized to mean one.
+
+        Age zero is the newest training date; one age unit is one ordered date in the
+        selected training pool. The half-life is fixed at ten trading days.
+        """
+        dates = pd.to_datetime(keys.date).dt.normalize()
+        counts = dates.value_counts().sort_index()
+        ordered = counts.index
+        ages = np.arange(len(ordered) - 1, -1, -1, dtype=np.float64)
+        day_weights = 2.0 ** (-ages / DATE_DECAY_HALF_LIFE_TRADING_DAYS)
+        raw = dates.map(pd.Series(day_weights, index=ordered)).to_numpy(dtype=np.float64)
+        sample_mean = float(raw.mean())
+        if not np.isfinite(raw).all() or not np.isfinite(sample_mean) or sample_mean <= 0:
+            raise ValueError("Invalid date-decay loss weights")
+        weights = (raw / sample_mean).astype(np.float32)
+        total = float(weights.sum(dtype=np.float64))
+        by_date = []
+        for position, date in enumerate(ordered):
+            selected = (dates == date).to_numpy()
+            weight = float(weights[selected][0])
+            by_date.append({"date": str(date.date()),
+                            "age_trading_days": int(len(ordered) - 1 - position),
+                            "samples": int(selected.sum()), "weight": weight,
+                            "weight_share": weight * int(selected.sum()) / total})
+        recent = [row for row in by_date if row["age_trading_days"] < 10]
+        self.time_loss_weighting_stats = {
+            "method": "date_decay_10d",
+            "half_life_trading_days": DATE_DECAY_HALF_LIFE_TRADING_DAYS,
+            "normalization": "mean_one_over_selected_training_samples",
+            "samples": int(len(raw)), "days": int(len(ordered)),
+            "oldest_age_trading_days": int(len(ordered) - 1),
+            "mean_weight": float(weights.mean(dtype=np.float64)), "weight_sum": total,
+            "recent_days": 10,
+            "recent_weight_share": float(sum(row["weight_share"] for row in recent)),
+            "by_date": by_date}
+        self._event("training", "time_loss_weighting_fitted", **self.time_loss_weighting_stats)
+        return weights
+
     def _fit_time_loss_weights(self, keys, target):
-        """Freeze intraday variance weights using only the selected training rows."""
+        """Freeze loss weights using only the selected training rows."""
         self.time_loss_weighting_stats = None
-        if self.config["time_loss_weighting"] == "none":
+        mode = self.config["time_loss_weighting"]
+        if mode == "none":
             return None
+        if mode == "date_decay_10d":
+            return self._fit_date_decay_weights(keys)
         times = keys.date.dt.strftime("%H:%M").to_numpy()
         if set(times) != set(self.training_sample_times):
             raise ValueError("Time loss weighting requires every configured training sample time and no other times")
@@ -261,7 +305,8 @@ class TLOBAdapter:
                 "optimization_loss": optimization_total / epoch_samples, "target_scale": self.target_scale,
                 "target_scaling": self.config["target_scaling"],
                 "time_loss_weighting": self.config["time_loss_weighting"],
-                "optimizer": "Adam_MSE" if time_weights is None else "Adam_time_weighted_MSE",
+                "optimizer": {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
+                              "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]],
                 "steps": steps, "samples": len(y), "samples_seen": samples_seen,
                 "epochs": actual_epochs, "epochs_completed": epochs_completed,
                 "stop_reason": "max_steps" if steps == self.config["max_steps"] else "epochs"}
@@ -300,7 +345,8 @@ class TLOBAdapter:
                 "kind": "modified_tlob", "architecture": self.architecture,
                 "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
                 "training_mean": self.intercept, "label": "official_vwap_return",
-                "loss": "MSE" if self.config["time_loss_weighting"] == "none" else "time_weighted_MSE",
+                "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
+                         "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
                 "target_scale": self.target_scale,
                 "time_loss_weighting_stats": self.time_loss_weighting_stats,
                 "torch_version": str(torch.__version__),
@@ -355,5 +401,9 @@ class TLOBAdapter:
             if not isinstance(result.time_loss_weighting_stats, dict):
                 raise ValueError("Weighted checkpoint is missing training weight statistics")
             result.training_sample_times = tuple(result.time_loss_weighting_stats["by_time"])
+        elif result.config["time_loss_weighting"] == "date_decay_10d":
+            if (not isinstance(result.time_loss_weighting_stats, dict)
+                    or result.time_loss_weighting_stats.get("method") != "date_decay_10d"):
+                raise ValueError("Date-weighted checkpoint is missing its training weight statistics")
         result.trained = True
         return result
