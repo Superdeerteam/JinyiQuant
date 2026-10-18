@@ -1,4 +1,4 @@
-"""Raise only the 40-day arm's optimizer steps from 1500 to 6000, then screen it.
+﻿"""Raise only the 40-day arm's optimizer steps from 1500 to 6000, then screen it.
 
 The archived coverage round held steps fixed, so the 40-day pool was traversed for about
 0.15 epochs; its pooled gain came entirely from research_a while research_b degraded and
@@ -549,7 +549,7 @@ def execute(plan_path, root):
                 "period_mean_deltas": screen["decision"]["period_mean_deltas"], "screen": screen,
                 "training_attempts": len(attempts), "final_views": 0, "model_promoted": False,
                 "note": "The round ends here by preregistration: no other step count is searched."})
-            rec.event("run", "completed", stage="screen", result="reject", training_attempts=len(attempts))
+            rec.event("run", "completed", phase="screen", result="reject", training_attempts=len(attempts))
             finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
             print("screen reject", screen["decision"]["mean_rank_ic_delta"],
                   screen["decision"]["period_mean_deltas"], flush=True)
@@ -567,7 +567,7 @@ def execute(plan_path, root):
                                                                       / f"seed{seed}_predictions.parquet")
                                                                    for seed in SCREEN_SEEDS}
                                                              for name in candidate_paths})
-        rec.event("run", "completed", stage="full", training_attempts=len(attempts), final_views=0)
+        rec.event("run", "completed", phase="full", training_attempts=len(attempts), final_views=0)
         finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
     except BaseException as exc:
         rec.failure("experiment", exc)
@@ -703,7 +703,7 @@ def execute_full(plan_path, root, source_run):
     write_json(root / "preregistration.json", plan)
     attempts = []
     try:
-        rec.event("run", "started", stage="full", screen_source=source["run"],
+        rec.event("run", "started", phase="full", screen_source=source["run"],
                   screen_sha256=source["screen_sha256"])
         if file_sha256(plan["registry_path"]) != plan["registry_sha256"]:
             raise ValueError("Shared data-role registration changed")
@@ -727,7 +727,7 @@ def execute_full(plan_path, root, source_run):
                                                  for seed in FULL_SEEDS}}
         run_full(plan, root, candidate_paths, {"decision": source["decision"]}, rec, source["predictions"],
                  fit_roots=[root, source["run"]])
-        rec.event("run", "completed", stage="full", training_attempts=len(attempts), final_views=0)
+        rec.event("run", "completed", phase="full", training_attempts=len(attempts), final_views=0)
         finish(root, "completed", 0, resources={"wall_seconds": time.monotonic() - started})
     except BaseException as exc:
         rec.failure("experiment", exc)
