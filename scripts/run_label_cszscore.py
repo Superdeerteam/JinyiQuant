@@ -522,8 +522,20 @@ def prepare(output_path=PLAN, *, frozen_path=FROZEN, output_root=RUNS,
 # ------------------------------------------------------------------ worker supervision
 
 
-def launch(plan_path, output, kind, window_name, *, seed=None, paths=None, cap=None):
-    output.mkdir(parents=True, exist_ok=False)
+def prepare_job_output(output, kind, *, allow_existing=False):
+    """Create a worker directory; only an incomplete fit may be resumed in place."""
+    output = Path(output)
+    if output.exists():
+        if not allow_existing or kind != "fit":
+            raise FileExistsError(f"Worker output already exists: {output}")
+        if (output / "model.pt").exists() or (output / "training.json").exists():
+            raise ValueError("A completed fit cannot be rerun")
+    else:
+        output.mkdir(parents=True)
+
+
+def launch(plan_path, output, kind, window_name, *, seed=None, paths=None, cap=None, allow_existing=False):
+    prepare_job_output(output, kind, allow_existing=allow_existing)
     plan = read_json(plan_path)
     window = next(w for w in plan["windows"] if w["name"] == window_name)
     config = copy.deepcopy(window["arms"][CANDIDATE]["config"])
@@ -672,7 +684,8 @@ def fit_candidate(plan_path, root, plan, window, seed, rec, attempts, started):
         raise TimeoutError("Fit stage budget exhausted")
     launch(plan_path, path, "fit", name, seed=seed,
            cap={"wall_seconds": min(plan["budget"]["per_fit_wall_cap_seconds"], remaining),
-                "rss_mb": plan["budget"]["local_peak_rss_cap_mib"]})
+                "rss_mb": plan["budget"]["local_peak_rss_cap_mib"]},
+           allow_existing=bool(prior))
     training = read_json(path / "training.json")
     stats = training.get("target_centering_stats")
     expected = plan["label_transform"]["per_window"][name]

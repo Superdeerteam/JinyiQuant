@@ -271,3 +271,20 @@ def test_one_technical_retry_per_fit_and_twelve_start_cap(tmp_path, monkeypatch)
     assert csz.claim_fit(plan_path, "research_a", 11, path)[0] == 2
     with pytest.raises(ValueError, match="At most one technical retry"):
         csz.claim_fit(plan_path, "research_a", 11, path)
+
+
+def test_incomplete_fit_directory_can_be_reused_for_a_retry_but_a_completed_one_cannot(tmp_path):
+    output = tmp_path / "fit"
+    csz.prepare_job_output(output, "fit")
+    (output / "events.jsonl").write_text("attempt-one\n", encoding="utf-8")
+    csz.prepare_job_output(output, "fit", allow_existing=True)
+    assert (output / "events.jsonl").read_text(encoding="utf-8") == "attempt-one\n"
+    with pytest.raises(FileExistsError, match="already exists"):
+        csz.prepare_job_output(output, "fit")
+    (output / "model.pt").write_bytes(b"weights")
+    with pytest.raises(ValueError, match="completed fit"):
+        csz.prepare_job_output(output, "fit", allow_existing=True)
+    inference = tmp_path / "inference"
+    csz.prepare_job_output(inference, "infer")
+    with pytest.raises(FileExistsError):
+        csz.prepare_job_output(inference, "infer", allow_existing=True)
