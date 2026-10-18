@@ -307,6 +307,24 @@ $env:PYTHONPATH = 'src;.'
 
 **解释边界：** 1500步×32只提供48,000次样本暴露，约为10日池的0.60轮、40日池的0.15轮。本轮只回答"相同计算预算下扩大日期覆盖能否改善泛化"，答案是未得到可复现的稳定改善；这不等于"更多历史数据无效"——40日池在此步数下远未遍历，两个窗口的行情状态也不同，本轮未按规定追加步数或种子。完整成本、逐种子结果、门槛与档案见[结构化研究记录](modified_tlob/training_coverage_arms_20261018.json)。
 
+### 40日方案加步复验（1500→6000步）
+
+上一轮40日方案在1500步（0.15轮）下失败，本轮只检验"这是欠拟合而非旧日期负迁移"这一条假设，[冻结计划](configs/coverage_step_scaling_20261018_plan.json) 与[脚本](scripts/run_coverage_step_scaling.py) 在首个6000步训练前固定：唯一变量是40日臂`max_steps`1500→6000（192,000次样本暴露，0.60轮，与10日臂已获得的份额相同）；归档40日/1500步作步数对照，保留的10日/1500步作参照；网络、学习率、批量、预处理、`target_std`与种子不变。决策门槛沿用上一轮归档值（最小改善量0.011647、两窗改善、多空/换手护栏、最差日容忍1.3897e-4、5/2日连续日块区间），初筛只花2次训练：seed 11两窗都不劣于参照且最差日护栏成立才补29/47。
+
+权重按相同种子从零重训。六次训练在step 1500的进度损失与归档1500步训练**逐位相同**（如research_a s11为1.1277108979419238e-05），因此这确实是同一轨迹的继续，而不是加载旧权重再补4500步。首次尝试在预处理阶段被会话中断、未产生模型，作为浪费尝试记录在案，不复用。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_step_scaling prepare
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_step_scaling run configs/coverage_step_scaling_20261018_plan.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_step_scaling continue configs/coverage_step_scaling_20261018_plan.json --screen <初筛通过档案>
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_coverage_step_scaling record configs/coverage_step_scaling_20261018_plan.json --execution <运行目录> --output modified_tlob/coverage_step_scaling_20261018.json
+```
+
+**结论：回退，保留10日参考。** 初筛在seed 11通过（研究A +0.039024、研究B +0.007656，四项初筛条件全过）。补足三种子后，配对逐日RankIC差（40日/6000步减10日/1500步，种子均值）+0.020429，越过0.011647门槛；研究A +0.040495、研究B +0.000362，`both_windows_improve`、多空、换手与两种日块区间全部通过。但`worst_day_guardrail`仍失败：研究B最差日多空差−0.000277，超过1.3897e-4容忍（上一轮为−0.000261），集中在2024-03-04与03-11两天，不是系统性尾部；B的逐种子RankIC差为+0.0077/−0.0071/+0.0005，改善未跨种子复现。按预登记本轮到此结束，未再搜索其他步数。
+
+**解释边界：** 步数对照（同池同种子，6000减1500）为+0.007701（A +0.004723、B +0.010680），5日块区间[0.005161, 0.015322]不含零、2日块含零，B在10天中有7天改善——方向支持"0.15轮欠拟合"，但区间在两种块长下结论不一致，证据只到方向性。即使当初通过，也只能说明"额外计算让40日方案更有用"，不能说明长历史优于同计算近期数据；那需要10日/6000步对照。逐种子结果、门槛与档案见[结构化研究记录](modified_tlob/coverage_step_scaling_20261018.json)。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

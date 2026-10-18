@@ -1,0 +1,1769 @@
+{
+  "budget_freeze": {
+    "limits": {
+      "basis": {
+        "declared_samples_seen": 192000,
+        "declared_training_steps": 6000,
+        "measured_peak_rss_mb": 7478.5234375,
+        "measured_preprocessing_seconds": 94.6512959000247,
+        "measured_seconds_per_step": 0.12143094800005201,
+        "rss_formula": "round_up_256(1.25 x measured peak host RSS)",
+        "wall_formula": "round_up_300(1.25 x (measured preprocessing + 6000 x measured seconds/step) + 300s save/check slack)",
+        "windows_measured": [
+          "research_a",
+          "research_b"
+        ]
+      },
+      "host": {
+        "measured_peak_below_system_memory": true,
+        "total_memory_mb": 16252.17578125
+      },
+      "max_rss_mb": 9472.0,
+      "wall_seconds": 1500.0
+    },
+    "pilot_source": "D:\\进益资本杯\\runs\\training-coverage-arms-20261018\\20261018T024634.978262Z_ea2f53860760",
+    "pilots": [
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "be5e5c42b63adc1756a466ae964353d78c7e52b723e40f17c1fc5c3dcfe39ea3",
+          "labels_sha256": "5990d6a703f276c4359febcc779ccf6c9080f244a11ee97641812fd3b1e06920",
+          "samples": 79920
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.193949999986216,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 30.84638219999033,
+        "process_peak_rss_mb": 2834.5078125,
+        "samples": 79920,
+        "seconds_per_step": 0.12193949999986216,
+        "stages": [
+          {
+            "elapsed_seconds": 5.399982910603285e-06,
+            "peak_rss_mb": 581.17578125,
+            "rss_mb": 550.88671875,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 18.614587599993683,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1261.3046875,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 20.776206699985778,
+            "peak_rss_mb": 2243.68359375,
+            "rss_mb": 1268.83203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 51.62270139998873,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1929.3203125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 52.72453749997658,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1942.7578125,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 52.81806459999643,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 1487.8984375,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 67.93937720000395,
+            "peak_rss_mb": 2834.5078125,
+            "rss_mb": 2145.54296875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0038659661156313857,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_a"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "180febd00cbe7996c5bcc9ab6a7979c796de4e0b445c5192bd13864764ab90ea",
+          "labels_sha256": "ed18e4a924d2b5dd33bbdd1996700f2d70a8a287ce30a89f652d397477494b78",
+          "samples": 319632
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 12.143094800005201,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 94.6512959000247,
+        "process_peak_rss_mb": 6200.828125,
+        "samples": 319632,
+        "seconds_per_step": 0.12143094800005201,
+        "stages": [
+          {
+            "elapsed_seconds": 4.4000043999403715e-06,
+            "peak_rss_mb": 707.13671875,
+            "rss_mb": 560.95703125,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 41.1058037999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2104.9765625,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 49.5824006999901,
+            "peak_rss_mb": 5107.35546875,
+            "rss_mb": 2127.12109375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 144.23380439999164,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3523.53125,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 147.83186380000552,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3562.4375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 148.10419069998898,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 3396.625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 163.65573190001305,
+            "peak_rss_mb": 6200.828125,
+            "rss_mb": 4054.4921875,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.0034071928545828484,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_a"
+      },
+      {
+        "arm": "10",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "07da0b5ee845bb1a2f29ab694b553bc8480c086971585a3f8f8e0fde967b0130",
+          "labels_sha256": "ee775a66d0857e5c6e73c084b4659f92f9200ea55a99f7c9e3b03103caa001fa",
+          "samples": 80000
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 10.354336799995508,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 26.7081725000171,
+        "process_peak_rss_mb": 2929.2421875,
+        "samples": 80000,
+        "seconds_per_step": 0.10354336799995507,
+        "stages": [
+          {
+            "elapsed_seconds": 4.999979864805937e-06,
+            "peak_rss_mb": 580.25,
+            "rss_mb": 549.984375,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 16.996975699992618,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1316.21484375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 18.804284799989546,
+            "peak_rss_mb": 2433.5546875,
+            "rss_mb": 1320.984375,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 45.51256889998331,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1980.91796875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 46.40519499999937,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1996.0546875,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 46.51128039998002,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 1512.7890625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 59.256307599978754,
+            "peak_rss_mb": 2929.2421875,
+            "rss_mb": 2170.05859375,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.004753065955907003,
+        "torch": "2.11.0+cu128",
+        "training_days": 10,
+        "window": "research_b"
+      },
+      {
+        "arm": "40",
+        "device": "cuda",
+        "frozen_identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "gpu_peak_memory_mb": 195.591796875,
+        "identity": {
+          "keys_sha256": "421473662444de01d79ee6726cf7123bbc3a74d6bb409e524616e35a779573ae",
+          "labels_sha256": "b026012f7dee143bf30f9471251c3378bb973e5517ac49e1bf9433870a4129c5",
+          "samples": 319720
+        },
+        "pilot_samples_seen": 3200,
+        "pilot_seconds": 11.962087399995653,
+        "pilot_steps": 100,
+        "preprocessing_seconds": 92.88846819999162,
+        "process_peak_rss_mb": 7478.5234375,
+        "samples": 319720,
+        "seconds_per_step": 0.11962087399995652,
+        "stages": [
+          {
+            "elapsed_seconds": 5.2000104915350676e-06,
+            "peak_rss_mb": 706.26953125,
+            "rss_mb": 560.16015625,
+            "stage": "start"
+          },
+          {
+            "elapsed_seconds": 49.30441549999523,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2108.234375,
+            "stage": "bars_and_labels_loaded"
+          },
+          {
+            "elapsed_seconds": 56.43150370000512,
+            "peak_rss_mb": 4661.35546875,
+            "rss_mb": 2130.58203125,
+            "stage": "targets_selected"
+          },
+          {
+            "elapsed_seconds": 149.32020390001708,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4777.07421875,
+            "stage": "batch_built"
+          },
+          {
+            "elapsed_seconds": 153.04723270001705,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4784.74609375,
+            "stage": "diagnostics_written"
+          },
+          {
+            "elapsed_seconds": 153.2003639000177,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 3515.15625,
+            "stage": "bars_released"
+          },
+          {
+            "elapsed_seconds": 167.77821519999998,
+            "peak_rss_mb": 7478.5234375,
+            "rss_mb": 4156.2890625,
+            "stage": "training_probe_completed"
+          }
+        ],
+        "target_scale": 0.005300936212323662,
+        "torch": "2.11.0+cu128",
+        "training_days": 40,
+        "window": "research_b"
+      }
+    ]
+  },
+  "candidate_status": "not promoted",
+  "conclusion": "With only the 40-day arm's steps changed (1500 -> 6000, 192,000 sample exposures = 0.60 epochs of the 40-day pool), the seed-mean paired daily all-eight-time RankIC difference against the retained 10-day/1500 reference was +0.020429 against the unchanged predeclared floor of 0.011647; per window research_a: +0.040495, research_b: +0.000362. The descriptive step contrast against the archived 40-day/1500 arm was +0.007701 (research_a: +0.004723, research_b: +0.010680). The candidate fails the predeclared gates worst_day_guardrail, so the 10-day reference is retained. Per preregistration the round ends here: no other step count was searched, and this is not evidence that more history is uninformative.",
+  "deployment_seed": 11,
+  "execution": {
+    "fits": [
+      {
+        "resources": {
+          "peak_rss_mb": 6416.12109375,
+          "wall_seconds": 847.1962229000001
+        },
+        "reused_from_screen_archive": true,
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_a_st6000_s11",
+        "seed": 11,
+        "steps": 6000,
+        "weights_sha256": "ab619ad83731bcff82959b7198d7324ab4e181b668a99c86e0dea66bdf1356b5",
+        "window": "research_a"
+      },
+      {
+        "resources": {
+          "peak_rss_mb": 7580.26953125,
+          "wall_seconds": 841.8501753000003
+        },
+        "reused_from_screen_archive": true,
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T042517.974654Z_b779238cb04a\\fits\\research_b_st6000_s11",
+        "seed": 11,
+        "steps": 6000,
+        "weights_sha256": "2e1921f3d791a58d8f68c3398de67d7f59de0723929e92b790e68e626b91270c",
+        "window": "research_b"
+      },
+      {
+        "attempt": 1,
+        "resources": {
+          "peak_rss_mb": 7343.6328125,
+          "wall_seconds": 883.262311
+        },
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s29",
+        "seed": 29,
+        "steps": 6000,
+        "weights_sha256": "b1167b36cbdcec73573d65985a8fc0c7376c4f05b73ea39d4fc1896b731fa3c4",
+        "window": "research_a"
+      },
+      {
+        "attempt": 1,
+        "resources": {
+          "peak_rss_mb": 7605.23828125,
+          "wall_seconds": 846.4254257000002
+        },
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_a_st6000_s47",
+        "seed": 47,
+        "steps": 6000,
+        "weights_sha256": "2253bf2ac2fbe0e2d5c2f8cd9d055511d01a30d8d13dcf2fffe05fd0ca38170d",
+        "window": "research_a"
+      },
+      {
+        "attempt": 1,
+        "resources": {
+          "peak_rss_mb": 7092.6484375,
+          "wall_seconds": 892.8834935000004
+        },
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s29",
+        "seed": 29,
+        "steps": 6000,
+        "weights_sha256": "691d1eb5e965b1794e434b14f2521a4ef9e7dfb45fd731e2e8217a628c12871f",
+        "window": "research_b"
+      },
+      {
+        "attempt": 1,
+        "resources": {
+          "peak_rss_mb": 6465.703125,
+          "wall_seconds": 974.7958333999995
+        },
+        "run": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85\\fits\\research_b_st6000_s47",
+        "seed": 47,
+        "steps": 6000,
+        "weights_sha256": "0746052d3725b02e3d721861b8e10f0b874636ab7f60ce86a77b68c174d048ad",
+        "window": "research_b"
+      }
+    ],
+    "interrupted_attempts": [
+      {
+        "archive": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T041616.752927Z_824a4d43e37a\\fits\\research_a_st6000_s11",
+        "claim": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\training_claims\\research_a_st6000_s11.json",
+        "claimed_at_utc": "2026-10-18T04:16:19.092445+00:00",
+        "complete": false
+      }
+    ],
+    "manifest_sha256": "76fafc1c7909bf1fe3e319a379afc2b821a46b74c004805f6ea024cd3f409cf8",
+    "new_training_fits": 6,
+    "run_dir": "D:\\进益资本杯\\runs\\coverage-step-scaling-20261018\\20261018T050004.599534Z_1529c1a26f85",
+    "screen": {
+      "checks": {
+        "research_a_rank_ic_delta_at_least": true,
+        "research_a_worst_day_delta_at_least": true,
+        "research_b_rank_ic_delta_at_least": true,
+        "research_b_worst_day_delta_at_least": true
+      },
+      "comparison": "cand40 minus ref10",
+      "descriptive_only": "Single-seed intervals understate uncertainty; the registered decision requires the three-seed replay.",
+      "gates": {
+        "rank_ic_delta_at_least": 0.0,
+        "worst_day_delta_at_least": -0.00013896761043335348
+      },
+      "intervals": [
+        {
+          "block_days": 5,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                0.02289330448563301,
+                0.05605766459089847
+              ],
+              "mean": 0.03902366061759384,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.00020713223353704106,
+                0.00044635501841140256
+              ],
+              "mean": 0.00032964678824182376,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.1912060301507538,
+                -0.15389447236180903
+              ],
+              "mean": -0.17810480976310122,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.0034071117786007602,
+                0.016973048072235847
+              ],
+              "mean": 0.007655690068829775,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                1.7154514482580083e-05,
+                7.680455043442176e-05
+              ],
+              "mean": 3.8148010344477826e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.01809045226130661,
+                0.03995791457286435
+              ],
+              "mean": 0.02681887114142143,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.011771667903878595,
+                0.0318483159809944
+              ],
+              "mean": 0.02333967534321181,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.00012413829567545041,
+                0.0002525275546100513
+              ],
+              "mean": 0.00018389739929315082,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                -0.08055841708542709,
+                -0.060279836683417055
+              ],
+              "mean": -0.07564296931083989,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        },
+        {
+          "block_days": 2,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                0.018486962375489586,
+                0.05906951177620832
+              ],
+              "mean": 0.03902366061759384,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.0001552258628054707,
+                0.0005116936116873638
+              ],
+              "mean": 0.00032964678824182376,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.20297918162239775,
+                -0.14522613065326626
+              ],
+              "mean": -0.17810480976310122,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.014583275402791454,
+                0.02498232149563028
+              ],
+              "mean": 0.007655690068829775,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -2.474447821860818e-05,
+                0.0001376737771168518
+              ],
+              "mean": 3.8148010344477826e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.016116834170854345,
+                0.04341268844221109
+              ],
+              "mean": 0.02681887114142143,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.008423589834989312,
+                0.03663745214376614
+              ],
+              "mean": 0.02333967534321181,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                9.542499255240409e-05,
+                0.00028986124235035683
+              ],
+              "mean": 0.00018389739929315082,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                -0.08837568198133523,
+                -0.05681530980796834
+              ],
+              "mean": -0.07564296931083989,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        }
+      ],
+      "mean_rank_ic_delta": 0.02333967534321181,
+      "next": "continue to seeds 29/47 and the registered three-seed decision",
+      "per_window": {
+        "research_a": {
+          "arm_window_means": {
+            "cand40": {
+              "long_short_return": 0.00035652128267616063,
+              "rank_ic": 0.04560996543072391,
+              "turnover": 1.4888101220387655
+            },
+            "ref10": {
+              "long_short_return": 2.6874494434336837e-05,
+              "rank_ic": 0.006586304813130069,
+              "turnover": 1.6669149318018666
+            }
+          },
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 0.0003296467882418238,
+              "rank_ic": 0.03902366061759384,
+              "turnover": -0.17810480976310106
+            }
+          },
+          "worst_day_delta": 0.0002936084965594198
+        },
+        "research_b": {
+          "arm_window_means": {
+            "cand40": {
+              "long_short_return": -1.1447193423778966e-05,
+              "rank_ic": -0.0029437065409200327,
+              "turnover": 1.5992915021536254
+            },
+            "ref10": {
+              "long_short_return": -4.959520376825679e-05,
+              "rank_ic": -0.010599396609749807,
+              "turnover": 1.572472631012204
+            }
+          },
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 3.8148010344477826e-05,
+              "rank_ic": 0.007655690068829774,
+              "turnover": 0.026818871141421452
+            }
+          },
+          "worst_day_delta": -9.334832721703639e-05
+        }
+      },
+      "period_mean_deltas": {
+        "research_a": 0.039023660617593846,
+        "research_b": 0.007655690068829775
+      },
+      "result": "pass",
+      "rule": "Screen at seed 11 before spending four more fits: the candidate must not degrade the retained 10-day reference in either research window and must clear the frozen worst-day guardrail in both. A failed screen ends this round; no other step count is searched afterwards.",
+      "schema_version": 1,
+      "seeds": [
+        11
+      ]
+    },
+    "screen_per_window": null,
+    "trajectory_equivalence_to_step_1500": {
+      "atol": 1e-06,
+      "rows": [
+        {
+          "candidate_loss": 1.1277108979419238e-05,
+          "control_loss": 1.1277108979419238e-05,
+          "matches": true,
+          "seed": 11,
+          "step": 1500,
+          "window": "research_a"
+        },
+        {
+          "candidate_loss": 6.605140976744636e-06,
+          "control_loss": 6.605140976744636e-06,
+          "matches": true,
+          "seed": 29,
+          "step": 1500,
+          "window": "research_a"
+        },
+        {
+          "candidate_loss": 1.5467462404726772e-05,
+          "control_loss": 1.5467462404726772e-05,
+          "matches": true,
+          "seed": 47,
+          "step": 1500,
+          "window": "research_a"
+        },
+        {
+          "candidate_loss": 1.3717949705522963e-05,
+          "control_loss": 1.3717949705522963e-05,
+          "matches": true,
+          "seed": 11,
+          "step": 1500,
+          "window": "research_b"
+        },
+        {
+          "candidate_loss": 1.9332799115397813e-05,
+          "control_loss": 1.9332799115397813e-05,
+          "matches": true,
+          "seed": 29,
+          "step": 1500,
+          "window": "research_b"
+        },
+        {
+          "candidate_loss": 4.0771616675758926e-05,
+          "control_loss": 4.0771616675758926e-05,
+          "matches": true,
+          "seed": 47,
+          "step": 1500,
+          "window": "research_b"
+        }
+      ],
+      "rtol": 1e-05
+    }
+  },
+  "experiment_id": "coverage-step-scaling-20261018",
+  "exposure": {
+    "research_a": {
+      "arms": {
+        "cand40": {
+          "epochs": 0.6006907944135756,
+          "sample_exposures": 192000,
+          "samples": 319632,
+          "steps": 6000
+        },
+        "ctrl40": {
+          "epochs": 0.1501726986033939,
+          "sample_exposures": 48000,
+          "samples": 319632,
+          "steps": 1500
+        },
+        "ref10": {
+          "epochs": 0.6006006006006006,
+          "sample_exposures": 48000,
+          "samples": 79920,
+          "steps": 1500
+        }
+      },
+      "batch_size": 32,
+      "interpretation": "The candidate gets four times the optimizer compute of both controls: 6000 x 32 = 192,000 sample exposures, i.e. 0.60 epochs of the 40-day pool, the share the 10-day/1500 arm already received. A gain therefore measures the value of extra optimization on the same 40-day pool, not the value of more history; separating those needs an equal-epoch 10-day/6000-step arm."
+    },
+    "research_b": {
+      "arms": {
+        "cand40": {
+          "epochs": 0.6005254597773051,
+          "sample_exposures": 192000,
+          "samples": 319720,
+          "steps": 6000
+        },
+        "ctrl40": {
+          "epochs": 0.15013136494432627,
+          "sample_exposures": 48000,
+          "samples": 319720,
+          "steps": 1500
+        },
+        "ref10": {
+          "epochs": 0.6,
+          "sample_exposures": 48000,
+          "samples": 80000,
+          "steps": 1500
+        }
+      },
+      "batch_size": 32,
+      "interpretation": "The candidate gets four times the optimizer compute of both controls: 6000 x 32 = 192,000 sample exposures, i.e. 0.60 epochs of the 40-day pool, the share the 10-day/1500 arm already received. A gain therefore measures the value of extra optimization on the same 40-day pool, not the value of more history; separating those needs an equal-epoch 10-day/6000-step arm."
+    }
+  },
+  "final_views": 0,
+  "gates": {
+    "decision": {
+      "direction": "maximize",
+      "exposure_policy": "Steps, batch size, learning rate and recipe stay fixed for this round; a larger pool gets no extra steps because that would confound coverage with compute.",
+      "guardrails": {
+        "both_windows_improve": true,
+        "gross_interval_lower_at_least": -0.00010387476657357637,
+        "gross_mean_nondecreasing": true,
+        "turnover_interval_upper_at_most": 0.03706698237510122,
+        "turnover_mean_nonincreasing": true,
+        "worst_day_delta_at_least": -0.00013896761043335348
+      },
+      "interpretation_rule": "A non-accept result bounds what equal-compute date expansion achieves; it does not establish that more history is uninformative.",
+      "minimum_mean_gain": 0.01164665094206816,
+      "minimum_mean_gain_basis": {
+        "minimum_mean_gain": 0.01164665094206816,
+        "noise_multiplier": 1.0,
+        "noise_scaled": 0.01164665094206816,
+        "practical_improvement": 0.002,
+        "primary_metric": "rank_ic_mean"
+      },
+      "noise": {
+        "long_short_return_mean": 0.00010387476657357637,
+        "min_daily_long_short_return": 0.00013896761043335348,
+        "rank_ic_mean": 0.01164665094206816,
+        "turnover_mean": 0.03706698237510122
+      },
+      "primary_metric": "paired daily all-eight-time RankIC, seed-mean per day before pairing",
+      "statistics": {
+        "block_days": [
+          5,
+          2
+        ],
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261017,
+        "confidence": 0.95,
+        "paired": true,
+        "sensitivity_rule": "Report both block lengths; conflicting conclusions are inconclusive, and neither is chosen after seeing results.",
+        "window_stratified": true
+      }
+    },
+    "minimum_mean_gain": 0.01164665094206816,
+    "screen": {
+      "rank_ic_delta_at_least": 0.0,
+      "worst_day_delta_at_least": -0.00013896761043335348
+    }
+  },
+  "hypothesis": "The 40-day arm failed at 1500 steps because that is only 0.15 epochs of its pool, not because the extra dates hurt: at 6000 steps (0.60 epochs, the share the 10-day arm already received) it should stop degrading research_b and clear the frozen worst-day guardrail.",
+  "limitations": [
+    "Two research windows and three seeds are selection data, not independent confirmation.",
+    "Steps were scaled for the 40-day arm only, so the candidate has four times the optimizer compute of the retained reference; a 10-day/6000-step arm is required before claiming that longer history beats recent data.",
+    "6000 steps is still only 0.60 epochs of the 40-day pool; heavier schedules are outside this round.",
+    "Local gross metrics exclude fees and slippage; platform time and memory limits remain unverified."
+  ],
+  "model_promoted": false,
+  "next_steps": [
+    "If the candidate passed, register a 10-day/6000-step arm so coverage and compute are separated at equal epochs.",
+    "If research_b still degraded, the next registered treatment is recent-date loss weighting inside the 40-day pool at a predeclared half-life, not another step count."
+  ],
+  "only_factor": "optimizer steps 1500 -> 6000 for the 40-day arm at fixed pool, network, learning rate, batch size, preprocessing and seeds",
+  "plan": {
+    "path": "D:\\进益资本杯\\configs\\coverage_step_scaling_20261018_plan.json",
+    "sha256": "c7ed3fe4f9b12e2912c4e88a57b9072b07583e1d21fe307935b834cfb8bb184e"
+  },
+  "platform_verified": false,
+  "prior_round": {
+    "action": "retain_10_day_reference",
+    "decision_sha256": "399b15daf8196a66c0f52967877696d317480c2cef3632ebbdf98e92c8c3256d",
+    "execution": "D:\\进益资本杯\\runs\\training-coverage-arms-20261018\\20261018T025756.181886Z_3b035283cf60",
+    "failed_checks": [
+      "both_windows_improve",
+      "worst_day_guardrail"
+    ],
+    "mean_rank_ic_delta": 0.012727350073053697,
+    "period_mean_deltas": {
+      "research_a": 0.03577244703246905,
+      "research_b": -0.010317746886361653
+    },
+    "result": "reject"
+  },
+  "recipe_fixed": {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "lookback": 128,
+    "loss": "MSE",
+    "raw12": true,
+    "sample_times": 8,
+    "smoothing": "none",
+    "target_scaling": "train_std",
+    "time_loss_weighting": "none"
+  },
+  "recorded_at_utc": "2026-10-18T06:08:57.567860+00:00",
+  "results": {
+    "decision": {
+      "action": "retain_10_day_reference",
+      "checks": {
+        "both_windows_improve": true,
+        "gross_mean_nondecreasing": true,
+        "inference_cost_measured": true,
+        "minimum_mean_gain": true,
+        "turnover_mean_nonincreasing": true,
+        "worst_day_guardrail": false
+      },
+      "cost_measured": true,
+      "exposure": {
+        "research_a": {
+          "arms": {
+            "cand40": {
+              "epochs": 0.6006907944135756,
+              "sample_exposures": 192000,
+              "samples": 319632,
+              "steps": 6000
+            },
+            "ctrl40": {
+              "epochs": 0.1501726986033939,
+              "sample_exposures": 48000,
+              "samples": 319632,
+              "steps": 1500
+            },
+            "ref10": {
+              "epochs": 0.6006006006006006,
+              "sample_exposures": 48000,
+              "samples": 79920,
+              "steps": 1500
+            }
+          },
+          "batch_size": 32,
+          "interpretation": "The candidate gets four times the optimizer compute of both controls: 6000 x 32 = 192,000 sample exposures, i.e. 0.60 epochs of the 40-day pool, the share the 10-day/1500 arm already received. A gain therefore measures the value of extra optimization on the same 40-day pool, not the value of more history; separating those needs an equal-epoch 10-day/6000-step arm."
+        },
+        "research_b": {
+          "arms": {
+            "cand40": {
+              "epochs": 0.6005254597773051,
+              "sample_exposures": 192000,
+              "samples": 319720,
+              "steps": 6000
+            },
+            "ctrl40": {
+              "epochs": 0.15013136494432627,
+              "sample_exposures": 48000,
+              "samples": 319720,
+              "steps": 1500
+            },
+            "ref10": {
+              "epochs": 0.6,
+              "sample_exposures": 48000,
+              "samples": 80000,
+              "steps": 1500
+            }
+          },
+          "batch_size": 32,
+          "interpretation": "The candidate gets four times the optimizer compute of both controls: 6000 x 32 = 192,000 sample exposures, i.e. 0.60 epochs of the 40-day pool, the share the 10-day/1500 arm already received. A gain therefore measures the value of extra optimization on the same 40-day pool, not the value of more history; separating those needs an equal-epoch 10-day/6000-step arm."
+        }
+      },
+      "final_views": 0,
+      "interpretation": "A non-accept result rejects the claim that four times the optimizer compute repairs the 40-day arm at this exposure: 6000 steps is still only 0.60 epochs of the 40-day pool, and step counts are frozen for this round.",
+      "interval_checks": [
+        {
+          "block_days": 5,
+          "gross_lower_above_negative_noise": true,
+          "positive_rank_ic_lower": true,
+          "turnover_upper_below_noise": true
+        },
+        {
+          "block_days": 2,
+          "gross_lower_above_negative_noise": true,
+          "positive_rank_ic_lower": true,
+          "turnover_upper_below_noise": true
+        }
+      ],
+      "limitations": "Two research windows and three seeds are selection data; local gross metrics exclude fees and slippage; the platform time and memory limits remain unverified.",
+      "mean_rank_ic_delta": 0.020428728075062182,
+      "minimum_mean_gain": 0.01164665094206816,
+      "model_promoted": false,
+      "only_factor": "optimizer steps 1500 -> 6000 for the 40-day arm at fixed pool, network, learning rate, batch size, preprocessing and seeds",
+      "period_mean_deltas": {
+        "research_a": 0.04049536889709788,
+        "research_b": 0.000362087253026489
+      },
+      "platform_verified": false,
+      "result": "reject",
+      "schema_version": 1,
+      "scope": "local_research_only",
+      "screen": {
+        "checks": {
+          "research_a_rank_ic_delta_at_least": true,
+          "research_a_worst_day_delta_at_least": true,
+          "research_b_rank_ic_delta_at_least": true,
+          "research_b_worst_day_delta_at_least": true
+        },
+        "comparison": "cand40 minus ref10",
+        "descriptive_only": "Single-seed intervals understate uncertainty; the registered decision requires the three-seed replay.",
+        "gates": {
+          "rank_ic_delta_at_least": 0.0,
+          "worst_day_delta_at_least": -0.00013896761043335348
+        },
+        "intervals": [
+          {
+            "block_days": 5,
+            "confidence": 0.95,
+            "rows": [
+              {
+                "days": 10,
+                "interval": [
+                  0.02289330448563301,
+                  0.05605766459089847
+                ],
+                "mean": 0.03902366061759384,
+                "metric": "rank_ic",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  0.00020713223353704106,
+                  0.00044635501841140256
+                ],
+                "mean": 0.00032964678824182376,
+                "metric": "long_short_return",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  -0.1912060301507538,
+                  -0.15389447236180903
+                ],
+                "mean": -0.17810480976310122,
+                "metric": "turnover",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  -0.0034071117786007602,
+                  0.016973048072235847
+                ],
+                "mean": 0.007655690068829775,
+                "metric": "rank_ic",
+                "period": "research_b"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  1.7154514482580083e-05,
+                  7.680455043442176e-05
+                ],
+                "mean": 3.8148010344477826e-05,
+                "metric": "long_short_return",
+                "period": "research_b"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  0.01809045226130661,
+                  0.03995791457286435
+                ],
+                "mean": 0.02681887114142143,
+                "metric": "turnover",
+                "period": "research_b"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  0.011771667903878595,
+                  0.0318483159809944
+                ],
+                "mean": 0.02333967534321181,
+                "metric": "rank_ic",
+                "period": "all"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  0.00012413829567545041,
+                  0.0002525275546100513
+                ],
+                "mean": 0.00018389739929315082,
+                "metric": "long_short_return",
+                "period": "all"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  -0.08055841708542709,
+                  -0.060279836683417055
+                ],
+                "mean": -0.07564296931083989,
+                "metric": "turnover",
+                "period": "all"
+              }
+            ],
+            "samples": 20000,
+            "seed": 20261017
+          },
+          {
+            "block_days": 2,
+            "confidence": 0.95,
+            "rows": [
+              {
+                "days": 10,
+                "interval": [
+                  0.018486962375489586,
+                  0.05906951177620832
+                ],
+                "mean": 0.03902366061759384,
+                "metric": "rank_ic",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  0.0001552258628054707,
+                  0.0005116936116873638
+                ],
+                "mean": 0.00032964678824182376,
+                "metric": "long_short_return",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  -0.20297918162239775,
+                  -0.14522613065326626
+                ],
+                "mean": -0.17810480976310122,
+                "metric": "turnover",
+                "period": "research_a"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  -0.014583275402791454,
+                  0.02498232149563028
+                ],
+                "mean": 0.007655690068829775,
+                "metric": "rank_ic",
+                "period": "research_b"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  -2.474447821860818e-05,
+                  0.0001376737771168518
+                ],
+                "mean": 3.8148010344477826e-05,
+                "metric": "long_short_return",
+                "period": "research_b"
+              },
+              {
+                "days": 10,
+                "interval": [
+                  0.016116834170854345,
+                  0.04341268844221109
+                ],
+                "mean": 0.02681887114142143,
+                "metric": "turnover",
+                "period": "research_b"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  0.008423589834989312,
+                  0.03663745214376614
+                ],
+                "mean": 0.02333967534321181,
+                "metric": "rank_ic",
+                "period": "all"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  9.542499255240409e-05,
+                  0.00028986124235035683
+                ],
+                "mean": 0.00018389739929315082,
+                "metric": "long_short_return",
+                "period": "all"
+              },
+              {
+                "days": 20,
+                "interval": [
+                  -0.08837568198133523,
+                  -0.05681530980796834
+                ],
+                "mean": -0.07564296931083989,
+                "metric": "turnover",
+                "period": "all"
+              }
+            ],
+            "samples": 20000,
+            "seed": 20261017
+          }
+        ],
+        "mean_rank_ic_delta": 0.02333967534321181,
+        "next": "continue to seeds 29/47 and the registered three-seed decision",
+        "per_window": {
+          "research_a": {
+            "arm_window_means": {
+              "cand40": {
+                "long_short_return": 0.00035652128267616063,
+                "rank_ic": 0.04560996543072391,
+                "turnover": 1.4888101220387655
+              },
+              "ref10": {
+                "long_short_return": 2.6874494434336837e-05,
+                "rank_ic": 0.006586304813130069,
+                "turnover": 1.6669149318018666
+              }
+            },
+            "per_seed_mean_delta": {
+              "11": {
+                "long_short_return": 0.0003296467882418238,
+                "rank_ic": 0.03902366061759384,
+                "turnover": -0.17810480976310106
+              }
+            },
+            "worst_day_delta": 0.0002936084965594198
+          },
+          "research_b": {
+            "arm_window_means": {
+              "cand40": {
+                "long_short_return": -1.1447193423778966e-05,
+                "rank_ic": -0.0029437065409200327,
+                "turnover": 1.5992915021536254
+              },
+              "ref10": {
+                "long_short_return": -4.959520376825679e-05,
+                "rank_ic": -0.010599396609749807,
+                "turnover": 1.572472631012204
+              }
+            },
+            "per_seed_mean_delta": {
+              "11": {
+                "long_short_return": 3.8148010344477826e-05,
+                "rank_ic": 0.007655690068829774,
+                "turnover": 0.026818871141421452
+              }
+            },
+            "worst_day_delta": -9.334832721703639e-05
+          }
+        },
+        "period_mean_deltas": {
+          "research_a": 0.039023660617593846,
+          "research_b": 0.007655690068829775
+        },
+        "result": "pass",
+        "rule": "Screen at seed 11 before spending four more fits: the candidate must not degrade the retained 10-day reference in either research window and must clear the frozen worst-day guardrail in both. A failed screen ends this round; no other step count is searched afterwards.",
+        "schema_version": 1,
+        "seeds": [
+          11
+        ]
+      },
+      "stage": "full",
+      "step_effect": {
+        "comparison": "cand40 minus ctrl40",
+        "mean_rank_ic_delta": 0.007701378002008488,
+        "period_mean_deltas": {
+          "research_a": 0.004722921864628836,
+          "research_b": 0.010679834139388143
+        }
+      }
+    },
+    "intervals": [
+      {
+        "block_days": 5,
+        "confidence": 0.95,
+        "rows": [
+          {
+            "days": 10,
+            "interval": [
+              0.02771759460022153,
+              0.05327314319397423
+            ],
+            "mean": 0.04049536889709788,
+            "metric": "rank_ic",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.00022078862949236722,
+              0.0003649767444665876
+            ],
+            "mean": 0.0002927109871358249,
+            "metric": "long_short_return",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.12064489112227808,
+              -0.10586264656616425
+            ],
+            "mean": -0.11471943048576219,
+            "metric": "turnover",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.005554384962945041,
+              0.006278559468998019
+            ],
+            "mean": 0.00036208725302648884,
+            "metric": "rank_ic",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -5.525992207108257e-05,
+              -1.7727768784750482e-06
+            ],
+            "mean": -2.8516349474778803e-05,
+            "metric": "long_short_return",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.009380234505862627,
+              0.027388519980856608
+            ],
+            "mean": 0.018384377243359618,
+            "metric": "turnover",
+            "period": "research_b"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.012696559454274869,
+              0.026187422969898295
+            ],
+            "mean": 0.020428728075062182,
+            "metric": "rank_ic",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              9.022433715163674e-05,
+              0.00017313178528421461
+            ],
+            "mean": 0.00013209731883052306,
+            "metric": "long_short_return",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              -0.05371047948073705,
+              -0.04342506430964351
+            ],
+            "mean": -0.04816752662120129,
+            "metric": "turnover",
+            "period": "all"
+          }
+        ],
+        "samples": 20000,
+        "seed": 20261017
+      },
+      {
+        "block_days": 2,
+        "confidence": 0.95,
+        "rows": [
+          {
+            "days": 10,
+            "interval": [
+              0.024980449693556058,
+              0.05344856756728874
+            ],
+            "mean": 0.04049536889709788,
+            "metric": "rank_ic",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.00018782568288444593,
+              0.000385304072596323
+            ],
+            "mean": 0.0002927109871358249,
+            "metric": "long_short_return",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.12072864321608043,
+              -0.10368509212730329
+            ],
+            "mean": -0.11471943048576219,
+            "metric": "turnover",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.008983987172516611,
+              0.0055462939196782085
+            ],
+            "mean": 0.00036208725302648884,
+            "metric": "rank_ic",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.00011569707410680854,
+              3.041216567892296e-05
+            ],
+            "mean": -2.8516349474778803e-05,
+            "metric": "long_short_return",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.0048283082077051455,
+              0.027429079923426625
+            ],
+            "mean": 0.018384377243359618,
+            "metric": "turnover",
+            "period": "research_b"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.010894519659722102,
+              0.02696496716002782
+            ],
+            "mean": 0.020428728075062182,
+            "metric": "rank_ic",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              6.1019974925610667e-05,
+              0.00018511402394367466
+            ],
+            "mean": 0.00013209731883052306,
+            "metric": "long_short_return",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              -0.05530155259182824,
+              -0.0410799166965782
+            ],
+            "mean": -0.04816752662120129,
+            "metric": "turnover",
+            "period": "all"
+          }
+        ],
+        "samples": 20000,
+        "seed": 20261017
+      }
+    ],
+    "step_effect": {
+      "comparison": "cand40 minus ctrl40",
+      "gross_mean_delta": 8.54105467065046e-05,
+      "intervals": [
+        {
+          "block_days": 5,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                -0.0005288338550841414,
+                0.012084673250132277
+              ],
+              "mean": 0.004722921864628836,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                3.8965991954366375e-05,
+                0.00010393309765914377
+              ],
+              "mean": 7.095863546998064e-05,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.007112945680784843,
+                0.0079145728643216
+              ],
+              "mean": 0.0001286192869107694,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.008790639726018548,
+                0.022787767160699933
+              ],
+              "mean": 0.010679834139388143,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                6.516863763543574e-05,
+                0.0002008701807781905
+              ],
+              "mean": 9.986245794302852e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.07240180067001671,
+                0.09463208901651106
+              ],
+              "mean": 0.08448103613304617,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.005160886114300771,
+                0.015321961691359446
+              ],
+              "mean": 0.007701378002008488,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                6.907580763068963e-05,
+                0.00014587073260137462
+              ],
+              "mean": 8.54105467065046e-05,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.03433040948791578,
+                0.047427973199329954
+              ],
+              "mean": 0.04230482770997847,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        },
+        {
+          "block_days": 2,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                -0.003151630952803782,
+                0.015125782172721942
+              ],
+              "mean": 0.004722921864628836,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                1.2685395812300646e-05,
+                0.0001453997810707029
+              ],
+              "mean": 7.095863546998064e-05,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.014297678870543184,
+                0.012939698492462303
+              ],
+              "mean": 0.0001286192869107694,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.003634755216688092,
+                0.025240647839913283
+              ],
+              "mean": 0.010679834139388143,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -5.011788557069003e-05,
+                0.00024014592221752485
+              ],
+              "mean": 9.986245794302852e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.06182998324958124,
+                0.0987355527638191
+              ],
+              "mean": 0.08448103613304617,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                -0.00028083360897289097,
+                0.016928701295231392
+              ],
+              "mean": 0.007701378002008488,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                6.4474866969983415e-06,
+                0.0001647884855815492
+              ],
+              "mean": 8.54105467065046e-05,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.029097162710875805,
+                0.05223097369286908
+              ],
+              "mean": 0.04230482770997847,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        }
+      ],
+      "mean_rank_ic_delta": 0.007701378002008488,
+      "note": "Steps are the only treatment, so a positive contrast shows the extra optimization helped on the same 40-day pool, seeds and batch order. It cannot show that longer history beats recent data at equal compute.",
+      "per_window": {
+        "research_a": {
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 3.054847757837391e-05,
+              "rank_ic": -0.0018664139961020107,
+              "turnover": -0.027144651830581124
+            },
+            "29": {
+              "long_short_return": 0.0001499585351889346,
+              "rank_ic": 0.018214890664984953,
+              "turnover": 0.03102117731514742
+            },
+            "47": {
+              "long_short_return": 3.2368893642633375e-05,
+              "rank_ic": -0.0021797110749964474,
+              "turnover": -0.003490667623833321
+            }
+          },
+          "worst_day_delta": -5.7515262193656395e-05
+        },
+        "research_b": {
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 7.790782770796223e-05,
+              "rank_ic": 0.008597634375169892,
+              "turnover": 0.05078885498923191
+            },
+            "29": {
+              "long_short_return": 2.7783810970970375e-05,
+              "rank_ic": 0.00244315201619111,
+              "turnover": 0.00629002153625291
+            },
+            "47": {
+              "long_short_return": 0.00019389573515015296,
+              "rank_ic": 0.020998716026803425,
+              "turnover": 0.19636423187365382
+            }
+          },
+          "worst_day_delta": -1.57675933167052e-05
+        }
+      },
+      "period_mean_deltas": {
+        "research_a": 0.004722921864628836,
+        "research_b": 0.010679834139388143
+      },
+      "schema_version": 1,
+      "scope": "descriptive_mechanism_evidence_no_gates",
+      "turnover_mean_delta": 0.04230482770997847
+    }
+  },
+  "retained_version": "10-day seed11 research reference (unchanged)",
+  "reused_arms": {
+    "research_a": {
+      "ctrl40": {
+        "11": {
+          "predictions_sha256": "8bc774c897d63305c4226a920b8d79bd49703fceae3daa3242f1d6414892fc1e",
+          "weights_sha256": "80fd6ffd85d6715867b34b5fcfc49f8349ac43b0e0654943dc1a101f4a992bc3"
+        },
+        "29": {
+          "predictions_sha256": "3deb4abc70c04ea6cfc93ed9a87da9c23bf001e8e2c96947630e0a598a508295",
+          "weights_sha256": "11e08b5babc8b85177239bec25390b69b78488edd5ca7e727fa5c428ea774cbe"
+        },
+        "47": {
+          "predictions_sha256": "a83d5c8b3c73d297146c1e50fba043435e8a19614e9badba8f5927e8a0929e17",
+          "weights_sha256": "f51c9ee8240188245f6d3afa57ae5f49f5122ffef774805c6861e454e66b79a1"
+        }
+      },
+      "ref10": {
+        "11": {
+          "predictions_sha256": "a52d29ac81557aaa2114d4334f631cfc19680016af2934960522b628537fddd5",
+          "weights_sha256": "79b4729d5ba82d615d045f9d9d1ec7f1dc35f3780fcb3ece91a7178e1bef1ca5"
+        },
+        "29": {
+          "predictions_sha256": "21a160c0a5d06125977aa013b72aa460ce7ec45d215fd6afdf1d24d4b1b9aaeb",
+          "weights_sha256": "db2fedb708930371c127234bc3f27f04154af8d3b3c8b88f0a133a59d7cc06da"
+        },
+        "47": {
+          "predictions_sha256": "1caa8c354f4c3d2d037df339a881e02f65512ababbe6159961d9998a4309f89a",
+          "weights_sha256": "4bed435a2b7cdbe9fc50a2c56f95749af669ef9dc174fbfa17222b4e0bf5f7e4"
+        }
+      }
+    },
+    "research_b": {
+      "ctrl40": {
+        "11": {
+          "predictions_sha256": "ce73e6f27790243465afb8aed0303cbec736fd183d9fee1ee052ce36a4a342ab",
+          "weights_sha256": "cda51e62168ea67c42a30ca838eb63bc80591e2964f6d9a971d1c1f625fea0f9"
+        },
+        "29": {
+          "predictions_sha256": "8b557b840c2a2af29a077cef9eaa7c0ea77fbb56e9cc8d2cd2ff5869b5c54c96",
+          "weights_sha256": "dff7b118d83643c8e8b754f92b4c491b7cba5111208adbaad5bf2bee8df9a466"
+        },
+        "47": {
+          "predictions_sha256": "be461edd7a955a7508485746aebac25dcb05083627d602a4d8802ca68fb01e53",
+          "weights_sha256": "d9c51520ac04a6acd06a554db2dcd42cf56be031996335c677389881254d84a8"
+        }
+      },
+      "ref10": {
+        "11": {
+          "predictions_sha256": "be846b9508a6bbbe690be1ac88d4009ae71877578149b2f86effa418b152fae7",
+          "weights_sha256": "5448cbf9e1513ac4f67aa18347aa5c10255f094f070b9551cf1bcb402fa92261"
+        },
+        "29": {
+          "predictions_sha256": "4956885fabd07fd15465386c8446d406859ca972eb6825a4a3070dcbcb09a644",
+          "weights_sha256": "4466ee681cb0f82162572bc797b4f0dfe4a39871140570afe431f6b00d305a26"
+        },
+        "47": {
+          "predictions_sha256": "1509b4c69b041c41d7eb3b3e69a80d2b09ea50d07c86f2208e869f42f5a6dbd5",
+          "weights_sha256": "7a33e18b5e98b20aa335ac83458172486a9628c3c296247c4129c7aff3260217"
+        }
+      }
+    }
+  },
+  "schema_version": 1,
+  "seeds": {
+    "full": [
+      11,
+      29,
+      47
+    ],
+    "screen": [
+      11
+    ]
+  },
+  "steps": {
+    "candidate": 6000,
+    "control": 1500,
+    "reference": 1500
+  }
+}
