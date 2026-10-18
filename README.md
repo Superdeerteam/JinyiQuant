@@ -362,7 +362,7 @@ $env:PYTHONPATH = 'src;.'
 
 上一轮的完整时间戳去均值把平均RankIC抬高约0.043，却因研究B最差日护栏回退。本轮只检验一条更窄的假设：同一完整时间戳内先做截面z-score，再用一个训练池常数`c=std(z)/std(q)`把目标方差匹配到中心化标签的全池方差，使各截面的目标幅度可比；`target_std`仍是原始训练标签标准差，网络、输入、1500步、batch顺序、MSE、三种子×两窗口均不变。按冻结公式，`r=float64(float32(y))`，`z=r−μ_t`，`q=z/σ_t`（`σ_t=0`时保留样本并令`q=0`），`c=std(z)/std(q)`，`y*=float32(c q)`，所有标准差`ddof=0`且先于随机批次和历史掩码一次计算。推理仍为`network(x)*target_scale`，不乘回`c`，不补未来`μ_t、σ_t`；缺历史回退值沿用中心化对照的截距。该截面z-score有[Qlib CSZScoreNorm](https://github.com/microsoft/qlib/blob/main/qlib/data/dataset/processor.py#L305)的公开先例，但“全池方差匹配”是本项目的对照设计，不能称为直接复刻Qlib配置。
 
-[冻结计划](configs/label_cszscore_20261018_plan.json)、[脚本](scripts/run_label_cszscore.py)与[行为测试](tests/test_label_cszscore.py)在首个训练前固定六次训练、原改善门槛0.011647、最差日容忍1.3897e-4、6次有效训练/最多12次启动和9000秒整轮上限；原始10日参考与中心化对照的六份权重、预测、训练键、原始标签和配置在准备阶段核对后复用，不重训。seed11只记录进度，六次全部完成后才判定。六个任务均一次完成，1500步、48,000次样本暴露，实际峰值RSS约2,930 MiB，训练与推理合计1,841秒，无重试。
+[冻结计划](configs/label_cszscore_20261018_plan.json)、[脚本](scripts/run_label_cszscore.py)与[行为测试](tests/test_label_cszscore.py)在首个训练前固定六次训练、原改善门槛0.011647、最差日容忍1.3897e-4、6次有效训练/最多12次启动和9000秒整轮上限；原始10日参考与中心化对照的六份权重、预测、训练键、原始标签和配置在准备阶段核对后复用，不重训。seed11只记录进度，六次全部完成后才判定。六个任务均一次完成，1500步、48,000次样本暴露，实际峰值RSS约2,930 MiB，执行阶段（训练、推理与分析）合计1,841秒，无重试。
 
 ```powershell
 $env:PYTHONPATH = 'src;.'
