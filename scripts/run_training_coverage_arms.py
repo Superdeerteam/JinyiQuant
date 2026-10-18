@@ -637,10 +637,17 @@ def fit_worker(plan, window, arm, config, output, rec):
     if config.model.max_steps is None or progress["steps"] != config.model.max_steps:
         raise ValueError("Did not complete exactly the frozen optimizer steps")
     rec.event("training", "completed", **progress)
+    raw_std = float(targets.target.to_numpy(dtype=np.float32)[mask].astype(np.float64).std())
+    centering = model.target_centering_stats
     write_json(output / "training.json", {**progress, "target_scale": model.target_scale, "arm": arm,
-        "training_days": len(dates), "prediction_units": "original_label_return",
+        "training_days": len(dates),
+        "prediction_units": ("relative_return_score" if config.model.target_centering != "none"
+                             else "original_label_return"),
         "evaluation_labels_loaded": False,
-        "training_std": float(targets.target.to_numpy(dtype=np.float32)[mask].astype(np.float64).std())})
+        "training_std": raw_std, "raw_target_std": raw_std,
+        "target_centering": config.model.target_centering,
+        "target_centering_stats": centering,
+        "centered_target_std": None if centering is None else centering["selected_centered_std"]})
     rec.event("saving", "started")
     model.save(output / "model.pt")
     model.export_text(output / "modified_tlob_weights.json")
@@ -655,6 +662,21 @@ def fit_worker(plan, window, arm, config, output, rec):
         del restored
     checks.append(check("training_only_target_scale", np.isclose(model.target_scale,
         targets.target.to_numpy(dtype=np.float32)[mask].astype(np.float64).std(), atol=1e-14, rtol=1e-10)))
+    if config.model.target_centering != "none":
+        checks.append(check("target_centering_covers_every_full_timestamp",
+                            centering is not None and centering["timestamps"] == len(dates) * len(times)
+                            and centering["rows"] == len(targets)
+                            and centering["mask_excluded_rows"] == 0,
+                            timestamps=None if centering is None else centering["timestamps"],
+                            mask_excluded=None if centering is None else centering["mask_excluded_rows"]))
+        checks.append(check("target_centering_is_zero_mean_within_timestamp",
+                            centering is not None
+                            and centering["max_abs_centered_timestamp_mean"] < 1e-12))
+        checks.append(check("target_scale_is_raw_label_std_not_centered_std",
+                            centering is not None and np.isclose(model.target_scale, raw_std, atol=1e-14, rtol=1e-10)
+                            and centering["selected_centered_std"] < raw_std,
+                            target_scale=model.target_scale, raw_std=raw_std,
+                            centered_std=None if centering is None else centering["selected_centered_std"]))
     if not save_checks(output, checks):
         raise ValueError("Model save/load or scale check failed")
     del probe, batch, model, targets
@@ -675,6 +697,12 @@ def infer_worker(plan, window, arm, config, paths, output, rec):
     rec.event("loading", "started", arm=arm, paths={str(s): str(p) for s, p in paths.items()})
     models = {seed: TLOBAdapter.load(path, device=config.model.device, recorder=rec) for seed, path in paths.items()}
     weight_hashes = {str(seed): file_sha256(path) for seed, path in paths.items()}
+    checks.append(check("checkpoints_use_declared_target_centering",
+                        all(model.config["target_centering"] == config.model.target_centering
+                            for model in models.values()),
+                        expected=config.model.target_centering,
+                        observed={str(seed): model.config["target_centering"]
+                                  for seed, model in models.items()}))
     rec.event("loading", "completed", weight_hashes=weight_hashes)
     for index, (dates, first, last) in enumerate(evaluation_chunks(window)):
         started = time.monotonic()

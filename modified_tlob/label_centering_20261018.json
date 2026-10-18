@@ -1,0 +1,2770 @@
+{
+  "candidate_status": "not promoted",
+  "conclusion": "With only the training label changed (raw official return -> official return minus the full-timestamp training-pool mean, raw-label target_std kept), the seed-mean paired daily all-eight-time RankIC difference against the retained raw-label 10-day/1500 reference was +0.043121 against the unchanged floor of 0.011647; per window research_a: +0.060710, research_b: +0.025531. Seed 11 progress was +0.025159 and is not part of the decision. Error reporting, kept separate from ranking: research_a: raw-label MSE 1.032584e-05, centered-label MSE 8.785327e-06, training centered loss 1.240359e-05 (seed 11); research_b: raw-label MSE 1.551679e-05, centered-label MSE 1.129793e-05, training centered loss 1.483013e-05 (seed 11). The candidate fails the predeclared gates worst_day_guardrail, so the raw-label 10-day reference is retained. The three seeds are complete; this is not evidence that every cross-sectional label transform is uninformative.",
+  "deployment_seed": 11,
+  "execution": {
+    "fits": [
+      {
+        "attempt": 2,
+        "centering": {
+          "centered_std": 0.003552189696783185,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+          "min_rows_per_timestamp": 999,
+          "raw_std": 0.0038659661156313857,
+          "rows": 79920,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2849.90234375,
+          "wall_seconds": 245.61342330000116
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s11",
+        "seed": 11,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.003552189696783185,
+          "loss": 1.2403587195326072e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.0038659661156313857,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857
+        },
+        "weights_sha256": "4fcec169abfd1fe01d2cd857d743f0453ccd2d1182ef573ffb68bdcd65315ac3",
+        "window": "research_a"
+      },
+      {
+        "attempt": 1,
+        "centering": {
+          "centered_std": 0.0038206402043766408,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+          "min_rows_per_timestamp": 1000,
+          "raw_std": 0.004753065955907003,
+          "rows": 80000,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2875.703125,
+          "wall_seconds": 236.38980129999982
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s11",
+        "seed": 11,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.0038206402043766408,
+          "loss": 1.4830126241288287e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.004753065955907003,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003
+        },
+        "weights_sha256": "420d584be194f9065924aef5bf25903dc02500154278a07cd5898c906bd464a7",
+        "window": "research_b"
+      },
+      {
+        "attempt": 1,
+        "centering": {
+          "centered_std": 0.003552189696783185,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+          "min_rows_per_timestamp": 999,
+          "raw_std": 0.0038659661156313857,
+          "rows": 79920,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2834.0234375,
+          "wall_seconds": 227.0678197999987
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s29",
+        "seed": 29,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.003552189696783185,
+          "loss": 1.2570142817383577e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.0038659661156313857,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857
+        },
+        "weights_sha256": "9b294727b7d0ff9143f07640b8062891309d032b701b6a8b07f75695ae126c3d",
+        "window": "research_a"
+      },
+      {
+        "attempt": 1,
+        "centering": {
+          "centered_std": 0.003552189696783185,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+          "min_rows_per_timestamp": 999,
+          "raw_std": 0.0038659661156313857,
+          "rows": 79920,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2872.90234375,
+          "wall_seconds": 221.07827030000044
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s47",
+        "seed": 47,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.003552189696783185,
+          "loss": 1.2573004701583198e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.0038659661156313857,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857
+        },
+        "weights_sha256": "96c35d3bab4373e1dd14b8a31f69896139d240aab4269f996245f86c564d6b6f",
+        "window": "research_a"
+      },
+      {
+        "attempt": 1,
+        "centering": {
+          "centered_std": 0.0038206402043766408,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+          "min_rows_per_timestamp": 1000,
+          "raw_std": 0.004753065955907003,
+          "rows": 80000,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2876.26171875,
+          "wall_seconds": 224.44125649999842
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s29",
+        "seed": 29,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.0038206402043766408,
+          "loss": 1.4456616099101027e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.004753065955907003,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003
+        },
+        "weights_sha256": "b2b42e66546b0408de796380a42e8d429d8fdd8d1f75c2b0f930c7d6dee41c93",
+        "window": "research_b"
+      },
+      {
+        "attempt": 1,
+        "centering": {
+          "centered_std": 0.0038206402043766408,
+          "mask_excluded_rows": 0,
+          "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+          "min_rows_per_timestamp": 1000,
+          "raw_std": 0.004753065955907003,
+          "rows": 80000,
+          "timestamps": 80
+        },
+        "resources": {
+          "peak_rss_mb": 2907.75,
+          "wall_seconds": 225.91920980000214
+        },
+        "run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s47",
+        "seed": 47,
+        "steps": 1500,
+        "training": {
+          "centered_target_std": 0.0038206402043766408,
+          "loss": 1.4432234292475562e-05,
+          "loss_units": "centered_return_squared",
+          "prediction_units": "relative_return_score",
+          "raw_target_std": 0.004753065955907003,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003
+        },
+        "weights_sha256": "ff535c16df6de66935bf964ab997a701a3352ec0f5e746b4c99c6addd6347bc9",
+        "window": "research_b"
+      }
+    ],
+    "manifest_sha256": "a0473d7b4c03f81a331ab53f6c4a028e9c72f5a7dda1c7b0b0018e8500c4507b",
+    "new_training_fits": 6,
+    "progress_seed11": {
+      "checks": {
+        "research_a_cand_centered_s11_answer_coverage": true,
+        "research_a_cand_centered_s11_complete_correlation_coverage": true,
+        "research_a_cand_centered_s11_exact_ten_day_eight_time_grid": true,
+        "research_a_ref10_s11_answer_coverage": true,
+        "research_a_ref10_s11_complete_correlation_coverage": true,
+        "research_a_ref10_s11_exact_ten_day_eight_time_grid": true,
+        "research_b_cand_centered_s11_answer_coverage": true,
+        "research_b_cand_centered_s11_complete_correlation_coverage": true,
+        "research_b_cand_centered_s11_exact_ten_day_eight_time_grid": true,
+        "research_b_ref10_s11_answer_coverage": true,
+        "research_b_ref10_s11_complete_correlation_coverage": true,
+        "research_b_ref10_s11_exact_ten_day_eight_time_grid": true
+      },
+      "descriptive_only": true,
+      "gross_mean_delta": 0.0001919685353986236,
+      "intervals": [
+        {
+          "block_days": 5,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                0.027661913488275968,
+                0.06843833510218053
+              ],
+              "mean": 0.04805012429522826,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.00028905945912473735,
+                0.0005145904129271828
+              ],
+              "mean": 0.00040182493602596004,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.2585427135678393,
+                -0.20565326633165823
+              ],
+              "mean": -0.23209798994974876,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.011240106001914203,
+                0.005400915124093178
+              ],
+              "mean": 0.0022672283131310923,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.0001937132564075208,
+                -1.4398081709027315e-06
+              ],
+              "mean": -1.7887865228712915e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.029522613065326643,
+                0.053014447236180914
+              ],
+              "mean": 0.03301722900215365,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.01077985970564732,
+                0.03228267892947046
+              ],
+              "mean": 0.02515867630417968,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                7.662395359075275e-05,
+                0.0002265770423783993
+              ],
+              "mean": 0.0001919685353986236,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                -0.11096105527638196,
+                -0.08279367821249098
+              ],
+              "mean": -0.09954038047379755,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        },
+        {
+          "block_days": 2,
+          "confidence": 0.95,
+          "rows": [
+            {
+              "days": 10,
+              "interval": [
+                0.02702626658556258,
+                0.06521916494091409
+              ],
+              "mean": 0.04805012429522826,
+              "metric": "rank_ic",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.00027640315734122326,
+                0.0005158428772823263
+              ],
+              "mean": 0.00040182493602596004,
+              "metric": "long_short_return",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.2731155778894473,
+                -0.18724874371859296
+              ],
+              "mean": -0.23209798994974876,
+              "metric": "turnover",
+              "period": "research_a"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.016619473351894926,
+                0.019008482290311397
+              ],
+              "mean": 0.0022672283131310923,
+              "metric": "rank_ic",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                -0.00021969241664293224,
+                0.00017498752401240767
+              ],
+              "mean": -1.7887865228712915e-05,
+              "metric": "long_short_return",
+              "period": "research_b"
+            },
+            {
+              "days": 10,
+              "interval": [
+                0.009980213567839225,
+                0.05734873250179468
+              ],
+              "mean": 0.03301722900215365,
+              "metric": "turnover",
+              "period": "research_b"
+            },
+            {
+              "days": 20,
+              "interval": [
+                0.010567596051138066,
+                0.03674624586652529
+              ],
+              "mean": 0.02515867630417968,
+              "metric": "rank_ic",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                6.740758828690262e-05,
+                0.00029998600058460964
+              ],
+              "mean": 0.0001919685353986236,
+              "metric": "long_short_return",
+              "period": "all"
+            },
+            {
+              "days": 20,
+              "interval": [
+                -0.12248860317211058,
+                -0.07393205929199569
+              ],
+              "mean": -0.09954038047379755,
+              "metric": "turnover",
+              "period": "all"
+            }
+          ],
+          "samples": 20000,
+          "seed": 20261017
+        }
+      ],
+      "mean_rank_ic_delta": 0.02515867630417968,
+      "note": "Progress display only. The round always completes seeds 29 and 47; this comparison cannot accept, reject or stop the experiment.",
+      "per_window": [
+        {
+          "arm_window_means": {
+            "cand_centered": {
+              "long_short_return": 0.0004286994304602969,
+              "rank_ic": 0.05463642910835833,
+              "turnover": 1.4348169418521177
+            },
+            "ref10": {
+              "long_short_return": 2.6874494434336837e-05,
+              "rank_ic": 0.006586304813130069,
+              "turnover": 1.6669149318018666
+            }
+          },
+          "days": 10,
+          "min_day_delta": 0.00016110042213220285,
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 0.0004018249360259601,
+              "rank_ic": 0.04805012429522826,
+              "turnover": -0.23209798994974884
+            }
+          },
+          "per_seed_metrics": {
+            "11": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": 7.100879362382327e-05,
+                "ic_mean": 0.054275914001092475,
+                "local_approximation": true,
+                "long_return_mean": 0.0001402177034069197,
+                "long_short_return_mean": 0.0004286994304602969,
+                "long_short_sharpe": 24.833861020214396,
+                "mae": 0.0020940829879192565,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": 7.100879362382327e-05,
+                "mse": 1.0325842612950075e-05,
+                "rank_ic_ir": 2.3520301827238943,
+                "rank_ic_mean": 0.05463642910835833,
+                "rank_persistence_mean": 0.20280632680565353,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.0001276967571659565,
+                "short_return_mean": -0.0002884817270533772,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.4348169418521177,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.000289176947171676,
+                "ic_mean": 0.008344993258457566,
+                "local_approximation": true,
+                "long_return_mean": -7.081056926290573e-05,
+                "long_short_return_mean": 2.6874494434336837e-05,
+                "long_short_sharpe": 1.8028457846549981,
+                "mae": 0.0021399955699479356,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.000289176947171676,
+                "mse": 1.07289917958255e-05,
+                "rank_ic_ir": 0.2697321300920331,
+                "rank_ic_mean": 0.006586304813130069,
+                "rank_persistence_mean": -0.11194116937110118,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.000917778865388225,
+                "short_return_mean": -9.768506369724257e-05,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.6669149318018666,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            }
+          },
+          "period": "research_a",
+          "worst_day_delta": 0.0003601857407954992
+        },
+        {
+          "arm_window_means": {
+            "cand_centered": {
+              "long_short_return": -6.74830689969697e-05,
+              "rank_ic": -0.008332168296618715,
+              "turnover": 1.6054898600143577
+            },
+            "ref10": {
+              "long_short_return": -4.959520376825679e-05,
+              "rank_ic": -0.010599396609749807,
+              "turnover": 1.572472631012204
+            }
+          },
+          "days": 10,
+          "min_day_delta": -0.00034679099372694126,
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": -1.7887865228712902e-05,
+              "rank_ic": 0.002267228313131092,
+              "turnover": 0.03301722900215376
+            }
+          },
+          "per_seed_metrics": {
+            "11": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0004621442260903926,
+                "ic_mean": -0.0048934098673595735,
+                "local_approximation": true,
+                "long_return_mean": 9.773621411459541e-05,
+                "long_short_return_mean": -6.74830689969697e-05,
+                "long_short_sharpe": -3.864260326615171,
+                "mae": 0.002757477782346589,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0004621442260903926,
+                "mse": 1.5516792361670524e-05,
+                "rank_ic_ir": -0.3693676367291946,
+                "rank_ic_mean": -0.008332168296618715,
+                "rank_persistence_mean": -0.00570501618441986,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.00019605022705177275,
+                "short_return_mean": 0.0001652192831115651,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.6054898600143577,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.00030116088435618087,
+                "ic_mean": -0.00790562542333589,
+                "local_approximation": true,
+                "long_return_mean": 0.00016035361737412815,
+                "long_short_return_mean": -4.959520376825679e-05,
+                "long_short_sharpe": -4.8355311719325895,
+                "mae": 0.0032291835946196964,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.00030116088435618087,
+                "mse": 1.9442401473140063e-05,
+                "rank_ic_ir": -0.567298676088852,
+                "rank_ic_mean": -0.010599396609749807,
+                "rank_persistence_mean": 0.03167852376798302,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.001817235484522939,
+                "short_return_mean": 0.00020994882114238494,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.572472631012204,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            }
+          },
+          "period": "research_b",
+          "worst_day_delta": -0.00016098334173421174
+        }
+      ],
+      "period_mean_deltas": {
+        "research_a": 0.04805012429522826,
+        "research_b": 0.0022672283131310914
+      },
+      "schema_version": 1,
+      "seeds": [
+        11
+      ],
+      "turnover_mean_delta": -0.09954038047379755,
+      "worst_day_delta": {
+        "research_a": 0.0003601857407954992,
+        "research_b": -0.00016098334173421174
+      }
+    },
+    "recovery": {
+      "new_training": 0,
+      "reason": "The six fits and inferences completed, but the original archive failed while writing the diagnostic centered-label report: float32 subtraction collapsed two near-tied labels and changed one day's rank IC. The diagnostic now centers in float64. No model is retrained.",
+      "reused_attempts": [
+        {
+          "arm": "cand_centered",
+          "attempt": 2,
+          "centering": {
+            "centered_std": 0.003552189696783185,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+            "min_rows_per_timestamp": 999,
+            "raw_std": 0.0038659661156313857,
+            "rows": 79920,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s11",
+          "prior_interrupted_archives": [
+            "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085118.172798Z_11194164904e\\fits\\research_a_s11"
+          ],
+          "seed": 11,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.003552189696783185,
+            "loss": 1.2403587195326072e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.0038659661156313857,
+            "samples": 79920,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.0038659661156313857
+          },
+          "window": "research_a"
+        },
+        {
+          "arm": "cand_centered",
+          "attempt": 1,
+          "centering": {
+            "centered_std": 0.0038206402043766408,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+            "min_rows_per_timestamp": 1000,
+            "raw_std": 0.004753065955907003,
+            "rows": 80000,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s11",
+          "prior_interrupted_archives": [],
+          "seed": 11,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.0038206402043766408,
+            "loss": 1.4830126241288287e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.004753065955907003,
+            "samples": 80000,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.004753065955907003
+          },
+          "window": "research_b"
+        },
+        {
+          "arm": "cand_centered",
+          "attempt": 1,
+          "centering": {
+            "centered_std": 0.003552189696783185,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+            "min_rows_per_timestamp": 999,
+            "raw_std": 0.0038659661156313857,
+            "rows": 79920,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s29",
+          "prior_interrupted_archives": [],
+          "seed": 29,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.003552189696783185,
+            "loss": 1.2570142817383577e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.0038659661156313857,
+            "samples": 79920,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.0038659661156313857
+          },
+          "window": "research_a"
+        },
+        {
+          "arm": "cand_centered",
+          "attempt": 1,
+          "centering": {
+            "centered_std": 0.003552189696783185,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+            "min_rows_per_timestamp": 999,
+            "raw_std": 0.0038659661156313857,
+            "rows": 79920,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_a_s47",
+          "prior_interrupted_archives": [],
+          "seed": 47,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.003552189696783185,
+            "loss": 1.2573004701583198e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.0038659661156313857,
+            "samples": 79920,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.0038659661156313857
+          },
+          "window": "research_a"
+        },
+        {
+          "arm": "cand_centered",
+          "attempt": 1,
+          "centering": {
+            "centered_std": 0.0038206402043766408,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+            "min_rows_per_timestamp": 1000,
+            "raw_std": 0.004753065955907003,
+            "rows": 80000,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s29",
+          "prior_interrupted_archives": [],
+          "seed": 29,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.0038206402043766408,
+            "loss": 1.4456616099101027e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.004753065955907003,
+            "samples": 80000,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.004753065955907003
+          },
+          "window": "research_b"
+        },
+        {
+          "arm": "cand_centered",
+          "attempt": 1,
+          "centering": {
+            "centered_std": 0.0038206402043766408,
+            "mask_excluded_rows": 0,
+            "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+            "min_rows_per_timestamp": 1000,
+            "raw_std": 0.004753065955907003,
+            "rows": 80000,
+            "timestamps": 80
+          },
+          "path": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d\\fits\\research_b_s47",
+          "prior_interrupted_archives": [],
+          "seed": 47,
+          "status": "completed",
+          "steps": 1500,
+          "training": {
+            "centered_target_std": 0.0038206402043766408,
+            "loss": 1.4432234292475562e-05,
+            "loss_units": "centered_return_squared",
+            "prediction_units": "relative_return_score",
+            "raw_target_std": 0.004753065955907003,
+            "samples": 80000,
+            "samples_seen": 48000,
+            "steps": 1500,
+            "target_scale": 0.004753065955907003
+          },
+          "window": "research_b"
+        }
+      ],
+      "source_manifest_sha256": "654063f982bca8c017be56a7d4f6888b634975d522c4853466cbee292b55c6c0",
+      "source_run": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T085148.483602Z_e28ceedf078d"
+    },
+    "retries": null,
+    "run_dir": "D:\\进益资本杯\\runs\\label-centering-20261018\\20261018T092920.229347Z_208fdbce4f22"
+  },
+  "experiment_id": "label-centering-20261018",
+  "exposure": {
+    "research_a": {
+      "arms": {
+        "cand_centered": {
+          "epochs": 0.6006006006006006,
+          "sample_exposures": 48000,
+          "samples": 79920,
+          "steps": 1500
+        },
+        "ref10": {
+          "epochs": 0.6006006006006006,
+          "sample_exposures": 48000,
+          "samples": 79920,
+          "steps": 1500
+        }
+      },
+      "batch_size": 32,
+      "interpretation": "Both arms use 1500 x 32 = 48,000 sample exposures on the same 10 training dates and seeds; only the training-label definition differs.",
+      "steps": 1500
+    },
+    "research_b": {
+      "arms": {
+        "cand_centered": {
+          "epochs": 0.6,
+          "sample_exposures": 48000,
+          "samples": 80000,
+          "steps": 1500
+        },
+        "ref10": {
+          "epochs": 0.6,
+          "sample_exposures": 48000,
+          "samples": 80000,
+          "steps": 1500
+        }
+      },
+      "batch_size": 32,
+      "interpretation": "Both arms use 1500 x 32 = 48,000 sample exposures on the same 10 training dates and seeds; only the training-label definition differs.",
+      "steps": 1500
+    }
+  },
+  "final_views": 0,
+  "gates": {
+    "minimum_mean_gain": 0.01164665094206816,
+    "policy": {
+      "direction": "maximize",
+      "exposure_policy": "Steps, batch size, learning rate and recipe stay fixed for this round; a larger pool gets no extra steps because that would confound coverage with compute.",
+      "guardrails": {
+        "both_windows_improve": true,
+        "gross_interval_lower_at_least": -0.00010387476657357637,
+        "gross_mean_nondecreasing": true,
+        "turnover_interval_upper_at_most": 0.03706698237510122,
+        "turnover_mean_nonincreasing": true,
+        "worst_day_delta_at_least": -0.00013896761043335348
+      },
+      "interpretation_rule": "A non-accept result bounds what equal-compute date expansion achieves; it does not establish that more history is uninformative.",
+      "minimum_mean_gain": 0.01164665094206816,
+      "minimum_mean_gain_basis": {
+        "minimum_mean_gain": 0.01164665094206816,
+        "noise_multiplier": 1.0,
+        "noise_scaled": 0.01164665094206816,
+        "practical_improvement": 0.002,
+        "primary_metric": "rank_ic_mean"
+      },
+      "noise": {
+        "long_short_return_mean": 0.00010387476657357637,
+        "min_daily_long_short_return": 0.00013896761043335348,
+        "rank_ic_mean": 0.01164665094206816,
+        "turnover_mean": 0.03706698237510122
+      },
+      "primary_metric": "paired daily all-eight-time RankIC, seed-mean per day before pairing",
+      "statistics": {
+        "block_days": [
+          5,
+          2
+        ],
+        "bootstrap_samples": 20000,
+        "bootstrap_seed": 20261017,
+        "confidence": 0.95,
+        "paired": true,
+        "sensitivity_rule": "Report both block lengths; conflicting conclusions are inconclusive, and neither is chosen after seeing results.",
+        "window_stratified": true
+      }
+    },
+    "thresholds_status": "copied unchanged from the frozen 20261017 v4 calibration",
+    "worst_day_tolerance": 0.00013896761043335348
+  },
+  "hypothesis": "The raw-label 10-day/1500 reference spends capacity fitting a market-wide level that its cross-sectional LOB inputs cannot predict. Subtracting the full-timestamp training-pool mean removes that unlearnable component while keeping the raw-label target_std, so the MSE should focus on relative returns and improve out-of-sample RankIC under the unchanged gates.",
+  "label_centering": {
+    "assumption_status": "minimal unverified assumption for this project; the public precedent does not establish that demean-only labels improve this model",
+    "cross_section": "one complete timestamp of the frozen 10-day training pool, all stocks and all eight sample times; never a random mini-batch",
+    "evaluation": "official raw labels for every reported ranking, long-short, turnover and raw MSE; a centered-label diagnostic is reported separately and never selects the model",
+    "formula": "y* = official return - group mean by full timestamp over the selected training pool",
+    "inference": "direct relative score from the fitted network times the raw-label target_std; no label read and no future timestamp mean added back",
+    "per_window": {
+      "research_a": {
+        "centered_mean": -1.42389714744843e-20,
+        "centered_std": 0.003552189696783185,
+        "formula": "official return - mean official return over every training stock at the same full timestamp",
+        "label_source": "official training labels only",
+        "max_abs_centered_timestamp_mean": 4.176186145870091e-19,
+        "max_abs_timestamp_mean": 0.004582335550186873,
+        "mean_abs_timestamp_mean": 0.001162258665096264,
+        "min_rows_per_timestamp": 999,
+        "raw_mean": -0.00025962943231619943,
+        "raw_std": 0.0038659661156313857,
+        "rms_timestamp_mean": 0.0015475948460117865,
+        "rows": 79920,
+        "scope": "every selected training row of each full timestamp; computed once before mini-batches and before the min-history mask",
+        "target_std_basis": "raw official training label standard deviation (not the centered standard deviation)",
+        "timestamp_means_sha256": "0543f9f28a429fcd2fce49c59f0e9d88f9ae3d5e6b807b021be5dcdeb75c2d49",
+        "timestamps": 80
+      },
+      "research_b": {
+        "centered_mean": 1.43982048506075e-20,
+        "centered_std": 0.0038206402043766408,
+        "formula": "official return - mean official return over every training stock at the same full timestamp",
+        "label_source": "official training labels only",
+        "max_abs_centered_timestamp_mean": 1.0269562977782697e-18,
+        "max_abs_timestamp_mean": 0.00836927746657614,
+        "mean_abs_timestamp_mean": 0.0022695944708478652,
+        "min_rows_per_timestamp": 1000,
+        "raw_mean": 0.0005795379168918638,
+        "raw_std": 0.004753065955907003,
+        "rms_timestamp_mean": 0.002886210076730094,
+        "rows": 80000,
+        "scope": "every selected training row of each full timestamp; computed once before mini-batches and before the min-history mask",
+        "target_std_basis": "raw official training label standard deviation (not the centered standard deviation)",
+        "timestamp_means_sha256": "22a226248e952875497fd6437b16cf0dbd888c9dab722b5578774f1386b935fb",
+        "timestamps": 80
+      }
+    },
+    "public_precedent": {
+      "url": "https://github.com/microsoft/qlib/blob/main/qlib/data/dataset/processor.py",
+      "use": "Qlib applies cross-sectional processors per datetime; this round borrows only the per-timestamp mean subtraction and does not claim an equivalent validated label recipe."
+    },
+    "timestamps_per_window": {
+      "research_a": 80,
+      "research_b": 80
+    }
+  },
+  "limitations": [
+    "Two research windows and three seeds are selection data, not independent confirmation.",
+    "Demeaning only is a minimal assumption with a public cross-sectional-processing precedent; this round does not establish that it is the best label transform or that it works elsewhere.",
+    "The target_std remains the raw-label standard deviation by design, so the centered and raw arms share one scale rather than an optimally rescaled centered target.",
+    "Raw-label MSE and centered-label MSE measure different targets; neither replaces the official competition score.",
+    "Confirmation, locked and legacy final ranges were not opened; the platform time and memory limits remain unverified."
+  ],
+  "model_promoted": false,
+  "next_steps": [
+    "If rejected, test a different scaling basis or label transform only after a new pre-registration; do not retune this round after seeing its result.",
+    "If accepted, run a separately frozen confirmation on untouched dates before any platform claim."
+  ],
+  "only_factor": "training label raw official return -> official return minus the mean official return over every training stock at the same full timestamp; target_std stays the raw-label std; network, inputs, 1500 steps, batch order, MSE, seeds and dates fixed",
+  "plan": {
+    "path": "D:\\进益资本杯\\configs\\label_centering_20261018_plan.json",
+    "sha256": "086f8aed2547985ea97cdaac3371bd45992cf4e6a9a91dac176027906fc68730"
+  },
+  "platform_verified": false,
+  "recipe_fixed": {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "lookback": 128,
+    "loss": "MSE",
+    "raw12": true,
+    "sample_times": 8,
+    "sampler": "torch.randperm(seed) unchanged",
+    "smoothing": "none",
+    "steps": 1500,
+    "target_scaling": "train_std",
+    "target_std_fit": "raw official selected training labels, full 10-day pool",
+    "time_loss_weighting": "none"
+  },
+  "recorded_at_utc": "2026-10-18T09:30:37.823105+00:00",
+  "reference_source": {
+    "manifest_status": "failed",
+    "note": "The six raw-label fits completed; that run failed only after training while writing its analysis. Its own prediction files and the completed analysis-recovery archive are reused.",
+    "run": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\20261017T064944.073834Z_193b03ead7ff",
+    "scoring_run": "D:\\进益资本杯\\runs\\fixed-seed-ensemble-20261017\\analysis-recovery\\20261017T091219.300500Z_7c40b5b5d26d"
+  },
+  "results": {
+    "decision": {
+      "action": "retain_10_day_reference",
+      "checks": {
+        "both_windows_improve": true,
+        "gross_mean_nondecreasing": true,
+        "inference_cost_measured": true,
+        "minimum_mean_gain": true,
+        "turnover_mean_nonincreasing": true,
+        "worst_day_guardrail": false
+      },
+      "cost_measured": true,
+      "exposure": {
+        "research_a": {
+          "arms": {
+            "cand_centered": {
+              "epochs": 0.6006006006006006,
+              "sample_exposures": 48000,
+              "samples": 79920,
+              "steps": 1500
+            },
+            "ref10": {
+              "epochs": 0.6006006006006006,
+              "sample_exposures": 48000,
+              "samples": 79920,
+              "steps": 1500
+            }
+          },
+          "batch_size": 32,
+          "interpretation": "Both arms use 1500 x 32 = 48,000 sample exposures on the same 10 training dates and seeds; only the training-label definition differs.",
+          "steps": 1500
+        },
+        "research_b": {
+          "arms": {
+            "cand_centered": {
+              "epochs": 0.6,
+              "sample_exposures": 48000,
+              "samples": 80000,
+              "steps": 1500
+            },
+            "ref10": {
+              "epochs": 0.6,
+              "sample_exposures": 48000,
+              "samples": 80000,
+              "steps": 1500
+            }
+          },
+          "batch_size": 32,
+          "interpretation": "Both arms use 1500 x 32 = 48,000 sample exposures on the same 10 training dates and seeds; only the training-label definition differs.",
+          "steps": 1500
+        }
+      },
+      "final_views": 0,
+      "interpretation": "A non-accept result rejects the claim that full-timestamp label demeaning improves the retained raw-label 10-day/1500 reference under the unchanged gates. It does not show that every cross-sectional label transform or target scale is uninformative.",
+      "interval_checks": [
+        {
+          "block_days": 5,
+          "gross_lower_above_negative_noise": true,
+          "positive_rank_ic_lower": true,
+          "turnover_upper_below_noise": true
+        },
+        {
+          "block_days": 2,
+          "gross_lower_above_negative_noise": true,
+          "positive_rank_ic_lower": true,
+          "turnover_upper_below_noise": true
+        }
+      ],
+      "limitations": "Two research windows and three seeds are selection data; local gross metrics exclude fees and slippage; the platform time and memory limits remain unverified.",
+      "mean_rank_ic_delta": 0.04312057841429788,
+      "minimum_mean_gain": 0.01164665094206816,
+      "model_promoted": false,
+      "only_factor": "training label raw official return -> official return minus the mean official return over every training stock at the same full timestamp; target_std stays the raw-label std; network, inputs, 1500 steps, batch order, MSE, seeds and dates fixed",
+      "period_mean_deltas": {
+        "research_a": 0.060710163407248365,
+        "research_b": 0.02553099342134741
+      },
+      "platform_verified": false,
+      "progress_seed11": {
+        "descriptive_only": true,
+        "mean_rank_ic_delta": 0.02515867630417968,
+        "period_mean_deltas": {
+          "research_a": 0.04805012429522826,
+          "research_b": 0.0022672283131310914
+        },
+        "worst_day_delta": {
+          "research_a": 0.0003601857407954992,
+          "research_b": -0.00016098334173421174
+        }
+      },
+      "result": "reject",
+      "schema_version": 1,
+      "scope": "local_research_only",
+      "stage": "full"
+    },
+    "inference_cost": {
+      "research_a": {
+        "arm": "cand_centered",
+        "chunks": [
+          {
+            "chunk": 0,
+            "dates": [
+              "2023-11-01",
+              "2023-11-02",
+              "2023-11-03",
+              "2023-11-06",
+              "2023-11-07"
+            ],
+            "per_seed_seconds": {
+              "11": 24.973798399998486,
+              "29": 25.330002399998193,
+              "47": 25.154568799996923
+            },
+            "resources": {
+              "cpu_seconds": 63.640625,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1887.51953125
+            },
+            "same_keys_sha256": "66a98f47d68a79a83c81bf75b115ab3bdf92f7136152fe7a92bc0563824fba43",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 28.266692400000466,
+            "timing_order": [
+              11,
+              29,
+              47
+            ]
+          },
+          {
+            "chunk": 1,
+            "dates": [
+              "2023-11-08",
+              "2023-11-09",
+              "2023-11-10",
+              "2023-11-13",
+              "2023-11-14"
+            ],
+            "per_seed_seconds": {
+              "11": 20.649789999999484,
+              "29": 20.31053459999748,
+              "47": 20.707194300000992
+            },
+            "resources": {
+              "cpu_seconds": 124.125,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 1979.37109375
+            },
+            "same_keys_sha256": "524df875913f1fdd6f635741f7f2de982ace2806c88706139a6451c3f8d92316",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 27.783982500001002,
+            "timing_order": [
+              47,
+              29,
+              11
+            ]
+          }
+        ],
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 56.05067490000147,
+        "total_seconds": 193.17656339999303
+      },
+      "research_b": {
+        "arm": "cand_centered",
+        "chunks": [
+          {
+            "chunk": 0,
+            "dates": [
+              "2024-03-01",
+              "2024-03-04",
+              "2024-03-05",
+              "2024-03-06",
+              "2024-03-07"
+            ],
+            "per_seed_seconds": {
+              "11": 20.92550609999671,
+              "29": 21.063914999998815,
+              "47": 20.38303349999842
+            },
+            "resources": {
+              "cpu_seconds": 63.859375,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 2010.20703125
+            },
+            "same_keys_sha256": "e5212f534d41bc0ce1416000348004407bcdd73b743198e879a4e85c2965b397",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 23.256578900000022,
+            "timing_order": [
+              11,
+              29,
+              47
+            ]
+          },
+          {
+            "chunk": 1,
+            "dates": [
+              "2024-03-08",
+              "2024-03-11",
+              "2024-03-12",
+              "2024-03-13",
+              "2024-03-14"
+            ],
+            "per_seed_seconds": {
+              "11": 21.124126099999557,
+              "29": 20.414272800000617,
+              "47": 20.37685430000056
+            },
+            "resources": {
+              "cpu_seconds": 124.078125,
+              "device": "cuda",
+              "gpu_memory_mb": 78.12060546875,
+              "gpu_peak_memory_mb": 89.05810546875,
+              "rss_mb": 2081.046875
+            },
+            "same_keys_sha256": "d79b14dc7e56baaf1742c86be55847ce16d8e3ef87cfe577ed0dc55bf8baabf9",
+            "samples": 40000,
+            "shared_preprocessing_seconds": 23.278574500000104,
+            "timing_order": [
+              47,
+              29,
+              11
+            ]
+          }
+        ],
+        "measurement": "Synchronized CUDA; same full input keys; warmup excluded; shared preprocessing reported separately",
+        "platform_verified": false,
+        "shared_preprocessing_seconds": 46.53515340000013,
+        "total_seconds": 170.8228611999948
+      }
+    },
+    "intervals": [
+      {
+        "block_days": 5,
+        "confidence": 0.95,
+        "rows": [
+          {
+            "days": 10,
+            "interval": [
+              0.03793140430753378,
+              0.08348892250696296
+            ],
+            "mean": 0.06071016340724835,
+            "metric": "rank_ic",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.00033346831690009304,
+              0.0005949465726411618
+            ],
+            "mean": 0.00046420744477062735,
+            "metric": "long_short_return",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.332998324958124,
+              -0.29526202440775307
+            ],
+            "mean": -0.3141301746829385,
+            "metric": "turnover",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.010799469448957561,
+              0.03164261750493443
+            ],
+            "mean": 0.02553099342134741,
+            "metric": "rank_ic",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              3.113976306958647e-05,
+              0.00022401182938142344
+            ],
+            "mean": 0.00016971101256483387,
+            "metric": "long_short_return",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.07445561139028486,
+              -0.05385259631490795
+            ],
+            "mean": -0.07265909906676245,
+            "metric": "turnover",
+            "period": "research_b"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.029187225844273024,
+              0.05206976102033899
+            ],
+            "mean": 0.04312057841429788,
+            "metric": "rank_ic",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.00020112737853284903,
+              0.0003638228606572858
+            ],
+            "mean": 0.00031695922866773065,
+            "metric": "long_short_return",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              -0.20055693646805456,
+              -0.17705559045226132
+            ],
+            "mean": -0.1933946368748505,
+            "metric": "turnover",
+            "period": "all"
+          }
+        ],
+        "samples": 20000,
+        "seed": 20261017
+      },
+      {
+        "block_days": 2,
+        "confidence": 0.95,
+        "rows": [
+          {
+            "days": 10,
+            "interval": [
+              0.03488119440564971,
+              0.07934300795731528
+            ],
+            "mean": 0.06071016340724835,
+            "metric": "rank_ic",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.00030781912671044387,
+              0.0005801329547260824
+            ],
+            "mean": 0.00046420744477062735,
+            "metric": "long_short_return",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.3387712371380712,
+              -0.289928810720268
+            ],
+            "mean": -0.3141301746829385,
+            "metric": "turnover",
+            "period": "research_a"
+          },
+          {
+            "days": 10,
+            "interval": [
+              0.009252031863751904,
+              0.03987496447617894
+            ],
+            "mean": 0.02553099342134741,
+            "metric": "rank_ic",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              1.4966900817431803e-05,
+              0.00030832834336939056
+            ],
+            "mean": 0.00016971101256483387,
+            "metric": "long_short_return",
+            "period": "research_b"
+          },
+          {
+            "days": 10,
+            "interval": [
+              -0.0905858159846854,
+              -0.0507732412060302
+            ],
+            "mean": -0.07265909906676245,
+            "metric": "turnover",
+            "period": "research_b"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.02743438573885741,
+              0.05434074663987135
+            ],
+            "mean": 0.04312057841429788,
+            "metric": "rank_ic",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              0.0002000627265401165,
+              0.0004010427104115723
+            ],
+            "mean": 0.00031695922866773065,
+            "metric": "long_short_return",
+            "period": "all"
+          },
+          {
+            "days": 20,
+            "interval": [
+              -0.2081373444603973,
+              -0.17677608204714051
+            ],
+            "mean": -0.1933946368748505,
+            "metric": "turnover",
+            "period": "all"
+          }
+        ],
+        "samples": 20000,
+        "seed": 20261017
+      }
+    ],
+    "windows": {
+      "research_a": {
+        "error_report": {
+          "cand_centered": {
+            "11": {
+              "centered_target_std": 0.003552189696783185,
+              "diagnostic_ic_centered_label": 0.054275914001092475,
+              "diagnostic_mae_centered_label": 0.0018665578828355738,
+              "diagnostic_mse_centered_label": 8.785327152649526e-06,
+              "official_ic_raw_label": 0.054275914001092475,
+              "official_mae_raw_label": 0.0020940829879192565,
+              "official_mse_raw_label": 1.0325842612950075e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": 1.2403587195326072e-05,
+              "training_loss_optimized_units": 1.2403587195326072e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            },
+            "29": {
+              "centered_target_std": 0.003552189696783185,
+              "diagnostic_ic_centered_label": 0.07267398110369672,
+              "diagnostic_mae_centered_label": 0.0018655266533490241,
+              "diagnostic_mse_centered_label": 8.787837712140872e-06,
+              "official_ic_raw_label": 0.07267398110369672,
+              "official_mae_raw_label": 0.0020955706612702427,
+              "official_mse_raw_label": 1.032563651677475e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": 1.2570142817383577e-05,
+              "training_loss_optimized_units": 1.2570142817383577e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            },
+            "47": {
+              "centered_target_std": 0.003552189696783185,
+              "diagnostic_ic_centered_label": 0.07481683576270613,
+              "diagnostic_mae_centered_label": 0.0018641540375658634,
+              "diagnostic_mse_centered_label": 8.778214384160604e-06,
+              "official_ic_raw_label": 0.07481683576270613,
+              "official_mae_raw_label": 0.002095207461036599,
+              "official_mse_raw_label": 1.0332547613410454e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": 1.2573004701583198e-05,
+              "training_loss_optimized_units": 1.2573004701583198e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            }
+          },
+          "ref10": {
+            "11": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": 0.008344993258457566,
+              "diagnostic_mae_centered_label": 0.001958562701029406,
+              "diagnostic_mse_centered_label": 9.521959209577716e-06,
+              "official_ic_raw_label": 0.008344993258457566,
+              "official_mae_raw_label": 0.0021399955699479356,
+              "official_mse_raw_label": 1.07289917958255e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.451864659044425e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.451864659044425e-05
+            },
+            "29": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": 0.021167965746501566,
+              "diagnostic_mae_centered_label": 0.0019699075761110646,
+              "diagnostic_mse_centered_label": 9.52518813637853e-06,
+              "official_ic_raw_label": 0.021167965746501566,
+              "official_mae_raw_label": 0.0021555838068809388,
+              "official_mse_raw_label": 1.0771633672910435e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.4484240245417189e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.4484240245417189e-05
+            },
+            "47": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": -0.006824960014630496,
+              "diagnostic_mae_centered_label": 0.0019167531291490927,
+              "diagnostic_mse_centered_label": 9.294187658782867e-06,
+              "official_ic_raw_label": -0.0068249600146304944,
+              "official_mae_raw_label": 0.002107991207090032,
+              "official_mse_raw_label": 1.052337143364709e-05,
+              "target_scale_raw_label_std": 0.0038659661156313857,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.4571496136973136e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.4571496136973136e-05
+            }
+          }
+        },
+        "reference_comparison": {
+          "arm_window_means": {
+            "cand_centered": {
+              "long_short_return": 0.0005112550906964132,
+              "rank_ic": 0.06899410195332321,
+              "turnover": 1.3311707346255084
+            },
+            "ref10": {
+              "long_short_return": 4.7047645925785906e-05,
+              "rank_ic": 0.008283938546074862,
+              "turnover": 1.6453009093084467
+            }
+          },
+          "days": 10,
+          "min_day_delta": 0.00016044767206654006,
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": 0.0004018249360259601,
+              "rank_ic": 0.04805012429522826,
+              "turnover": -0.23209798994974884
+            },
+            "29": {
+              "long_short_return": 0.0003937941114521021,
+              "rank_ic": 0.053016512609313636,
+              "turnover": -0.44929109834888714
+            },
+            "47": {
+              "long_short_return": 0.00059700328683382,
+              "rank_ic": 0.08106385331720319,
+              "turnover": -0.26100143575017953
+            }
+          },
+          "per_seed_metrics": {
+            "11": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": 7.100879362382327e-05,
+                "ic_mean": 0.054275914001092475,
+                "local_approximation": true,
+                "long_return_mean": 0.0001402177034069197,
+                "long_short_return_mean": 0.0004286994304602969,
+                "long_short_sharpe": 24.833861020214396,
+                "mae": 0.0020940829879192565,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": 7.100879362382327e-05,
+                "mse": 1.0325842612950075e-05,
+                "rank_ic_ir": 2.3520301827238943,
+                "rank_ic_mean": 0.05463642910835833,
+                "rank_persistence_mean": 0.20280632680565353,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.0001276967571659565,
+                "short_return_mean": -0.0002884817270533772,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.4348169418521177,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.000289176947171676,
+                "ic_mean": 0.008344993258457566,
+                "local_approximation": true,
+                "long_return_mean": -7.081056926290573e-05,
+                "long_short_return_mean": 2.6874494434336837e-05,
+                "long_short_sharpe": 1.8028457846549981,
+                "mae": 0.0021399955699479356,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.000289176947171676,
+                "mse": 1.07289917958255e-05,
+                "rank_ic_ir": 0.2697321300920331,
+                "rank_ic_mean": 0.006586304813130069,
+                "rank_persistence_mean": -0.11194116937110118,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.000917778865388225,
+                "short_return_mean": -9.768506369724257e-05,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.6669149318018666,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            },
+            "29": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": 0.00013724579058653507,
+                "ic_mean": 0.07267398110369672,
+                "local_approximation": true,
+                "long_return_mean": 0.0001877326478617491,
+                "long_short_return_mean": 0.0005601337657085684,
+                "long_short_sharpe": 42.523172350801666,
+                "mae": 0.0020955706612702427,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": 0.00013724579058653507,
+                "mse": 1.032563651677475e-05,
+                "rank_ic_ir": 2.8650266674113394,
+                "rank_ic_mean": 0.07551740869755488,
+                "rank_persistence_mean": 0.4422751474136247,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.00020392447555745655,
+                "short_return_mean": -0.0003724011178468193,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.2196877243359656,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.00012058092014646541,
+                "ic_mean": 0.021167965746501566,
+                "local_approximation": true,
+                "long_return_mean": 2.979244793105832e-06,
+                "long_short_return_mean": 0.00016633965425646627,
+                "long_short_sharpe": 13.844694104745951,
+                "mae": 0.0021555838068809388,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.00012058092014646541,
+                "mse": 1.0771633672910435e-05,
+                "rank_ic_ir": 0.9471389551885309,
+                "rank_ic_mean": 0.022500896088241247,
+                "rank_persistence_mean": -0.08809457959065328,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.0008975534101105636,
+                "short_return_mean": -0.00016336040946336047,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.6689788226848528,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            },
+            "47": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.00011502768734278604,
+                "ic_mean": 0.07481683576270613,
+                "local_approximation": true,
+                "long_return_mean": 0.00019559948927583157,
+                "long_short_return_mean": 0.0005449320759203745,
+                "long_short_sharpe": 31.885950226403835,
+                "mae": 0.002095207461036599,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.00011502768734278604,
+                "mse": 1.0332547613410454e-05,
+                "rank_ic_ir": 2.88261346295659,
+                "rank_ic_mean": 0.07682846805405645,
+                "rank_persistence_mean": 0.3082830246064414,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.00010398476296575375,
+                "short_return_mean": -0.000349332586644543,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.3390075376884423,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "2ff3ffe0780a61848a35295de96b268a21386396fb366fa97dcb59cfcc5f7c23"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0004839840530741022,
+                "ic_mean": -0.0068249600146304944,
+                "local_approximation": true,
+                "long_return_mean": -8.337734301128592e-05,
+                "long_short_return_mean": -5.20712109134454e-05,
+                "long_short_sharpe": -3.172703324805313,
+                "mae": 0.002107991207090032,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0004839840530741022,
+                "mse": 1.052337143364709e-05,
+                "rank_ic_ir": -0.12787355216558613,
+                "rank_ic_mean": -0.004235385263146735,
+                "rank_persistence_mean": -0.00182238353783075,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79920,
+                "sample_keys_sha256": "81d8dfa6aa347161b6506b3975a4178352e9dbb1be5de31381b2dd343711eefd",
+                "schema_version": 1,
+                "score_change_mae": 0.0005688623732452979,
+                "short_return_mean": -3.1306132097840534e-05,
+                "targets_sha256": "8f58cade23a1a97b7a378a5993387c4ab7be92361a687babdfbc09915ec625e4",
+                "turnover_mean": 1.6000089734386218,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            }
+          },
+          "period": "research_a",
+          "worst_day_delta": 0.00032549068870238744
+        }
+      },
+      "research_b": {
+        "error_report": {
+          "cand_centered": {
+            "11": {
+              "centered_target_std": 0.0038206402043766408,
+              "diagnostic_ic_centered_label": -0.004893409867359575,
+              "diagnostic_mae_centered_label": 0.0022294260521640748,
+              "diagnostic_mse_centered_label": 1.129793005732112e-05,
+              "official_ic_raw_label": -0.0048934098673595735,
+              "official_mae_raw_label": 0.002757477782346589,
+              "official_mse_raw_label": 1.5516792361670524e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": 1.4830126241288287e-05,
+              "training_loss_optimized_units": 1.4830126241288287e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            },
+            "29": {
+              "centered_target_std": 0.0038206402043766408,
+              "diagnostic_ic_centered_label": 0.06383785239102464,
+              "diagnostic_mae_centered_label": 0.0021975727163081665,
+              "diagnostic_mse_centered_label": 1.1163692772228389e-05,
+              "official_ic_raw_label": 0.06383785239102463,
+              "official_mae_raw_label": 0.002735809113851088,
+              "official_mse_raw_label": 1.539974786600104e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": 1.4456616099101027e-05,
+              "training_loss_optimized_units": 1.4456616099101027e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            },
+            "47": {
+              "centered_target_std": 0.0038206402043766408,
+              "diagnostic_ic_centered_label": 0.02051290012417755,
+              "diagnostic_mae_centered_label": 0.0022177392917293237,
+              "diagnostic_mse_centered_label": 1.1242197706200561e-05,
+              "official_ic_raw_label": 0.020512900124177554,
+              "official_mae_raw_label": 0.00273511895074813,
+              "official_mse_raw_label": 1.536429308989704e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": 1.4432234292475562e-05,
+              "training_loss_optimized_units": 1.4432234292475562e-05,
+              "training_loss_units": "centered_return_squared",
+              "training_raw_loss": null
+            }
+          },
+          "ref10": {
+            "11": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": -0.007905625423335892,
+              "diagnostic_mae_centered_label": 0.002825630368622697,
+              "diagnostic_mse_centered_label": 1.54982190954488e-05,
+              "official_ic_raw_label": -0.00790562542333589,
+              "official_mae_raw_label": 0.0032291835946196964,
+              "official_mse_raw_label": 1.9442401473140063e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.9607459064967403e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.9607459064967403e-05
+            },
+            "29": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": 0.011875428372707258,
+              "diagnostic_mae_centered_label": 0.0026752769799618633,
+              "diagnostic_mse_centered_label": 1.4705845543661443e-05,
+              "official_ic_raw_label": 0.011875428372707256,
+              "official_mae_raw_label": 0.0031314825323796925,
+              "official_mse_raw_label": 1.8842647646949054e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.8375928293160723e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.8375928293160723e-05
+            },
+            "47": {
+              "centered_target_std": null,
+              "diagnostic_ic_centered_label": 0.004357464110180944,
+              "diagnostic_mae_centered_label": 0.002803014629736083,
+              "diagnostic_mse_centered_label": 1.5215064987106829e-05,
+              "official_ic_raw_label": 0.004357464110180943,
+              "official_mae_raw_label": 0.0031736460588843176,
+              "official_mse_raw_label": 1.8917010057820864e-05,
+              "target_scale_raw_label_std": 0.004753065955907003,
+              "training_centered_loss": null,
+              "training_loss_optimized_units": 1.8490635802238783e-05,
+              "training_loss_units": "raw_label_mse",
+              "training_raw_loss": 1.8490635802238783e-05
+            }
+          }
+        },
+        "reference_comparison": {
+          "arm_window_means": {
+            "cand_centered": {
+              "long_short_return": 0.0002250359039898094,
+              "rank_ic": 0.025009775426594587,
+              "turnover": 1.5064911462072268
+            },
+            "ref10": {
+              "long_short_return": 5.5324891424975544e-05,
+              "rank_ic": -0.0005212179947528195,
+              "turnover": 1.5791502452739892
+            }
+          },
+          "days": 10,
+          "min_day_delta": -0.0002532618452609364,
+          "per_seed_mean_delta": {
+            "11": {
+              "long_short_return": -1.7887865228712902e-05,
+              "rank_ic": 0.002267228313131092,
+              "turnover": 0.03301722900215376
+            },
+            "29": {
+              "long_short_return": 0.00043201174581944927,
+              "rank_ic": 0.06137020962161153,
+              "turnover": -0.23361503948312978
+            },
+            "47": {
+              "long_short_return": 9.500915710376515e-05,
+              "rank_ic": 0.012955542329299604,
+              "turnover": -0.017379486719310666
+            }
+          },
+          "per_seed_metrics": {
+            "11": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0004621442260903926,
+                "ic_mean": -0.0048934098673595735,
+                "local_approximation": true,
+                "long_return_mean": 9.773621411459541e-05,
+                "long_short_return_mean": -6.74830689969697e-05,
+                "long_short_sharpe": -3.864260326615171,
+                "mae": 0.002757477782346589,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0004621442260903926,
+                "mse": 1.5516792361670524e-05,
+                "rank_ic_ir": -0.3693676367291946,
+                "rank_ic_mean": -0.008332168296618715,
+                "rank_persistence_mean": -0.00570501618441986,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.00019605022705177275,
+                "short_return_mean": 0.0001652192831115651,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.6054898600143577,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.00030116088435618087,
+                "ic_mean": -0.00790562542333589,
+                "local_approximation": true,
+                "long_return_mean": 0.00016035361737412815,
+                "long_short_return_mean": -4.959520376825679e-05,
+                "long_short_sharpe": -4.8355311719325895,
+                "mae": 0.0032291835946196964,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.00030116088435618087,
+                "mse": 1.9442401473140063e-05,
+                "rank_ic_ir": -0.567298676088852,
+                "rank_ic_mean": -0.010599396609749807,
+                "rank_persistence_mean": 0.03167852376798302,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.001817235484522939,
+                "short_return_mean": 0.00020994882114238494,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.572472631012204,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            },
+            "29": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0001407012776456849,
+                "ic_mean": 0.06383785239102463,
+                "local_approximation": true,
+                "long_return_mean": 0.00040805386900503326,
+                "long_short_return_mean": 0.0005728530146890778,
+                "long_short_sharpe": 25.850630691327595,
+                "mae": 0.002735809113851088,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0001407012776456849,
+                "mse": 1.539974786600104e-05,
+                "rank_ic_ir": 1.6490815012419024,
+                "rank_ic_mean": 0.06966207587902115,
+                "rank_persistence_mean": 0.31426458911284905,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.00012856688531492547,
+                "short_return_mean": -0.00016479914568404453,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.3145972720746593,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0002247071847882993,
+                "ic_mean": 0.011875428372707256,
+                "local_approximation": true,
+                "long_return_mean": 0.00024877329557820247,
+                "long_short_return_mean": 0.0001408412688696285,
+                "long_short_sharpe": 8.757178718169866,
+                "mae": 0.0031314825323796925,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0002247071847882993,
+                "mse": 1.8842647646949054e-05,
+                "rank_ic_ir": 0.34050325808738663,
+                "rank_ic_mean": 0.008291866257409625,
+                "rank_persistence_mean": 0.05153980258152539,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.001860678159842723,
+                "short_return_mean": 0.000107932026708574,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.548212311557789,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            },
+            "47": {
+              "cand_centered": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.0004665155542406116,
+                "ic_mean": 0.020512900124177554,
+                "local_approximation": true,
+                "long_return_mean": 0.0001889127401358937,
+                "long_short_return_mean": 0.00016973776627732007,
+                "long_short_sharpe": 8.093517969890417,
+                "mae": 0.00273511895074813,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.0004665155542406116,
+                "mse": 1.536429308989704e-05,
+                "rank_ic_ir": 0.40948737760526077,
+                "rank_ic_mean": 0.013699418697381328,
+                "rank_persistence_mean": -0.002680136985505001,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.00022841885683920005,
+                "short_return_mean": 1.9174973858573657e-05,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.5993863065326634,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              },
+              "ref10": {
+                "conventions": {
+                  "constant_portfolio": "undefined: signal cannot rank stocks",
+                  "correlation_comparison": "each policy correlation requires all target-eligible timestamps; incomplete baseline or absent evidence is inconclusive; incomplete candidate rejected",
+                  "costs": "gross forward label returns; no fees, execution, overlap or compounding adjustment",
+                  "cross_section": "one prediction timestamp; average ranks for ties",
+                  "daily": "equal timestamp mean; undefined correlations remain missing and are counted",
+                  "extreme_return": "mean of worst ceil(1% * days) daily long-short returns",
+                  "long_short_sharpe": "daily mean / sample std * sqrt(periods_per_year); zero variance undefined",
+                  "official_score": "not implemented: official complete evaluation rules unavailable",
+                  "portfolio": "equal tail weights; floor(n*quantile), minimum one; boundary ties share weight",
+                  "rank_ic_ir": "daily mean / sample std (ddof=1), not annualized",
+                  "signal_change": "mean absolute raw score change and rank correlation on common stocks; first timestamp undefined; consecutive sampled timestamps, including overnight",
+                  "turnover": "0.5*sum(abs(net_weight_t-net_weight_previous)); first timestamp undefined; no drift",
+                  "version": "local-v1"
+                },
+                "correlation_coverage": {
+                  "ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "rank_ic": {
+                    "eligible_section_count": 80,
+                    "eligible_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1",
+                    "valid_section_count": 80,
+                    "valid_sections_sha256": "f3ae432334564e47be4919af50a4730c3ddc2ffbfa26bb2499fc706ce0f6d6a1"
+                  },
+                  "schema_version": 1
+                },
+                "cross_section_count": 80,
+                "day_count": 10,
+                "extreme_return": -0.00015216413146705219,
+                "ic_mean": 0.004357464110180943,
+                "local_approximation": true,
+                "long_return_mean": 0.00021742445826693481,
+                "long_short_return_mean": 7.472860917355492e-05,
+                "long_short_sharpe": 6.932107527035826,
+                "mae": 0.0031736460588843176,
+                "metric_scope": "local_approximation",
+                "min_daily_long_short_return": -0.00015216413146705219,
+                "mse": 1.8917010057820864e-05,
+                "rank_ic_ir": 0.03970662419731368,
+                "rank_ic_mean": 0.0007438763680817247,
+                "rank_persistence_mean": -0.026911669299501256,
+                "ranking_defined_section_count": 80,
+                "sample_count": 79904,
+                "sample_keys_sha256": "367426d350d57a4068c7d9a6224af24ed157705a185561151e3563b5f04f4060",
+                "schema_version": 1,
+                "score_change_mae": 0.0016447193379550851,
+                "short_return_mean": 0.0001426958490933799,
+                "targets_sha256": "5fa2e040dc4b7a6f4da1b74fc7d1484dd6611f2b370c91ca019a1e72330072bc",
+                "turnover_mean": 1.6167657932519741,
+                "undefined_ic_count": 0,
+                "undefined_rank_ic_count": 0,
+                "valid_days": {
+                  "ic": 10,
+                  "long_return": 10,
+                  "long_short_return": 10,
+                  "mae": 10,
+                  "mse": 10,
+                  "rank_ic": 10,
+                  "rank_persistence": 10,
+                  "score_change_mae": 10,
+                  "short_return": 10,
+                  "turnover": 10
+                }
+              }
+            }
+          },
+          "period": "research_b",
+          "worst_day_delta": -0.0002506044947595652
+        }
+      }
+    }
+  },
+  "retained_version": "raw-label 10-day seed11 research reference (unchanged)",
+  "reused_arms": {
+    "research_a": {
+      "11": {
+        "predictions_sha256": "a52d29ac81557aaa2114d4334f631cfc19680016af2934960522b628537fddd5",
+        "training": {
+          "loss": 1.451864659044425e-05,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857,
+          "training_std": 0.0038659661156313857
+        },
+        "weights_sha256": "79b4729d5ba82d615d045f9d9d1ec7f1dc35f3780fcb3ece91a7178e1bef1ca5"
+      },
+      "29": {
+        "predictions_sha256": "21a160c0a5d06125977aa013b72aa460ce7ec45d215fd6afdf1d24d4b1b9aaeb",
+        "training": {
+          "loss": 1.4484240245417189e-05,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857,
+          "training_std": 0.0038659661156313857
+        },
+        "weights_sha256": "db2fedb708930371c127234bc3f27f04154af8d3b3c8b88f0a133a59d7cc06da"
+      },
+      "47": {
+        "predictions_sha256": "1caa8c354f4c3d2d037df339a881e02f65512ababbe6159961d9998a4309f89a",
+        "training": {
+          "loss": 1.4571496136973136e-05,
+          "samples": 79920,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.0038659661156313857,
+          "training_std": 0.0038659661156313857
+        },
+        "weights_sha256": "4bed435a2b7cdbe9fc50a2c56f95749af669ef9dc174fbfa17222b4e0bf5f7e4"
+      }
+    },
+    "research_b": {
+      "11": {
+        "predictions_sha256": "be846b9508a6bbbe690be1ac88d4009ae71877578149b2f86effa418b152fae7",
+        "training": {
+          "loss": 1.9607459064967403e-05,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003,
+          "training_std": 0.004753065955907003
+        },
+        "weights_sha256": "5448cbf9e1513ac4f67aa18347aa5c10255f094f070b9551cf1bcb402fa92261"
+      },
+      "29": {
+        "predictions_sha256": "4956885fabd07fd15465386c8446d406859ca972eb6825a4a3070dcbcb09a644",
+        "training": {
+          "loss": 1.8375928293160723e-05,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003,
+          "training_std": 0.004753065955907003
+        },
+        "weights_sha256": "4466ee681cb0f82162572bc797b4f0dfe4a39871140570afe431f6b00d305a26"
+      },
+      "47": {
+        "predictions_sha256": "1509b4c69b041c41d7eb3b3e69a80d2b09ea50d07c86f2208e869f42f5a6dbd5",
+        "training": {
+          "loss": 1.8490635802238783e-05,
+          "samples": 80000,
+          "samples_seen": 48000,
+          "steps": 1500,
+          "target_scale": 0.004753065955907003,
+          "training_std": 0.004753065955907003
+        },
+        "weights_sha256": "7a33e18b5e98b20aa335ac83458172486a9628c3c296247c4129c7aff3260217"
+      }
+    }
+  },
+  "schema_version": 1,
+  "seeds": {
+    "full": [
+      11,
+      29,
+      47
+    ],
+    "progress": [
+      11
+    ]
+  },
+  "steps": {
+    "candidate": 1500,
+    "reference": 1500
+  }
+}

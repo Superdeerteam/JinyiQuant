@@ -340,6 +340,24 @@ $env:PYTHONPATH = 'src;.'
 
 **解释边界：** 结果只否定“固定10日半衰期、mean-1、6000步”这一组合，不否定其他衰减强度或正则化方式；多数种子-窗口单元退化说明不能靠seed11的初筛通过认定改善，但两个研究窗仍是已使用数据，不能当作独立确认。最终检查区间未打开，平台时限与内存仍未验收。
 
+### 10日标签按完整时间戳去均值（20261018）
+
+上一轮及更早复验反复出现“seed11通过、完整复验失败”。本轮只检验一条最小假设：训练标签改为`y* = 官方收益 − 同一完整时间戳的训练股票池平均收益`，按完整截面一次计算，不按随机小批量；`target_std`仍取原始训练标签标准差，网络、输入、1500步、batch顺序、MSE、三种子×两窗口均不变。推理直接输出相对收益分数，不读取标签、不补回真实未来截面均值；全部评价继续使用原始官方标签，原始MSE与中心化损失分开报告。该“只去均值”做法有[Qlib逐时间戳截面处理](https://github.com/microsoft/qlib/blob/main/qlib/data/dataset/processor.py)的公开先例，但只是本项目的最小假设，不是已验证有效的配方。
+
+[冻结计划](configs/label_centering_20261018_plan.json)在首个训练前固定六次训练、原改善门槛0.011647与最差日容忍1.3897e-4；seed11只记录进度，六次训练仍全部完成。首次执行在分析阶段失败：诊断脚本用float32做时间戳去均值，两个近似并列标签换位，改变了2024-03-12的RankIC；没有重训，诊断改为float64后从原六份拟合恢复，失败档案保留。
+
+**结论：回退，保留10日参考。** 三种子配对逐日全天RankIC差（去均值减原始10日/1500，种子均值）+0.043121，高于未改门槛；研究A +0.060710、研究B +0.025531，`both_windows_improve`成立。多空均值+0.000316959、换手均值−0.193395，5日/2日连续日块RankIC区间[0.029187, 0.052070]和[0.027434, 0.054341]均不含零。但研究B最差日多空差−0.000250604（2024-03-07）超过1.3897e-4容忍，`worst_day_guardrail`失败，因此按预登记回退。误差分开报告（研究A/B，种子11）：原始标签MSE 1.0326e-5/1.5517e-5，参考1.0729e-5/1.9442e-5；中心化标签MSE 8.785e-6/1.130e-5，参考9.522e-6/1.550e-5；训练中心化损失1.240e-5/1.483e-5。逐种子结果、档案与解释边界见[结构化研究记录](modified_tlob/label_centering_20261018.json)和[完成档案](runs/label-centering-20261018/20261018T092920.229347Z_208fdbce4f22)。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_centering prepare
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_centering run configs/label_centering_20261018_plan.json
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_centering recover configs/label_centering_20261018_plan.json --execution <首次执行目录>
+& .venv-ensemble-cuda/Scripts/python.exe -m scripts.run_label_centering record configs/label_centering_20261018_plan.json --execution <完成档案目录> --output modified_tlob/label_centering_20261018.json
+```
+
+**解释边界：** 本轮只回答“在当前10日、1500步、原始缩放和两个研究窗口下，完整时间戳去均值是否同时通过原门槛与最差日护栏”，答案是否定的；不否定其他截面标签变换、其他缩放口径或最差日容忍以外的评价方式。两个研究窗仍是已使用数据，确认、锁定和旧final未打开，平台时限与内存仍未验收。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

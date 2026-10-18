@@ -1,5 +1,6 @@
 """Batch training/inference and portable checkpoints with frozen preprocessing."""
 
+import hashlib
 import json
 import os
 import random
@@ -23,12 +24,15 @@ class TLOBAdapter:
     def __init__(self, model_config, data_config, *, seed=42, recorder=None):
         self.config = model_config.model_dump() if hasattr(model_config, "model_dump") else dict(model_config)
         self.config.setdefault("target_scaling", "none")
+        self.config.setdefault("target_centering", "none")
         self.config.setdefault("max_steps", None)
         self.config.setdefault("time_loss_weighting", "none")
         self.config.setdefault("book_representation", "raw")
         self.config.setdefault("trade_features", "zero")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
+        if self.config["target_centering"] not in ("none", "timestamp_mean_train"):
+            raise ValueError("Unsupported target centering")
         if self.config["time_loss_weighting"] not in ("none", "train_variance", "date_decay_10d"):
             raise ValueError("Unsupported loss weighting")
         data = data_config.model_dump(mode="json") if hasattr(data_config, "model_dump") else dict(data_config)
@@ -50,6 +54,7 @@ class TLOBAdapter:
         self.network = ModifiedTLOB(**self.architecture).to(self.device)
         self.intercept = None
         self.target_scale = 1.0
+        self.target_centering_stats = None
         self.time_loss_weighting_stats = None
         self.trained = False
         if recorder:
@@ -167,6 +172,63 @@ class TLOBAdapter:
         self._event("training", "time_loss_weighting_fitted", **self.time_loss_weighting_stats)
         return np.asarray([by_time[sample_time]["weight"] for sample_time in times], dtype=np.float32)
 
+    def _training_targets(self, keys, target, mask):
+        """Center official labels within each full training timestamp.
+
+        The mean is computed once from every row of the selected training pool at a
+        timestamp, before mini-batches and before the min-history mask. The mask only
+        chooses which centered labels enter the optimizer. The standard deviation that
+        drives ``target_std`` remains the raw label standard deviation, so centering
+        does not also change the target scale. Inference never sees this label vector,
+        the timestamp means, or any future cross-section.
+        """
+        raw = np.asarray(target, dtype=np.float32)
+        raw64 = raw.astype(np.float64)
+        self.target_centering_stats = None
+        if self.config["target_centering"] == "none":
+            return raw[mask], None
+        if len(keys) != len(raw64):
+            raise ValueError("Centering keys and targets are not aligned")
+        timestamps = pd.to_datetime(keys["date"])
+        if timestamps.isna().any():
+            raise ValueError("Centering requires a timestamp for every training row")
+        frame = pd.DataFrame({"timestamp": timestamps.to_numpy(), "target": raw64})
+        grouped = frame.groupby("timestamp", sort=False)["target"]
+        means = grouped.transform("mean").to_numpy()
+        centered = raw64 - means
+        timestamp_means = grouped.mean()
+        centered_means = pd.DataFrame({"timestamp": frame["timestamp"], "target": centered}).groupby(
+            "timestamp", sort=False)["target"].mean()
+        counts = grouped.size()
+        if not np.isfinite(means).all() or not np.isfinite(centered).all():
+            raise FloatingPointError("Nonfinite timestamp-centered training targets")
+        values = timestamp_means.to_numpy(dtype=np.float64)
+        stats = {
+            "method": "timestamp_mean_train",
+            "label_source": "official training labels only",
+            "scope": "every row of each full timestamp in the selected training pool; computed once before "
+                     "mini-batches and before the min-history mask",
+            "timestamps": int(len(timestamp_means)), "rows": int(len(raw64)),
+            "min_rows_per_timestamp": int(counts.min()),
+            "mask_excluded_rows": int((~np.asarray(mask, dtype=bool)).sum()),
+            "raw_mean": float(raw64.mean()), "raw_std": float(raw64.std()),
+            "centered_mean": float(centered.mean()), "centered_std": float(centered.std()),
+            "selected_centered_mean": float(centered[mask].mean()),
+            "selected_centered_std": float(centered[mask].std()),
+            "mean_abs_timestamp_mean": float(np.abs(values).mean()),
+            "rms_timestamp_mean": float(np.sqrt(np.mean(values ** 2))),
+            "max_abs_timestamp_mean": float(np.abs(values).max()),
+            "max_abs_centered_timestamp_mean": float(np.abs(centered_means.to_numpy()).max()),
+            "timestamp_means_sha256": hashlib.sha256(json.dumps(
+                [{"timestamp": str(timestamp), "mean": float(value)}
+                 for timestamp, value in timestamp_means.items()], sort_keys=True).encode("utf-8")).hexdigest(),
+        }
+        if stats["max_abs_centered_timestamp_mean"] > 1e-12:
+            raise ValueError("Timestamp-centered training labels are not zero-mean within a timestamp")
+        self.target_centering_stats = stats
+        self._event("training", "target_centering_fitted", **stats)
+        return centered[mask].astype(np.float32), stats
+
     def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None,
             observer_every_steps=None):
         if observer_every_steps is not None and (type(observer_every_steps) is not int or observer_every_steps < 1):
@@ -177,8 +239,11 @@ class TLOBAdapter:
         mask = np.ones(len(y), dtype=bool) if sample_mask is None else np.asarray(sample_mask)
         if mask.dtype != bool or mask.shape != y.shape or not mask.any():
             raise ValueError("Training sample mask must select aligned samples")
-        x, y = self._input(batch, sample_mask=mask), y[mask]
+        x = self._input(batch, sample_mask=mask)
+        y, centering_stats = self._training_targets(batch.keys, y, mask)
         time_weights = self._fit_time_loss_weights(batch.keys.loc[mask], y)
+        if validation is not None and self.config["target_centering"] != "none":
+            raise ValueError("Timestamp-mean training requires timestamp-centered validation targets")
         validation_inputs = None
         if validation is not None:
             vb, vy = validation
@@ -186,8 +251,9 @@ class TLOBAdapter:
             if vy.shape != (len(vx),) or not len(vy) or not np.isfinite(vy).all():
                 raise ValueError("Validation requires nonempty aligned finite targets")
             validation_inputs = vx, vy
+        raw_selected = np.asarray(target, dtype=np.float32)[mask].astype(np.float64)
+        training_std = float(raw_selected.std())
         self.intercept = float(y.astype(np.float64).mean())
-        training_std = float(y.astype(np.float64).std())
         self.target_scale = training_std if self.config["target_scaling"] == "train_std" and training_std > 0 else 1.0
         optimization_targets = (y if self.target_scale == 1.0 else
                                 (y.astype(np.float64) / self.target_scale).astype(np.float32))
@@ -196,7 +262,12 @@ class TLOBAdapter:
         self._event("training", "target_scaling_fitted", method=self.config["target_scaling"],
                     target_scale=self.target_scale, training_std=training_std, samples=len(y),
                     constant_target_fallback=self.config["target_scaling"] == "train_std" and training_std == 0,
-                    centering=False, loss_units="original_return_squared")
+                    centering=self.config["target_centering"],
+                    centered_training_std=(None if centering_stats is None
+                                           else centering_stats["selected_centered_std"]),
+                    centering_stats=centering_stats,
+                    loss_units=("centered_return_squared" if centering_stats is not None
+                                else "original_return_squared"))
         optimizer = torch.optim.Adam(self.network.parameters(), lr=self.config["learning_rate"])
         generator = torch.Generator().manual_seed(self.seed)
         started, steps, samples_seen, epochs_completed = time.monotonic(), 0, 0, 0
@@ -263,6 +334,8 @@ class TLOBAdapter:
                             if name.split(".")[0] == group and parameter.grad is not None]).sum().sqrt())
                         for group in ("norm_layer", "emb_layer", "layers", "final_layers")}
                     self._event("training", "progress", epoch=epoch + 1, step=steps, loss=raw_loss,
+                                loss_units=("centered_label_mse" if centering_stats is not None
+                                            else "raw_label_mse"),
                                 weighted_loss=weighted_loss,
                                 optimization_loss=optimization_loss,
                                 gradient_norms=gradient_norms,
@@ -304,6 +377,13 @@ class TLOBAdapter:
                 "weighted_loss": weighted_total / epoch_samples,
                 "optimization_loss": optimization_total / epoch_samples, "target_scale": self.target_scale,
                 "target_scaling": self.config["target_scaling"],
+                "target_centering": self.config["target_centering"],
+                "raw_target_std": training_std,
+                "centered_target_std": (None if centering_stats is None
+                                        else centering_stats["selected_centered_std"]),
+                "mask_excluded": int((~mask).sum()),
+                "loss_units": ("centered_return_squared" if centering_stats is not None
+                               else "original_return_squared"),
                 "time_loss_weighting": self.config["time_loss_weighting"],
                 "optimizer": {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
                               "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]],
@@ -328,6 +408,8 @@ class TLOBAdapter:
         scores *= self.target_scale
         missing = (batch.observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
                    < self.preprocessing["min_history"])
+        # Fallback is the fitted training-target mean. For timestamp-centered training
+        # this is a relative score; no future timestamp mean or evaluation label exists here.
         scores[missing] = self.intercept
         if not np.isfinite(scores).all():
             raise FloatingPointError("Nonfinite predictions")
@@ -344,10 +426,16 @@ class TLOBAdapter:
         return {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
                 "kind": "modified_tlob", "architecture": self.architecture,
                 "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
-                "training_mean": self.intercept, "label": "official_vwap_return",
+                "training_mean": self.intercept,
+                "label": ("official_vwap_return_minus_training_timestamp_mean"
+                          if self.config["target_centering"] != "none" else "official_vwap_return"),
+                "prediction_units": ("relative_return_score" if self.config["target_centering"] != "none"
+                                     else "original_label_return"),
                 "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
                          "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
                 "target_scale": self.target_scale,
+                "target_centering": self.config["target_centering"],
+                "target_centering_stats": self.target_centering_stats,
                 "time_loss_weighting_stats": self.time_loss_weighting_stats,
                 "torch_version": str(torch.__version__),
                 "state_dict": {k: v.detach().cpu() for k, v in self.network.state_dict().items()}}
@@ -372,6 +460,8 @@ class TLOBAdapter:
         if payload["schema_version"] == 3 and not {"book_representation", "trade_features"}.issubset(config):
             raise ValueError("Checkpoint is missing its input transformation contract")
         result = cls(config, payload["preprocessing"], seed=payload["seed"], recorder=recorder)
+        if payload.get("target_centering", "none") != result.config["target_centering"]:
+            raise ValueError("Checkpoint target-centering contract mismatch")
         if result.new_input_contract and payload["schema_version"] < 3:
             raise ValueError("LOB input transformations require checkpoint schema_version=3")
         if payload["schema_version"] == 1 and result.config["target_scaling"] != "none":
@@ -396,6 +486,11 @@ class TLOBAdapter:
             raise ValueError("Invalid target scale")
         if result.config["target_scaling"] == "none" and result.target_scale != 1.0:
             raise ValueError("Unscaled checkpoint requires target_scale=1")
+        result.target_centering_stats = payload.get("target_centering_stats")
+        if result.config["target_centering"] != "none" and (
+                not isinstance(result.target_centering_stats, dict)
+                or result.target_centering_stats.get("method") != "timestamp_mean_train"):
+            raise ValueError("Timestamp-centered checkpoint is missing its centering statistics")
         result.time_loss_weighting_stats = payload.get("time_loss_weighting_stats")
         if result.config["time_loss_weighting"] == "train_variance":
             if not isinstance(result.time_loss_weighting_stats, dict):
