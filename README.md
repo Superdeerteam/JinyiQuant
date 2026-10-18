@@ -268,6 +268,25 @@ PYTHONPATH=src:. python -m scripts.annual_baseline run <新的运行目录> \
 - 失败不限于开盘：每月重训在 9 月 14:30 的毛多空负截面为 14/21；10 月 13:30 的 RankIC 中位数为 -0.022629，RankIC 和毛多空均有 11/16 个负截面。
 - 12 月出现不同表现：每月重训与固定权重的 RankIC 中位数分别为 0.052383、0.040920，换手中位数分别为 1.341709、1.482412。单年份、单种子且权重日龄与月份混杂，不能据此作因果判断或自动替换当前模型。
 
+## 10日与40日训练覆盖研究
+
+本轮冻结方案以 [v3配置](configs/training_coverage_20261017_v3_frozen.json) 为准；此前两版草稿方案已删除，其副本仍留在本地 `runs/training-coverage-freeze/` 的两份档案中。唯一研究变量是训练日期数10→40；raw12、八时点、128条输入、MSE、train_std、1500步、batch32、学习率1e-4、无平滑保持固定。研究种子11/29/47全部登记，部署种子固定11。训练矩阵为每个起点2方案×3种子=6次训练（全轮24次），同起点同方案的三份配置除`seed`外完全相同；每次训练完成后冻结权重、只做推理与评价，不按成绩重训或挑种子。此轮不启动模型训练，数值晋升门槛和40日训练资源预算留待基线校准后另行冻结。
+
+训练清单由官方股票池日历生成，沿用原登记截止日：研究A为2023-11-01，研究B为2024-03-01，确认为2024-06-29，锁定检查为2024-10-01。研究A/B已被使用，只能用于初筛、校准和复验；2024年7月确认区、第四季度锁定区和旧final继续保留。锁定方案配置的validation段是国庆休市间隙，只用于配置结构，不作为额外评价区。
+
+`python -m scripts.freeze_training_coverage` 保存8份训练目标清单、逐项剔除计数、官方源校验值及完整运行档案，拒绝覆盖已有方案。官方标签下载没有 `label_end`：有实际结束戳时优先据其清除跨界样本；无结束戳时，利用官方“不预测隔夜收益”约束，以当日15:00为保守上界，核验早于所有午夜训练截止日。原11:30→13:30选择时钟仍标为假设，不能冒充已验证的实际午休结束时刻。
+
+低成本诊断入口（先按模块README配置独立TLOB环境和`PYTHONPATH`）：
+
+```powershell
+python -m scripts.diagnose_training_coverage history
+python -m scripts.diagnose_training_coverage inference --annual-root runs/annual-2022-cloud-source/original --device cuda
+python -m scripts.diagnose_training_coverage inference --annual-root runs/annual-2022-cloud-source/original --device cuda --resume-from <中断的季度推理档案目录>
+python -m scripts.publish_training_coverage --history-run <历史质量档案目录> --inference-run <季度推理档案目录>
+```
+
+季度诊断只使用与全年索引校验一致的1/4/7/10月原权重，复用6组原预测，补6组推理；不接受本机另一次训练产生的同名权重。`--resume-from` 只接受同一冻结索引、同一`jobs.json`的中断档案，并逐月校验日历、八时点、无重复和非有限得分后复用已保存预测，避免重复消耗补充分组合预算；复用月份及其校验值写入`checks.json`。历史诊断复用`history_diagnostics`；旧全年输出缺少逐时完整长度及年龄明细，因此仅重放无标签的历史窗口构建，不运行模型。结果按[逐月研究索引](modified_tlob/training_coverage_20261017/index.json)组织，包含逐时排序、多空、换手、配对差、128条完整性、缺失率和最近有效行情年龄，不输出全年平均数。单年单种子且训练起点、行情和权重日龄混杂，不作因果推断，不据此晋升40日方案。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。
