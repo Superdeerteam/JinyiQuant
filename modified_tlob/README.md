@@ -245,6 +245,24 @@ $env:PYTHONPATH = 'src;.'
 
 行为测试比较新旧输入数组、掩码、历史时间和固定权重预测，包含跨月、停牌、新入池、缺失处理及午夜边界。资源脚本在两个独立进程中比较合成行情的读取、预处理和最后一个截面的窗口构造，输出峰值 RSS、查询规模及输入哈希；有内存和耗时上限，资源不足会明确失败。它不测 DAI 服务端、模型全区间推理或官方评分器，不能代替平台完整运行验收。截图中的 `51200MB` 是此次任务的内存阈值，不能据此认定为 GPU 显存上限，也不能在没有平台阶段日志时确定实际被杀的代码行。
 
+## 七文件平台上传包
+
+需要只上传七个平级文件时，从上面已经校验过的完整推理包生成：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& $tlobPython scripts/package_flat_submission.py <完整推理包目录> dist/flat-upload-001
+& $tlobPython scripts/check_flat_submission.py <完整推理包目录> dist/flat-upload-001.zip --output runs/flat-upload-check-001
+```
+
+输出目录与同名 ZIP 只包含 `modified_tlob_weights.json`、`provenance.json`、`requirements.txt`、`submission_config.json`、`modified_tlob_flat.py`、`jinyiquant_flat.py`、`inference.ipynb`。解压后将这七个文件放在同一目录上传，入口选择 `inference.ipynb`。
+
+生成器将平台推理依赖合并成可阅读的 Python 源码，调整两文件之间的导入、产物根目录和源码归档路径；原权重及提交配置逐字保留，按天流式读取仍保留。训练及其他研究入口继续留在仓库工程内；上传的两文件只收纳冻结权重推理需要的模块。`provenance.json` 记录原模块哈希及合并来源；上游 MIT 许可全文保留在 `modified_tlob_flat.py` 的模块说明中。
+
+`requirements.txt` 统一保留原已验证依赖版本，Torch 使用公共版本 `torch==2.5.0`，已安装的同版本 CPU/CUDA 构建都可满足；平台专有 `dai` 由 BigQuant 预装并在文件中注明，不安装名称相似的第三方包。Notebook 不安装依赖或访问外网。
+
+检查器在隔离进程中分别运行原包和从 ZIP 解压的新包，并明确禁止新包导入原 `jinyiquant`/`modified_tlob` 目录及联网。它自动检查七文件清单、权重与配置哈希、全部预测键和数值、依赖版本及运行时源码快照，生成独立 `checks.json`。本地原参考权重在相同合成行情上的256条预测差异为0；该结果验证打包等价，不是线上平台验收或收益改进证据。
+
 ## 尚未完成的外部验收
 
 本地 CPU 训练/复跑、上游中间表示对照、三档/五档梯度、常数/缺失窗口、因果性、错误设备、文本权重与断网包检查均有脚本或行为测试。原 Python 3.13 基线环境也独立验证。CI 增加可选 CPU 后端检查，尚未执行远端 CI。
