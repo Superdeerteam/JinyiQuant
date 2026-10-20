@@ -221,6 +221,30 @@ weights_path = train_and_save({"bar1m": "cpt_jyc_2026_stock_bar1m"})
 
 它只读冻结训练/研究验证区间，保存独立完整档案并返回新文本权重路径，不覆盖原提交权重；用于私榜的替换/冻结组织方式应由实际平台流程验收。公榜 main 不调用它。
 
+## 平台内存超限：保持权重的流式推理
+
+`inference.ipynb` 调用 `modified_tlob/submission.py`。旧入口一次读取整个评测区间的分钟行情，随后每个截面又复制、排序和分组整份行情；模型已经按批推理，单独减小模型 batch size 不能解决这部分峰值。BigQuant 的[读取数据 OOM 说明](https://mf.bigquant.com/wiki/doc/XKUOYC6Bnc)也描述了整段行情和全量窗口常驻内存的问题，建议分块读取、预测后释放。
+
+现在入口按自然日读取行情，只跨日保留每只证券最近 `lookback` 条观测；构造每个截面前再裁掉无关证券和多余历史。固定首次 `warm_start`，保留未入池证券、停牌前历史及全缺失行，继续使用原预处理、价格精度、缺失掩码、模型权重和预测批次顺序，不进行量化、缩窗、降采样或重训。`data.json` 记录每块行数和哈希，`events.jsonl` 记录块加载后的进程内存；输出仍是完整预测区间的三列结果。行情内存随单日行数及证券历史尾部变化，不再随评测区间的分钟总行数增长；最终输出和股票池键仍随预测数量增长。
+
+已存在的完整提交包可只刷新推理入口，无须重训：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& $tlobPython -m modified_tlob.package <原提交包目录> <新提交包目录> --refresh-inference
+```
+
+该命令先校验旧包的清单、文件和权重哈希，再复制为新目录，仅替换 `modified_tlob/submission.py` 并更新包清单。权重、模型、预处理、配置和依赖文件逐字保留；新清单分别记录原训练来源和推理更新来源。运行输出目录不会混入新包。原来的从训练档案打包方式仍要求源码与训练快照一致。**重新上传新包中的文件，单独重新上传未改变的 Notebook 不会更新其导入的 Python 代码。**
+
+可复跑行为与资源检查：
+
+```powershell
+& $tlobPython -m pytest tests/test_submission_streaming.py tests/test_package_inference_refresh.py -q --basetemp=runs/streaming-check-temp
+& $tlobPython scripts/benchmark_submission_memory.py --output runs/streaming-memory/benchmark.json
+```
+
+行为测试比较新旧输入数组、掩码、历史时间和固定权重预测，包含跨月、停牌、新入池、缺失处理及午夜边界。资源脚本在两个独立进程中比较合成行情的读取、预处理和最后一个截面的窗口构造，输出峰值 RSS、查询规模及输入哈希；有内存和耗时上限，资源不足会明确失败。它不测 DAI 服务端、模型全区间推理或官方评分器，不能代替平台完整运行验收。截图中的 `51200MB` 是此次任务的内存阈值，不能据此认定为 GPU 显存上限，也不能在没有平台阶段日志时确定实际被杀的代码行。
+
 ## 尚未完成的外部验收
 
 本地 CPU 训练/复跑、上游中间表示对照、三档/五档梯度、常数/缺失窗口、因果性、错误设备、文本权重与断网包检查均有脚本或行为测试。原 Python 3.13 基线环境也独立验证。CI 增加可选 CPU 后端检查，尚未执行远端 CI。
