@@ -6,6 +6,20 @@
         "rank_ic": 0.054488004542246005,
         "turnover": -0.3588837042354631
       },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": 0.006586304813130067,
+          "sample_count": 79920,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.06107430935537607,
+          "sample_count": 79920,
+          "sections": 80
+        }
+      },
       "seed": 11,
       "v0": {
         "day_count": 10.0,
@@ -34,6 +48,20 @@
         "long_short_return": 0.00038516628871421713,
         "rank_ic": 0.057643400312367775,
         "turnover": -0.49125089734386185
+      },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": 0.022500896088241247,
+          "sample_count": 79920,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.08014429640060902,
+          "sample_count": 79920,
+          "sections": 80
+        }
       },
       "seed": 29,
       "v0": {
@@ -64,6 +92,20 @@
         "rank_ic": 0.08281060470273095,
         "turnover": -0.41549712849964093
       },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": -0.004235385263146733,
+          "sample_count": 79920,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.0785752194395842,
+          "sample_count": 79920,
+          "sections": 80
+        }
+      },
       "seed": 47,
       "v0": {
         "day_count": 10.0,
@@ -92,6 +134,20 @@
         "long_short_return": 0.0001530836062973625,
         "rank_ic": 0.018679956552357775,
         "turnover": 0.08681860193826285
+      },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": -0.010599396609749807,
+          "sample_count": 79904,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.008080559942607967,
+          "sample_count": 79904,
+          "sections": 80
+        }
       },
       "seed": 11,
       "v0": {
@@ -122,6 +178,20 @@
         "rank_ic": 0.051554064329253274,
         "turnover": -0.17825071787509006
       },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": 0.00829186625740963,
+          "sample_count": 79904,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.0598459305866629,
+          "sample_count": 79904,
+          "sections": 80
+        }
+      },
       "seed": 29,
       "v0": {
         "day_count": 10.0,
@@ -150,6 +220,20 @@
         "long_short_return": 0.00013308373109958727,
         "rank_ic": 0.012903506941316744,
         "turnover": -0.03419580043072501
+      },
+      "prediction_recompute": {
+        "v0": {
+          "days": 10,
+          "rank_ic_mean": 0.0007438763680817235,
+          "sample_count": 79904,
+          "sections": 80
+        },
+        "v1": {
+          "days": 10,
+          "rank_ic_mean": 0.013647383309398473,
+          "sample_count": 79904,
+          "sections": 80
+        }
       },
       "seed": 47,
       "v0": {
@@ -350,7 +434,13 @@
     "rank_ic": 0.046346589563378726,
     "turnover": -0.23187660774108645
   },
-  "recorded_at_utc": "2026-10-23T17:21:36.285211+00:00",
+  "prediction_recompute": {
+    "all_match": true,
+    "cells_checked": 12,
+    "scope": "RankIC recomputed per complete timestamp with average ranks, then averaged by day; prediction and sample coverage also checked.",
+    "source": "archived seed predictions merged with the official monthly vwap_return labels"
+  },
+  "recorded_at_utc": "2026-10-23T17:24:46.034702+00:00",
   "schema_version": 1,
   "scope": "Archived CSZ round reused as the multi-seed extension of V1 after proving the V1 seed-11 research-A network is bit-identical to the archived CSZ arm. No new training and no new data range were opened.",
   "sources": {

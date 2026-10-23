@@ -33,6 +33,10 @@ CELL_METRICS = ("rank_ic_mean", "long_short_return_mean", "turnover_mean",
                 "sample_count")
 DELTA_KEYS = {"rank_ic_mean": "rank_ic", "long_short_return_mean": "long_short_return",
               "turnover_mean": "turnover"}
+LABELS = {
+    "research_a": ROOT / "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-11.parquet",
+    "research_b": ROOT / "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-03.parquet",
+}
 
 
 def close(left, right, atol=1e-12):
@@ -103,6 +107,21 @@ def interval_rows(record, block_days):
     return {(row["period"], row["metric"]): row for row in matches[0]["rows"]}
 
 
+def recompute_rank_ic(window, seed, arm):
+    run = CSZ_RUN if arm == "v1" else RAW_RUN
+    predictions = pd.read_parquet(run / f"inference/{window}/seed{seed}_predictions.parquet")
+    labels = pd.read_parquet(LABELS[window], columns=["date", "instrument", "vwap_return"])
+    merged = predictions.merge(labels, on=["date", "instrument"], how="inner")
+    merged = merged.dropna(subset=["vwap_return"])
+    require(len(merged) > 0, f"{window}/{seed}/{arm}: no prediction rows have labels")
+    sections = pd.Series(
+        {timestamp: float(frame["score"].corr(frame["vwap_return"], method="spearman"))
+         for timestamp, frame in merged.groupby("date", sort=True)})
+    daily = sections.groupby(sections.index.normalize()).mean()
+    return {"rank_ic_mean": float(daily.mean()), "sections": int(len(sections)),
+            "days": int(len(daily)), "sample_count": int(len(merged))}
+
+
 def version_pair():
     version = read_json(VERSION_RECORD)
     require(version["experiment_id"] == "model-versions-20261023", "unexpected version record")
@@ -156,6 +175,26 @@ def build():
             "worst_day_delta": ref["worst_day_delta"],
             "min_day_delta": ref["min_day_delta"],
         }
+
+    for cell in cells:
+        values = {}
+        for arm in ("v0", "v1"):
+            values[arm] = recompute_rank_ic(cell["window"], cell["seed"], arm)
+            expected = cell[arm]
+            require(close(values[arm]["rank_ic_mean"], expected["rank_ic_mean"], atol=1e-9),
+                    f"{cell['window']}/{cell['seed']}/{arm}: recomputed RankIC differs")
+            require(values[arm]["sample_count"] == expected["sample_count"],
+                    f"{cell['window']}/{cell['seed']}/{arm}: recomputed sample count differs")
+            require(values[arm]["days"] == expected["day_count"],
+                    f"{cell['window']}/{cell['seed']}/{arm}: recomputed day count differs")
+        cell["prediction_recompute"] = values
+    prediction_recompute = {
+        "source": "archived seed predictions merged with the official monthly vwap_return labels",
+        "cells_checked": len(cells) * 2,
+        "all_match": True,
+        "scope": "RankIC recomputed per complete timestamp with average ranks, then averaged by day; "
+                 "prediction and sample coverage also checked.",
+    }
 
     daily = pd.read_csv(CSZ_RUN / "paired_daily.csv")
     require(len(daily) == 20, "paired daily file must contain twenty seed-mean days")
@@ -237,6 +276,7 @@ def build():
                                "and no fit hit its cap.",
         },
         "cells": cells,
+        "prediction_recompute": prediction_recompute,
         "windows": windows,
         "pooled_seed_mean_delta": {key: float(recomputed["all"][key])
                                    for key in DELTA_KEYS.values()},
@@ -292,6 +332,7 @@ def report_text(record):
         "V0 vs V1 三种子 x 两窗证据（本地近似口径，复用已冻结归档）",
         "",
         "身份：V1 seed11 research-A 权重与归档 CSZ 臂逐张量相同；V0 seed11 research-A 权重与归档 raw 臂逐张量相同。",
+        f"逐格 RankIC 已由归档预测 + 官方 vwap_return 独立复算，{record['prediction_recompute']['cells_checked']} 个手臂/窗口单元与冻结记录一致。",
         "V0=原始官方收益标签；V1=完整时间戳截面 z-score 后按训练池常数匹配中心化方差。每格网络、输入、训练日期、1500 步、batch 32、lr 1e-4、种子相同。",
         "",
         "逐种子 RankIC（V0 -> V1，括号内为差）：",
