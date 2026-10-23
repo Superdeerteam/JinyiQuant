@@ -446,6 +446,9 @@ $env:PYTHONPATH = 'src;.'
 
 残差化后 V1 减 V0 的 RankIC 仍为 A +0.058911、B +0.019919，ICIR +3.274/+1.113，多空夏普 +31.87/+12.67，换手 −0.425/−0.032，两个窗口的最差日 V1 都不差于 V0。V1 的 RankIC 在残差化后保留 87.8%/90.6%，即增量主要不是风格或行业暴露；V0 在 A 只保留 65.5%，B 的原始 RankIC 为负（绝对值比 9.07，比率无方向含义）。风格+行业可解释的分数截面方差为 15.2%–22.6%。
 
+**V1 平台提交包：** 由 V1 训练目录依次执行 `modified_tlob.package`、`--refresh-inference --recover-missing-history` 与[七文件打包](scripts/package_flat_submission.py)生成；`submission_config.json` 中 `weights_sha256` 与 V1 权重一致（`deabe877…`），并显式启用 `recover_then_mean`（开盘缺失历史回补、无历史按训练均值回退）。[离线校验](scripts/check_flat_submission.py)在参考包与扁平包间做逐字节预测比较：普通与 opening-gap 两个场景均通过，预测最大差 0，回补与均值回退已验证，网络被禁用，requirements 与 torch 2.5.0 环境匹配。上传文件为 `submission_config.json`、`provenance.json`、`jinyiquant_flat.py`、`modified_tlob_weights.json`、`requirements.txt`、`inference.ipynb`、`modified_tlob_flat.py`；`dist/` 与压缩包不入库，平台时限与内存仍未验收。
+
+
 **解释边界：** 新配对只用一个种子和一个窗口，逐日差不是独立确认；风格残差是本地近似口径，不是官方 `M.jyc_eval` 预处理。归档的 CSZ 轮因研究B最差日护栏失败而未被门槛晋升，V1 是按用户方向形成的版本，不记为门槛通过；确认区、第四季度锁定区与旧 final 未打开，平台时限与内存仍未验收。
 
 ## 仓库发布边界
