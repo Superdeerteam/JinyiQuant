@@ -1,0 +1,614 @@
+{
+  "cells": [
+    {
+      "delta": {
+        "long_short_return": 0.00040823748992086444,
+        "rank_ic": 0.054488004542246005,
+        "turnover": -0.3588837042354631
+      },
+      "seed": 11,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": 2.6874494434336837e-05,
+        "long_short_sharpe": 1.8028457846549981,
+        "min_daily_long_short_return": -0.000289176947171676,
+        "rank_ic_ir": 0.2697321300920331,
+        "rank_ic_mean": 0.006586304813130069,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.6669149318018666
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.00043511198435520126,
+        "long_short_sharpe": 28.13492073821748,
+        "min_daily_long_short_return": 6.0455621637986214e-05,
+        "rank_ic_ir": 2.5255177282434724,
+        "rank_ic_mean": 0.061074309355376076,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.3080312275664034
+      },
+      "window": "research_a"
+    },
+    {
+      "delta": {
+        "long_short_return": 0.00038516628871421713,
+        "rank_ic": 0.057643400312367775,
+        "turnover": -0.49125089734386185
+      },
+      "seed": 29,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.00016633965425646627,
+        "long_short_sharpe": 13.844694104745951,
+        "min_daily_long_short_return": -0.00012058092014646541,
+        "rank_ic_ir": 0.9471389551885309,
+        "rank_ic_mean": 0.022500896088241247,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.6689788226848528
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0005515059429706834,
+        "long_short_sharpe": 46.52277104147427,
+        "min_daily_long_short_return": 0.00024496006098519943,
+        "rank_ic_ir": 3.427385906019466,
+        "rank_ic_mean": 0.08014429640060902,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.177727925340991
+      },
+      "window": "research_a"
+    },
+    {
+      "delta": {
+        "long_short_return": 0.000607998559394632,
+        "rank_ic": 0.08281060470273095,
+        "turnover": -0.41549712849964093
+      },
+      "seed": 47,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": -5.20712109134454e-05,
+        "long_short_sharpe": -3.172703324805313,
+        "min_daily_long_short_return": -0.0004839840530741022,
+        "rank_ic_ir": -0.12787355216558613,
+        "rank_ic_mean": -0.004235385263146735,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.6000089734386218
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0005559273484811866,
+        "long_short_sharpe": 41.25413188809382,
+        "min_daily_long_short_return": 5.5514007467891984e-05,
+        "rank_ic_ir": 3.0549736507990435,
+        "rank_ic_mean": 0.07857521943958422,
+        "sample_count": 79920.0,
+        "turnover_mean": 1.1845118449389809
+      },
+      "window": "research_a"
+    },
+    {
+      "delta": {
+        "long_short_return": 0.0001530836062973625,
+        "rank_ic": 0.018679956552357775,
+        "turnover": 0.08681860193826285
+      },
+      "seed": 11,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": -4.959520376825679e-05,
+        "long_short_sharpe": -4.8355311719325895,
+        "min_daily_long_short_return": -0.00030116088435618087,
+        "rank_ic_ir": -0.567298676088852,
+        "rank_ic_mean": -0.010599396609749807,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.572472631012204
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0001034884025291057,
+        "long_short_sharpe": 5.007939896886641,
+        "min_daily_long_short_return": -0.0006015967449039918,
+        "rank_ic_ir": 0.2386838961082883,
+        "rank_ic_mean": 0.008080559942607967,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.6592912329504668
+      },
+      "window": "research_b"
+    },
+    {
+      "delta": {
+        "long_short_return": 0.00035338472341882424,
+        "rank_ic": 0.051554064329253274,
+        "turnover": -0.17825071787509006
+      },
+      "seed": 29,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0001408412688696285,
+        "long_short_sharpe": 8.757178718169866,
+        "min_daily_long_short_return": -0.0002247071847882993,
+        "rank_ic_ir": 0.34050325808738663,
+        "rank_ic_mean": 0.008291866257409625,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.548212311557789
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0004942259922884527,
+        "long_short_sharpe": 30.278933513711983,
+        "min_daily_long_short_return": 5.5298440017477585e-05,
+        "rank_ic_ir": 1.9322298172903212,
+        "rank_ic_mean": 0.0598459305866629,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.369961593682699
+      },
+      "window": "research_b"
+    },
+    {
+      "delta": {
+        "long_short_return": 0.00013308373109958727,
+        "rank_ic": 0.012903506941316744,
+        "turnover": -0.03419580043072501
+      },
+      "seed": 47,
+      "v0": {
+        "day_count": 10.0,
+        "long_short_return_mean": 7.472860917355492e-05,
+        "long_short_sharpe": 6.932107527035826,
+        "min_daily_long_short_return": -0.00015216413146705219,
+        "rank_ic_ir": 0.03970662419731368,
+        "rank_ic_mean": 0.0007438763680817247,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.6167657932519741
+      },
+      "v1": {
+        "day_count": 10.0,
+        "long_short_return_mean": 0.0002078123402731422,
+        "long_short_sharpe": 9.352713152876776,
+        "min_daily_long_short_return": -0.0005651055913664857,
+        "rank_ic_ir": 0.3074504371064242,
+        "rank_ic_mean": 0.013647383309398468,
+        "sample_count": 79904.0,
+        "turnover_mean": 1.582569992821249
+      },
+      "window": "research_b"
+    }
+  ],
+  "daily_diagnostics": {
+    "days": 20,
+    "non_positive_days": [
+      {
+        "date": "2024-03-07",
+        "long_short_return": -0.0002780696762844,
+        "period": "research_b",
+        "rank_ic": -0.0566579751969753
+      },
+      {
+        "date": "2024-03-11",
+        "long_short_return": -0.0001145865791517,
+        "period": "research_b",
+        "rank_ic": 0.0139306865619589
+      },
+      {
+        "date": "2024-03-12",
+        "long_short_return": 5.3135758664726905e-05,
+        "period": "research_b",
+        "rank_ic": -0.0020609108666872
+      }
+    ],
+    "seed_mean_rank_ic_positive_days": 18
+  },
+  "experiment_id": "model-versions-multi-seed-20261023",
+  "gates": {
+    "action": "retain_10_day_reference",
+    "candidate_status": "not promoted",
+    "checks": {
+      "both_windows_improve": true,
+      "gross_mean_nondecreasing": true,
+      "inference_cost_measured": true,
+      "minimum_mean_gain": true,
+      "turnover_mean_nonincreasing": true,
+      "worst_day_guardrail": false
+    },
+    "conclusion": "With only the training target changed (raw official return -> full-timestamp z-score rescaled by one pool constant to the centered-pool variance, raw-label target_std kept), the seed-mean paired daily all-eight-time RankIC difference against the raw-label 10-day/1500 reference was +0.046347 against the unchanged floor of 0.011647; per window research_a: +0.064981, research_b: +0.027713. Seed 11 progress was +0.036584 and is not part of the decision. Error reporting, kept separate from ranking: research_a: raw-label MSE 1.033639e-05, centered-label MSE 8.780151e-06, optimized transformed-target loss 1.259908e-05 (seed 11); research_b: raw-label MSE 1.545138e-05, centered-label MSE 1.122348e-05, optimized transformed-target loss 1.479845e-05 (seed 11). Same-seed contrast against the centered control (report only): RankIC +0.003226 (per window research_a: +0.004271, research_b: +0.002182), gross +0.000023200, turnover -0.038482. The candidate fails the predeclared gates worst_day_guardrail, so the raw-label 10-day reference is retained. The three seeds are complete; this is not evidence that every cross-sectional label transform is uninformative.",
+    "guardrails": {
+      "both_windows_improve": true,
+      "gross_interval_lower_at_least": -0.00010387476657357637,
+      "gross_mean_nondecreasing": true,
+      "turnover_interval_upper_at_most": 0.03706698237510122,
+      "turnover_mean_nonincreasing": true,
+      "worst_day_delta_at_least": -0.00013896761043335348
+    },
+    "minimum_mean_gain": 0.01164665094206816
+  },
+  "identity_checks": {
+    "all_six_cells_share_data_splits_steps_batch_learning_rate_seed": true,
+    "all_six_raw_arms_use_none_and_csz_arms_use_csz": true,
+    "budget_cap_note": "Archived raw fits were capped at 3600 s / 6144 MiB / 100000 samples; CSZ fits at 900 s / 9472 MiB / 79920 samples. Actual steps, samples, samples seen, batch and learning rate are equal, and no fit hit its cap.",
+    "budget_caps_differ_between_archived_raw_and_csz_fits": true,
+    "v0_seed11_research_a_bit_identical_to_archived_raw_arm": true,
+    "v0_v1_configs_differ_only_in_target_centering": true,
+    "v1_seed11_research_a_bit_identical_to_archived_csz_arm": true
+  },
+  "intervals": {
+    "2": {
+      "long_short_all": {
+        "days": 20,
+        "interval": [
+          0.00022591820311322416,
+          0.0004226224657107617
+        ],
+        "mean": 0.00034015906647424785,
+        "metric": "long_short_return",
+        "period": "all"
+      },
+      "rank_ic_all": {
+        "days": 20,
+        "interval": [
+          0.030224776645579824,
+          0.05848223445763144
+        ],
+        "mean": 0.04634658956337876,
+        "metric": "rank_ic",
+        "period": "all"
+      },
+      "rank_ic_research_a": {
+        "days": 10,
+        "interval": [
+          0.038456451497192026,
+          0.08348008199097756
+        ],
+        "mean": 0.06498066985244824,
+        "metric": "rank_ic",
+        "period": "research_a"
+      },
+      "rank_ic_research_b": {
+        "days": 10,
+        "interval": [
+          0.010376148067333018,
+          0.04356618444694864
+        ],
+        "mean": 0.027712509274309266,
+        "metric": "rank_ic",
+        "period": "research_b"
+      },
+      "turnover_all": {
+        "days": 20,
+        "interval": [
+          -0.24584893776920314,
+          -0.21534529717037582
+        ],
+        "mean": -0.23187660774108645,
+        "metric": "turnover",
+        "period": "all"
+      }
+    },
+    "5": {
+      "long_short_all": {
+        "days": 20,
+        "interval": [
+          0.00023443210813376596,
+          0.00038911832184473086
+        ],
+        "mean": 0.00034015906647424785,
+        "metric": "long_short_return",
+        "period": "all"
+      },
+      "rank_ic_all": {
+        "days": 20,
+        "interval": [
+          0.03251427870378978,
+          0.05524686072109686
+        ],
+        "mean": 0.04634658956337876,
+        "metric": "rank_ic",
+        "period": "all"
+      },
+      "rank_ic_research_a": {
+        "days": 10,
+        "interval": [
+          0.042737047876775756,
+          0.0872242918281207
+        ],
+        "mean": 0.06498066985244824,
+        "metric": "rank_ic",
+        "period": "research_a"
+      },
+      "rank_ic_research_b": {
+        "days": 10,
+        "interval": [
+          0.011064008782783739,
+          0.033519010278823855
+        ],
+        "mean": 0.027712509274309266,
+        "metric": "rank_ic",
+        "period": "research_b"
+      },
+      "turnover_all": {
+        "days": 20,
+        "interval": [
+          -0.23936348408710223,
+          -0.21725139836085194
+        ],
+        "mean": -0.23187660774108645,
+        "metric": "turnover",
+        "period": "all"
+      }
+    }
+  },
+  "limits": [
+    "The six archived cells are the CSZ round's three seeds and two used research windows; they are selection data, not independent confirmation.",
+    "The older pre-declared worst-day guardrail is not passed: research B's worst day is worse than the -1.3896761e-4 tolerance, so V1 is a leading version by average evidence, not a formal gate pass.",
+    "Local RankIC, long-short and turnover are local approximations, not the official platform score.",
+    "Style residualization is the frozen local proxy, not the official M.jyc_eval preprocessing; it is reused, not recomputed.",
+    "Confirmation, locked and legacy final ranges were not opened; platform limits remain unverified."
+  ],
+  "policy": "V0 uses the raw official training label; V1 uses the full-timestamp z-score rescaled by one training-pool constant. Network, inputs, training dates, steps, batch, learning rate and seed are identical within every cell.",
+  "pooled_seed_mean_delta": {
+    "long_short_return": 0.00034015906647421625,
+    "rank_ic": 0.046346589563378726,
+    "turnover": -0.23187660774108645
+  },
+  "recorded_at_utc": "2026-10-23T17:21:36.285211+00:00",
+  "schema_version": 1,
+  "scope": "Archived CSZ round reused as the multi-seed extension of V1 after proving the V1 seed-11 research-A network is bit-identical to the archived CSZ arm. No new training and no new data range were opened.",
+  "sources": {
+    "csz_record": {
+      "path": "modified_tlob/label_cszscore_20261018.json",
+      "sha256": "49487024754545953571ace7dfbc0fc2695bf4dd2fb5f6afd1a9b0575b1729fb"
+    },
+    "csz_run": "runs/label-cszscore-20261018/20261018T104425.466761Z_1b8039d5f4e1",
+    "plan": {
+      "path": "configs/label_cszscore_20261018_plan.json",
+      "sha256": "78e7e58b1967667e8e8da1717a1c1c878f469c3eaa8ca646cf67152201fcfb38"
+    },
+    "raw_run": "runs/fixed-seed-ensemble-20261017/20261017T064944.073834Z_193b03ead7ff",
+    "version_record": {
+      "path": "modified_tlob/model_versions_20261023.json",
+      "sha256": "40267c8eb5f9e950cc00e409646b16475e1c6afe400774202b9b4461b4ead29b"
+    }
+  },
+  "style_adjusted": {
+    "note": "Already-recorded three-seed style-residual replay; V0 is ref10 and V1 is cand_csz. It is reused, not recomputed; the trained networks reproduce those archived arms.",
+    "source": {
+      "method": "use the most recent exposure date strictly before the signal date (previous trading day); every one of the eight timestamps of a day uses that same snapshot; same-day rows are never used and there is no forward fill",
+      "path": "modified_tlob/risk_neutralization_20261018.json",
+      "scope": "local approximation of the official preprocessing; no official score",
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "sha256": "a21dfbeadeffe7f189bed43c0835aa836ba82c48c3371beb25405e37a8b46201"
+    },
+    "windows": {
+      "research_a": {
+        "v0_processed": {
+          "long_short_return_mean": 7.107970172737012e-05,
+          "long_short_sharpe": 15.915083505725354,
+          "min_daily_long_short_return": -9.362429003044951e-05,
+          "rank_ic_ir": 0.5852321027250061,
+          "rank_ic_mean": 0.005434100821524714,
+          "turnover_mean": 1.6412658530748985
+        },
+        "v0_rank_ic_retained": 0.654615654579587,
+        "v0_raw": {
+          "long_short_return_mean": 4.7211014056318825e-05,
+          "long_short_sharpe": 4.181913198207805,
+          "min_daily_long_short_return": -0.00029612198640369814,
+          "rank_ic_ir": 0.36492709131332696,
+          "rank_ic_mean": 0.00830120817232006,
+          "turnover_mean": 1.6452590332615458
+        },
+        "v0_raw_rank_ic_positive": true,
+        "v1_minus_v0_processed": {
+          "long_short_return_mean": 0.00038186721572555437,
+          "long_short_sharpe": 31.866172057045347,
+          "rank_ic_ir": 3.274126035141635,
+          "rank_ic_mean": 0.05891108831035726,
+          "turnover_mean": -0.42546063651591304
+        },
+        "v1_processed": {
+          "long_short_return_mean": 0.0004529469174529245,
+          "long_short_sharpe": 47.7812555627707,
+          "min_daily_long_short_return": 0.00022212405578557525,
+          "rank_ic_ir": 3.859358137866641,
+          "rank_ic_mean": 0.06434518913188197,
+          "turnover_mean": 1.2158052165589854
+        },
+        "v1_rank_ic_retained": 0.8780152532133446,
+        "v1_raw": {
+          "long_short_return_mean": 0.0005141963252250441,
+          "long_short_sharpe": 38.65995383931071,
+          "min_daily_long_short_return": 0.00012030989669702587,
+          "rank_ic_ir": 3.0016699725098603,
+          "rank_ic_mean": 0.0732848192515934,
+          "turnover_mean": 1.2234236659487916
+        },
+        "v1_raw_rank_ic_positive": true
+      },
+      "research_b": {
+        "v0_processed": {
+          "long_short_return_mean": 8.571916458880982e-05,
+          "long_short_sharpe": 11.674171459623368,
+          "min_daily_long_short_return": -8.973325204507383e-05,
+          "rank_ic_ir": 0.4015555880111134,
+          "rank_ic_mean": 0.004727934301033755,
+          "turnover_mean": 1.5754845058626465
+        },
+        "v0_rank_ic_retained": 9.070934519971663,
+        "v0_raw": {
+          "long_short_return_mean": 5.5324891424975544e-05,
+          "long_short_sharpe": 3.6179183577577008,
+          "min_daily_long_short_return": -0.00022601073353717744,
+          "rank_ic_ir": -0.06236293126805056,
+          "rank_ic_mean": -0.000521217994752819,
+          "turnover_mean": 1.579150245273989
+        },
+        "v0_raw_rank_ic_positive": false,
+        "v1_minus_v0_processed": {
+          "long_short_return_mean": 0.00014302186839978357,
+          "long_short_sharpe": 12.6671303963891,
+          "rank_ic_ir": 1.1129511939362784,
+          "rank_ic_mean": 0.019918560093859353,
+          "turnover_mean": -0.03173090153146685
+        },
+        "v1_processed": {
+          "long_short_return_mean": 0.00022874103298859338,
+          "long_short_sharpe": 24.341301856012468,
+          "min_daily_long_short_return": -6.457333372925282e-05,
+          "rank_ic_ir": 1.5145067819473919,
+          "rank_ic_mean": 0.024646494394893106,
+          "turnover_mean": 1.5437536043311797
+        },
+        "v1_rank_ic_retained": 0.9064113263875547,
+        "v1_raw": {
+          "long_short_return_mean": 0.0002685089116969002,
+          "long_short_sharpe": 14.879862187825132,
+          "min_daily_long_short_return": -0.00037046796541766663,
+          "rank_ic_ir": 0.826121383501678,
+          "rank_ic_mean": 0.027191291279556443,
+          "turnover_mean": 1.537274273151472
+        },
+        "v1_raw_rank_ic_positive": true
+      }
+    }
+  },
+  "version_pair": {
+    "single_seed_pair_mean_delta": {
+      "long_short_return": 0.00040823748992082113,
+      "rank_ic": 0.054488004542245935,
+      "turnover": -0.358883704235463
+    },
+    "single_seed_pair_worst_day_delta": {
+      "long_short_return": {
+        "date": "2023-11-02",
+        "delta": -1.371597915430004e-05
+      },
+      "rank_ic": {
+        "date": "2023-11-02",
+        "delta": -0.012886216865562898
+      }
+    },
+    "source": "modified_tlob/model_versions_20261023.json",
+    "v0": {
+      "max_abs_difference": 0.0,
+      "metrics": {
+        "day_count": 10,
+        "ic_mean": 0.008344993258457566,
+        "long_short_return_mean": 2.6874494434336837e-05,
+        "long_short_sharpe": 1.8028457846549981,
+        "min_daily_long_short_return": -0.000289176947171676,
+        "rank_ic_ir": 0.2697321300920331,
+        "rank_ic_mean": 0.006586304813130069,
+        "sample_count": 79920,
+        "turnover_mean": 1.6669149318018666
+      },
+      "run": "runs/model-versions/v0/20261023T161038.327693Z_df200417df15",
+      "run_id": "20261023T161038.327693Z_df200417df15",
+      "tensors": 346,
+      "weights_vs_archived_arm_bit_identical": true
+    },
+    "v1": {
+      "max_abs_difference": 0.0,
+      "metrics": {
+        "day_count": 10,
+        "ic_mean": 0.061252674733734504,
+        "long_short_return_mean": 0.00043511198435520126,
+        "long_short_sharpe": 28.13492073821748,
+        "min_daily_long_short_return": 6.0455621637986214e-05,
+        "rank_ic_ir": 2.5255177282434724,
+        "rank_ic_mean": 0.061074309355376076,
+        "sample_count": 79920,
+        "turnover_mean": 1.3080312275664034
+      },
+      "run": "runs/model-versions/v1/20261023T162934.801889Z_69b92102de6c",
+      "run_id": "20261023T162934.801889Z_69b92102de6c",
+      "tensors": 346,
+      "weights_vs_archived_arm_bit_identical": true
+    }
+  },
+  "windows": {
+    "research_a": {
+      "arm_window_means": {
+        "cand_csz": {
+          "long_short_return": 0.0005141817586023571,
+          "rank_ic": 0.0732646083985231,
+          "turnover": 1.2234236659487918
+        },
+        "ref10": {
+          "long_short_return": 4.7047645925785906e-05,
+          "rank_ic": 0.008283938546074862,
+          "turnover": 1.6453009093084467
+        }
+      },
+      "days": 10,
+      "min_day_delta": 0.00010243396788364338,
+      "per_seed_mean_delta": {
+        "11": {
+          "long_short_return": 0.00040823748992086444,
+          "rank_ic": 0.054488004542246005,
+          "turnover": -0.3588837042354631
+        },
+        "29": {
+          "long_short_return": 0.00038516628871421713,
+          "rank_ic": 0.057643400312367775,
+          "turnover": -0.49125089734386185
+        },
+        "47": {
+          "long_short_return": 0.000607998559394632,
+          "rank_ic": 0.08281060470273095,
+          "turnover": -0.41549712849964093
+        }
+      },
+      "train_dates": null,
+      "worst_day_delta": 0.0004124408005512213
+    },
+    "research_b": {
+      "arm_window_means": {
+        "cand_csz": {
+          "long_short_return": 0.0002685089116969002,
+          "rank_ic": 0.02719129127955644,
+          "turnover": 1.5372742731514715
+        },
+        "ref10": {
+          "long_short_return": 5.5324891424975544e-05,
+          "rank_ic": -0.0005212179947528195,
+          "turnover": 1.5791502452739892
+        }
+      },
+      "days": 10,
+      "min_day_delta": -0.0002780696762844693,
+      "per_seed_mean_delta": {
+        "11": {
+          "long_short_return": 0.0001530836062973625,
+          "rank_ic": 0.018679956552357775,
+          "turnover": 0.08681860193826285
+        },
+        "29": {
+          "long_short_return": 0.00035338472341882424,
+          "rank_ic": 0.051554064329253274,
+          "turnover": -0.17825071787509006
+        },
+        "47": {
+          "long_short_return": 0.00013308373109958727,
+          "rank_ic": 0.012903506941316744,
+          "turnover": -0.03419580043072501
+        }
+      },
+      "train_dates": null,
+      "worst_day_delta": -0.00027541232578309814
+    }
+  },
+  "worst_day": {
+    "research_a": 0.0004124408005512213,
+    "research_b": -0.00027541232578309814,
+    "seed_mean_worst_row": {
+      "date": "2024-03-07",
+      "long_short_return": -0.0002780696762844,
+      "period": "research_b"
+    },
+    "tolerance": 0.00013896761043335348
+  }
+}
