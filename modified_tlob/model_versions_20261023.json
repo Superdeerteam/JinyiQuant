@@ -1,0 +1,299 @@
+{
+  "archived_multi_seed_evidence": {
+    "candidate_status": "not promoted",
+    "conclusion": "With only the training target changed (raw official return -> full-timestamp z-score rescaled by one pool constant to the centered-pool variance, raw-label target_std kept), the seed-mean paired daily all-eight-time RankIC difference against the raw-label 10-day/1500 reference was +0.046347 against the unchanged floor of 0.011647; per window research_a: +0.064981, research_b: +0.027713. Seed 11 progress was +0.036584 and is not part of the decision. Error reporting, kept separate from ranking: research_a: raw-label MSE 1.033639e-05, centered-label MSE 8.780151e-06, optimized transformed-target loss 1.259908e-05 (seed 11); research_b: raw-label MSE 1.545138e-05, centered-label MSE 1.122348e-05, optimized transformed-target loss 1.479845e-05 (seed 11). Same-seed contrast against the centered control (report only): RankIC +0.003226 (per window research_a: +0.004271, research_b: +0.002182), gross +0.000023200, turnover -0.038482. The candidate fails the predeclared gates worst_day_guardrail, so the raw-label 10-day reference is retained. The three seeds are complete; this is not evidence that every cross-sectional label transform is uninformative.",
+    "note": "Archived three-seed/two-window CSZ evidence is the uncertainty reference; this single-seed pair adds a same-pipeline version record, not independent confirmation.",
+    "path": "modified_tlob/label_cszscore_20261018.json",
+    "sha256": "49487024754545953571ace7dfbc0fc2695bf4dd2fb5f6afd1a9b0575b1729fb"
+  },
+  "comparison": {
+    "daily": [
+      {
+        "date": "2023-11-01",
+        "long_short_return_delta": 0.00037336067434980006,
+        "rank_ic_delta": 0.04664193853171811,
+        "turnover_delta": -0.39913854989231856
+      },
+      {
+        "date": "2023-11-02",
+        "long_short_return_delta": -1.371597915430004e-05,
+        "rank_ic_delta": -0.012886216865562898,
+        "turnover_delta": -0.387562814070352
+      },
+      {
+        "date": "2023-11-03",
+        "long_short_return_delta": 0.00026104479527448623,
+        "rank_ic_delta": 0.0434325678383793,
+        "turnover_delta": -0.2474874371859297
+      },
+      {
+        "date": "2023-11-06",
+        "long_short_return_delta": 0.00032883692973989997,
+        "rank_ic_delta": 0.0309211410809606,
+        "turnover_delta": -0.31092964824120606
+      },
+      {
+        "date": "2023-11-07",
+        "long_short_return_delta": 0.0004731571988065245,
+        "rank_ic_delta": 0.0631557198836335,
+        "turnover_delta": -0.34484924623115587
+      },
+      {
+        "date": "2023-11-08",
+        "long_short_return_delta": 0.0004957605403368,
+        "rank_ic_delta": 0.0731392589890618,
+        "turnover_delta": -0.4409547738693469
+      },
+      {
+        "date": "2023-11-09",
+        "long_short_return_delta": 0.0007835011485249,
+        "rank_ic_delta": 0.0984984970016593,
+        "turnover_delta": -0.3831658291457285
+      },
+      {
+        "date": "2023-11-10",
+        "long_short_return_delta": 0.0001192358505281,
+        "rank_ic_delta": 0.042493142441038204,
+        "turnover_delta": -0.36494974874371855
+      },
+      {
+        "date": "2023-11-13",
+        "long_short_return_delta": 0.00064155283992,
+        "rank_ic_delta": 0.0622261700578334,
+        "turnover_delta": -0.39133165829145744
+      },
+      {
+        "date": "2023-11-14",
+        "long_short_return_delta": 0.0006196409008819999,
+        "rank_ic_delta": 0.0972578264637381,
+        "turnover_delta": -0.31846733668341676
+      }
+    ],
+    "days": 10,
+    "mean_delta": {
+      "long_short_return": 0.00040823748992082113,
+      "rank_ic": 0.054488004542245935,
+      "turnover": -0.358883704235463
+    },
+    "worst_day_delta": {
+      "long_short_return": {
+        "date": "2023-11-02",
+        "delta": -1.371597915430004e-05
+      },
+      "rank_ic": {
+        "date": "2023-11-02",
+        "delta": -0.012886216865562898
+      }
+    }
+  },
+  "experiment_id": "model-versions-20261023",
+  "limits": [
+    "One seed and one evaluation window in the new pair; paired daily differences are not independent confirmation.",
+    "Local RankIC/long-short/turnover are approximations, not the official platform score.",
+    "The archived CSZ round failed its worst-day guardrail on raw scores; V1 is formed by user direction and is not recorded as a gate pass.",
+    "Style residualization is the frozen local proxy, not the official M.jyc_eval preprocessing.",
+    "Confirmation, locked and legacy final ranges were not opened; platform limits remain unverified."
+  ],
+  "policy": "V0 and V1 share network, inputs, training dates, steps, seed and budget; only model.target_centering changes, so this comparison isolates the training label.",
+  "recorded_at_utc": "2026-10-23T16:46:58.404849+00:00",
+  "reproduction": {
+    "v0": {
+      "archived_arm": "runs/fixed-seed-ensemble-20261017/20261017T064944.073834Z_193b03ead7ff/fits/research_a_s11/modified_tlob_weights.json",
+      "archived_arm_sha256": "415d3c41c0b235715ed5275c65c57262a4d2eaa104768430c250a62efb360d30",
+      "max_abs_difference": 0.0,
+      "network_weights_bit_identical": true,
+      "tensors": 346
+    },
+    "v1": {
+      "archived_arm": "runs/label-cszscore-20261018/20261018T104425.466761Z_1b8039d5f4e1/fits/research_a_s11/modified_tlob_weights.json",
+      "archived_arm_sha256": "deabe877d36e7461eb2d5e85a330788b953d44c4cfea767fcd144e2b95e7152a",
+      "max_abs_difference": 0.0,
+      "network_weights_bit_identical": true,
+      "tensors": 346
+    }
+  },
+  "schema_version": 1,
+  "style_adjusted": {
+    "note": "Already-recorded three-seed style-residual replay; V0 is ref10 and V1 is cand_csz. It is reused, not recomputed; the trained networks reproduce those archived arms.",
+    "source": {
+      "method": "use the most recent exposure date strictly before the signal date (previous trading day); every one of the eight timestamps of a day uses that same snapshot; same-day rows are never used and there is no forward fill",
+      "path": "modified_tlob/risk_neutralization_20261018.json",
+      "scope": "local approximation of the official preprocessing; no official score",
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "sha256": "a21dfbeadeffe7f189bed43c0835aa836ba82c48c3371beb25405e37a8b46201"
+    },
+    "windows": {
+      "research_a": {
+        "v0_processed": {
+          "long_short_return_mean": 7.107970172737012e-05,
+          "long_short_sharpe": 15.915083505725354,
+          "min_daily_long_short_return": -9.362429003044951e-05,
+          "rank_ic_ir": 0.5852321027250061,
+          "rank_ic_mean": 0.005434100821524714,
+          "turnover_mean": 1.6412658530748985
+        },
+        "v0_rank_ic_retained": 0.654615654579587,
+        "v0_raw": {
+          "long_short_return_mean": 4.7211014056318825e-05,
+          "long_short_sharpe": 4.181913198207805,
+          "min_daily_long_short_return": -0.00029612198640369814,
+          "rank_ic_ir": 0.36492709131332696,
+          "rank_ic_mean": 0.00830120817232006,
+          "turnover_mean": 1.6452590332615458
+        },
+        "v0_raw_rank_ic_positive": true,
+        "v1_minus_v0_processed": {
+          "long_short_return_mean": 0.00038186721572555437,
+          "long_short_sharpe": 31.866172057045347,
+          "rank_ic_ir": 3.274126035141635,
+          "rank_ic_mean": 0.05891108831035726,
+          "turnover_mean": -0.42546063651591304
+        },
+        "v1_processed": {
+          "long_short_return_mean": 0.0004529469174529245,
+          "long_short_sharpe": 47.7812555627707,
+          "min_daily_long_short_return": 0.00022212405578557525,
+          "rank_ic_ir": 3.859358137866641,
+          "rank_ic_mean": 0.06434518913188197,
+          "turnover_mean": 1.2158052165589854
+        },
+        "v1_rank_ic_retained": 0.8780152532133446,
+        "v1_raw": {
+          "long_short_return_mean": 0.0005141963252250441,
+          "long_short_sharpe": 38.65995383931071,
+          "min_daily_long_short_return": 0.00012030989669702587,
+          "rank_ic_ir": 3.0016699725098603,
+          "rank_ic_mean": 0.0732848192515934,
+          "turnover_mean": 1.2234236659487916
+        },
+        "v1_raw_rank_ic_positive": true
+      },
+      "research_b": {
+        "v0_processed": {
+          "long_short_return_mean": 8.571916458880982e-05,
+          "long_short_sharpe": 11.674171459623368,
+          "min_daily_long_short_return": -8.973325204507383e-05,
+          "rank_ic_ir": 0.4015555880111134,
+          "rank_ic_mean": 0.004727934301033755,
+          "turnover_mean": 1.5754845058626465
+        },
+        "v0_rank_ic_retained": 9.070934519971663,
+        "v0_raw": {
+          "long_short_return_mean": 5.5324891424975544e-05,
+          "long_short_sharpe": 3.6179183577577008,
+          "min_daily_long_short_return": -0.00022601073353717744,
+          "rank_ic_ir": -0.06236293126805056,
+          "rank_ic_mean": -0.000521217994752819,
+          "turnover_mean": 1.579150245273989
+        },
+        "v0_raw_rank_ic_positive": false,
+        "v1_minus_v0_processed": {
+          "long_short_return_mean": 0.00014302186839978357,
+          "long_short_sharpe": 12.6671303963891,
+          "rank_ic_ir": 1.1129511939362784,
+          "rank_ic_mean": 0.019918560093859353,
+          "turnover_mean": -0.03173090153146685
+        },
+        "v1_processed": {
+          "long_short_return_mean": 0.00022874103298859338,
+          "long_short_sharpe": 24.341301856012468,
+          "min_daily_long_short_return": -6.457333372925282e-05,
+          "rank_ic_ir": 1.5145067819473919,
+          "rank_ic_mean": 0.024646494394893106,
+          "turnover_mean": 1.5437536043311797
+        },
+        "v1_rank_ic_retained": 0.9064113263875547,
+        "v1_raw": {
+          "long_short_return_mean": 0.0002685089116969002,
+          "long_short_sharpe": 14.879862187825132,
+          "min_daily_long_short_return": -0.00037046796541766663,
+          "rank_ic_ir": 0.826121383501678,
+          "rank_ic_mean": 0.027191291279556443,
+          "turnover_mean": 1.537274273151472
+        },
+        "v1_raw_rank_ic_positive": true
+      }
+    }
+  },
+  "versions": {
+    "v0": {
+      "config": {
+        "path": "configs/model_v0.json",
+        "sha256": "d28f3d5bd319776eb2fb1c6981d01f9909b8a2e8b4af1c369855bf1e29f8d023"
+      },
+      "label_semantics": {
+        "prediction_units": "original_label_return",
+        "target_centering": "none",
+        "target_scaling": "train_std"
+      },
+      "metrics": {
+        "day_count": 10,
+        "ic_mean": 0.008344993258457566,
+        "long_short_return_mean": 2.6874494434336837e-05,
+        "long_short_sharpe": 1.8028457846549981,
+        "min_daily_long_short_return": -0.000289176947171676,
+        "rank_ic_ir": 0.2697321300920331,
+        "rank_ic_mean": 0.006586304813130069,
+        "sample_count": 79920,
+        "turnover_mean": 1.6669149318018666
+      },
+      "run": "runs/model-versions/v0/20261023T161038.327693Z_df200417df15",
+      "run_id": "20261023T161038.327693Z_df200417df15",
+      "training": {
+        "loss": 1.451864659044425e-05,
+        "samples": 79920,
+        "samples_seen": 48000,
+        "steps": 1500,
+        "target_centering_stats": null,
+        "target_scale": 0.0038659661156313857
+      },
+      "weights_sha256": "1c557b41401428c0114714d805bd92fa27785b8bfe16b956aebce907886f6a03"
+    },
+    "v1": {
+      "config": {
+        "path": "configs/model_v1.json",
+        "sha256": "1015c3fbf17839a9d5d05e3f68ec0c5948a8c3ca097c9db10cb3b092e86f098c"
+      },
+      "label_semantics": {
+        "prediction_units": "relative_return_score",
+        "target_centering": "timestamp_zscore_train_rms_matched",
+        "target_scaling": "train_std"
+      },
+      "metrics": {
+        "day_count": 10,
+        "ic_mean": 0.061252674733734504,
+        "long_short_return_mean": 0.00043511198435520126,
+        "long_short_sharpe": 28.13492073821748,
+        "min_daily_long_short_return": 6.0455621637986214e-05,
+        "rank_ic_ir": 2.5255177282434724,
+        "rank_ic_mean": 0.061074309355376076,
+        "sample_count": 79920,
+        "turnover_mean": 1.3080312275664034
+      },
+      "run": "runs/model-versions/v1/20261023T162934.801889Z_69b92102de6c",
+      "run_id": "20261023T162934.801889Z_69b92102de6c",
+      "training": {
+        "loss": 1.2599081426776613e-05,
+        "samples": 79920,
+        "samples_seen": 48000,
+        "steps": 1500,
+        "target_centering_stats": {
+          "c": 0.003552189696783185,
+          "centered_std": 0.003552189696783185,
+          "fallback_mean": 1.368592170967451e-12,
+          "method": "timestamp_zscore_train_rms_matched",
+          "rows": 79920,
+          "timestamps": 80,
+          "transformed_std": 0.003552189696783185,
+          "zero_variance_timestamps": 0
+        },
+        "target_scale": 0.0038659661156313857
+      },
+      "weights_sha256": "deabe877d36e7461eb2d5e85a330788b953d44c4cfea767fcd144e2b95e7152a"
+    }
+  }
+}

@@ -213,8 +213,13 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     # A sealed final check must never become per-epoch training feedback.
     if config.model.kind == "modified_tlob" and config.evaluation_split == "validation":
         if not config.logging.learning_curves:
-            eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
-            fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
+            if config.model.target_centering == "none":
+                eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
+                fit_options["validation"] = (eval_batch, _aligned_targets(eval_batch, eval_targets).target.to_numpy())
+            else:
+                # Transformed training targets have no raw-label validation diagnostic; the
+                # adapter rejects mixed scales, and evaluation after saving stays on raw labels.
+                rec.event("training", "validation_diagnostic_skipped", target_centering=config.model.target_centering)
     if config.logging.learning_curves and config.model.kind == "modified_tlob":
         fit_options["observer"] = observe_curve
         fit_options["observer_every_steps"] = config.logging.learning_curve_every_steps
