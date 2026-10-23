@@ -154,6 +154,7 @@ def build_flat_package(package_dir, destination):
         "source_package_manifest_sha256": file_sha256(manifest_path),
         "training_run_id": manifest["training_run_id"],
         "weights_sha256": contract["weights_sha256"], "weights_changed": False,
+        "history_policy": contract.get("history_policy", {"mode": "strict"}),
         "scope": "Frozen-weight platform inference; original training project remains separate.",
         "source_modules": {f"{package}/{module}.py": manifest["files"][f"{package}/{module}.py"]
                            for package, modules in (("jinyiquant", JINYI_MODULES), ("modified_tlob", TLOB_MODULES))

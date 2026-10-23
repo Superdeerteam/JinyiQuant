@@ -75,6 +75,22 @@ def test_refresh_preserves_every_other_upload_file_and_training_provenance(exist
     assert not (destination / "modified_tlob" / "__pycache__").exists()
 
 
+def test_explicit_history_recovery_changes_only_inference_and_its_policy(existing_package):
+    old, destination = existing_package
+    original = read_json(old / "package_manifest.json")
+    package.refresh_inference_package(old, destination, recover_missing_history=True)
+    manifest = read_json(destination / "package_manifest.json")
+    changed = {name for name, digest in original["files"].items()
+               if file_sha256(destination / name) != digest}
+    assert changed == {package.INFERENCE_ENTRY, "submission_config.json"}
+    assert file_sha256(destination / "modified_tlob_weights.json") == original["files"]["modified_tlob_weights.json"]
+    contract = read_json(destination / "submission_config.json")
+    assert contract["history_policy"] == {"mode": "recover_then_mean", "max_backfill_days": 366,
+                                          "instrument_batch_size": 50}
+    assert manifest["inference_update"]["history_policy"] == contract["history_policy"]
+    assert manifest["files"]["submission_config.json"] == file_sha256(destination / "submission_config.json")
+
+
 @pytest.mark.parametrize("mutation", ["tamper", "missing", "extra", "wrong_weight_contract"])
 def test_refresh_rejects_unverified_payload_before_creating_destination(existing_package, mutation):
     old, destination = existing_package

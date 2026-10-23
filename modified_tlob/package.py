@@ -48,8 +48,8 @@ def _check_inference_dependencies(source, inventory, package_dir):
                 raise ValueError("Existing device.py does not provide device_resources")
 
 
-def refresh_inference_package(package_dir, destination):
-    """Replace only the inference entry in an intact package, without retraining.
+def refresh_inference_package(package_dir, destination, *, recover_missing_history=False):
+    """Refresh inference and optionally its explicit history policy, without retraining.
 
     Unlisted inference_runs/, training_runs/ and __pycache__/ outputs are ignored
     and never copied. All upload files must be listed and match their old hashes.
@@ -106,6 +106,11 @@ def refresh_inference_package(package_dir, destination):
         if file_sha256(target) != (new_entry_hash if name == INFERENCE_ENTRY else expected):
             raise ValueError(f"File changed while refreshing package: {name}")
     manifest["files"] = {**inventory, INFERENCE_ENTRY: new_entry_hash}
+    if recover_missing_history:
+        contract["history_policy"] = {"mode": "recover_then_mean", "max_backfill_days": 366,
+                                      "instrument_batch_size": 50}
+        write_json(destination / "submission_config.json", contract)
+        manifest["files"]["submission_config.json"] = file_sha256(destination / "submission_config.json")
     manifest["platform_acceptance"] = "not_verified"
     manifest["inference_update"] = {
         "schema_version": 1, "updated_at": utc_now(),
@@ -113,9 +118,15 @@ def refresh_inference_package(package_dir, destination):
         "previous_package_manifest_sha256": old_manifest_hash,
         "previous_submission_sha256": inventory[INFERENCE_ENTRY],
         "submission_sha256": new_entry_hash,
-        "scope": "Only inference entry replaced; all other upload files are byte-identical. "
-                 "Training provenance remains unchanged; the new inference entry is not the training snapshot.",
+        "scope": ("Inference entry and explicit history policy updated; weights, model and preprocessing "
+                  "are byte-identical." if recover_missing_history else
+                  "Only inference entry replaced; all other upload files are byte-identical.") +
+                 " Training provenance remains unchanged; the new inference entry is not the training snapshot.",
     }
+    if recover_missing_history:
+        manifest["inference_update"].update(history_policy=contract["history_policy"],
+            previous_submission_config_sha256=inventory["submission_config.json"],
+            submission_config_sha256=manifest["files"]["submission_config.json"])
     write_json(destination / "package_manifest.json", manifest)
     return destination
 
@@ -168,9 +179,16 @@ def main():
     parser.add_argument("destination", type=Path)
     parser.add_argument("--refresh-inference", action="store_true",
                         help="Treat run_dir as an existing package; replace only submission.py without retraining")
+    parser.add_argument("--recover-missing-history", action="store_true",
+                        help="Explicitly enable bounded historical backfill and saved-mean fallback")
     args = parser.parse_args()
-    operation = refresh_inference_package if args.refresh_inference else build_package
-    print(operation(args.run_dir, args.destination))
+    if args.recover_missing_history and not args.refresh_inference:
+        parser.error("--recover-missing-history requires --refresh-inference")
+    if args.refresh_inference:
+        print(refresh_inference_package(args.run_dir, args.destination,
+                                        recover_missing_history=args.recover_missing_history))
+    else:
+        print(build_package(args.run_dir, args.destination))
 
 
 if __name__ == "__main__":

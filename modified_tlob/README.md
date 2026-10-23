@@ -263,6 +263,23 @@ $env:PYTHONPATH = 'src;.'
 
 检查器在隔离进程中分别运行原包和从 ZIP 解压的新包，并明确禁止新包导入原 `jinyiquant`/`modified_tlob` 目录及联网。它自动检查七文件清单、权重与配置哈希、全部预测键和数值、依赖版本及运行时源码快照，生成独立 `checks.json`。本地原参考权重在相同合成行情上的256条预测差异为0；该结果验证打包等价，不是线上平台验收或收益改进证据。
 
+## 09:30 历史补读与缺历史回退
+
+原提交包的 `min_coverage=0.99` 是本地研究的有效历史覆盖门槛，既不是每只股票必须有128条历史，也不是官方的输出缺失率规则。默认严格模式继续保留该门槛；面向上传的容错模式必须显式生成：
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& $tlobPython -m modified_tlob.package <原完整提交包> dist/history-recovery-full-001 --refresh-inference --recover-missing-history
+& $tlobPython scripts/package_flat_submission.py dist/history-recovery-full-001 dist/history-recovery-flat-001
+& $tlobPython scripts/check_flat_submission.py dist/history-recovery-full-001 dist/history-recovery-flat-001.zip --scenario opening-gap --output runs/history-recovery-check-001
+```
+
+新包只更新推理代码及 `submission_config.json` 中的 `history_policy`，权重、网络、原始预处理参数和旧包均保留。正常历史仍按日读取；只有当前窗口不满足已保存的 `min_history` 的证券会请求额外历史。补读限定同一个注入行情表、当前预测时间之前最多366个自然日、原预取边界之前，每次最多50只证券；SQL通过 `ROW_NUMBER() OVER (PARTITION BY instrument ORDER BY date DESC)` 限制每只股票最多返回 `lookback` 条，随后仍用共享预处理和窗口函数。参考：[官方 DAI 日期和证券过滤](https://bigquant.com/wiki/doc/0INTpyBnZY)、[官方数据文档中的 QUALIFY/ROW_NUMBER 示例](https://bigquant.com/data/datasources/cn_stock_factors_shares)。补读缓存只用于原本不足的证券，已有有效窗口的样本保持原输入和预测批次顺序；已占满128条但全缺失的窗口不会跳过缺失行引入更老记录。
+
+补读后仍不足的股票继续输出权重中已保存的训练期目标均值，不删除股票或09:30时点；99%保留为告警参考，不替换成60%。每个时点记录补读、有效及回退数量，补读行情和请求证券的哈希另写结构化事件，每天首次回退会在平台控制台显示摘要。若整段预测区间没有任何有效历史，或者查询、字段、重复键、模型或时间预算出错，则明确失败，不把数据源异常伪装成正常结果。首个09:30全无历史但后续时点有数据时，该首时点仅输出训练期均值，不利用后续行情构造此前预测。
+
+行为测试 `tests/test_platform_history_recovery.py` 覆盖长假补读、缓存、原有效窗口不变、无历史回退、全缺失窗口边界、整段空数据失败及查询/超时异常传播；`--scenario opening-gap` 使用原已训练权重、完整256个合成预测键及独立历史窗口对照验证七文件包。这里验证的是输入处理和打包行为，不是平台成绩或收益改善。
+
 ## 尚未完成的外部验收
 
 本地 CPU 训练/复跑、上游中间表示对照、三档/五档梯度、常数/缺失窗口、因果性、错误设备、文本权重与断网包检查均有脚本或行为测试。原 Python 3.13 基线环境也独立验证。CI 增加可选 CPU 后端检查，尚未执行远端 CI。

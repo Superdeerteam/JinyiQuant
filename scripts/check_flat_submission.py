@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -21,7 +22,7 @@ def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def worker(package, baseline_config, output, *, flat):
+def worker(package, baseline_config, output, *, flat, scenario="normal"):
     import importlib.abc
     import socket
 
@@ -63,16 +64,33 @@ def worker(package, baseline_config, output, *, flat):
     pool = bars.loc[bars.date.between(start, end) &
                     bars.date.dt.strftime("%H:%M").isin(config["sample_times"]),
                     ["date", "instrument"]].copy()
+    if scenario == "opening-gap":
+        # The pool keeps both securities. S000 has valid quotes only before the
+        # original ten-day prefetch at the opening; S001 has no quotes at all.
+        bars = bars.loc[~bars.instrument.eq("S001") &
+                        ~(bars.instrument.eq("S000") & bars.date.le(start))].copy()
+        prior = pd.DataFrame({"date": pd.date_range("2021-12-24 13:00", periods=config["lookback"], freq="min"),
+                              "instrument": "S000"})
+        for index, name in enumerate(features):
+            prior[name] = 12 + index * .01 + np.arange(len(prior)) * .0001 if "price" in name else 100 + index
+        bars = pd.concat([prior, bars], ignore_index=True)
     queries = []
 
     def query(sql, *, filters):
         assert not any(name in sql.lower() for name in ("vwap", "target", "label"))
         columns = sql.split(" FROM ")[0].removeprefix("SELECT ").split(", ")
-        table = pool if "instruments" in sql else bars
+        table_name = re.search(r"FROM (\w+)", sql).group(1)
+        table = pool if table_name == "instruments" else bars
         lower, upper = map(pd.Timestamp, filters["date"])
         frame = table.loc[table.date.between(lower, upper), columns].copy()
+        if "QUALIFY" in sql:
+            assert "WHERE date >= TIMESTAMP" in sql and "AND date < TIMESTAMP" in sql
+            assert len(filters["instrument"]) <= 50
+            limit = int(re.search(r"<= (\d+)$", sql).group(1))
+            frame = frame.loc[frame.date.lt(upper) & frame.instrument.isin(filters["instrument"])]
+            frame = frame.sort_values("date").groupby("instrument", sort=False).tail(limit)
         queries.append({"rows": len(frame), "start": str(lower), "end": str(upper),
-                        "role": "pool" if table is pool else "bars"})
+                        "role": "pool" if table is pool else "backfill" if "QUALIFY" in sql else "bars"})
         return SimpleNamespace(df=lambda: frame)
 
     sys.modules["dai"] = SimpleNamespace(query=query)
@@ -86,7 +104,35 @@ def worker(package, baseline_config, output, *, flat):
     actual.to_parquet(output.with_suffix(".parquet"), index=False)
     result = {"passed": True, "rows": len(actual), "queries": queries,
               "prediction_sha256": hashlib.sha256(actual.factor.to_numpy().tobytes()).hexdigest(),
-              "notebook_executed": True, "network": "blocked", "flat": flat}
+              "notebook_executed": True, "network": "blocked", "flat": flat, "scenario": scenario}
+    if scenario == "opening-gap":
+        if flat:
+            from jinyiquant_flat import build_batch, preprocess_bars
+            from modified_tlob_flat import TLOBAdapter
+        else:
+            from jinyiquant.data import build_batch, preprocess_bars
+            from modified_tlob.adapter import TLOBAdapter
+        model = TLOBAdapter.load(package / "modified_tlob_weights.json", device="cpu")
+        contract = json.loads((package / "submission_config.json").read_text(encoding="utf-8"))
+        data = {**model.preprocessing, "price_scale": contract["platform_price_scale"]}
+        prepared = preprocess_bars(bars, data)
+        original = prepared.loc[prepared.date.ge(start - pd.Timedelta(days=data["history_days"]))]
+        expected, originally_usable = [], []
+        for _, group in pool.groupby("date", sort=True):
+            base = build_batch(original, group, data)
+            complete = build_batch(prepared, group, data)
+            missing = base.effective_rows.sum(axis=1) < data["min_history"]
+            # Independent oracle: leave every usable original window untouched;
+            # only missing windows use all available earlier observations.
+            for name in ("x", "observed", "history_dates"):
+                getattr(base, name)[missing] = getattr(complete, name)[missing]
+            expected.extend(model.predict(base))
+            originally_usable.extend(~missing)
+        np.testing.assert_array_equal(actual.factor.to_numpy(), expected)
+        assert actual.loc[actual.instrument.eq("S001"), "factor"].eq(model.intercept).all()
+        assert any(query["role"] == "backfill" for query in queries)
+        result.update(independent_window_oracle_equal=True, saved_mean_fallback_verified=True,
+                      originally_usable_samples=int(np.sum(originally_usable)))
     if flat:
         from importlib.metadata import version
 
@@ -110,7 +156,7 @@ def worker(package, baseline_config, output, *, flat):
     output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
 
-def verify(baseline, archive_path, output_root):
+def verify(baseline, archive_path, output_root, *, scenario="normal"):
     output_root.mkdir(parents=True, exist_ok=False)
     reference, flat = output_root / "reference", output_root / "flat"
     manifest = json.loads((baseline / "package_manifest.json").read_text(encoding="utf-8"))
@@ -138,7 +184,7 @@ def verify(baseline, archive_path, output_root):
         completed = subprocess.run([
             sys.executable, "-I", "-B", str(Path(__file__).resolve()), str(package),
             str(reference / "training_config.json"), "--output", str(output_root / f"{mode}.json"),
-            "--worker", mode,
+            "--worker", mode, "--scenario", scenario,
         ], cwd=output_root, env=environment, text=True, capture_output=True, timeout=120)
         (output_root / f"{mode}.log").write_text(completed.stdout + completed.stderr, encoding="utf-8")
         if completed.returncode:
@@ -159,6 +205,11 @@ def verify(baseline, archive_path, output_root):
               "original_packages_imported": False, "notebook_executed": True,
               "requirements_satisfied": worker_result["requirements_satisfied"],
               "source_snapshot_verified": True, "network": "blocked", "platform_acceptance": "not_verified"}
+    result["scenario"] = scenario
+    if scenario == "opening-gap":
+        result.update(independent_window_oracle_equal=worker_result["independent_window_oracle_equal"],
+                      saved_mean_fallback_verified=worker_result["saved_mean_fallback_verified"],
+                      originally_usable_samples=worker_result["originally_usable_samples"])
     (output_root / "checks.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
 
@@ -169,11 +220,13 @@ def main():
     parser.add_argument("archive", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--worker", choices=("reference", "flat"))
+    parser.add_argument("--scenario", choices=("normal", "opening-gap"), default="normal")
     args = parser.parse_args()
     if args.worker:
-        worker(args.baseline, args.archive, args.output, flat=args.worker == "flat")
+        worker(args.baseline, args.archive, args.output, flat=args.worker == "flat", scenario=args.scenario)
     else:
-        print(json.dumps(verify(args.baseline.resolve(), args.archive.resolve(), args.output.resolve())))
+        print(json.dumps(verify(args.baseline.resolve(), args.archive.resolve(), args.output.resolve(),
+                                scenario=args.scenario)))
 
 
 if __name__ == "__main__":
