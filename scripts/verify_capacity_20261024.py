@@ -3,12 +3,14 @@
 Verifies, with machine-readable output, that:
 1. every arm config differs from configs/model_v2_60d_csz.json only on the declared allowed keys;
 2. the declared frozen expectations still equal the V2 config item by item;
-3. the step arithmetic and config file hashes recorded in the preregistration are consistent;
+3. the step arithmetic and canonical config digests recorded in the preregistration are consistent;
 4. the pre-registered gate numbers equal the V2 record's pre_registered_thresholds;
 5. ModifiedTLOB parameter counts and final-head structures match the recorded values (needs torch).
 
-Run with `python scripts/verify_capacity_20261024.py`; a torch-capable interpreter completes check 5,
-otherwise it is reported as skipped and `complete` is false. Exit 0 only if every executed check passes.
+Run with `python scripts/verify_capacity_20261024.py` from the research workspace: a torch-capable
+interpreter completes check 5, otherwise it is reported as skipped and `complete` is false. The script also
+reads the local, git-ignored runs/model-versions/v2-cloud-20261023/record.json, so a bare clone is not enough.
+Exit 0 only if every executed check passed.
 """
 
 import hashlib
@@ -40,8 +42,11 @@ def flatten(value, prefix=""):
     return {prefix[:-1]: value}
 
 
-def file_sha256(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def canonical_sha256(path):
+    """Line-ending and whitespace independent config identity."""
+    value = read_json(path)
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return hashlib.sha256(payload).hexdigest()
 
 
 def check_config_diffs(plan, reference):
@@ -55,8 +60,8 @@ def check_config_diffs(plan, reference):
         outside = sorted(set(unexpected) - allowed)
         rows.append({"arm": arm["arm"], "changed_keys": unexpected, "unexpected_keys": outside,
                      "passed": not outside,
-                     "config_sha256_matches": file_sha256(path) == arm["config_sha256"]})
-    passed = all(row["passed"] and row["config_sha256_matches"] for row in rows)
+                     "canonical_sha256_matches": canonical_sha256(path) == arm["config_canonical_sha256"]})
+    passed = all(row["passed"] and row["canonical_sha256_matches"] for row in rows)
     return {"check": "config_diff_vs_v2", "passed": passed, "detail": rows}
 
 

@@ -16,7 +16,7 @@
     "version": "v2_60d_csz",
     "experiment_id": "model-v2-60d-csz",
     "config": "configs/model_v2_60d_csz.json",
-    "config_sha256": "547eb2abc3c2e5bb3f5c9252adf9f4bc31d47dfbd64f426cecb95b4bd0cffb0c",
+    "config_file_sha256_v2_manifest": "547eb2abc3c2e5bb3f5c9252adf9f4bc31d47dfbd64f426cecb95b4bd0cffb0c",
     "run_record": "runs/model-versions/v2-cloud-20261023/record.json",
     "local_run_dir": "runs/model-versions/v2-cloud-20261023/60d",
     "weights": "runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json",
@@ -144,14 +144,14 @@
       "logging.learning_curves",
       "logging.learning_curve_every_steps"
     ],
-    "note": "experiment_id and hypothesis are run-identity metadata, not recipe knobs. Everything else must equal configs/model_v2_60d_csz.json item by item; scripts/verify_capacity_20261024.py checks the flattened key sets and fails on any other difference. data.cache_dir is deliberately left at V2's value so the three arms share one checksum-validated projection cache; cache entries rebuild themselves if they do not match."
+    "note": "experiment_id and hypothesis are run-identity metadata, not recipe knobs. Everything else must equal configs/model_v2_60d_csz.json item by item; scripts/verify_capacity_20261024.py checks the flattened key sets and fails on any other difference. data.cache_dir is deliberately left at V2's value so the three arms share one checksum-validated projection cache; cache entries rebuild themselves if they do not match.",
+    "config_identity": "Arms are identified by a canonical JSON digest: sha256 over json.dumps(config, sort_keys=True, separators=(',',':'), ensure_ascii=False). Raw file hashes are transport dependent here (the Windows worktree stores CRLF while git blobs are LF, which is also why the V2 manifest's file hash equals the CRLF bytes of an rsynced worktree), so the canonical digest is the reproducible identity and scripts/verify_capacity_20261024.py checks it. arms[].config_canonical_sha256 holds that digest for each arm config."
   },
   "arms": [
     {
       "arm": "w40_full2epoch",
       "group": "training_volume",
       "config": "configs/capacity_20261024/w40_full2epoch.json",
-      "config_sha256": "f4404dbfd1717daa3f4cfda9e99f3396c29e959c14df259d3706301e6a6b9f87",
       "experiment_id": "capacity-w40-full2epoch",
       "hidden_dim": 40,
       "max_steps": 29966,
@@ -178,13 +178,13 @@
       "learning_curves": {
         "enabled": true,
         "every_steps": 500
-      }
+      },
+      "config_canonical_sha256": "b1e106cacc82f892cbebc8aa88c598517a61365eb107dece60326186449d5305"
     },
     {
       "arm": "w80_9000",
       "group": "capacity",
       "config": "configs/capacity_20261024/w80_9000.json",
-      "config_sha256": "fcd9ddbdd59716176ce8a85b2edfded76ad9ada1f2f4b1e99fed227ec73ecc09",
       "experiment_id": "capacity-w80-9000",
       "hidden_dim": 80,
       "max_steps": 9000,
@@ -212,13 +212,13 @@
       "learning_curves": {
         "enabled": true,
         "every_steps": 500
-      }
+      },
+      "config_canonical_sha256": "511a3a9464c7d975f2570104728d4a2e866e1fe60763b692d2ea76ac107ef8ad"
     },
     {
       "arm": "w160_9000",
       "group": "capacity",
       "config": "configs/capacity_20261024/w160_9000.json",
-      "config_sha256": "59632debaf383436d9c555691ffdd79d47b33452f08cba3fa3c10d295ad3fc5e",
       "experiment_id": "capacity-w160-9000",
       "hidden_dim": 160,
       "max_steps": 9000,
@@ -246,7 +246,8 @@
       "learning_curves": {
         "enabled": true,
         "every_steps": 500
-      }
+      },
+      "config_canonical_sha256": "b4957a5e8913728f5af2488f5100e85be329ec556eab655a81a0b9ce768f8217"
     }
   ],
   "reused_arm": {
@@ -416,6 +417,11 @@
         "v2_60d_csz"
       ]
     ],
+    "candidate_weights_mirror": {
+      "convention": "runs/model-versions/capacity-20261024/<arm>/ mirrored from the cloud run dir /root/shared-nvme/capacity-20261024/runs/<arm>/<run_id>, same layout as runs/model-versions/v2-cloud-20261023/60d, with the round record at runs/model-versions/capacity-20261024/record.json",
+      "weights_file": "modified_tlob_weights.json",
+      "why": "the replay plan needs a stable local weights path and sha256 per arm; the reference column uses runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json with sha256 3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa, and every arm's expected_sha256 should be filled from its mirrored file before the replay run"
+    },
     "tool": {
       "script": "scripts/replay_model_versions.py",
       "plan_schema_reference": "configs/model_version_replay_20261023.json",
@@ -449,7 +455,7 @@
     "required_reporting": [
       "per-window and pooled mean deltas for rank_ic, long_short_return and turnover",
       "each arm's own worst-day long_short_return (date and window)",
-      "training curve checkpoints (learning_curve.json/csv, every 500 steps) for every arm, including the reused V2 run's loss level at step 9000",
+      "training curve checkpoints (learning_curve.json/csv, every 500 steps) for the three new arms; the reused V2 run trained with logging.learning_curves=false, so its loss trajectory is read from its events.jsonl training progress rows (log_every_steps=100) at step 9000 instead",
       "executed steps, samples_seen and epoch share read back from events.jsonl for every new run"
     ]
   },
@@ -518,19 +524,16 @@
       "command": "uv run python -m jinyiquant validate-config configs/capacity_20261024/<arm>.json",
       "results": {
         "w40_full2epoch": {
-          "valid": true,
-          "local_config_sha256": "e0359adb6003ac6b3c1a7d2ec7ec13e22a943b027de86e062c70753f36ea9d69"
+          "valid": true
         },
         "w80_9000": {
-          "valid": true,
-          "local_config_sha256": "2e184b0461dbda9c4e98fbc783a23b75250e665cf1ddab391ff291ae91421156"
+          "valid": true
         },
         "w160_9000": {
-          "valid": true,
-          "local_config_sha256": "50c2b0c060009974fbbed769e84faacb50bdab768d3d6731857234d823ea9a73"
+          "valid": true
         }
       },
-      "note": "the printed config_sha256 is the digest of the resolved snapshot, and load_config resolves the absolute output_root/data paths against the host root, so the locally printed value differs from the cloud-side value recorded in the run manifest. The file sha256 values in arms[].config_sha256 are platform independent."
+      "note": "load_config resolves the absolute output_root/data paths against the host root before validating, so validate-config's printed config_sha256 is a host-specific snapshot digest (Linux /root/... versus a Windows drive prefix). It is therefore not recorded as an identity; use the canonical digests in arms[] and the validator's \"valid\": true output."
     },
     "field_and_param_checks": {
       "command": "uv run python scripts/verify_capacity_20261024.py",
@@ -538,9 +541,10 @@
       "what_it_checks": [
         "each arm config differs from configs/model_v2_60d_csz.json only on frozen_recipe.allowed_differences",
         "frozen_recipe.declared_expectations still equal the V2 config values item by item",
-        "step arithmetic: ceil(479432/32)=14983, 2*14983=29966, 958864=2*479432, 9000/14983=0.6007108411620418",
+        "step arithmetic: ceil(479432/32)=14983 updates per epoch, 2*14983=29966 updates, 2*479432=958864 samples, 9000*32=288000 samples and 288000/479432=0.6007108411620418 epoch share",
         "the gate values in this file equal the V2 record's pre_registered_thresholds",
-        "total_params and final_layers of ModifiedTLOB at widths 40/80/160 equal capacity_params (torch required; reported as skipped without torch)"
+        "total_params and final_layers of ModifiedTLOB at widths 40/80/160 equal capacity_params (torch required; reported as skipped without torch)",
+        "each arm config's canonical JSON digest equals arms[].config_canonical_sha256"
       ],
       "reproduce_param_counts": "Python with torch: from modified_tlob.model import ModifiedTLOB; sum(p.numel() for p in ModifiedTLOB(hidden_dim=w, num_layers=4, seq_size=128, num_features=12, num_heads=1, is_sin_emb=True).parameters())"
     },
