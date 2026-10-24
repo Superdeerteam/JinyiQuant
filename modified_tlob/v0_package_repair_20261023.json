@@ -1,0 +1,37 @@
+{
+ "schema_version": 1,
+ "created_at_utc": "2026-10-24T01:55:48.391085+00:00",
+ "package": "dist/v0-submission",
+ "kind": "payload_provenance_repair",
+ "issue": "Three of six recorded payload files did not match provenance: requirements.txt was absent, while inference.ipynb and submission_config.json differed only in JSON serialization. The weights and both flat modules already matched.",
+ "recorded_payload_sha256": {
+  "inference.ipynb": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178",
+  "jinyiquant_flat.py": "3f14edb1f419f4d273f8cc86e1f8cc9732e375cb68276755df2308ba40f20393",
+  "modified_tlob_flat.py": "b79c125242dc64fa20a10947037771ce377fca1b33c90579938bba219da83421",
+  "modified_tlob_weights.json": "eb4d6ffbd6e1458e7b75101adf88c7df05636fb742c666a220731ad72506c389",
+  "requirements.txt": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327",
+  "submission_config.json": "4d407376bdc877c855a617f4737ce14d549bcabf7309da058d5bac49dccee069"
+ },
+ "observed_before_repair": {
+  "inference.ipynb": "66394e6669af5455ce12b5f2a8672d385a338ab79e129a93fbc8d2899d59903d",
+  "jinyiquant_flat.py": "3f14edb1f419f4d273f8cc86e1f8cc9732e375cb68276755df2308ba40f20393",
+  "modified_tlob_flat.py": "b79c125242dc64fa20a10947037771ce377fca1b33c90579938bba219da83421",
+  "modified_tlob_weights.json": "eb4d6ffbd6e1458e7b75101adf88c7df05636fb742c666a220731ad72506c389",
+  "requirements.txt": null,
+  "submission_config.json": "626668b360c55997ef8a7a5b0212b6ce211abddc2cd323328791bda1e485d532"
+ },
+ "action": [
+  "Restored requirements.txt from the V1/V2 package; its sha256 equals the hash recorded for V0.",
+  "Rewrote inference.ipynb and submission_config.json with jinyiquant.io.write_json after confirming the parsed JSON content was unchanged; the canonical form reproduces the recorded hashes."
+ ],
+ "observed_after_repair": {
+  "inference.ipynb": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178",
+  "jinyiquant_flat.py": "3f14edb1f419f4d273f8cc86e1f8cc9732e375cb68276755df2308ba40f20393",
+  "modified_tlob_flat.py": "b79c125242dc64fa20a10947037771ce377fca1b33c90579938bba219da83421",
+  "modified_tlob_weights.json": "eb4d6ffbd6e1458e7b75101adf88c7df05636fb742c666a220731ad72506c389",
+  "requirements.txt": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327",
+  "submission_config.json": "4d407376bdc877c855a617f4737ce14d549bcabf7309da058d5bac49dccee069"
+ },
+ "verification": "All six payload hashes equal provenance.flat_package.payload_sha256; weights sha256 eb4d6ffb... is unchanged.",
+ "scope": "File identity only. No weight, code-behavior or score change; the platform score is not re-verified."
+}

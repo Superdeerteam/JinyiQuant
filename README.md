@@ -415,6 +415,8 @@ $env:PYTHONPATH = 'src;.'
 
 当前项目冻结为 **V0**：10 个训练日（2023-10-18 至 11-01）、八时点、原始 12 列盘口、lookback 128、hidden 40/4 层、batch 32、学习率 1e-4、1500 步、seed 11、`target_scaling=train_std`、**原始官方收益标签**。[V0 配置](configs/model_v0.json)。
 
+**版本身份更正（20261023）：** 这里的 V0 是 2023-10-18 至 10-31 的本地重训（权重 `1c557b41…`），**不是**首次公榜 0.18503 使用的七月提交权重。提交包 `dist/v0-submission` 的权重 sha256 为 `eb4d6ffb…`，其 `target_scale`/训练均值与 2023-07-11 至 07-24 的标签矩精确一致，provenance 指向 `july_25_28_s11_d10_t8` 的 1500 步 seed-11 run。因此“V1 高于 V0”是相对十月重训的提升，不能读作相对提交版本的提升；三窗固定权重重放显示 V1 相对提交 V0 在 2023-11、2024-01、2024-03 的 RankIC 分别低 0.0121、0.0145、0.0199，V2-60d 则高 0.0075、0.0008、0.0040（区间含 0）。提交包原有三个 payload 文件与 provenance 不一致（缺 requirements.txt，另两个仅 JSON 序列化不同），已按记录内容恢复并验证 6/6。证据见[身份表](modified_tlob/model_version_identity_20261023.json)、[重放记录](modified_tlob/model_version_replay_20261023.json)、[逐日对照](modified_tlob/model_version_daily_comparison_20261023.json)与[平台包重放](modified_tlob/platform_replay_20261023.json)。
+
 **V1 只在 V0 上启用已有的标签截面标准化**：`model.target_centering=timestamp_zscore_train_rms_matched`，即每个完整训练时间戳内 `q=(r−μ_t)/σ_t`（`σ_t=0` 时 `q=0`，ddof=0），再用训练池常数 `c=std(z)/std(q)` 匹配中心化标签方差；`target_std` 仍是原始训练标签标准差。网络、输入、训练日期、步数、种子与预算逐字段一致。[V1 配置](configs/model_v1.json)。
 
 两版一致性由[行为测试](tests/test_model_versions.py)自动检查（只允许 `model.target_centering` 与实验身份字段不同），并用合成 fixture 证明中心化目标能走统一入口。统一 runner 对非 `none` 的中心化目标跳过原始标签验证诊断（[runner.py](src/jinyiquant/runner.py)），因为适配器不接受混合尺度的验证目标；推理仍为 `network(x)*target_scale`，不乘回 `c`、不读取未来标签或未来截面。

@@ -1,0 +1,197 @@
+{
+ "schema_version": 1,
+ "experiment_id": "model-version-forward-replay-20261023",
+ "hypothesis": "The submitted July weight set and the two October candidates can be replayed with each checkpoint's saved preprocessing on the same fixed development windows; paired daily differences show whether the V1/V2 gain over the submitted V0 persists away from the training boundary.",
+ "output_root": "../runs/model-version-replay-20261023",
+ "seed": 20261023,
+ "data": {
+  "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+  "labels_path": "../数据/cpt_jyc_2026_vwap",
+  "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+  "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+  "cache_dir": null,
+  "source": "official_local_download_with_explicit_mapping",
+  "version": "cpt_jyc_2026",
+  "feature_columns": [
+   "ask_price1",
+   "ask_volume1",
+   "bid_price1",
+   "bid_volume1",
+   "ask_price2",
+   "ask_volume2",
+   "bid_price2",
+   "bid_volume2",
+   "ask_price3",
+   "ask_volume3",
+   "bid_price3",
+   "bid_volume3"
+  ],
+  "lookback": 128,
+  "min_history": 1,
+  "history_days": 10,
+  "max_ffill_steps": 5,
+  "missing_policy": "ffill",
+  "missing_sentinel": -1,
+  "price_scale": 100,
+  "outside_universe_labels": "exclude",
+  "label_horizon_minutes": 30,
+  "sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "training_sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "allowed_start": "2020-01-01T00:00:00",
+  "allowed_end": "2025-01-01T00:00:00"
+ },
+ "evaluation": {
+  "quantile": 0.2,
+  "periods_per_year": 252,
+  "min_cross_section": 3,
+  "constant_portfolios": "undefined"
+ },
+ "windows": [
+  {
+   "name": "nov2023",
+   "label": "2023-11 development month",
+   "start": "2023-11-01T00:00:00",
+   "end": "2023-12-01T00:00:00"
+  },
+  {
+   "name": "jan2024",
+   "label": "2024-01 development month",
+   "start": "2024-01-01T00:00:00",
+   "end": "2024-02-01T00:00:00"
+  },
+  {
+   "name": "mar2024",
+   "label": "2024-03 development month",
+   "start": "2024-03-01T00:00:00",
+   "end": "2024-04-01T00:00:00"
+  }
+ ],
+ "versions": [
+  {
+   "name": "v0_july_submitted",
+   "label": "V0 July (submitted package, first public 0.18503)",
+   "role": "submitted",
+   "weights": "../dist/v0-submission/modified_tlob_weights.json",
+   "expected_sha256": "eb4d6ffbd6e1458e7b75101adf88c7df05636fb742c666a220731ad72506c389"
+  },
+  {
+   "name": "v0_local_oct",
+   "label": "V0 October local retrain (README frozen V0)",
+   "role": "auxiliary",
+   "weights": "../runs/model-versions/v0/20261023T161038.327693Z_df200417df15/modified_tlob_weights.json",
+   "expected_sha256": "1c557b41401428c0114714d805bd92fa27785b8bfe16b956aebce907886f6a03"
+  },
+  {
+   "name": "v1_oct_csz",
+   "label": "V1 October CSZ labels",
+   "role": "candidate",
+   "weights": "../runs/model-versions/v1/20261023T162934.801889Z_69b92102de6c/modified_tlob_weights.json",
+   "expected_sha256": "deabe877d36e7461eb2d5e85a330788b953d44c4cfea767fcd144e2b95e7152a"
+  },
+  {
+   "name": "v2_60d_csz",
+   "label": "V2 60-day CSZ labels",
+   "role": "candidate",
+   "weights": "../runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json",
+   "expected_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"
+  }
+ ],
+ "identity_candidates": [
+  {
+   "name": "submit_v0_package",
+   "path": "../dist/v0-submission/modified_tlob_weights.json"
+  },
+  {
+   "name": "submit_v1_package",
+   "path": "../dist/v1-submission-20261023/modified_tlob_weights.json"
+  },
+  {
+   "name": "submit_v2_package",
+   "path": "../dist/v2-submission-20261023/modified_tlob_weights.json"
+  },
+  {
+   "name": "local_v0_oct",
+   "path": "../runs/model-versions/v0/20261023T161038.327693Z_df200417df15/modified_tlob_weights.json"
+  },
+  {
+   "name": "local_v1_oct",
+   "path": "../runs/model-versions/v1/20261023T162934.801889Z_69b92102de6c/modified_tlob_weights.json"
+  },
+  {
+   "name": "local_v2_60d",
+   "path": "../runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json"
+  },
+  {
+   "name": "local_v2_120d",
+   "path": "../runs/model-versions/v2-cloud-20261023/120d/modified_tlob_weights.json"
+  },
+  {
+   "name": "archive_raw_s11_research_a",
+   "path": "../runs/fixed-seed-ensemble-20261017/20261017T064944.073834Z_193b03ead7ff/fits/research_a_s11/modified_tlob_weights.json"
+  },
+  {
+   "name": "archive_csz_s11_research_a",
+   "path": "../runs/label-cszscore-20261018/20261018T104425.466761Z_1b8039d5f4e1/fits/research_a_s11/modified_tlob_weights.json"
+  }
+ ],
+ "training_windows": [
+  {
+   "name": "july_25_28",
+   "train_start": "2023-07-11T00:00:00",
+   "train_end": "2023-07-25T00:00:00",
+   "validation_end": "2023-07-29T00:00:00"
+  },
+  {
+   "name": "oct_18_31",
+   "train_start": "2023-10-18T00:00:00",
+   "train_end": "2023-11-01T00:00:00",
+   "validation_end": "2023-11-15T00:00:00"
+  },
+  {
+   "name": "aug_oct_60d",
+   "train_start": "2023-08-01T00:00:00",
+   "train_end": "2023-11-01T00:00:00",
+   "validation_end": "2023-11-15T00:00:00"
+  },
+  {
+   "name": "may_oct_120d",
+   "train_start": "2023-05-05T00:00:00",
+   "train_end": "2023-11-01T00:00:00",
+   "validation_end": "2023-11-15T00:00:00"
+  }
+ ],
+ "platform_packages": [
+  {
+   "version": "v0_july_submitted",
+   "path": "../dist/v0-submission"
+  },
+  {
+   "version": "v1_oct_csz",
+   "path": "../dist/v1-submission-20261023"
+  },
+  {
+   "version": "v2_60d_csz",
+   "path": "../dist/v2-submission-20261023"
+  }
+ ],
+ "predict_batch_size": 512,
+ "bootstrap_draws": 20000
+}
