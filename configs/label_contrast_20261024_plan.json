@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "experiment_id": "label-contrast-20261024",
+  "created_at_utc": "2026-10-24T17:18:54+00:00",
+  "hypothesis": "With every other recipe factor fixed (60-day cache, width 40, 9000 steps, seed 11, batch 32, lr 1e-4), the label transform alone (raw official vwap_return vs the full-timestamp training-mean centered label vs the CSZ z-score+variance-matched label) changes out-of-sample ranking quality on the raw official labels. The round compares RAW, CENTER and the frozen CSZ baseline on identical keys, dates and labels, and decides whether a candidate earns a seed-29 replication.",
+  "preregistration_note": "This file is written before the replay metrics of this round are computed. The decision framework below is fixed here; results are written to ../modified_tlob/label_contrast_20261024.json afterwards.",
+  "output_root": "../runs/label-contrast-eval-20261024",
+  "seed": 20261024,
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "windows": [
+    {
+      "name": "july2023",
+      "label": "2023-07-25..28 context window (before every version's training window; not part of the decision)",
+      "start": "2023-07-25T00:00:00",
+      "end": "2023-07-29T00:00:00"
+    },
+    {
+      "name": "nov2023",
+      "label": "2023-11 development month",
+      "start": "2023-11-01T00:00:00",
+      "end": "2023-12-01T00:00:00"
+    },
+    {
+      "name": "jan2024",
+      "label": "2024-01 development month",
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-02-01T00:00:00"
+    },
+    {
+      "name": "mar2024",
+      "label": "2024-03 development month",
+      "start": "2024-03-01T00:00:00",
+      "end": "2024-04-01T00:00:00"
+    }
+  ],
+  "versions": [
+    {
+      "name": "v2_raw",
+      "label": "V2 60d RAW labels (target_centering=none, seed 11)",
+      "role": "candidate",
+      "weights": "../runs/label-contrast-20261024/raw/modified_tlob_weights.json",
+      "expected_sha256": "ad7fa42ad0efb9b9e534e5a6eff0005097522cc5d4c0b0a17555bc5f124ca914"
+    },
+    {
+      "name": "v2_center",
+      "label": "V2 60d CENTER labels (timestamp_mean_train, seed 11)",
+      "role": "candidate",
+      "weights": "../runs/label-contrast-20261024/center/modified_tlob_weights.json",
+      "expected_sha256": "bc569175b3e235e2ea2702aa5f1a0da9bd4359999225b56734bf4ffbd21b99f6"
+    },
+    {
+      "name": "v2_60d_csz",
+      "label": "V2 60-day CSZ labels (frozen baseline, seed 11)",
+      "role": "baseline",
+      "weights": "../runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json",
+      "expected_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"
+    }
+  ],
+  "pairs": [
+    [
+      "v2_raw",
+      "v2_60d_csz"
+    ],
+    [
+      "v2_center",
+      "v2_60d_csz"
+    ]
+  ],
+  "predict_batch_size": 512,
+  "chunk_days": 11,
+  "bootstrap_draws": 20000,
+  "analysis": {
+    "archive_path": "../modified_tlob/label_contrast_20261024.json",
+    "label_use": "every version is scored against the same raw official vwap_return target values; model scores are used exactly as the saved weights predict them (score = network output * raw-label training std); no label inverse transform is applied to any version, and the centered/CSZ arms are not re-centred at evaluation time",
+    "development_months": [
+      "nov2023",
+      "jan2024",
+      "mar2024"
+    ],
+    "timestamps": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "style_residualization": {
+      "source": "scripts/diagnose_risk_neutralization.py + modified_tlob/risk.py, frozen 2026-10-18 convention",
+      "exposure_snapshot": "most recent exposure date strictly before the signal date; all eight timestamps of a day use that same snapshot; same-day rows never used; no forward fill; stocks without a previous-day exposure row are dropped from that timestamp for every version",
+      "winsorize": "per timestamp clip at median +/- 3 * 1.4826 * MAD; MAD==0 falls back to population std; constant section becomes zeros",
+      "standardize": "per timestamp z-score with ddof=0",
+      "regression": "equal-weight OLS without intercept on the 10 style factors + all 32 industry dummies; ret/weights/float_market_cap/industry_level1_code excluded",
+      "raw_reference": "the raw-score metrics are also recomputed on the same exposure-common sample (raw_common) so the processed-vs-raw contrast is sample-identical"
+    },
+    "training_losses": "read from runs/label-contrast-20261024/training_evidence.json for raw/center and from the frozen CSZ run archive; losses are listed per arm with their declared units and are never compared across arms"
+  },
+  "decision_framework": {
+    "primary_metric": "rank_ic_mean computed on the raw official labels (score used as predicted, no inverse transform)",
+    "primary_sample": "the three development months pooled (nov2023 + jan2024 + mar2024 = 65 trading days); july2023 is context only and is not used for the decision",
+    "primary_test": "paired daily rank_ic difference (candidate minus v2_60d_csz) over the pooled development months; contiguous-day moving-block bootstrap with block_days 5 and 2, 20000 draws, seed 20261024, 95% intervals",
+    "rank_ic_improvement": "mean paired rank_ic delta > 0 AND lower bound of the block-5 95% interval > 0 AND lower bound of the block-2 95% interval > 0 AND the per-month mean delta is positive in at least 2 of the 3 development months",
+    "guardrails": {
+      "long_short": "material degradation only if the pooled mean paired daily long_short_return delta < 0 AND the block-5 95% interval upper bound < 0",
+      "turnover": "material degradation if candidate turnover_mean is more than 10% above the CSZ turnover_mean on the pooled development months (relative increase > 0.10)",
+      "worst_day": "material degradation if the candidate's worst single-day long_short_return over the pooled development months is more than 25% worse than CSZ's, i.e. (candidate_worst - csz_worst) / abs(csz_worst) < -0.25"
+    },
+    "verdicts": {
+      "better_than_csz": "rank_ic_improvement holds and no guardrail is materially degraded",
+      "guardrail_degraded": "rank_ic_improvement holds but at least one guardrail is materially degraded",
+      "not_better": "rank_ic_improvement does not hold"
+    },
+    "seed29_followup": "triggered for a candidate whose verdict is better_than_csz, or whose pooled mean rank_ic delta is > 0 with no material guardrail degradation and block-5 lower bound > -0.005 (promising but not conclusive because only seed 11 exists); not triggered when the point estimate is not positive or a guardrail is materially degraded",
+    "style_view": "the style-residualized view is reported as a robustness check only and does not override the pre-registered primary metric; a materially different conclusion under residualization is recorded as a disagreement, not used to re-select a winner",
+    "single_seed_note": "seed 11 is the only seed for RAW/CENTER in this round; the decision framework therefore treats a single-seed win as a replication trigger, not as final promotion evidence"
+  },
+  "statistics": {
+    "block_days": [
+      5,
+      2
+    ],
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20261024,
+    "confidence": 0.95
+  },
+  "access_policy": "july2023 and the three development months (nov2023, jan2024, mar2024) only; final/locked ranges are never read; no model is trained or refitted in this round"
+}
