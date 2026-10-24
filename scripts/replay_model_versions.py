@@ -33,6 +33,11 @@ SUMMARY_METRICS = (
     "long_short_return_mean", "long_short_sharpe", "turnover_mean", "min_daily_long_short_return",
 )
 DAILY_METRICS = ("ic", "rank_ic", "long_short_return", "long_return", "short_return", "turnover")
+DEFAULT_PAIRS = (
+    ("v1_oct_csz", "v0_july_submitted"), ("v2_60d_csz", "v0_july_submitted"),
+    ("v1_oct_csz", "v0_local_oct"), ("v2_60d_csz", "v0_local_oct"),
+    ("v1_oct_csz", "v2_60d_csz"),
+)
 
 
 def resolve(base: Path, value: str) -> Path:
@@ -244,6 +249,16 @@ def _block_delta(frame: pd.DataFrame, column: str, block: int, draws: int, seed:
             "ci_low": float(np.quantile(means, 0.025)), "ci_high": float(np.quantile(means, 0.975))}
 
 
+def pair_list(plan: dict) -> list[tuple[str, str]]:
+    """Plan-defined comparison pairs, defaulting to the frozen 20261023 set."""
+    pairs = [tuple(pair) for pair in plan.get("pairs", DEFAULT_PAIRS)]
+    names = {version["name"] for version in plan["versions"]}
+    for pair in pairs:
+        if len(pair) != 2 or not set(pair) <= names:
+            raise ValueError(f"Invalid comparison pair {pair}; versions are {sorted(names)}")
+    return pairs
+
+
 def report(plan_path: Path, run_dir: Path) -> Path:
     plan, _ = load_plan(plan_path)
     versions = [version["name"] for version in plan["versions"]]
@@ -284,12 +299,10 @@ def report(plan_path: Path, run_dir: Path) -> Path:
     by_time_all.to_csv(report_dir / "eight_time_points.csv", index=False)
     summary = pd.DataFrame(summary_rows)
     summary.to_csv(report_dir / "summary.csv", index=False)
-    # Paired daily differences: submitted V0 is the reference; the October pair isolates centering.
+    # Paired daily differences on identical keys; pairs come from the plan.
     wide = daily_all.pivot_table(index=["window", "date"], columns="version",
                                  values=["ic", "rank_ic", "long_short_return", "turnover"])
-    pairs = [("v1_oct_csz", "v0_july_submitted"), ("v2_60d_csz", "v0_july_submitted"),
-             ("v1_oct_csz", "v0_local_oct"), ("v2_60d_csz", "v0_local_oct"),
-             ("v1_oct_csz", "v2_60d_csz")]
+    pairs = pair_list(plan)
     delta_rows, paired_rows = [], []
     for window in plan["windows"]:
         name = window["name"]

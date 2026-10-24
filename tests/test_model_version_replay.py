@@ -52,6 +52,17 @@ def test_daily_counts_separate_missing_answers_from_history_fallback():
     assert counts.loc["2024-01-03", "no_history_count"] == 0
 
 
+def test_pair_list_uses_plan_pairs_and_rejects_unknown_versions():
+    replay = replay_module()
+    default_names = {"v0_july_submitted", "v0_local_oct", "v1_oct_csz", "v2_60d_csz"}
+    plan = {"versions": [{"name": name} for name in default_names]}
+    assert replay.pair_list(plan) == list(replay.DEFAULT_PAIRS)
+    custom = {"versions": [{"name": "a"}, {"name": "b"}], "pairs": [["a", "b"]]}
+    assert replay.pair_list(custom) == [("a", "b")]
+    with pytest.raises(ValueError, match="Invalid comparison pair"):
+        replay.pair_list({"versions": [{"name": "a"}], "pairs": [["a", "missing"]]})
+
+
 def test_block_delta_interval_covers_the_mean_and_is_degenerate_for_constant_days():
     replay = replay_module()
     rising = pd.DataFrame({"delta": [1.0, 2.0, 3.0, 4.0, 5.0]})
