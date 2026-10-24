@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "experiment_id": "v0-local-oct-common-windows-20261023",
+  "hypothesis": "The October local V0 retrain (raw labels, 2023-10-18..10-31) can be replayed with its frozen weights on the same four fixed windows used by the V1.1 comparison, providing the missing new-V0 column without retraining or touching the baseline.",
+  "output_root": "../runs/v0-local-oct-common-windows-20261023",
+  "seed": 20261023,
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1", "ask_volume1", "bid_price1", "bid_volume1",
+      "ask_price2", "ask_volume2", "bid_price2", "bid_volume2",
+      "ask_price3", "ask_volume3", "bid_price3", "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"],
+    "training_sample_times": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {"quantile": 0.2, "periods_per_year": 252, "min_cross_section": 3,
+                 "constant_portfolios": "undefined"},
+  "windows": [
+    {"name": "july2023", "label": "2023-07-25..28 (before this model's training)",
+     "start": "2023-07-25T00:00:00", "end": "2023-07-29T00:00:00"},
+    {"name": "nov2023", "label": "2023-11 development month",
+     "start": "2023-11-01T00:00:00", "end": "2023-12-01T00:00:00"},
+    {"name": "jan2024", "label": "2024-01 development month",
+     "start": "2024-01-01T00:00:00", "end": "2024-02-01T00:00:00"},
+    {"name": "mar2024", "label": "2024-03 development month",
+     "start": "2024-03-01T00:00:00", "end": "2024-04-01T00:00:00"}
+  ],
+  "versions": [
+    {"name": "v0_local_oct", "label": "V0 October local retrain (raw labels)",
+     "role": "control_new_v0", "weights": "../runs/model-versions/v0/20261023T161038.327693Z_df200417df15/modified_tlob_weights.json",
+     "expected_sha256": "1c557b41401428c0114714d805bd92fa27785b8bfe16b956aebce907886f6a03"}
+  ],
+  "pairs": [],
+  "predict_batch_size": 512,
+  "bootstrap_draws": 20000
+}

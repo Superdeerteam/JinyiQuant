@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment_id": "model-v1.1-july-experiment-20261023",
-  "created_at_utc": "2026-10-24T03:18:36.871372+00:00",
+  "created_at_utc": "2026-10-24T16:09:26.927413+00:00",
   "scope": "Experiment-only V1.1 (July 10-day training window + CSZ labels, seed 11, 1500 steps) trained locally and replayed with the frozen V2-60d baseline and earlier V0/V1 checkpoints on identical fixed windows. The V2 baseline was not modified.",
   "access_policy": "July/November 2023 and January/March 2024 are already-used research windows; confirmation, locked and legacy final ranges stay closed.",
   "hypothesis": "Moving the V1 CSZ recipe from the October 10-day window to the submitted V0 July 10-day window (2023-07-11..2023-07-24) improves out-of-window ranking and remains competitive with the V2 60-day CSZ baseline.",
@@ -1291,6 +1291,191 @@
         "positive_days": 37,
         "negative_days": 28,
         "mean": 0.004067690530739582
+      }
+    }
+  },
+  "supplement_v0_local_oct": {
+    "source_plan": "configs/v0_local_oct_common_windows_20261023.json",
+    "run_dir": "runs/v0-local-oct-common-windows-20261023/20261024T160058.479545Z_0febd7827302",
+    "weights_sha256": "1c557b41401428c0114714d805bd92fa27785b8bfe16b956aebce907886f6a03",
+    "reproduction_max_abs_metric_difference_nov_jan_mar": {
+      "nov2023": 0.0,
+      "jan2024": 0.0,
+      "mar2024": 0.0
+    },
+    "by_window": {
+      "july2023": {
+        "rank_ic_mean": 0.010091387163462025,
+        "rank_ic_ir": 0.890768734090886,
+        "long_short_return_mean": 9.291268596186536e-05,
+        "long_short_sharpe": 13.455124891959532,
+        "turnover_mean": 1.6992776381909547,
+        "min_daily_long_short_return": -3.7952465024647375e-05,
+        "day_count": 4,
+        "sample_count": 31968
+      },
+      "nov2023": {
+        "rank_ic_mean": 0.00841097159952917,
+        "rank_ic_ir": 0.41083513086982953,
+        "long_short_return_mean": 6.824802497006414e-05,
+        "long_short_sharpe": 5.722022896939042,
+        "turnover_mean": 1.6676931736605105,
+        "min_daily_long_short_return": -0.000289176947171676,
+        "day_count": 22,
+        "sample_count": 175784
+      },
+      "jan2024": {
+        "rank_ic_mean": 0.01676438067221828,
+        "rank_ic_ir": 0.7246577753402946,
+        "long_short_return_mean": 0.000193887845136201,
+        "long_short_sharpe": 12.830590861260948,
+        "turnover_mean": 1.6645546115316845,
+        "min_daily_long_short_return": -0.0002168209088852494,
+        "day_count": 22,
+        "sample_count": 175808
+      },
+      "mar2024": {
+        "rank_ic_mean": 0.014090816596144777,
+        "rank_ic_ir": 0.5293457068461682,
+        "long_short_return_mean": 0.00014416159997947665,
+        "long_short_sharpe": 8.971945882590633,
+        "turnover_mean": 1.6698379226062283,
+        "min_daily_long_short_return": -0.000476296403430049,
+        "day_count": 21,
+        "sample_count": 167888
+      }
+    },
+    "three_month_mean": {
+      "rank_ic": 0.013073306130730504,
+      "long_short_return": 0.00013529819602932014,
+      "turnover": 1.6673238099839858
+    },
+    "v1_1_minus_v0_local_oct": {
+      "per_window": {
+        "july2023": {
+          "rank_ic": {
+            "days": 4,
+            "mean_delta": 0.0675360422522102,
+            "block5_ci_low": 0.06543032492435691,
+            "block5_ci_high": 0.06853916136379914,
+            "positive_days": 4,
+            "negative_days": 0
+          },
+          "long_short_return": {
+            "days": 4,
+            "mean_delta": 0.0004276807154403162,
+            "block5_ci_low": 0.00037748530474751297,
+            "block5_ci_high": 0.0004942497976315825,
+            "positive_days": 4,
+            "negative_days": 0
+          },
+          "turnover": {
+            "days": 4,
+            "mean_delta": -0.2993987796123475,
+            "block5_ci_low": -0.30944005743000724,
+            "block5_ci_high": -0.2821069633883705,
+            "positive_days": 0,
+            "negative_days": 4
+          }
+        },
+        "nov2023": {
+          "rank_ic": {
+            "days": 22,
+            "mean_delta": 0.059384986986270476,
+            "block5_ci_low": 0.030812099113460882,
+            "block5_ci_high": 0.0894796623096254,
+            "positive_days": 21,
+            "negative_days": 1
+          },
+          "long_short_return": {
+            "days": 22,
+            "mean_delta": 0.0003692428672633884,
+            "block5_ci_low": 0.0001199246407070208,
+            "block5_ci_high": 0.0006433213648989799,
+            "positive_days": 21,
+            "negative_days": 1
+          },
+          "turnover": {
+            "days": 22,
+            "mean_delta": -0.3055170332180382,
+            "block5_ci_low": -0.3343503230437904,
+            "block5_ci_high": -0.2802763819095477,
+            "positive_days": 0,
+            "negative_days": 22
+          }
+        },
+        "jan2024": {
+          "rank_ic": {
+            "days": 22,
+            "mean_delta": 0.02827105882921691,
+            "block5_ci_low": 0.015801986952039142,
+            "block5_ci_high": 0.04769728971871086,
+            "positive_days": 20,
+            "negative_days": 2
+          },
+          "long_short_return": {
+            "days": 22,
+            "mean_delta": 0.0001827724510877161,
+            "block5_ci_low": 2.3653085246235654e-05,
+            "block5_ci_high": 0.00036158342126516415,
+            "positive_days": 19,
+            "negative_days": 3
+          },
+          "turnover": {
+            "days": 22,
+            "mean_delta": -0.25270169842720097,
+            "block5_ci_low": -0.3154522613065326,
+            "block5_ci_high": -0.1836118090452262,
+            "positive_days": 0,
+            "negative_days": 22
+          }
+        },
+        "mar2024": {
+          "rank_ic": {
+            "days": 21,
+            "mean_delta": 0.05738116004300005,
+            "block5_ci_low": 0.02082242982081514,
+            "block5_ci_high": 0.08135101218807403,
+            "positive_days": 21,
+            "negative_days": 0
+          },
+          "long_short_return": {
+            "days": 21,
+            "mean_delta": 0.00033587543431410884,
+            "block5_ci_low": -1.325749608181747e-05,
+            "block5_ci_high": 0.0005659880019616466,
+            "positive_days": 19,
+            "negative_days": 2
+          },
+          "turnover": {
+            "days": 21,
+            "mean_delta": -0.2846557404368783,
+            "block5_ci_low": -0.3272519741564968,
+            "block5_ci_high": -0.25978140703517577,
+            "positive_days": 0,
+            "negative_days": 21
+          }
+        }
+      },
+      "three_month_point_estimate": {
+        "rank_ic": {
+          "days": 65,
+          "mean_delta": 0.048206728751441906,
+          "positive_days": 62,
+          "negative_days": 3
+        },
+        "long_short_return": {
+          "days": 65,
+          "mean_delta": 0.0002953495557587782,
+          "positive_days": 59,
+          "negative_days": 6
+        },
+        "turnover": {
+          "days": 65,
+          "mean_delta": -0.2809012714672262,
+          "positive_days": 0,
+          "negative_days": 65
+        }
       }
     }
   },
