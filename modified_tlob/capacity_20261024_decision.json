@@ -1,0 +1,512 @@
+{
+  "arms": [
+    {
+      "all_bootstrap_passed": false,
+      "all_numeric_passed": false,
+      "arm": "w40_full2epoch",
+      "bootstrap_gates": [
+        {
+          "ci_high": 0.0033263805447274787,
+          "ci_low": -0.026024389473201858,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=rank_ic]",
+          "excludes_zero": false,
+          "metric": "rank_ic",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": 9.918153195699999e-05,
+          "ci_low": -0.00016554379778642068,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=long_short_return]",
+          "excludes_zero": false,
+          "metric": "long_short_return",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": -0.03530150753768835,
+          "ci_low": -0.09775664034458012,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=turnover]",
+          "excludes_zero": true,
+          "metric": "turnover",
+          "passed": true,
+          "required_side": "below_zero"
+        }
+      ],
+      "changed_vs_v2": [
+        "training_epochs"
+      ],
+      "exit_rule_applies": true,
+      "exit_rule_reason": "pooled RankIC delta <= 0 and pooled long-short delta <= 0: a training-loss movement is not evidence, the version exits the submission-candidate pool",
+      "expected_epoch_share": 2.0,
+      "expected_samples_seen": 958864,
+      "failed_gates": [
+        "rank_ic_mean_improvement",
+        "worst_day_long_short",
+        "bootstrap_rank_ic",
+        "bootstrap_long_short_return"
+      ],
+      "group": "training_volume",
+      "hidden_dim": 40,
+      "max_steps": 29966,
+      "numeric_gates": [
+        {
+          "ci_high": 0.0033263805447274787,
+          "ci_low": -0.026024389473201858,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=rank_ic]/mean_delta",
+          "id": "rank_ic_mean_improvement",
+          "metric": "rank_ic",
+          "observed": -0.007960196517832712,
+          "op": "gte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.01164665
+        },
+        {
+          "ci_high": 9.918153195699999e-05,
+          "ci_low": -0.00016554379778642068,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=long_short_return]/mean_delta",
+          "id": "long_short_mean_degradation",
+          "metric": "long_short_return",
+          "observed": -3.442767927089057e-05,
+          "op": "gte",
+          "passed": true,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": -0.00010387477
+        },
+        {
+          "ci_high": -0.03530150753768835,
+          "ci_low": -0.09775664034458012,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w40_full2epoch-minus-v2_60d_csz,metric=turnover]/mean_delta",
+          "id": "turnover_degradation",
+          "metric": "turnover",
+          "observed": -0.07145889474846757,
+          "op": "lte",
+          "passed": true,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.03706698
+        },
+        {
+          "date": "2024-03-07",
+          "evidence": "modified_tlob/capacity_20261024.json#/pooled_metrics/w40_full2epoch/min_daily_long_short_return",
+          "id": "worst_day_long_short",
+          "metric": "long_short_return",
+          "observed": -0.0002371454469809,
+          "op": "gte",
+          "passed": false,
+          "statistic": "minimum daily long_short_return of the candidate itself over the pooled three windows",
+          "threshold": -0.00013896761,
+          "window": "mar2024"
+        }
+      ],
+      "passed": false,
+      "pooled_long_short_delta": -3.442767927089057e-05,
+      "pooled_rank_ic_delta": -0.007960196517832712
+    },
+    {
+      "all_bootstrap_passed": false,
+      "all_numeric_passed": false,
+      "arm": "w80_9000",
+      "bootstrap_gates": [
+        {
+          "ci_high": 0.004295548000180643,
+          "ci_low": -0.01708653722277398,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=rank_ic]",
+          "excludes_zero": false,
+          "metric": "rank_ic",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": 7.632109017806772e-05,
+          "ci_low": -0.00012396582700895865,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=long_short_return]",
+          "excludes_zero": false,
+          "metric": "long_short_return",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": 0.07179334170854271,
+          "ci_low": 0.022110552763819014,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=turnover]",
+          "excludes_zero": true,
+          "metric": "turnover",
+          "passed": false,
+          "required_side": "below_zero"
+        }
+      ],
+      "changed_vs_v2": [
+        "capacity"
+      ],
+      "exit_rule_applies": true,
+      "exit_rule_reason": "pooled RankIC delta <= 0 and pooled long-short delta <= 0: a training-loss movement is not evidence, the version exits the submission-candidate pool",
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_samples_seen": 288000,
+      "failed_gates": [
+        "rank_ic_mean_improvement",
+        "turnover_degradation",
+        "worst_day_long_short",
+        "bootstrap_rank_ic",
+        "bootstrap_long_short_return",
+        "bootstrap_turnover"
+      ],
+      "group": "capacity",
+      "hidden_dim": 80,
+      "max_steps": 9000,
+      "numeric_gates": [
+        {
+          "ci_high": 0.004295548000180643,
+          "ci_low": -0.01708653722277398,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=rank_ic]/mean_delta",
+          "id": "rank_ic_mean_improvement",
+          "metric": "rank_ic",
+          "observed": -0.0017640327116097735,
+          "op": "gte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.01164665
+        },
+        {
+          "ci_high": 7.632109017806772e-05,
+          "ci_low": -0.00012396582700895865,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=long_short_return]/mean_delta",
+          "id": "long_short_mean_degradation",
+          "metric": "long_short_return",
+          "observed": -4.905908705548671e-06,
+          "op": "gte",
+          "passed": true,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": -0.00010387477
+        },
+        {
+          "ci_high": 0.07179334170854271,
+          "ci_low": 0.022110552763819014,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w80_9000-minus-v2_60d_csz,metric=turnover]/mean_delta",
+          "id": "turnover_degradation",
+          "metric": "turnover",
+          "observed": 0.04471746093102877,
+          "op": "lte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.03706698
+        },
+        {
+          "date": "2024-03-07",
+          "evidence": "modified_tlob/capacity_20261024.json#/pooled_metrics/w80_9000/min_daily_long_short_return",
+          "id": "worst_day_long_short",
+          "metric": "long_short_return",
+          "observed": -0.0002246939045384,
+          "op": "gte",
+          "passed": false,
+          "statistic": "minimum daily long_short_return of the candidate itself over the pooled three windows",
+          "threshold": -0.00013896761,
+          "window": "mar2024"
+        }
+      ],
+      "passed": false,
+      "pooled_long_short_delta": -4.905908705548671e-06,
+      "pooled_rank_ic_delta": -0.0017640327116097735
+    },
+    {
+      "all_bootstrap_passed": false,
+      "all_numeric_passed": false,
+      "arm": "w160_9000",
+      "bootstrap_gates": [
+        {
+          "ci_high": -0.004948977737017036,
+          "ci_low": -0.04269227556472695,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=rank_ic]",
+          "excludes_zero": true,
+          "metric": "rank_ic",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": -3.277927878917438e-05,
+          "ci_low": -0.00031575768624626305,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=long_short_return]",
+          "excludes_zero": true,
+          "metric": "long_short_return",
+          "passed": false,
+          "required_side": "above_zero"
+        },
+        {
+          "ci_high": 0.21600000000000005,
+          "ci_low": 0.15333354271356775,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=turnover]",
+          "excludes_zero": true,
+          "metric": "turnover",
+          "passed": false,
+          "required_side": "below_zero"
+        }
+      ],
+      "changed_vs_v2": [
+        "capacity"
+      ],
+      "exit_rule_applies": true,
+      "exit_rule_reason": "pooled RankIC delta <= 0 and pooled long-short delta <= 0: a training-loss movement is not evidence, the version exits the submission-candidate pool",
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_samples_seen": 288000,
+      "failed_gates": [
+        "rank_ic_mean_improvement",
+        "long_short_mean_degradation",
+        "turnover_degradation",
+        "worst_day_long_short",
+        "bootstrap_rank_ic",
+        "bootstrap_long_short_return",
+        "bootstrap_turnover"
+      ],
+      "group": "capacity",
+      "hidden_dim": 160,
+      "max_steps": 9000,
+      "numeric_gates": [
+        {
+          "ci_high": -0.004948977737017036,
+          "ci_low": -0.04269227556472695,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=rank_ic]/mean_delta",
+          "id": "rank_ic_mean_improvement",
+          "metric": "rank_ic",
+          "observed": -0.02448649449129782,
+          "op": "gte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.01164665
+        },
+        {
+          "ci_high": -3.277927878917438e-05,
+          "ci_low": -0.00031575768624626305,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=long_short_return]/mean_delta",
+          "id": "long_short_mean_degradation",
+          "metric": "long_short_return",
+          "observed": -0.000160124608391156,
+          "op": "gte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": -0.00010387477
+        },
+        {
+          "ci_high": 0.21600000000000005,
+          "ci_low": 0.15333354271356775,
+          "days": 65,
+          "evidence": "modified_tlob/capacity_20261024.json#/paired_deltas/pooled[pair=w160_9000-minus-v2_60d_csz,metric=turnover]/mean_delta",
+          "id": "turnover_degradation",
+          "metric": "turnover",
+          "observed": 0.18213780440664862,
+          "op": "lte",
+          "passed": false,
+          "statistic": "pooled mean of paired daily delta",
+          "threshold": 0.03706698
+        },
+        {
+          "date": "2024-03-07",
+          "evidence": "modified_tlob/capacity_20261024.json#/pooled_metrics/w160_9000/min_daily_long_short_return",
+          "id": "worst_day_long_short",
+          "metric": "long_short_return",
+          "observed": -0.000439909623941,
+          "op": "gte",
+          "passed": false,
+          "statistic": "minimum daily long_short_return of the candidate itself over the pooled three windows",
+          "threshold": -0.00013896761,
+          "window": "mar2024"
+        }
+      ],
+      "passed": false,
+      "pooled_long_short_delta": -0.000160124608391156,
+      "pooled_rank_ic_delta": -0.02448649449129782
+    }
+  ],
+  "boundaries": [
+    "single seed (11) per arm and the three development months are already-used development data, so this is a screening decision, not independent confirmation",
+    "local approximate metric (gross forward label returns, no fees or slippage), not the official score",
+    "the capacity contrast changes width and final-head depth together, so a width conclusion carries that caveat",
+    "final split 2024-10-08..2025-01-01 and the locked windows stay unopened"
+  ],
+  "change_registration": {
+    "w160_9000": {
+      "changed_vs_v2": [
+        "capacity"
+      ],
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_samples_seen": 288000,
+      "hidden_dim": 160,
+      "max_steps": 9000
+    },
+    "w40_full2epoch": {
+      "changed_vs_v2": [
+        "training_epochs"
+      ],
+      "expected_epoch_share": 2.0,
+      "expected_samples_seen": 958864,
+      "hidden_dim": 40,
+      "max_steps": 29966
+    },
+    "w80_9000": {
+      "changed_vs_v2": [
+        "capacity"
+      ],
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_samples_seen": 288000,
+      "hidden_dim": 80,
+      "max_steps": 9000
+    }
+  },
+  "decision_inputs": {
+    "comparison": "modified_tlob/capacity_20261024.json",
+    "comparison_code_commit": "00144415569f6d560433ae787716a1f2dbecf9ad",
+    "comparison_plan_seed": 20261024,
+    "comparison_replay_run_id": "20261024T195108.907203Z_39831f2a9d63",
+    "gates_frozen": true,
+    "gates_source": "runs/model-versions/v2-cloud-20261023/record.json pre_registered_thresholds",
+    "no_checkpoint_selection": "Every arm trains to its declared max_steps; epochs never binds at 9000 updates. learning_curve checkpoints (every 3000 steps) are recorded diagnostics, and no early stopping, checkpoint picking or curve-based stopping may influence any run or selection.",
+    "no_post_hoc": "the selection order and handback rule are frozen here; no metric, window or threshold may be substituted afterwards",
+    "preregistration": "configs/capacity_20261024/experiments.json",
+    "selection_rule": "among versions passing every gate, submit the one with the highest pooled RankIC mean delta; if the top two are within 0.002 (the V2 tie-break band) choose the higher pooled long-short mean delta, then the smaller pooled turnover delta, then the smaller hidden_dim",
+    "tie_break_band": 0.002
+  },
+  "evidence_chain": {
+    "evidence": "modified_tlob/capacity_20261024.json#/verification",
+    "identical_evaluation_scope_per_window": true,
+    "intact": true,
+    "preregistration_match": true,
+    "replay_report_agreement": true,
+    "weights_sha256_match": true
+  },
+  "generated_utc": "2026-10-24T20:11:30.317068+00:00",
+  "handback": {
+    "candidate_selected": false,
+    "exited_arms": [
+      "w40_full2epoch",
+      "w80_9000",
+      "w160_9000"
+    ],
+    "negative_result": "both pre-registered questions are negative: extra training exposure and extra width at the fixed 9000-update budget do not improve the three development months over V2",
+    "rule": "if no version passes every gate, submit no capacity version: the submission slot returns to the label branch (label-contrast) and this branch records the negative result and the reason",
+    "slot": "returns_to_label_branch",
+    "submission_candidate": null
+  },
+  "kind": "capacity_study_decision",
+  "one_line_conclusion": "两个问题均为否：增加训练曝光（0.6→2 轮）无效、扩大容量（40→80/160）无效，三开发月均未达到预登记 RankIC 门槛；本分支无提交候选，名额交回标签分支，step3 不触发。",
+  "questions": {
+    "capacity": {
+      "answer": "no",
+      "arms": [
+        "w80_9000",
+        "w160_9000"
+      ],
+      "failed_gates": {
+        "w160_9000": [
+          "rank_ic_mean_improvement",
+          "long_short_mean_degradation",
+          "turnover_degradation",
+          "worst_day_long_short",
+          "bootstrap_rank_ic",
+          "bootstrap_long_short_return",
+          "bootstrap_turnover"
+        ],
+        "w80_9000": [
+          "rank_ic_mean_improvement",
+          "turnover_degradation",
+          "worst_day_long_short",
+          "bootstrap_rank_ic",
+          "bootstrap_long_short_return",
+          "bootstrap_turnover"
+        ]
+      },
+      "hypothesis": "Width, not exposure, may be the binding constraint: raising hidden_dim from 40 to 80/160 at the fixed 9000-update budget raises development RankIC by at least the same pre-registered margin without breaching the same guardrails.",
+      "passing": [],
+      "reason": "no arm in this group reached the pre-registered RankIC improvement margin; failed gates: w80_9000: rank_ic_mean_improvement, turnover_degradation, worst_day_long_short, bootstrap_rank_ic, bootstrap_long_short_return, bootstrap_turnover; w160_9000: rank_ic_mean_improvement, long_short_mean_degradation, turnover_degradation, worst_day_long_short, bootstrap_rank_ic, bootstrap_long_short_return, bootstrap_turnover"
+    },
+    "training_volume": {
+      "answer": "no",
+      "arms": [
+        "w40_full2epoch"
+      ],
+      "failed_gates": {
+        "w40_full2epoch": [
+          "rank_ic_mean_improvement",
+          "worst_day_long_short",
+          "bootstrap_rank_ic",
+          "bootstrap_long_short_return"
+        ]
+      },
+      "hypothesis": "V2's 0.6007-epoch run may be exposure-limited: two full epochs on the identical 60-day CSZ pool raise development RankIC by at least the pre-registered margin without breaching the long-short, turnover or worst-day guardrails.",
+      "passing": [],
+      "reason": "no arm in this group reached the pre-registered RankIC improvement margin; failed gates: w40_full2epoch: rank_ic_mean_improvement, worst_day_long_short, bootstrap_rank_ic, bootstrap_long_short_return"
+    }
+  },
+  "reference": {
+    "epochs": 0.6007108411620418,
+    "steps": 9000,
+    "version": "v2_60d_csz",
+    "weights_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"
+  },
+  "schema_version": 1,
+  "selection": {
+    "closest_non_passing": "w80_9000",
+    "ranked_passing": [],
+    "reason": "no version passed every pre-registered gate, so the frozen selection order has no candidate to rank",
+    "strongest_passing_version": null,
+    "tie_break_applied": false
+  },
+  "step3": {
+    "action_if_triggered": "retrain that width at the training-volume arm's 2-epoch exposure (29966 updates, 958864 samples) and repeat the identical three-window paired comparison before any submission, so width and exposure are not confounded",
+    "reason": "no capacity version passed, so no width result needs a 2-epoch confirmation run",
+    "trigger_condition": "a capacity-group version (w80_9000 or w160_9000) passes every pre-registered gate",
+    "triggered": false,
+    "winner_if_triggered": null
+  },
+  "study_id": "capacity-20261024",
+  "training_loss_note": {
+    "continuity_max_abs_loss_difference": 0.0,
+    "evidence": "modified_tlob/capacity_20261024.json#/curves/contrasts/matched_step_loss",
+    "matched_step_loss": {
+      "v2_60d_csz": {
+        "100": 1.2039732876292249e-05,
+        "1000": 9.657003386078885e-06,
+        "3000": 6.654994615821815e-06,
+        "6000": 7.1499996526017646e-06,
+        "9000": 8.378063349068992e-06
+      },
+      "w160_9000": {
+        "100": 1.209733606203833e-05,
+        "1000": 9.77969020645782e-06,
+        "3000": 6.631202974606549e-06,
+        "6000": 7.290450692018927e-06,
+        "9000": 8.345974327242985e-06
+      },
+      "w40_full2epoch": {
+        "100": 1.2039732876292249e-05,
+        "1000": 9.657003386078885e-06,
+        "3000": 6.654994615821815e-06,
+        "6000": 7.1499996526017646e-06,
+        "9000": 8.378063349068992e-06
+      },
+      "w80_9000": {
+        "100": 1.2335742211038433e-05,
+        "1000": 9.66410527401174e-06,
+        "3000": 6.608837621594979e-06,
+        "6000": 7.262365409649765e-06,
+        "9000": 8.243010673292061e-06
+      }
+    },
+    "statement": "the two-epoch arm reproduces the reused V2 run's 100-step loss rows exactly and its extra epochs do not raise development RankIC; per the frozen shared_guardrail a training-loss movement is not evidence of improvement"
+  }
+}
