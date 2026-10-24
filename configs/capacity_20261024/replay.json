@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "experiment_id": "capacity-replay-20261024",
+  "hypothesis": "Scoring the reused V2 width-40 selection (9000 updates, 0.6007 epochs) and the three new capacity arms on identical prediction keys, dates and labels in the three pre-registered development months isolates whether extra training volume (two epochs at width 40) or extra width (80/160 at 9000 updates) moves development RankIC, long-short, turnover and worst-day relative to V2.",
+  "output_root": "../../runs/capacity-20261024/replay",
+  "seed": 20261024,
+  "data": {
+    "bars_path": "../../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1", "ask_volume1", "bid_price1", "bid_volume1",
+      "ask_price2", "ask_volume2", "bid_price2", "bid_volume2",
+      "ask_price3", "ask_volume3", "bid_price3", "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"],
+    "training_sample_times": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "windows": [
+    {"name": "nov2023", "label": "2023-11 development month",
+     "start": "2023-11-01T00:00:00", "end": "2023-12-01T00:00:00"},
+    {"name": "jan2024", "label": "2024-01 development month",
+     "start": "2024-01-01T00:00:00", "end": "2024-02-01T00:00:00"},
+    {"name": "mar2024", "label": "2024-03 development month",
+     "start": "2024-03-01T00:00:00", "end": "2024-04-01T00:00:00"}
+  ],
+  "versions": [
+    {"name": "v2_60d_csz", "label": "V2 width 40, 9000 updates, 0.6007 epochs (pre-registered reference)",
+     "role": "reference_and_training_volume_baseline", "hidden_dim": 40, "steps": 9000, "epochs": 0.6007108411620418,
+     "weights": "../../runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json",
+     "expected_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"},
+    {"name": "w40_full2epoch", "label": "width 40, 29966 updates, 2.0 epochs (training-volume candidate)",
+     "role": "training_volume_candidate", "hidden_dim": 40, "steps": 29966, "epochs": 2.0,
+     "weights": "../../runs/model-versions/capacity-20261024/w40_full2epoch/modified_tlob_weights.json",
+     "expected_sha256": "79a1e9c150894e6f37c2a8c6029803202e2f0203ee512784143a4e0dd3624d83"},
+    {"name": "w80_9000", "label": "width 80, 9000 updates, 0.6007 epochs (capacity candidate)",
+     "role": "capacity_candidate", "hidden_dim": 80, "steps": 9000, "epochs": 0.6007108411620418,
+     "weights": "../../runs/model-versions/capacity-20261024/w80_9000/modified_tlob_weights.json",
+     "expected_sha256": "ce17e6754120b6355ed118c8135f4584e0af972907d5b536d85d7539f71a9fe3"},
+    {"name": "w160_9000", "label": "width 160, 9000 updates, 0.6007 epochs (capacity candidate)",
+     "role": "capacity_candidate", "hidden_dim": 160, "steps": 9000, "epochs": 0.6007108411620418,
+     "weights": "../../runs/model-versions/capacity-20261024/w160_9000/modified_tlob_weights.json",
+     "expected_sha256": "7585a20007ef9e192ff99f51e1e2aaa052cbc04ff778e5993996475e243dd28f"}
+  ],
+  "pairs": [
+    ["w40_full2epoch", "v2_60d_csz"],
+    ["w80_9000", "v2_60d_csz"],
+    ["w160_9000", "v2_60d_csz"]
+  ],
+  "predict_batch_size": 512,
+  "bootstrap_draws": 20000
+}
