@@ -1,0 +1,561 @@
+{
+  "schema_version": 1,
+  "kind": "capacity_study_preregistration",
+  "study_id": "capacity-20261024",
+  "branch": "research/capacity-20261024",
+  "base_commit": "56d60bf",
+  "created_utc": "2026-10-24T16:22:33Z",
+  "status": "preregistered_before_training",
+  "scope": "Two 60-day CSZ questions on the frozen V2 recipe. (1) training volume: width 40, V2's existing 9000-update run (= 0.6007 epochs) reused as-is versus a new full-two-epoch run (29966 updates). (2) capacity: widths 40/80/160 at the common 9000-update budget, width 40 reusing the same V2 run. V2 recipe, data, splits and reference files stay untouched.",
+  "hypotheses": {
+    "training_volume": "V2's 0.6007-epoch run may be exposure-limited: two full epochs on the identical 60-day CSZ pool raise development RankIC by at least the pre-registered margin without breaching the long-short, turnover or worst-day guardrails.",
+    "capacity": "Width, not exposure, may be the binding constraint: raising hidden_dim from 40 to 80/160 at the fixed 9000-update budget raises development RankIC by at least the same pre-registered margin without breaching the same guardrails.",
+    "shared_guardrail": "A gain that only moves during-training loss while the three development months show no improvement is not evidence and exits the candidate pool."
+  },
+  "reference": {
+    "version": "v2_60d_csz",
+    "experiment_id": "model-v2-60d-csz",
+    "config": "configs/model_v2_60d_csz.json",
+    "config_sha256": "547eb2abc3c2e5bb3f5c9252adf9f4bc31d47dfbd64f426cecb95b4bd0cffb0c",
+    "run_record": "runs/model-versions/v2-cloud-20261023/record.json",
+    "local_run_dir": "runs/model-versions/v2-cloud-20261023/60d",
+    "weights": "runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json",
+    "weights_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa",
+    "cloud_run_dir": "/root/shared-nvme/v2-20261023/runs/60d/20261023T172305.534059Z_ada259105b24",
+    "run_id": "20261023T172305.534059Z_ada259105b24",
+    "seed": 11,
+    "steps": 9000,
+    "samples_seen": 288000,
+    "epochs": 0.6007108411620418,
+    "train_pool_requested": 479520,
+    "train_pool_selected": 479432,
+    "train_pool_missing_labels": 88,
+    "roles": [
+      "reference for every pre-registered gate",
+      "capacity arm at width 40 (9000 updates, not retrained)",
+      "training-volume arm at 0.6007 epochs (not retrained)"
+    ]
+  },
+  "frozen_recipe": {
+    "source_config": "configs/model_v2_60d_csz.json",
+    "declared_expectations": {
+      "data.feature_columns": [
+        "ask_price1",
+        "ask_volume1",
+        "bid_price1",
+        "bid_volume1",
+        "ask_price2",
+        "ask_volume2",
+        "bid_price2",
+        "bid_volume2",
+        "ask_price3",
+        "ask_volume3",
+        "bid_price3",
+        "bid_volume3"
+      ],
+      "data.lookback": 128,
+      "data.min_history": 1,
+      "data.history_days": 10,
+      "data.max_ffill_steps": 5,
+      "data.missing_policy": "ffill",
+      "data.missing_sentinel": -1,
+      "data.price_scale": 100,
+      "data.outside_universe_labels": "exclude",
+      "data.label_horizon_minutes": 30,
+      "data.sample_times": [
+        "09:30",
+        "10:00",
+        "10:30",
+        "11:00",
+        "11:30",
+        "13:30",
+        "14:00",
+        "14:30"
+      ],
+      "data.training_sample_times": [
+        "09:30",
+        "10:00",
+        "10:30",
+        "11:00",
+        "11:30",
+        "13:30",
+        "14:00",
+        "14:30"
+      ],
+      "splits.train": {
+        "start": "2023-08-01T00:00:00",
+        "end": "2023-11-01T00:00:00"
+      },
+      "splits.validation": {
+        "start": "2023-11-01T00:00:00",
+        "end": "2023-11-15T00:00:00"
+      },
+      "splits.final": {
+        "start": "2024-10-08T00:00:00",
+        "end": "2025-01-01T00:00:00"
+      },
+      "evaluation_split": "validation",
+      "model.num_layers": 4,
+      "model.num_heads": 1,
+      "model.batch_size": 32,
+      "model.learning_rate": 0.0001,
+      "model.target_scaling": "train_std",
+      "model.target_centering": "timestamp_zscore_train_rms_matched",
+      "model.time_loss_weighting": "none",
+      "model.is_sin_emb": true,
+      "model.book_representation": "raw",
+      "model.trade_features": "zero",
+      "model.device": "cuda",
+      "model.cpu_threads": 1,
+      "model.log_every_steps": 100,
+      "seed": 11,
+      "budget.max_rss_mb": 48000,
+      "budget.max_train_samples": 500000,
+      "logging.resource_interval_seconds": 5.0,
+      "acceptance": {
+        "min_coverage": 0.99,
+        "repro_atol": 1e-06,
+        "repro_rtol": 1e-05
+      },
+      "evaluation": {
+        "quantile": 0.2,
+        "periods_per_year": 252,
+        "min_cross_section": 3,
+        "constant_portfolios": "undefined"
+      },
+      "final_access": {
+        "max_views": 1,
+        "purpose": ""
+      },
+      "data.bars_path": "/root/shared-nvme/v2-20261023/data/bars",
+      "data.labels_path": "/root/shared-nvme/v2-20261023/data/labels",
+      "data.instruments_path": "/root/shared-nvme/v2-20261023/data/instruments.parquet",
+      "data.instrument_map_path": "/root/shared-nvme/v2-20261023/data/instrument_map.csv",
+      "data.cache_dir": "/root/shared-nvme/v2-20261023/cache/60d"
+    },
+    "allowed_differences": [
+      "experiment_id",
+      "hypothesis",
+      "output_root",
+      "model.hidden_dim",
+      "model.max_steps",
+      "model.epochs",
+      "budget.wall_seconds",
+      "logging.learning_curves",
+      "logging.learning_curve_every_steps"
+    ],
+    "note": "experiment_id and hypothesis are run-identity metadata, not recipe knobs. Everything else must equal configs/model_v2_60d_csz.json item by item; scripts/verify_capacity_20261024.py checks the flattened key sets and fails on any other difference. data.cache_dir is deliberately left at V2's value so the three arms share one checksum-validated projection cache; cache entries rebuild themselves if they do not match."
+  },
+  "arms": [
+    {
+      "arm": "w40_full2epoch",
+      "group": "training_volume",
+      "config": "configs/capacity_20261024/w40_full2epoch.json",
+      "config_sha256": "f4404dbfd1717daa3f4cfda9e99f3396c29e959c14df259d3706301e6a6b9f87",
+      "experiment_id": "capacity-w40-full2epoch",
+      "hidden_dim": 40,
+      "max_steps": 29966,
+      "epochs": 2,
+      "learning_rate": 0.0001,
+      "batch_size": 32,
+      "seed": 11,
+      "expected_pool_selected": 479432,
+      "expected_samples_seen": 958864,
+      "expected_epoch_share": 2.0,
+      "expected_updates_per_epoch": 14983,
+      "total_params": 1134633,
+      "final_head_linear_layers": [
+        "Linear(320,80)",
+        "Linear(80,1)"
+      ],
+      "output_root": "/root/shared-nvme/capacity-20261024/runs/w40_full2epoch",
+      "retrain": true,
+      "budget": {
+        "wall_seconds": 10800,
+        "max_rss_mb": 48000,
+        "max_train_samples": 500000
+      },
+      "learning_curves": {
+        "enabled": true,
+        "every_steps": 500
+      }
+    },
+    {
+      "arm": "w80_9000",
+      "group": "capacity",
+      "config": "configs/capacity_20261024/w80_9000.json",
+      "config_sha256": "fcd9ddbdd59716176ce8a85b2edfded76ad9ada1f2f4b1e99fed227ec73ecc09",
+      "experiment_id": "capacity-w80-9000",
+      "hidden_dim": 80,
+      "max_steps": 9000,
+      "epochs": 12,
+      "learning_rate": 0.0001,
+      "batch_size": 32,
+      "seed": 11,
+      "expected_pool_selected": 479432,
+      "expected_samples_seen": 288000,
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_updates_per_epoch": 14983,
+      "total_params": 1513863,
+      "final_head_linear_layers": [
+        "Linear(640,160)",
+        "Linear(160,40)",
+        "Linear(40,1)"
+      ],
+      "output_root": "/root/shared-nvme/capacity-20261024/runs/w80_9000",
+      "retrain": true,
+      "budget": {
+        "wall_seconds": 10800,
+        "max_rss_mb": 48000,
+        "max_train_samples": 500000
+      },
+      "learning_curves": {
+        "enabled": true,
+        "every_steps": 500
+      }
+    },
+    {
+      "arm": "w160_9000",
+      "group": "capacity",
+      "config": "configs/capacity_20261024/w160_9000.json",
+      "config_sha256": "59632debaf383436d9c555691ffdd79d47b33452f08cba3fa3c10d295ad3fc5e",
+      "experiment_id": "capacity-w160-9000",
+      "hidden_dim": 160,
+      "max_steps": 9000,
+      "epochs": 12,
+      "learning_rate": 0.0001,
+      "batch_size": 32,
+      "seed": 11,
+      "expected_pool_selected": 479432,
+      "expected_samples_seen": 288000,
+      "expected_epoch_share": 0.6007108411620418,
+      "expected_updates_per_epoch": 14983,
+      "total_params": 3018003,
+      "final_head_linear_layers": [
+        "Linear(1280,320)",
+        "Linear(320,80)",
+        "Linear(80,1)"
+      ],
+      "output_root": "/root/shared-nvme/capacity-20261024/runs/w160_9000",
+      "retrain": true,
+      "budget": {
+        "wall_seconds": 10800,
+        "max_rss_mb": 48000,
+        "max_train_samples": 500000
+      },
+      "learning_curves": {
+        "enabled": true,
+        "every_steps": 500
+      }
+    }
+  ],
+  "reused_arm": {
+    "arm": "v2_60d_9000_reused",
+    "config": "configs/model_v2_60d_csz.json",
+    "hidden_dim": 40,
+    "max_steps": 9000,
+    "expected_samples_seen": 288000,
+    "expected_epoch_share": 0.6007108411620418,
+    "total_params": 1134633,
+    "retrain": false,
+    "reason": "The width-40 9000-update arm and the 0.6007-epoch training-volume arm are the same executed run. Retraining would spend GPU time to reproduce an identical recipe/seed and would introduce a second, non-preregistered source of variation.",
+    "evidence": "runs/model-versions/v2-cloud-20261023/record.json arms[arm=60d]"
+  },
+  "step_arithmetic": {
+    "train_pool_selected": 479432,
+    "train_pool_requested": 479520,
+    "train_pool_missing_labels": 88,
+    "pool_source": "runs/model-versions/v2-cloud-20261023/record.json sample_exposure_matching.arms.60d.pool_selected, i.e. the V2 60d run's selected training pool for train split 2023-08-01..2023-11-01 and the shared sample_times",
+    "batch_size": 32,
+    "updates_per_epoch_formula": "ceil(pool_selected / batch_size)",
+    "updates_per_epoch": 14983,
+    "full_epochs": 2,
+    "full_epoch_steps_formula": "full_epochs * updates_per_epoch",
+    "full_epoch_steps": 29966,
+    "full_epoch_samples_formula": "full_epochs * pool_selected",
+    "full_epoch_samples": 958864,
+    "nine_thousand_step_samples_formula": "9000 * batch_size",
+    "nine_thousand_step_samples": 288000,
+    "nine_thousand_step_epoch_share_formula": "(9000 * batch_size) / train_pool_selected = 288000 / 479432",
+    "nine_thousand_step_epoch_share": 0.6007108411620418,
+    "epoch_share_note": "the runner records achieved epochs as epoch_samples / pool_selected, so the 9000-update share is 288000/479432 = 0.6007108411620418. Dividing updates by updates_per_epoch instead gives 9000/14983 = 0.60068078, which understates the share: the epoch's tail batch is short (479432 = 14982*32 + 8), so 9000 updates cover 288000 samples rather than 9000*479432/14983.",
+    "tail_batch": "modified_tlob/adapter.py iterates range(0, len(y), batch_size) per epoch, so the final batch of each epoch holds pool_selected - 14982*32 = 8 samples and still counts as one update; that is why two full epochs are 2*14983 = 29966 updates, not floor(2*479432/32) = 29964 or 2*14982.25 rounded down."
+  },
+  "pool_recheck": {
+    "when": "immediately after each new run starts, before accepting the run",
+    "method": "read the run's events.jsonl event stage=training type=started and require samples == 479432",
+    "secondary": "read the run's events.jsonl stage=training type=epoch_completed/epoch_stopped rows: epoch 1 must stop at step 14983 and epoch 2 at 29966 for w40_full2epoch (samples_seen 479432 then 958864); the 9000-update arms must stop at step 9000 inside epoch 1 with samples_seen 288000",
+    "on_mismatch": "stop the run, discard it, recompute updates_per_epoch = ceil(actual_pool/32) and max_steps = full_epochs * updates_per_epoch with the same formula, record the deviation, and only then restart. No max_steps value may be chosen by any other rule.",
+    "why": "max_steps is what fixes the epoch share; a changed pool would silently change the exposure of both groups."
+  },
+  "capacity_params": {
+    "measuring_code": "modified_tlob.model.ModifiedTLOB(hidden_dim=w, num_layers=4, seq_size=128, num_features=12, num_heads=1, is_sin_emb=True); sum(p.numel() for p in model.parameters())",
+    "measured_with": "torch 2.11.0+cpu, Python 3.13 (C:\\ProgramData\\miniconda3\\python.exe), no training involved",
+    "widths": {
+      "40": {
+        "total_params": 1134633,
+        "final_head_params": 25761,
+        "final_head_linear_count": 2,
+        "final_layers": [
+          {
+            "op": "Linear",
+            "in": 320,
+            "out": 80,
+            "params": 25680
+          },
+          {
+            "op": "GELU"
+          },
+          {
+            "op": "Linear",
+            "in": 80,
+            "out": 1,
+            "params": 81
+          }
+        ]
+      },
+      "80": {
+        "total_params": 1513863,
+        "final_head_params": 109041,
+        "final_head_linear_count": 3,
+        "final_layers": [
+          {
+            "op": "Linear",
+            "in": 640,
+            "out": 160,
+            "params": 102560
+          },
+          {
+            "op": "GELU"
+          },
+          {
+            "op": "Linear",
+            "in": 160,
+            "out": 40,
+            "params": 6440
+          },
+          {
+            "op": "GELU"
+          },
+          {
+            "op": "Linear",
+            "in": 40,
+            "out": 1,
+            "params": 41
+          }
+        ]
+      },
+      "160": {
+        "total_params": 3018003,
+        "final_head_params": 435681,
+        "final_head_linear_count": 3,
+        "final_layers": [
+          {
+            "op": "Linear",
+            "in": 1280,
+            "out": 320,
+            "params": 409920
+          },
+          {
+            "op": "GELU"
+          },
+          {
+            "op": "Linear",
+            "in": 320,
+            "out": 80,
+            "params": 25680
+          },
+          {
+            "op": "GELU"
+          },
+          {
+            "op": "Linear",
+            "in": 80,
+            "out": 1,
+            "params": 81
+          }
+        ]
+      }
+    },
+    "head_structure_change": "final_layers flatten (hidden_dim//4)*(seq_size//4) and halve it by /4 until <=128, so the head is width-dependent: width 40 starts at 320 and needs 2 linear layers (320->80->1); widths 80 and 160 start at 640/1280 and need 3 linear layers (640->160->40->1 and 1280->320->80->1). Capacity therefore changes width and head depth together; it is not a clean width-only contrast, and any capacity conclusion must state that.",
+    "approx_claim_check": "1,134,633 / 1,513,863 / 3,018,003 match the expected ~1.13M / 1.51M / 3.02M."
+  },
+  "evaluation": {
+    "windows": [
+      {
+        "name": "nov2023",
+        "label": "2023-11 development month",
+        "start": "2023-11-01T00:00:00",
+        "end": "2023-12-01T00:00:00"
+      },
+      {
+        "name": "jan2024",
+        "label": "2024-01 development month",
+        "start": "2024-01-01T00:00:00",
+        "end": "2024-02-01T00:00:00"
+      },
+      {
+        "name": "mar2024",
+        "label": "2024-03 development month",
+        "start": "2024-03-01T00:00:00",
+        "end": "2024-04-01T00:00:00"
+      }
+    ],
+    "window_boundary_note": "The three windows are half-open prediction ranges on already-used development data. nov2023 runs past V2's validation split end (2023-11-15) into 2023-11-16..2023-11-30, so no window is a fresh holdout; the same months were scored in earlier model-version replays, which is why a pass here is a screening signal only.",
+    "pairs": [
+      [
+        "w40_full2epoch",
+        "v2_60d_csz"
+      ],
+      [
+        "w80_9000",
+        "v2_60d_csz"
+      ],
+      [
+        "w160_9000",
+        "v2_60d_csz"
+      ]
+    ],
+    "tool": {
+      "script": "scripts/replay_model_versions.py",
+      "plan_schema_reference": "configs/model_version_replay_20261023.json",
+      "commands": [
+        "python scripts/replay_model_versions.py run <plan.json> --output-root runs/capacity-20261024/replay",
+        "python scripts/replay_model_versions.py report <plan.json> <run_dir>"
+      ],
+      "path_base": "relative paths inside a replay plan resolve against the plan file's own directory, so a plan under configs/capacity_20261024/ needs ../../runs/... for repository artifacts",
+      "reported_files": [
+        "report/summary.csv",
+        "report/daily_all.csv",
+        "report/paired_summary.csv",
+        "report/daily_deltas.csv"
+      ]
+    },
+    "paired_daily_series": "for each arm, delta = arm minus v2_60d_csz on the same prediction keys, date by date; both versions are scored inside one replay run on identical keys, dates and labels, so no cross-run comparability assumption is needed",
+    "primary_series": "the three windows' paired daily deltas concatenated in chronological order and weighted equally per paired trading day; gate means are computed on this pooled series",
+    "scoring_convention": "local approximate jinyiquant.evaluation (gross forward label returns, no fees/slippage/execution); not the official platform score",
+    "bootstrap": {
+      "method": "moving consecutive-day block bootstrap of the pooled paired daily delta series",
+      "block_days": 5,
+      "draws": 20000,
+      "interval": [
+        0.025,
+        0.975
+      ],
+      "seed": 20261024,
+      "implementation": "same estimator as scripts/replay_model_versions.py::_block_delta(block=5, draws, seed) applied to the pooled series; the replay plan's seed also seeds these draws",
+      "per_window_reporting": "paired_summary.csv already reports per-window block-5 intervals; they are required stability evidence in the report but only the pooled interval gates a version"
+    },
+    "required_reporting": [
+      "per-window and pooled mean deltas for rank_ic, long_short_return and turnover",
+      "each arm's own worst-day long_short_return (date and window)",
+      "training curve checkpoints (learning_curve.json/csv, every 500 steps) for every arm, including the reused V2 run's loss level at step 9000",
+      "executed steps, samples_seen and epoch share read back from events.jsonl for every new run"
+    ]
+  },
+  "pre_registered_gates": {
+    "frozen": true,
+    "frozen_statement": "These numbers are the V2 record's pre_registered_thresholds, carried over unchanged and written before any capacity run started. No threshold, metric, window, step budget or gate orientation may change after results are seen; a later change invalidates the round.",
+    "source": "runs/model-versions/v2-cloud-20261023/record.json pre_registered_thresholds",
+    "comparison": "candidate minus v2_60d_csz, paired by trading day, pooled over the three development windows",
+    "gates": [
+      {
+        "id": "rank_ic_mean_improvement",
+        "metric": "rank_ic",
+        "statistic": "pooled mean of paired daily delta",
+        "op": "gte",
+        "value": 0.01164665,
+        "meaning": "candidate RankIC must beat V2 by at least this mean margin"
+      },
+      {
+        "id": "long_short_mean_degradation",
+        "metric": "long_short_return",
+        "statistic": "pooled mean of paired daily delta",
+        "op": "gte",
+        "value": -0.00010387477,
+        "meaning": "candidate mean long-short may fall below V2 by at most this tolerance"
+      },
+      {
+        "id": "turnover_degradation",
+        "metric": "turnover",
+        "statistic": "pooled mean of paired daily delta",
+        "op": "lte",
+        "value": 0.03706698,
+        "meaning": "candidate mean turnover may exceed V2 by at most this tolerance"
+      },
+      {
+        "id": "worst_day_long_short",
+        "metric": "long_short_return",
+        "statistic": "minimum daily long_short_return of the candidate itself over the pooled three windows",
+        "op": "gte",
+        "value": -0.00013896761,
+        "meaning": "absolute floor on the candidate's worst development day, not a delta"
+      }
+    ],
+    "bootstrap_gate": {
+      "applies_to": [
+        "rank_ic",
+        "long_short_return",
+        "turnover"
+      ],
+      "rule": "the 5-day block bootstrap 95% interval of the pooled paired daily delta must exclude 0",
+      "orientation": "for rank_ic and long_short_return the interval must lie above 0; for turnover it must lie below 0. This orientation clause only resolves which side of zero a passing interval may sit on; it adds no new threshold.",
+      "consistency_note": "the tolerance gates already forbid the unfavourable direction, so an interval that excludes zero on the unfavourable side also fails its tolerance gate"
+    },
+    "pass_rule": "a version passes only if all four numeric gates and all three bootstrap intervals pass; one miss fails the version",
+    "derived_absolute_bounds_for_this_round": "not applicable: this round's gates are relative to the recomputed V2 column of the same replay run, so no absolute bound is fixed in advance",
+    "exit_rule": "a version whose training loss falls but whose development metrics show no improvement (pooled RankIC delta <= 0 and pooled long-short delta <= 0) exits the submission-candidate pool and is reported as a negative result; falling training loss alone is never evidence"
+  },
+  "decision_rule": {
+    "selection": "among versions passing every gate, submit the one with the highest pooled RankIC mean delta; if the top two are within 0.002 (the V2 tie-break band) choose the higher pooled long-short mean delta, then the smaller pooled turnover delta, then the smaller hidden_dim",
+    "handback": "if no version passes every gate, submit no capacity version: the submission slot returns to the label branch (label-contrast) and this branch records the negative result and the reason",
+    "group_reporting": "training volume (w40 two epochs vs V2 0.6007 epochs) and capacity (w40/80/160 at 9000 updates) are judged separately; passing in one group does not promote the other",
+    "no_post_hoc": "the selection order and handback rule are frozen here; no metric, window or threshold may be substituted afterwards",
+    "no_checkpoint_selection": "Every arm trains to its declared max_steps; epochs never binds at 9000 updates. learning_curve checkpoints (every 500 steps) are recorded diagnostics, and no early stopping, checkpoint picking or curve-based stopping may influence any run or selection."
+  },
+  "verification": {
+    "config_validation": {
+      "command": "uv run python -m jinyiquant validate-config configs/capacity_20261024/<arm>.json",
+      "results": {
+        "w40_full2epoch": {
+          "valid": true,
+          "local_config_sha256": "e0359adb6003ac6b3c1a7d2ec7ec13e22a943b027de86e062c70753f36ea9d69"
+        },
+        "w80_9000": {
+          "valid": true,
+          "local_config_sha256": "2e184b0461dbda9c4e98fbc783a23b75250e665cf1ddab391ff291ae91421156"
+        },
+        "w160_9000": {
+          "valid": true,
+          "local_config_sha256": "50c2b0c060009974fbbed769e84faacb50bdab768d3d6731857234d823ea9a73"
+        }
+      },
+      "note": "the printed config_sha256 is the digest of the resolved snapshot, and load_config resolves the absolute output_root/data paths against the host root, so the locally printed value differs from the cloud-side value recorded in the run manifest. The file sha256 values in arms[].config_sha256 are platform independent."
+    },
+    "field_and_param_checks": {
+      "command": "uv run python scripts/verify_capacity_20261024.py",
+      "torch_capable_command": "python scripts/verify_capacity_20261024.py",
+      "what_it_checks": [
+        "each arm config differs from configs/model_v2_60d_csz.json only on frozen_recipe.allowed_differences",
+        "frozen_recipe.declared_expectations still equal the V2 config values item by item",
+        "step arithmetic: ceil(479432/32)=14983, 2*14983=29966, 958864=2*479432, 9000/14983=0.6007108411620418",
+        "the gate values in this file equal the V2 record's pre_registered_thresholds",
+        "total_params and final_layers of ModifiedTLOB at widths 40/80/160 equal capacity_params (torch required; reported as skipped without torch)"
+      ],
+      "reproduce_param_counts": "Python with torch: from modified_tlob.model import ModifiedTLOB; sum(p.numel() for p in ModifiedTLOB(hidden_dim=w, num_layers=4, seq_size=128, num_features=12, num_heads=1, is_sin_emb=True).parameters())"
+    },
+    "unchanged_paths": [
+      "configs/model_v2_60d_csz.json",
+      "runs/model-versions/v2-cloud-20261023/**",
+      "modified_tlob/model.py"
+    ]
+  },
+  "caveats": [
+    "Single seed (11) per arm; the three development months are already-used development data from earlier rounds, so a pass is a screening signal, not independent confirmation.",
+    "The capacity contrast moves hidden_dim and final-head depth together (see capacity_params.head_structure_change), so width effects cannot be separated from head-capacity effects.",
+    "Local approximate metric (equal tail weights, no fees or slippage); it is not the official platform score.",
+    "The width-40 9000-update arm is reused, not retrained, so it carries V2's cloud-side data hashes and environment rather than a fresh run in this round; the replay recomputes its scores on the same keys as the new arms, which removes cross-run scoring differences but not the shared-data caveat.",
+    "The bootstrap pools blocks across window gaps as a documented approximation of the handed-down 5-day-block rule; per-window intervals are reported alongside.",
+    "final split 2024-10-08..2025-01-01 and the locked Q4 windows stay unopened; no capacity decision may read them."
+  ]
+}
