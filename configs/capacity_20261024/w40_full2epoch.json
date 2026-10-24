@@ -93,7 +93,7 @@
     "log_every_steps": 100
   },
   "budget": {
-    "wall_seconds": 10800,
+    "wall_seconds": 14400,
     "max_rss_mb": 48000,
     "max_train_samples": 500000
   },
@@ -110,7 +110,7 @@
   },
   "logging": {
     "learning_curves": true,
-    "learning_curve_every_steps": 500,
+    "learning_curve_every_steps": 3000,
     "resource_interval_seconds": 5.0
   },
   "final_access": {

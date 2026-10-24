@@ -171,15 +171,15 @@
       "output_root": "/root/shared-nvme/capacity-20261024/runs/w40_full2epoch",
       "retrain": true,
       "budget": {
-        "wall_seconds": 10800,
+        "wall_seconds": 14400,
         "max_rss_mb": 48000,
         "max_train_samples": 500000
       },
       "learning_curves": {
         "enabled": true,
-        "every_steps": 500
+        "every_steps": 3000
       },
-      "config_canonical_sha256": "b1e106cacc82f892cbebc8aa88c598517a61365eb107dece60326186449d5305"
+      "config_canonical_sha256": "c9606f80ca1cbdd12622516e9ca9a519e525f44ff966c8a50abd615933476b05"
     },
     {
       "arm": "w80_9000",
@@ -205,15 +205,15 @@
       "output_root": "/root/shared-nvme/capacity-20261024/runs/w80_9000",
       "retrain": true,
       "budget": {
-        "wall_seconds": 10800,
+        "wall_seconds": 14400,
         "max_rss_mb": 48000,
         "max_train_samples": 500000
       },
       "learning_curves": {
         "enabled": true,
-        "every_steps": 500
+        "every_steps": 3000
       },
-      "config_canonical_sha256": "511a3a9464c7d975f2570104728d4a2e866e1fe60763b692d2ea76ac107ef8ad"
+      "config_canonical_sha256": "cae565f06e644dfda67f8c9308e1f272be0a056d8f71912a8fc669246ed76490"
     },
     {
       "arm": "w160_9000",
@@ -239,15 +239,15 @@
       "output_root": "/root/shared-nvme/capacity-20261024/runs/w160_9000",
       "retrain": true,
       "budget": {
-        "wall_seconds": 10800,
+        "wall_seconds": 14400,
         "max_rss_mb": 48000,
         "max_train_samples": 500000
       },
       "learning_curves": {
         "enabled": true,
-        "every_steps": 500
+        "every_steps": 3000
       },
-      "config_canonical_sha256": "b4957a5e8913728f5af2488f5100e85be329ec556eab655a81a0b9ce768f8217"
+      "config_canonical_sha256": "06564ba693e59012b2f47c45965f3f5ed067842f89867186b6489cc8e71a2f3e"
     }
   ],
   "reused_arm": {
@@ -281,6 +281,25 @@
     "nine_thousand_step_epoch_share": 0.6007108411620418,
     "epoch_share_note": "the runner records achieved epochs as epoch_samples / pool_selected, so the 9000-update share is 288000/479432 = 0.6007108411620418. Dividing updates by updates_per_epoch instead gives 9000/14983 = 0.60068078, which understates the share: the epoch's tail batch is short (479432 = 14982*32 + 8), so 9000 updates cover 288000 samples rather than 9000*479432/14983.",
     "tail_batch": "modified_tlob/adapter.py iterates range(0, len(y), batch_size) per epoch, so the final batch of each epoch holds pool_selected - 14982*32 = 8 samples and still counts as one update; that is why two full epochs are 2*14983 = 29966 updates, not floor(2*479432/32) = 29964 or 2*14982.25 rounded down."
+  },
+  "runtime_budget": {
+    "frozen_wall_seconds": 14400,
+    "per_curve_checkpoint_seconds": 238,
+    "per_curve_checkpoint_scope": "one learning-curve evaluation predicts the whole training pool (479432 samples) plus the validation window (79920 samples); 238 s was the reviewer's measurement behind findings F1/F2",
+    "curve_evaluation_rule": "1 evaluation at step 0, then every in-training multiple of logging.learning_curve_every_steps up to max_steps, plus each completed-epoch boundary evaluation that lands on a new step, plus the final stop evaluation (deduplicated by step)",
+    "curve_evaluations": {
+      "w40_full2epoch": 12,
+      "w80_9000": 4,
+      "w160_9000": 4
+    },
+    "estimated_wall_seconds": {
+      "w40_full2epoch": 5200,
+      "w80_9000": 2300,
+      "w160_9000": 4100
+    },
+    "estimate_basis": "238 s per curve evaluation; training throughput scaled from the V2 60d run (9000 updates in 527 s) by planning factors 1.0/1.3/2.2 for widths 40/80/160; about 550 s of fixed data/save overhead from the V2 wall breakdown. Wider-model factors are planning assumptions, so read the numbers as +/-30%.",
+    "margin": "every estimate stays below the 14400 s wall budget (margins about 2.8x/6.3x/3.5x); the trainer must still compare the recorded run wall time against 14400 before an arm counts as complete",
+    "history": "the first pre-registration used every 500 steps and 10800 s, which at width 40 would have produced 62 full-pool evaluations (~14.8k s of curve work alone) and would have been killed by the budget before saving; the t2 review's F1/F2 findings fixed the cadence at 3000 and the budget at 14400"
   },
   "pool_recheck": {
     "when": "immediately after each new run starts, before accepting the run",
@@ -455,7 +474,7 @@
     "required_reporting": [
       "per-window and pooled mean deltas for rank_ic, long_short_return and turnover",
       "each arm's own worst-day long_short_return (date and window)",
-      "training curve checkpoints (learning_curve.json/csv, every 500 steps) for the three new arms; the reused V2 run trained with logging.learning_curves=false, so its loss trajectory is read from its events.jsonl training progress rows (log_every_steps=100) at step 9000 instead",
+      "training curve checkpoints (learning_curve.json/csv, every 3000 steps) for the three new arms; the reused V2 run trained with logging.learning_curves=false, so its loss trajectory is read from its events.jsonl training progress rows (log_every_steps=100) at step 9000 instead",
       "executed steps, samples_seen and epoch share read back from events.jsonl for every new run"
     ]
   },
@@ -517,7 +536,7 @@
     "handback": "if no version passes every gate, submit no capacity version: the submission slot returns to the label branch (label-contrast) and this branch records the negative result and the reason",
     "group_reporting": "training volume (w40 two epochs vs V2 0.6007 epochs) and capacity (w40/80/160 at 9000 updates) are judged separately; passing in one group does not promote the other",
     "no_post_hoc": "the selection order and handback rule are frozen here; no metric, window or threshold may be substituted afterwards",
-    "no_checkpoint_selection": "Every arm trains to its declared max_steps; epochs never binds at 9000 updates. learning_curve checkpoints (every 500 steps) are recorded diagnostics, and no early stopping, checkpoint picking or curve-based stopping may influence any run or selection."
+    "no_checkpoint_selection": "Every arm trains to its declared max_steps; epochs never binds at 9000 updates. learning_curve checkpoints (every 3000 steps) are recorded diagnostics, and no early stopping, checkpoint picking or curve-based stopping may influence any run or selection."
   },
   "verification": {
     "config_validation": {
@@ -544,7 +563,8 @@
         "step arithmetic: ceil(479432/32)=14983 updates per epoch, 2*14983=29966 updates, 2*479432=958864 samples, 9000*32=288000 samples and 288000/479432=0.6007108411620418 epoch share",
         "the gate values in this file equal the V2 record's pre_registered_thresholds",
         "total_params and final_layers of ModifiedTLOB at widths 40/80/160 equal capacity_params (torch required; reported as skipped without torch)",
-        "each arm config's canonical JSON digest equals arms[].config_canonical_sha256"
+        "each arm config's canonical JSON digest equals arms[].config_canonical_sha256",
+        "config budget.wall_seconds equals arms[].budget.wall_seconds and stays >= 14400, and logging.learning_curve_every_steps equals 3000 for every arm (F1/F2 cadence and budget fix), with runtime_budget.curve_evaluations matching the counting rule"
       ],
       "reproduce_param_counts": "Python with torch: from modified_tlob.model import ModifiedTLOB; sum(p.numel() for p in ModifiedTLOB(hidden_dim=w, num_layers=4, seq_size=128, num_features=12, num_heads=1, is_sin_emb=True).parameters())"
     },

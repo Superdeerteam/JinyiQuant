@@ -3,7 +3,7 @@
 Verifies, with machine-readable output, that:
 1. every arm config differs from configs/model_v2_60d_csz.json only on the declared allowed keys;
 2. the declared frozen expectations still equal the V2 config item by item;
-3. the step arithmetic and canonical config digests recorded in the preregistration are consistent;
+3. the step arithmetic, curve-cadence/wall-budget counts and canonical config digests are consistent;
 4. the pre-registered gate numbers equal the V2 record's pre_registered_thresholds;
 5. ModifiedTLOB parameter counts and final-head structures match the recorded values (needs torch).
 
@@ -101,10 +101,37 @@ def check_step_arithmetic(plan, record):
         config = read_json(ROOT / arm["config"])
         expected[f"{arm['arm']}_config_max_steps"] = config["model"]["max_steps"] == arm["max_steps"]
         expected[f"{arm['arm']}_config_epochs"] = config["model"]["epochs"] == arm["epochs"]
-        expected[f"{arm['arm']}_budget_wall"] = config["budget"]["wall_seconds"] >= 10800
-        expected[f"{arm['arm']}_learning_curves"] = (config["logging"]["learning_curves"] is True
-                                                     and config["logging"]["learning_curve_every_steps"] == 500)
+        expected[f"{arm['arm']}_budget_wall"] = (config["budget"]["wall_seconds"]
+                                                 == arm["budget"]["wall_seconds"] >= 14400)
+        expected[f"{arm['arm']}_learning_curves"] = (
+            config["logging"]["learning_curves"] is True
+            and config["logging"]["learning_curve_every_steps"]
+            == arm["learning_curves"]["every_steps"] == 3000)
     return {"check": "step_arithmetic", "passed": all(expected.values()), "detail": expected}
+
+
+def curve_evaluations(max_steps, every, per_epoch, epochs):
+    """Learning-curve evaluations given the adapter's observer schedule, deduplicated by step."""
+    observed = {0}
+    observed.update(range(every, max_steps + 1, every))
+    observed.update(epoch * per_epoch for epoch in range(1, epochs + 1) if epoch * per_epoch <= max_steps)
+    observed.add(max_steps)
+    return len(observed)
+
+
+def check_runtime_budget(plan):
+    budget = plan["runtime_budget"]
+    every = 3000
+    expected = {"frozen_wall_seconds": budget["frozen_wall_seconds"] == 14400}
+    for arm in plan["arms"]:
+        count = curve_evaluations(arm["max_steps"], every, arm["expected_updates_per_epoch"], arm["epochs"])
+        expected[f"{arm['arm']}_curve_evaluations"] = (
+            count == budget["curve_evaluations"][arm["arm"]]
+            and arm["learning_curves"]["every_steps"] == every
+            and arm["budget"]["wall_seconds"] == budget["frozen_wall_seconds"])
+        expected[f"{arm['arm']}_estimate_inside_budget"] = (
+            0 < budget["estimated_wall_seconds"][arm["arm"]] < budget["frozen_wall_seconds"])
+    return {"check": "runtime_budget", "passed": all(expected.values()), "detail": expected}
 
 
 def check_gates(plan, record):
@@ -168,6 +195,7 @@ def main():
         check_config_diffs(plan, reference),
         check_declared_expectations(plan, reference),
         check_step_arithmetic(plan, record),
+        check_runtime_budget(plan),
         check_gates(plan, record),
         check_params(plan),
     ]
