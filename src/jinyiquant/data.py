@@ -206,13 +206,16 @@ def _digest(path: Path) -> dict[str, Any]:
 
 def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_record: dict,
                  source_state: tuple[int, int], cache_dir: Path | None,
-                 events: list[dict]) -> tuple[pd.DataFrame, dict]:
+                 events: list[dict], selection: DaySelection | None = None) -> tuple[pd.DataFrame, dict]:
     """Use a verified projection cache; never include runtime cache state in provenance."""
     identity = {"reader_version": READER_FORMAT_VERSION, "source_sha256": source_record["sha256"],
                 "format": path.suffix.lower(), "columns": list(dict.fromkeys(requested)),
                 "start": None if start is None else str(pd.Timestamp(start)),
                 "end": None if end is None else str(pd.Timestamp(end)),
                 "pandas_version": pd.__version__, "pyarrow_version": pa.__version__}
+    if selection is not None:
+        # Keep unsampled cache identities unchanged; a day selection is an extra dimension.
+        identity["selection"] = selection.identity()
     cache_key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     cache_file = None if cache_dir is None else cache_dir / f"{cache_key}.parquet"
     cache_manifest = None if cache_dir is None else cache_dir / f"{cache_key}.json"
@@ -247,6 +250,8 @@ def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_
         extra = {"members": members}
     else:
         frame, extra = _read_file(path, requested, start, end), {}
+    if selection is not None:
+        frame = frame.loc[selection.keep(frame["date"])].reset_index(drop=True)
     if cache_dir is not None:
         source_after = path.stat()
         if source_state != (source_after.st_size, source_after.st_mtime_ns):
@@ -271,7 +276,8 @@ def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_
 
 
 def _read(path_value: Any, requested: list[str], start: Any, end: Any,
-          cache_dir: Path | None = None, cache_events: list[dict] | None = None) -> tuple[pd.DataFrame, list[dict]]:
+          cache_dir: Path | None = None, cache_events: list[dict] | None = None,
+          selection: DaySelection | None = None) -> tuple[pd.DataFrame, list[dict]]:
     path = Path(path_value)
     if not path.exists():
         raise FileNotFoundError(f"Data source does not exist: {path}")
@@ -290,7 +296,7 @@ def _read(path_value: Any, requested: list[str], start: Any, end: Any,
         before = file.stat()
         record = _digest(file)
         frame, extra = _cached_read(file, requested, start, end, record,
-                                   (before.st_size, before.st_mtime_ns), cache_dir, cache_events)
+                                   (before.st_size, before.st_mtime_ns), cache_dir, cache_events, selection)
         record.update(extra)
         after = file.stat()
         if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
@@ -318,11 +324,90 @@ def _map_instruments(frame: pd.DataFrame, mapping: pd.DataFrame | None, name: st
     return mapped
 
 
+@dataclass(frozen=True)
+class DaySelection:
+    """Keep only the listed calendar days inside [start, end); other dates pass through."""
+
+    start: pd.Timestamp
+    end: pd.Timestamp
+    days: pd.DatetimeIndex
+
+    def keep(self, dates: pd.Series) -> pd.Series:
+        inside = (dates >= self.start) & (dates < self.end)
+        return ~inside | dates.dt.normalize().isin(self.days)
+
+    def identity(self) -> dict[str, Any]:
+        stamps = "\n".join(day.strftime("%Y-%m-%d") for day in sorted(self.days))
+        return {"start": str(self.start), "end": str(self.end), "days": len(self.days),
+                "days_sha256": hashlib.sha256(stamps.encode()).hexdigest()}
+
+
+def complete_trading_calendar(universe: pd.DataFrame, sample_times: Sequence[str]) -> pd.DatetimeIndex:
+    """Days whose independent universe grid contains every configured sampling time."""
+    grid = list(dict.fromkeys(sample_times))
+    stamps = _dates(universe["date"], "universe.date")
+    kept = stamps.loc[stamps.dt.strftime("%H:%M").isin(grid)]
+    counts = kept.groupby(kept.dt.normalize()).nunique()
+    return pd.DatetimeIndex(counts.index[counts == len(grid)].sort_values())
+
+
+def monthly_sampled_days(calendar: Any, start: Any, end: Any,
+                         days_per_month: int) -> tuple[pd.DatetimeIndex, list[dict]]:
+    """Centered stratified choice of complete trading days in every month of [start, end)."""
+    start, end = pd.Timestamp(start), pd.Timestamp(end)
+    if start.day != 1 or end.day != 1 or start >= end:
+        raise ValueError("Monthly sampling requires month-aligned start < end")
+    if days_per_month < 1:
+        raise ValueError("days_per_month must be positive")
+    dates = pd.DatetimeIndex(sorted(set(pd.DatetimeIndex(pd.to_datetime(calendar)).normalize())))
+    selected, months = [], []
+    month = start
+    while month < end:
+        following = month + pd.offsets.MonthBegin(1)
+        available = dates[(dates >= month) & (dates < following)]
+        if len(available) < days_per_month:
+            raise ValueError(f"{month:%Y-%m} has {len(available)} complete trading days; "
+                             f"{days_per_month} per month cannot be met")
+        indices = [(2 * i + 1) * len(available) // (2 * days_per_month) for i in range(days_per_month)]
+        chosen = available[indices]
+        selected.extend(chosen)
+        months.append({"month": f"{month:%Y-%m}", "complete_trading_days": len(available),
+                       "indices": indices, "selected": [str(day.date()) for day in chosen]})
+        month = following
+    return pd.DatetimeIndex(selected), months
+
+
+def previous_trading_days(calendar: Any, days: Any) -> pd.DatetimeIndex:
+    """One independently registered trading day before each selected day, for bar history."""
+    dates = pd.DatetimeIndex(sorted(set(pd.DatetimeIndex(pd.to_datetime(calendar)).normalize())))
+    positions = dates.get_indexer(pd.DatetimeIndex(pd.to_datetime(days)).normalize())
+    if (positions <= 0).any():
+        raise ValueError("Every sampled day requires a preceding calendar trading day")
+    return pd.DatetimeIndex(sorted(set(dates[positions - 1])))
+
+
+def _sampling_fields(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    get = value.get if isinstance(value, dict) else lambda name: getattr(value, name)
+    fields = {"start": pd.Timestamp(get("start")), "end": pd.Timestamp(get("end")),
+              "days_per_month": int(get("days_per_month"))}
+    if fields["start"].tzinfo or fields["end"].tzinfo:
+        raise ValueError("Monthly sampling requires timezone-naive timestamps")
+    if fields["days_per_month"] < 1:
+        raise ValueError("days_per_month must be positive")
+    return fields
+
+
 def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
     """Read only selected dates/columns; bars include configured historical warm-up.
 
     Label values are retained separately. No label-derived columns enter bars or
     build_batch; inference can use the bars and universe without the label table.
+
+    With ``monthly_sampling`` the training interval keeps only evenly spaced
+    complete trading days (and one previous trading day of bar history for the
+    128-bar window), one monthly source file at a time, cached per projection.
     """
     features = list(_get(config, "feature_columns"))
     if FORBIDDEN_FEATURES.intersection(features):
@@ -334,18 +419,24 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
         raise ValueError("Requested data starts before the allowed development interval")
     if end is not None and allowed_end is not None and pd.Timestamp(end) > pd.Timestamp(allowed_end):
         raise ValueError("Requested data ends after the allowed development interval")
-    warm_start = None if start is None else pd.Timestamp(start) - pd.Timedelta(days=_get(config, "history_days", 10))
+    sampling = _sampling_fields(_get(config, "monthly_sampling"))
+    if sampling is not None and (start is None or pd.Timestamp(start) != sampling["start"]):
+        raise ValueError("Monthly sampling reads must start exactly at the sampling range")
+    history_days = _get(config, "history_days", 10)
+    warm_start = None if start is None else (
+        sampling["start"] if sampling is not None
+        else pd.Timestamp(start) - pd.Timedelta(days=history_days))
     if warm_start is not None and allowed_start is not None:
         warm_start = max(warm_start, pd.Timestamp(allowed_start))
     records = {}
     cache_events = []
     cache_root = _get(config, "cache_dir")
 
-    def read_role(role, path, columns, first, last):
+    def read_role(role, path, columns, first, last, selection=None):
         directory = None if cache_root is None else Path(cache_root) / role
         if directory is not None and Path(path).is_dir() and Path(path).resolve().is_relative_to(Path(cache_root).resolve()):
             raise ValueError("cache_dir must not be the same directory as, or an ancestor of, an input directory")
-        return _read(path, columns, first, last, directory, cache_events)
+        return _read(path, columns, first, last, directory, cache_events, selection)
 
     mapping = None
     map_path = _get(config, "instrument_map_path")
@@ -357,15 +448,41 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
         mapping = mapping.drop_duplicates().reset_index(drop=True)
         if mapping["instrument_id"].duplicated().any() or mapping["instrument"].duplicated().any():
             raise ValueError("Instrument map must be one-to-one")
+    instruments, rows_selection, bars_selection, sampling_audit = None, None, None, None
+    if sampling is not None:
+        if not _get(config, "instruments_path"):
+            raise ValueError("Monthly sampling requires the independent instruments calendar")
+        raw_universe, records["instruments"] = read_role("instruments", _get(config, "instruments_path"),
+                                                         KEYS, start, end)
+        universe = validate_keys(raw_universe, "instruments")
+        calendar = complete_trading_calendar(universe, _get(config, "sample_times", []))
+        days, months = monthly_sampled_days(calendar, sampling["start"], sampling["end"],
+                                            sampling["days_per_month"])
+        context = previous_trading_days(calendar, days)
+        history_end = max(sampling["start"], sampling["end"] - pd.Timedelta(days=history_days))
+        rows_selection = DaySelection(sampling["start"], sampling["end"], days)
+        bars_selection = DaySelection(sampling["start"], history_end, days.union(context))
+        instruments = universe.loc[rows_selection.keep(universe["date"])].reset_index(drop=True)
+        if instruments.empty:
+            raise ValueError("Monthly sampling selected no universe rows")
+        sampling_audit = {
+            "start": str(sampling["start"]), "end": str(sampling["end"]),
+            "days_per_month": sampling["days_per_month"], "days": len(days),
+            "selected_days": [str(day.date()) for day in days],
+            "context_days": [str(day.date()) for day in context],
+            "history_end": str(history_end), "months": months,
+            "calendar_source": "independent instruments table",
+            "rule": "centered stratified index floor((2i+1)n/(2k)) inside each calendar month",
+            "reader": "one monthly source projection per cache entry"}
     bars, records["bars"] = read_role("bars", _get(config, "bars_path"),
-                                      ["date", "instrument", "instrument_id", *features], warm_start, end)
-    bars = validate_keys(_map_instruments(bars, mapping, "bars"), "bars")
-    bars = preprocess_bars(bars, config)
+                                      ["date", "instrument", "instrument_id", *features], warm_start, end,
+                                      bars_selection)
+    bars = preprocess_bars(_map_instruments(bars, mapping, "bars"), config)
     label_path = _get(config, "labels_path")
     if label_path:
         labels, records["labels"] = read_role("labels", label_path,
                                               [*KEYS, "instrument_id", "target", "vwap_return", "label_end"],
-                                              start, end)
+                                              start, end, rows_selection)
         labels = validate_keys(_map_instruments(labels, mapping, "labels"), "labels")
         if "target" in labels and "vwap_return" in labels:
             if not np.allclose(labels["target"], labels["vwap_return"], equal_nan=True):
@@ -380,7 +497,6 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
             labels["label_end"] = _dates(labels["label_end"], "labels.label_end")
     else:
         labels = pd.DataFrame(columns=[*KEYS, "target"])
-    instruments = None
     outside_policy = _get(config, "outside_universe_labels", "exclude")
     if outside_policy not in {"exclude", "error"}:
         raise ValueError("outside_universe_labels must be exclude or error")
@@ -388,24 +504,25 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
                  "outside_universe_label_rows": 0, "outside_universe_label_instruments": 0,
                  "labels_retained_rows": len(labels)}
     data_events = []
-    if _get(config, "instruments_path"):
+    if _get(config, "instruments_path") and instruments is None:
         instruments, records["instruments"] = read_role("instruments", _get(config, "instruments_path"),
                                                         KEYS, start, end)
         instruments = validate_keys(instruments, "instruments")
-        if len(labels):
-            # Membership is exact at the prediction timestamp, not the union
-            # of securities seen at any time. Keep the universe unchanged.
-            invalid = labels.merge(instruments.assign(_member=True), on=KEYS, how="left",
-                                   validate="one_to_one", sort=False)["_member"].isna()
-            if invalid.any():
-                if outside_policy == "error":
-                    raise ValueError("Label keys include securities outside the point-in-time universe")
-                alignment["outside_universe_label_rows"] = int(invalid.sum())
-                alignment["outside_universe_label_instruments"] = int(labels.loc[invalid, "instrument"].nunique())
-                labels = labels.loc[~invalid].reset_index(drop=True)
-                alignment["labels_retained_rows"] = len(labels)
-                data_events.append({"event": "outside_universe_labels_excluded", **alignment})
-    payload = json.dumps(records, sort_keys=True, separators=(",", ":")).encode()
+    if instruments is not None and len(labels):
+        # Membership is exact at the prediction timestamp, not the union
+        # of securities seen at any time. Keep the universe unchanged.
+        invalid = labels.merge(instruments.assign(_member=True), on=KEYS, how="left",
+                               validate="one_to_one", sort=False)["_member"].isna()
+        if invalid.any():
+            if outside_policy == "error":
+                raise ValueError("Label keys include securities outside the point-in-time universe")
+            alignment["outside_universe_label_rows"] = int(invalid.sum())
+            alignment["outside_universe_label_instruments"] = int(labels.loc[invalid, "instrument"].nunique())
+            labels = labels.loc[~invalid].reset_index(drop=True)
+            alignment["labels_retained_rows"] = len(labels)
+            data_events.append({"event": "outside_universe_labels_excluded", **alignment})
+    payload = json.dumps({"files": records, "monthly_sampling": sampling_audit},
+                         sort_keys=True, separators=(",", ":")).encode()
     metadata = {"schema_version": 1, "source": _get(config, "source"), "version": _get(config, "version"),
                 "data_sha256": hashlib.sha256(payload).hexdigest(), "files": records,
                 "requested_start": None if start is None else str(pd.Timestamp(start)),
@@ -416,7 +533,8 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
                 "feature_columns": features, "price_scale": _get(config, "price_scale", 1.0),
                 "label_definition": ("provided target; end_price/future_vwap - 1 is inferred from the "
                                      "official vwap_return field description; original labels are used unchanged"),
-                "timezone": "Asia/Shanghai (naive)", "history_days": _get(config, "history_days", 10)}
+                "timezone": "Asia/Shanghai (naive)", "history_days": history_days,
+                "monthly_sampling": sampling_audit}
     return DataBundle(bars=bars, labels=labels, metadata=metadata, instruments=instruments,
                       cache_events=cache_events, data_events=data_events)
 

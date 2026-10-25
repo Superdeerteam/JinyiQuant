@@ -27,6 +27,24 @@ class Period(StrictModel):
         return self
 
 
+class MonthlySampling(StrictModel):
+    """Evenly spaced complete trading days across a month-aligned training range."""
+
+    start: datetime
+    end: datetime
+    days_per_month: int = Field(default=6, ge=1, le=15)
+
+    @model_validator(mode="after")
+    def month_aligned(self):
+        for value in (self.start, self.end):
+            if (value.tzinfo or value.day != 1
+                    or (value.hour, value.minute, value.second, value.microsecond) != (0, 0, 0, 0)):
+                raise ValueError("Monthly sampling boundaries require month-aligned naive midnights")
+        if self.start >= self.end:
+            raise ValueError("Monthly sampling must have start < end")
+        return self
+
+
 class Splits(StrictModel):
     train: Period
     validation: Period
@@ -61,6 +79,7 @@ class DataConfig(StrictModel):
     missing_sentinel: float | None = -1.0
     source: str = Field(min_length=1)
     version: str = Field(min_length=1)
+    monthly_sampling: MonthlySampling | None = None
 
     @model_validator(mode="after")
     def valid_features(self):
@@ -73,6 +92,10 @@ class DataConfig(StrictModel):
             raise ValueError("Keys and future label fields must not be features")
         if self.min_history > self.lookback:
             raise ValueError("min_history exceeds lookback")
+        if self.monthly_sampling is not None and (
+                self.monthly_sampling.start < self.allowed_start
+                or self.monthly_sampling.end > self.allowed_end):
+            raise ValueError("Monthly sampling must stay inside the allowed development interval")
         if not self.sample_times or len(set(self.sample_times)) != len(self.sample_times):
             raise ValueError("sample_times must be nonempty and unique")
         if self.training_sample_times is not None and (
@@ -174,6 +197,10 @@ class RunConfig(StrictModel):
                 raise ValueError("modified_tlob requires lookback >= 4")
         if self.splits.train.start < self.data.allowed_start or self.splits.final.end > self.data.allowed_end:
             raise ValueError("All splits must stay within the declared allowed development interval")
+        if self.data.monthly_sampling is not None and (
+                self.splits.train.start != self.data.monthly_sampling.start
+                or self.splits.train.end != self.data.monthly_sampling.end):
+            raise ValueError("Monthly sampling must exactly cover the training split")
         if self.evaluation_split == "final" and not self.final_access.purpose.strip():
             raise ValueError("Final split requires a recorded purpose; default is validation only")
         return self
