@@ -192,6 +192,7 @@ def run(plan_path: Path, output_root: Path | None = None) -> Path:
                     "no_history_keys": int(len(fallback)),
                     "no_history_ratio": float(len(fallback) / len(keys))})
         keys.to_parquet(run_dir / "windows" / window["name"] / "keys.parquet", index=False)
+        targets.to_parquet(run_dir / "windows" / window["name"] / "targets.parquet", index=False)
         for version in plan["versions"]:
             name = version["name"]
             metrics, daily, sections = evaluate_version(scores[name], keys, targets, plan["evaluation"])

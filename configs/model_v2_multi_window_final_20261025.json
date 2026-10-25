@@ -95,6 +95,24 @@
       "weights": "/root/v5/repo/runs/v2-60d-csz-step13500-seed11/20261025T135426.466075Z_4716e5fc2645/modified_tlob_weights.json"
     },
     {
+      "name": "s13500_b32_seed29",
+      "label": "60d 13500 steps batch 32 seed 29",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-step13500-seed29/20261025T161603.632532Z_edd8ca59fe80/modified_tlob_weights.json"
+    },
+    {
+      "name": "s13500_b32_seed47",
+      "label": "60d 13500 steps batch 32 seed 47",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-step13500-seed47/20261025T161831.926515Z_2424c0662248/modified_tlob_weights.json"
+    },
+    {
+      "name": "s18000_b32_seed11",
+      "label": "60d 18000 steps batch 32 seed 11",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-step18000-seed11/20261025T145129.396199Z_c517c5e546d1/modified_tlob_weights.json"
+    },
+    {
       "name": "s19800_b32_seed11",
       "label": "60d 19800 steps batch 32 seed 11",
       "role": "candidate",
@@ -105,6 +123,18 @@
       "label": "60d 19800 steps batch 32 seed 29",
       "role": "candidate",
       "weights": "/root/v5/repo/runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef/modified_tlob_weights.json"
+    },
+    {
+      "name": "s19800_b32_seed47",
+      "label": "60d 19800 steps batch 32 seed 47",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21/modified_tlob_weights.json"
+    },
+    {
+      "name": "s22500_b32_seed11",
+      "label": "60d 22500 steps batch 32 seed 11",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-step22500-seed11/20261025T160017.805030Z_bc722995c97c/modified_tlob_weights.json"
     },
     {
       "name": "s9000_b32_seed11",
@@ -123,11 +153,33 @@
       "label": "60d 9000 steps batch 32 seed 47",
       "role": "candidate",
       "weights": "/root/v5/repo/runs/v2-60d-csz-seed47/20261025T125639.258836Z_675cd55b8f3b/modified_tlob_weights.json"
+    },
+    {
+      "name": "s9900_b64_seed11",
+      "label": "60d 9900 steps batch 64 seed 11",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-b64-9900-seed11/20261025T171251.204019Z_a88ed543ae42/modified_tlob_weights.json"
     }
   ],
   "pairs": [
     [
+      "s9900_b64_seed11",
+      "s9000_b32_seed11"
+    ],
+    [
       "s13500_b32_seed11",
+      "s9000_b32_seed11"
+    ],
+    [
+      "s13500_b32_seed29",
+      "s9000_b32_seed29"
+    ],
+    [
+      "s13500_b32_seed47",
+      "s9000_b32_seed47"
+    ],
+    [
+      "s18000_b32_seed11",
       "s9000_b32_seed11"
     ],
     [
@@ -137,6 +189,14 @@
     [
       "s19800_b32_seed29",
       "s9000_b32_seed29"
+    ],
+    [
+      "s19800_b32_seed47",
+      "s9000_b32_seed47"
+    ],
+    [
+      "s22500_b32_seed11",
+      "s9000_b32_seed11"
     ]
   ]
 }

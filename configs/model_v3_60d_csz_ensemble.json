@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "experiment_id": "model-v3-60d-csz-19800-ensemble",
+  "hypothesis": "V3 = the V2 60-day CSZ recipe trained for 19,800 steps (1.32 epoch share) and deployed as an equal-weight ensemble of seeds 11/29/47: the ensemble beats the single-seed V2 baseline by +0.0063 paired daily RankIC on the validation window (5-day block 95% CI +0.0047..+0.0113), turns over 1.127 versus 1.326, and is positive on all three replay windows; the schedule change alone is NOT promotable (single seeds disagree), the ensemble is what carries it.",
+  "output_root": "../runs/model-v3-20261025",
+  "seed": 11,
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": "../cache/v2-60d-csz-20261025",
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "splits": {
+    "train": {
+      "start": "2023-08-01T00:00:00",
+      "end": "2023-11-01T00:00:00"
+    },
+    "validation": {
+      "start": "2023-11-01T00:00:00",
+      "end": "2023-11-15T00:00:00"
+    },
+    "final": {
+      "start": "2024-10-08T00:00:00",
+      "end": "2025-01-01T00:00:00"
+    }
+  },
+  "evaluation_split": "validation",
+  "model": {
+    "kind": "modified_tlob",
+    "hidden_dim": 40,
+    "num_layers": 4,
+    "num_heads": 1,
+    "is_sin_emb": true,
+    "book_representation": "raw",
+    "trade_features": "zero",
+    "epochs": 12,
+    "max_steps": 19800,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "target_scaling": "train_std",
+    "target_centering": "timestamp_zscore_train_rms_matched",
+    "time_loss_weighting": "none",
+    "device": "cuda",
+    "cpu_threads": 1,
+    "log_every_steps": 100
+  },
+  "budget": {
+    "wall_seconds": 9000,
+    "max_rss_mb": 48000,
+    "max_train_samples": 500000
+  },
+  "acceptance": {
+    "min_coverage": 0.99,
+    "repro_atol": 1e-06,
+    "repro_rtol": 1e-05
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "logging": {
+    "learning_curves": false,
+    "learning_curve_every_steps": 1500,
+    "resource_interval_seconds": 5.0
+  },
+  "final_access": {
+    "max_views": 1,
+    "purpose": ""
+  }
+}
