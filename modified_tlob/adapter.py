@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 
 from .device import device_resources, select_device
-from .model import ModifiedTLOB
+from .model import ModifiedTLOB, OpenResidualHead
 from .schema import validate_input_schema
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
@@ -123,6 +123,86 @@ def timestamp_zscore_train_rms_matched(keys, target, mask):
 
 
 
+OPEN_RESIDUAL_METHOD = "opening_0930_additive_residual"
+OPEN_SAMPLE_TIME = "09:30"
+
+
+def open_market_mask(keys, sample_time=OPEN_SAMPLE_TIME):
+    """Boolean opening-section marker parsed from the exchange-local prediction keys."""
+    if len(sample_time) != 5 or sample_time[2] != ":":
+        raise ValueError("Opening marker requires an HH:MM sample time")
+    timestamps = pd.to_datetime(keys["date"])
+    if timestamps.isna().any():
+        raise ValueError("Opening marker requires a timestamp for every prediction key")
+    if isinstance(timestamps.dtype, pd.DatetimeTZDtype):
+        raise ValueError("Opening marker requires timezone-naive exchange-local timestamps")
+    return timestamps.dt.strftime("%H:%M").eq(sample_time).to_numpy()
+
+
+def frozen_stats_sha256(stats):
+    digest = hashlib.sha256()
+    digest.update(json.dumps({"c": float(stats["c"]), "per_timestamp": stats["per_timestamp"]},
+                             sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def apply_frozen_timestamp_zscore(keys, target, stats):
+    """Map official labels into a checkpoint's frozen cross-sectional target space.
+
+    Reuses the saved per-timestamp means/stds and pool constant ``c`` verbatim:
+    ``r = float64(float32(y))``, ``q = (r - mean_t) / std_t`` (0 where ``std_t == 0``)
+    and ``y* = float32(c q)``. No statistic is re-estimated, so the residual head
+    learns in exactly the units of the trunk whose output it corrects.
+    """
+    if not isinstance(stats, dict) or stats.get("method") != "timestamp_zscore_train_rms_matched":
+        raise ValueError("Frozen target transform requires saved cross-sectional z-score statistics")
+    rows = stats.get("per_timestamp")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Frozen target transform is missing its per-timestamp statistics")
+    c = float(stats["c"])
+    if not np.isfinite(c) or c <= 0:
+        raise ValueError("Frozen target transform requires a positive finite pool constant")
+    raw64 = np.asarray(target, dtype=np.float32).astype(np.float64)
+    if len(keys) != len(raw64):
+        raise ValueError("Frozen target-transform keys and targets are not aligned")
+    if not np.isfinite(raw64).all():
+        raise ValueError("Frozen target transform requires finite official labels")
+    timestamps = pd.to_datetime(keys["date"])
+    if timestamps.isna().any() or isinstance(timestamps.dtype, pd.DatetimeTZDtype):
+        raise ValueError("Frozen target transform requires timezone-naive timestamps for every row")
+    table = {pd.Timestamp(row["timestamp"]): row for row in rows}
+    means, stds = np.empty(len(raw64)), np.empty(len(raw64))
+    for index, timestamp in enumerate(timestamps):
+        row = table.get(timestamp)
+        if row is None:
+            raise ValueError(f"Frozen target transform has no statistics for {timestamp}")
+        means[index], stds[index] = float(row["mean"]), float(row["std"])
+    centered = raw64 - means
+    q = np.divide(centered, stds, out=np.zeros_like(centered), where=stds > 0)
+    transformed = (c * q).astype(np.float32)
+    if not np.isfinite(centered).all() or not np.isfinite(transformed).all():
+        raise FloatingPointError("Nonfinite frozen rms-matched training targets")
+    return transformed, {
+        "method": "frozen_timestamp_zscore_train_rms_matched",
+        "source": "checkpoint target_centering_stats reused verbatim; no statistic re-estimated",
+        "c": c, "rows": int(len(raw64)), "timestamps": int(timestamps.nunique()),
+        "zero_variance_timestamps": int((stds == 0).sum()),
+        "stats_sha256": frozen_stats_sha256(stats),
+        "checkpoint_per_timestamp_sha256": stats.get("per_timestamp_sha256"),
+        "transformed_mean": float(transformed.astype(np.float64).mean()),
+        "transformed_std": float(transformed.astype(np.float64).std()),
+    }
+
+
+def state_dict_sha256(state):
+    """Stable digest of a tensor state dict, used to prove frozen weights are unchanged."""
+    digest = hashlib.sha256()
+    for name in sorted(state):
+        digest.update(name.encode("utf-8"))
+        digest.update(np.ascontiguousarray(state[name].detach().cpu().numpy()).tobytes())
+    return digest.hexdigest()
+
+
 class TLOBAdapter:
     def __init__(self, model_config, data_config, *, seed=42, recorder=None):
         self.config = model_config.model_dump() if hasattr(model_config, "model_dump") else dict(model_config)
@@ -159,6 +239,8 @@ class TLOBAdapter:
         self.target_scale = 1.0
         self.target_centering_stats = None
         self.time_loss_weighting_stats = None
+        self.open_residual_head = None
+        self.open_residual_metadata = None
         self.trained = False
         if recorder:
             recorder.event("training", "determinism", seed=seed, algorithms=True, cpu_threads=torch.get_num_threads(),
@@ -509,24 +591,173 @@ class TLOBAdapter:
             raise ValueError("Model is not fitted")
         return self._predict(batch)
 
-    def _predict(self, batch):
-        """Fixed-weight scores for epoch diagnostics; public inference still requires a fitted model."""
-        x = self._input(batch)
-        scores = np.empty(len(x), dtype=np.float64)
+    def _missing_history(self, batch):
+        return (batch.observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
+                < self.preprocessing["min_history"])
+
+    def _trunk_features(self, x):
+        """Frozen trunk representation of prepared inputs; the residual head's only input."""
+        features = np.empty((len(x), self.network.feature_dim), dtype=np.float32)
         self.network.eval()
         with torch.inference_mode():
             for offset in range(0, len(x), self.config["batch_size"]):
                 xb = torch.from_numpy(x[offset:offset + self.config["batch_size"]]).to(self.device)
-                scores[offset:offset + len(xb)] = self.network(xb).cpu().numpy()
-        scores *= self.target_scale
-        missing = (batch.observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
-                   < self.preprocessing["min_history"])
+                features[offset:offset + len(xb)] = self.network.forward_features(xb).cpu().numpy()
+        return features
+
+    def _output_scores(self, x, open_rows=None):
+        """Unscaled output-head scores; ``open_rows`` adds the trained 09:30 correction.
+
+        Rows outside ``open_rows`` keep the frozen trunk score bit for bit, so a
+        residual head can only ever change the section it was declared for.
+        """
+        head = None if open_rows is None else self.open_residual_head
+        scores = np.empty(len(x), dtype=np.float64)
+        self.network.eval()
+        if head is not None:
+            head.eval()
+        with torch.inference_mode():
+            for offset in range(0, len(x), self.config["batch_size"]):
+                xb = torch.from_numpy(x[offset:offset + self.config["batch_size"]]).to(self.device)
+                trunk = self.network.forward_features(xb)
+                output = self.network.forward_output(trunk)
+                if head is not None:
+                    selected = np.nonzero(open_rows[offset:offset + len(xb)])[0]
+                    if len(selected):
+                        index = torch.from_numpy(selected).to(self.device)
+                        output[index] = output[index] + head(trunk[index]).to(output.dtype)
+                scores[offset:offset + len(xb)] = output.cpu().numpy()
+        return scores
+
+    def _predict(self, batch):
+        """Fixed-weight scores for epoch diagnostics; public inference still requires a fitted model."""
+        x = self._input(batch)
+        open_rows = None
+        if self.open_residual_head is not None:
+            open_rows = open_market_mask(batch.keys, self.open_residual_metadata.get(
+                "sample_time", OPEN_SAMPLE_TIME)) & ~self._missing_history(batch)
+        scores = self._output_scores(x, open_rows) * self.target_scale
+        missing = self._missing_history(batch)
         # Fallback is the fitted training-target mean. For timestamp-centered training
         # this is a relative score; no future timestamp mean or evaluation label exists here.
         scores[missing] = self.intercept
         if not np.isfinite(scores).all():
             raise FloatingPointError("Nonfinite predictions")
         return scores
+
+    def attach_open_residual(self, *, hidden_dim=32, seed=None):
+        """Freeze the trunk and add a zero-initialised 09:30 correction head on top of it.
+
+        The trunk parameters keep their checkpoint ``requires_grad`` flag on purpose: flipping
+        it makes oneDNN select a packed inference kernel whose rounding differs from the frozen
+        V2 predictions. Freezing is enforced instead by optimising only the head on trunk
+        outputs computed under ``inference_mode``, so no trunk gradient is ever created.
+        """
+        if self.open_residual_head is not None:
+            raise ValueError("The open residual head is already attached")
+        head = OpenResidualHead(self.network.feature_dim, hidden_dim,
+                                seed=self.seed if seed is None else seed).to(self.device)
+        self.open_residual_head = head
+        self.open_residual_metadata = {
+            "method": OPEN_RESIDUAL_METHOD, "sample_time": OPEN_SAMPLE_TIME,
+            "feature_dim": head.feature_dim, "hidden_dim": head.hidden_dim,
+            "gating": "correction added only where the prediction key exchange time equals sample_time "
+                      "and min_history is satisfied; every other row keeps the frozen trunk score",
+            "target_space": "checkpoint standardized target units, scaled by target_scale at inference",
+            "target_centering": self.config["target_centering"],
+            "init_seed": int(self.seed if seed is None else seed),
+            "trunk_parameters": int(sum(p.numel() for p in self.network.parameters())),
+            "head_parameters": int(sum(p.numel() for p in head.parameters())),
+            "optimizer_scope": "head parameters only; trunk outputs are detached frozen features",
+        }
+        self._event("training", "open_residual_attached", **self.open_residual_metadata)
+        return head
+
+    def fit_open_residual(self, batch, target, *, sample_mask=None, max_steps=1500,
+                          learning_rate=1e-4, batch_size=32):
+        """Fit only the 09:30 correction head on frozen trunk outputs.
+
+        ``target`` is the training target in optimization units (the checkpoint's
+        standardized space, already divided by ``target_scale``). The head regresses
+        ``target - frozen trunk output`` for history-valid 09:30 samples; the outer
+        ``target_scale`` is applied at prediction time, not here.
+        """
+        head = self.open_residual_head
+        if head is None:
+            raise ValueError("Attach the open residual head before fitting it")
+        if type(max_steps) is not int or max_steps < 1 or type(batch_size) is not int or batch_size < 1:
+            raise ValueError("max_steps and batch_size must be positive integers")
+        y = np.asarray(target, dtype=np.float32)
+        if y.shape != (len(batch.keys),) or not len(y) or not np.isfinite(y).all():
+            raise ValueError("Open residual training requires nonempty aligned finite targets")
+        eligible = open_market_mask(batch.keys, self.open_residual_metadata.get(
+            "sample_time", OPEN_SAMPLE_TIME)) & ~self._missing_history(batch)
+        if sample_mask is not None:
+            mask = np.asarray(sample_mask)
+            if mask.dtype != bool or mask.shape != y.shape:
+                raise ValueError("Open residual sample mask must be aligned booleans")
+            if (mask & ~eligible).any():
+                raise ValueError("Open residual training may select only history-valid 09:30 samples")
+            eligible &= mask
+        if not eligible.any():
+            raise ValueError("Open residual training requires a history-valid 09:30 sample")
+        x = self._input(batch, sample_mask=eligible)
+        features = self._trunk_features(x)
+        residual = (y[eligible].astype(np.float64) - self._output_scores(x)).astype(np.float32)
+        initial_mse = float(np.square(residual.astype(np.float64)).mean())
+        # Clear stale trunk gradients left by any earlier full-trunk fit so the freeze check
+        # below observes this fit only; no optimizer owns those parameters.
+        self.network.zero_grad(set_to_none=True)
+        head.zero_grad(set_to_none=True)
+        head.train()
+        optimizer = torch.optim.Adam(head.parameters(), lr=learning_rate)
+        generator = torch.Generator().manual_seed(self.seed)
+        started, steps = time.monotonic(), 0
+        while steps < max_steps:
+            order = torch.randperm(len(residual), generator=generator).numpy()
+            for offset in range(0, len(order), batch_size):
+                indices = order[offset:offset + batch_size]
+                xb = torch.from_numpy(features[indices]).to(self.device)
+                yb = torch.from_numpy(residual[indices]).to(self.device)
+                optimizer.zero_grad(set_to_none=True)
+                loss = torch.nn.functional.mse_loss(head(xb), yb)
+                if not torch.isfinite(loss):
+                    raise FloatingPointError("Nonfinite open residual loss")
+                loss.backward()
+                gradients = [p.grad for p in head.parameters() if p.grad is not None]
+                if not gradients or not all(torch.isfinite(g).all() for g in gradients):
+                    raise FloatingPointError("Nonfinite open residual gradients")
+                optimizer.step()
+                steps += 1
+                if steps % 100 == 0 or steps == max_steps:
+                    self._event("training", "open_residual_progress", step=steps, loss=loss.item(),
+                                initial_mse=initial_mse, elapsed_seconds=time.monotonic() - started)
+                if steps >= max_steps:
+                    break
+        head.eval()
+        if any(parameter.grad is not None for parameter in self.network.parameters()):
+            raise RuntimeError("Frozen trunk received gradients during open residual training")
+        with torch.inference_mode():
+            correction = np.concatenate([
+                head(torch.from_numpy(features[offset:offset + batch_size]).to(self.device)).cpu().numpy()
+                for offset in range(0, len(features), batch_size)])
+        final_mse = float(np.square(correction.astype(np.float64) - residual).mean())
+        self.open_residual_metadata.update({
+            "samples": int(eligible.sum()), "steps": steps, "learning_rate": learning_rate,
+            "batch_size": batch_size, "shuffle_seed": self.seed, "optimizer": "Adam_MSE",
+            "initial_mse": initial_mse, "final_mse": final_mse,
+            "mse_reduction": None if initial_mse <= 0 else 1 - final_mse / initial_mse,
+            "residual_std": float(residual.astype(np.float64).std()),
+            "correction_mean": float(correction.astype(np.float64).mean()),
+            "correction_std": float(correction.astype(np.float64).std()),
+            "correction_min": float(correction.min()), "correction_max": float(correction.max()),
+            "wall_seconds": time.monotonic() - started,
+            "in_sample": True,
+        })
+        summary = {k: v for k, v in self.open_residual_metadata.items()
+                   if k not in {"gating", "target_space"}}
+        self._event("training", "open_residual_fitted", **summary)
+        return summary
 
     def validate_training_preprocessing(self, batch, sample_mask):
         self._input(batch)
@@ -536,28 +767,45 @@ class TLOBAdapter:
     def _payload(self):
         if not self.trained:
             raise ValueError("Cannot save an unfitted model")
-        return {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
-                "kind": "modified_tlob", "architecture": self.architecture,
-                "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
-                "training_mean": self.intercept,
-                "label": TARGET_LABELS[self.config["target_centering"]],
-                "prediction_units": PREDICTION_UNITS[self.config["target_centering"]],
-                "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
-                         "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
-                "target_scale": self.target_scale,
-                "target_centering": self.config["target_centering"],
-                "target_centering_stats": self.target_centering_stats,
-                "time_loss_weighting_stats": self.time_loss_weighting_stats,
-                "torch_version": str(torch.__version__),
-                "state_dict": {k: v.detach().cpu() for k, v in self.network.state_dict().items()}}
+        payload = {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
+                   "kind": "modified_tlob", "architecture": self.architecture,
+                   "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
+                   "training_mean": self.intercept,
+                   "label": TARGET_LABELS[self.config["target_centering"]],
+                   "prediction_units": PREDICTION_UNITS[self.config["target_centering"]],
+                   "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
+                            "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
+                   "target_scale": self.target_scale,
+                   "target_centering": self.config["target_centering"],
+                   "target_centering_stats": self.target_centering_stats,
+                   "time_loss_weighting_stats": self.time_loss_weighting_stats,
+                   "torch_version": str(torch.__version__),
+                   "state_dict": {k: v.detach().cpu() for k, v in self.network.state_dict().items()}}
+        if self.open_residual_head is not None:
+            # The trunk tensors above stay byte-identical to the frozen checkpoint; only the
+            # separate head state and its training metadata are appended.
+            payload["schema_version"] = 4
+            payload["open_residual"] = {
+                **self.open_residual_metadata,
+                "method": OPEN_RESIDUAL_METHOD, "sample_time": self.open_residual_metadata["sample_time"],
+                "feature_dim": self.open_residual_head.feature_dim,
+                "hidden_dim": self.open_residual_head.hidden_dim,
+                "base_state_sha256": state_dict_sha256(payload["state_dict"]),
+                "state_dict": {k: v.detach().cpu() for k, v in self.open_residual_head.state_dict().items()},
+            }
+        return payload
 
     def save(self, path):
         torch.save(self._payload(), Path(path))
 
     def export_text(self, path):
         payload = self._payload()
-        payload["state_dict"] = {k: {"dtype": str(t.dtype).removeprefix("torch."), "shape": list(t.shape),
-                                     "data": t.reshape(-1).tolist()} for k, t in payload["state_dict"].items()}
+        states = [payload["state_dict"]]
+        if "open_residual" in payload:
+            states.append(payload["open_residual"]["state_dict"])
+        for state in states:
+            state.update({k: {"dtype": str(t.dtype).removeprefix("torch."), "shape": list(t.shape),
+                              "data": t.reshape(-1).tolist()} for k, t in state.items()})
         Path(path).write_text(json.dumps(payload, allow_nan=False, ensure_ascii=False), encoding="utf-8")
 
     @classmethod
@@ -565,8 +813,10 @@ class TLOBAdapter:
         path = Path(path)
         payload = json.loads(path.read_text(encoding="utf-8")) if path.suffix == ".json" else torch.load(
             path, map_location="cpu", weights_only=True)
-        if payload["schema_version"] not in (1, 2, 3) or payload["kind"] != "modified_tlob":
+        if payload["schema_version"] not in (1, 2, 3, 4) or payload["kind"] != "modified_tlob":
             raise ValueError("Unsupported checkpoint format")
+        if (payload["schema_version"] == 4) != ("open_residual" in payload):
+            raise ValueError("Open residual checkpoints require schema_version=4 and a head payload")
         config = {**payload["model_config"], "device": device}
         if payload["schema_version"] == 3 and not {"book_representation", "trade_features"}.issubset(config):
             raise ValueError("Checkpoint is missing its input transformation contract")
@@ -612,5 +862,31 @@ class TLOBAdapter:
             if (not isinstance(result.time_loss_weighting_stats, dict)
                     or result.time_loss_weighting_stats.get("method") != "date_decay_10d"):
                 raise ValueError("Date-weighted checkpoint is missing its training weight statistics")
+        if "open_residual" in payload:
+            result._load_open_residual(payload["open_residual"], path)
         result.trained = True
         return result
+
+    def _load_open_residual(self, payload, path):
+        if not isinstance(payload, dict) or payload.get("method") != OPEN_RESIDUAL_METHOD:
+            raise ValueError("Unsupported open residual head payload")
+        if payload.get("feature_dim") != self.network.feature_dim:
+            raise ValueError("Open residual head feature width does not match the trunk")
+        if payload.get("hidden_dim", 0) < 1:
+            raise ValueError("Invalid open residual head width")
+        head = OpenResidualHead(self.network.feature_dim, payload["hidden_dim"]).to(self.device)
+        state = payload.get("state_dict")
+        if not isinstance(state, dict) or set(head.state_dict()) != set(state):
+            raise ValueError("Open residual head state does not match its architecture")
+        if path.suffix == ".json":
+            state = {k: torch.tensor(meta["data"], dtype=getattr(torch, meta["dtype"])).reshape(meta["shape"])
+                     for k, meta in state.items()}
+        if not all(torch.isfinite(t).all() for t in state.values()):
+            raise ValueError("Nonfinite open residual head weights")
+        if payload.get("base_state_sha256") != state_dict_sha256(
+                {k: v.detach().cpu() for k, v in self.network.state_dict().items()}):
+            raise ValueError("Open residual head does not belong to this frozen trunk")
+        head.load_state_dict(state, strict=True)
+        head.eval()
+        self.open_residual_head = head
+        self.open_residual_metadata = {k: v for k, v in payload.items() if k != "state_dict"}

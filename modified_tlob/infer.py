@@ -47,7 +47,11 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
         weights = Path(weights).resolve()
         rec.event("loading", "started", path=str(weights))
         model = TLOBAdapter.load(weights, device=device, recorder=rec)
-        rec.event("loading", "model_loaded", device=str(model.device), training=False)
+        # Schema-4 checkpoints carry their 09:30 correction head; record it for auditability.
+        open_residual = None if model.open_residual_head is None else {
+            key: model.open_residual_metadata[key] for key in ("method", "sample_time", "feature_dim")}
+        rec.event("loading", "model_loaded", device=str(model.device), training=False,
+                  open_residual=open_residual)
         preprocessing = dict(model.preprocessing)
         if price_scale is not None:
             if not 0 < price_scale < float("inf"):
@@ -60,7 +64,8 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
         write_json(run_dir / "config.json", {"schema_version": 1, "weights": str(weights),
             "data": config, "device": device, "selected_device": str(model.device),
             "start_date": None if first is None else str(first), "end_date": None if last is None else str(last),
-            "min_coverage": min_coverage, "training": False, "label_input": False})
+            "min_coverage": min_coverage, "training": False, "label_input": False,
+            "open_residual": open_residual})
         manifest = read_json(run_dir / "manifest.json")
         manifest.update(code=capture_source(run_dir), environment=environment(), model_sha256=file_sha256(weights))
         manifest["environment"]["determinism"].update(device=str(model.device),

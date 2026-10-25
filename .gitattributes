@@ -1,3 +1,5 @@
 # Keep fixed upstream reference bytes and original whitespace for hash verification.
 modified_tlob/upstream/*.txt -text -whitespace
 modified_tlob/LICENSE text eol=lf
+# The V3-open admission gate is hashed byte-for-byte by the committed research record.
+configs/v3_open_20261024_gate.json -text

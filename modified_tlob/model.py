@@ -1,5 +1,7 @@
 """Fixed upstream TLOB trunk adapted to scalar regression. See provenance.json (MIT)."""
 
+import math
+
 import torch
 from torch import nn
 
@@ -62,6 +64,40 @@ def sinusoidal_positional_embedding(seq_size, hidden_dim):
     return result
 
 
+class OpenResidualHead(nn.Module):
+    """Additive opening-section correction head over frozen trunk features (FiLM-style conditioning).
+
+    ``features -> hidden -> 1`` is the per-section gate: the binary 09:30 marker decides
+    whether the correction is applied, and the trunk is its condition. Only the last layer
+    is zero-initialised, so a freshly attached head reproduces the frozen trunk exactly and
+    training cannot disturb it. The output lives in the same standardized target units as
+    the trunk's output head; the checkpoint's ``target_scale`` is applied afterwards.
+    """
+
+    def __init__(self, feature_dim, hidden_dim=32, seed=0):
+        super().__init__()
+        if type(feature_dim) is not int or type(hidden_dim) is not int or feature_dim < 1 or hidden_dim < 1:
+            raise ValueError("Open residual head dimensions must be positive integers")
+        self.feature_dim, self.hidden_dim = feature_dim, hidden_dim
+        self.fc1 = nn.Linear(feature_dim, hidden_dim)
+        self.act = nn.GELU()
+        self.fc2 = nn.Linear(hidden_dim, 1)
+        # A private generator keeps the initialisation reproducible regardless of how much
+        # global RNG the surrounding data preparation already consumed.
+        generator = torch.Generator().manual_seed(seed)
+        bound = 1 / math.sqrt(feature_dim)
+        with torch.no_grad():
+            self.fc1.weight.uniform_(-bound, bound, generator=generator)
+            self.fc1.bias.uniform_(-bound, bound, generator=generator)
+            self.fc2.weight.zero_()
+            self.fc2.bias.zero_()
+
+    def forward(self, features):
+        if features.ndim != 2 or features.shape[1] != self.feature_dim:
+            raise ValueError(f"Expected [batch, {self.feature_dim}] trunk features")
+        return self.fc2(self.act(self.fc1(features)))[:, 0]
+
+
 class ModifiedTLOB(nn.Module):
     def __init__(self, *, hidden_dim=40, num_layers=4, seq_size=128, num_features=12,
                  num_heads=1, is_sin_emb=True):
@@ -84,13 +120,15 @@ class ModifiedTLOB(nn.Module):
             self.layers.append(TransformerLayer(hidden_dim, num_heads, hidden_dim // 4 if last else hidden_dim))
             self.layers.append(TransformerLayer(seq_size, num_heads, seq_size // 4 if last else seq_size))
         total_dim = (hidden_dim // 4) * (seq_size // 4)
+        self.feature_dim = total_dim
         self.final_layers = nn.ModuleList()
         while total_dim > 128:
             self.final_layers.extend([nn.Linear(total_dim, total_dim // 4), nn.GELU()])
             total_dim //= 4
         self.final_layers.append(nn.Linear(total_dim, 1))
 
-    def forward(self, x):
+    def forward_features(self, x):
+        """Return the flattened trunk representation consumed by the 1-wide output head."""
         if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
             raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
         if not torch.isfinite(x).all():
@@ -100,7 +138,14 @@ class ModifiedTLOB(nn.Module):
         for layer in self.layers:
             x = layer(x).transpose(1, 2)
         # Upstream rearrange 'b s f -> b (f s) 1', not a direct [s,f] flatten.
-        x = x.transpose(1, 2).reshape(x.shape[0], -1)
+        return x.transpose(1, 2).reshape(x.shape[0], -1)
+
+    def forward_output(self, features):
+        """Map trunk features to the scalar regression output."""
+        x = features
         for layer in self.final_layers:
             x = layer(x)
         return x[:, 0]
+
+    def forward(self, x):
+        return self.forward_output(self.forward_features(x))

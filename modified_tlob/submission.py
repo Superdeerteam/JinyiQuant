@@ -167,7 +167,10 @@ def predict_range(datasources, start_date, end_date, *, package_root=None, query
         manifest["environment"]["determinism"].update(device=selected, cpu_threads=model.config["cpu_threads"],
             torch_version=manifest["environment"]["dependencies"].get("torch"), deterministic_algorithms=True)
         write_json(run_dir / "manifest.json", manifest)
-        rec.event("loading", "model_loaded", path="modified_tlob_weights.json")
+        rec.event("loading", "model_loaded", path="modified_tlob_weights.json",
+                  open_residual=None if model.open_residual_head is None else {
+                      key: model.open_residual_metadata[key]
+                      for key in ("method", "sample_time", "feature_dim")})
         data = dict(model.preprocessing)
         # DAI quotes are yuan; offline download quotes may have been cents.
         # Both pass through the same conversion to canonical yuan windows.
