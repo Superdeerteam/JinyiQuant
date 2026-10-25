@@ -1,0 +1,2000 @@
+{
+  "baseline": {
+    "base_state_sha256": "e392d993b29ba4b3190320c18a1b0c8fe6794170d9807d3cdf93397bb950317f",
+    "headline": {
+      "rank_ic_0930_processed_pooled_daily_mean": 0.024501988512483065,
+      "rank_ic_0930_processed_window_mean": 0.024595548073365017,
+      "rank_ic_0930_raw_full_pooled_daily_mean": 0.020414557417448242,
+      "rank_ic_0930_raw_full_window_mean": 0.020404772669566532,
+      "rank_ic_1000_raw_full_window_mean": 0.10848687444401857
+    },
+    "noise_units": {
+      "block5_se_long_short_full_day_processed": 2.2515308600352358e-05,
+      "block5_se_rank_ic_0930_processed": 0.0041569177022581115,
+      "block5_se_rank_ic_0930_processed_monthly": {
+        "jan2024": 0.005492779719542442,
+        "mar2024": 0.010051447731143616,
+        "nov2023": 0.005013710790679721
+      },
+      "block5_se_rank_ic_0930_raw_full": 0.008193730980666832,
+      "block5_se_rank_ic_1000_raw_full": 0.011041346698202451,
+      "block5_se_turnover_full_day_processed": 0.004955665560787743,
+      "daily_std_long_short_full_day_processed": 0.0001766819486788634
+    },
+    "recompute_check": {
+      "all_passed": true,
+      "gate_self_test_passed": true,
+      "per_window_max_metric_abs_diff": {
+        "jan2024": 0.0,
+        "mar2024": 0.0,
+        "nov2023": 0.0
+      },
+      "rank_ic_0930_abs_diff": 4.772669566530802e-06,
+      "rank_ic_1000_abs_diff": 3.1255559814341582e-06
+    },
+    "replay_run_dir": "D:\\进益资本杯\\runs\\label-contrast-eval-20261024\\20261024T171905.318633Z_ad9cc8a7400e",
+    "replay_run_id": "20261024T171905.318633Z_ad9cc8a7400e",
+    "seed": 11,
+    "submission_score": {
+      "platform_total_score": 0.2334,
+      "provenance": "user-reported platform total score for the V2 submission recorded in the team plan (T10); it is not reproducible locally and no V3-open package was ever submitted"
+    },
+    "version": "v2_60d_csz",
+    "weights_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"
+  },
+  "branch": {
+    "base_commit": "e27e2e7abbe4fa635e3dec0e2276e2018b29f55d",
+    "base_commit_short": "e27e2e7",
+    "commit_message": "V3-open 09:30 开盘残差头：seed11 未过风格中性准入，保留 V2-CSZ 基线",
+    "main_merged": false,
+    "name": "research/v3-open-20261024",
+    "worktree": "D:\\进益资本杯-v3-open"
+  },
+  "created_at_utc": "2026-10-25T06:13:55.037752+00:00",
+  "experiment_id": "v3-open-20261024",
+  "gate_evidence": {
+    "checks": [
+      {
+        "delta_mean": 0.00043957372707033315,
+        "id": "mean_delta_at_least_minimum_gain",
+        "improvement_positive": true,
+        "margin": -0.0037173439751877783,
+        "minimum_gain": 0.0041569177022581115,
+        "passed": false
+      },
+      {
+        "block_days": 5,
+        "block_mean": 0.00043957372707033315,
+        "ci_high": 0.004356261519465034,
+        "ci_low": -0.002804405017533833,
+        "id": "block5_lower_positive",
+        "margin": -0.002804405017533833,
+        "month_order": [
+          "nov2023",
+          "jan2024",
+          "mar2024"
+        ],
+        "passed": false,
+        "samples": 20000,
+        "seed": 20261024
+      },
+      {
+        "block_days": 2,
+        "block_mean": 0.00043957372707033315,
+        "ci_high": 0.005155770802917653,
+        "ci_low": -0.002564910805522468,
+        "id": "block2_lower_positive",
+        "margin": -0.002564910805522468,
+        "month_order": [
+          "nov2023",
+          "jan2024",
+          "mar2024"
+        ],
+        "passed": false,
+        "samples": 20000,
+        "seed": 20261024
+      },
+      {
+        "id": "months_positive",
+        "month_deltas": {
+          "jan2024": 0.003398495603055936,
+          "mar2024": -0.0005049258081309414,
+          "nov2023": -0.0016177804107686002
+        },
+        "months_positive": 1,
+        "months_required": 2,
+        "passed": false
+      },
+      {
+        "delta_mean": 0.01722640999052345,
+        "id": "raw_view_consistency",
+        "month_deltas": {
+          "jan2024": 0.036895641565315905,
+          "mar2024": 0.01222585871231901,
+          "nov2023": 0.002330431908562508
+        },
+        "passed": true,
+        "threshold": -0.008193730980666832
+      },
+      {
+        "delta_mean": -0.0016177804107686002,
+        "floor": -0.005013710790679721,
+        "id": "monthly_floor_nov2023",
+        "margin": 0.0033959303799111205,
+        "passed": true
+      },
+      {
+        "delta_mean": 0.003398495603055936,
+        "floor": -0.005492779719542442,
+        "id": "monthly_floor_jan2024",
+        "margin": 0.008891275322598377,
+        "passed": true
+      },
+      {
+        "delta_mean": -0.0005049258081309414,
+        "floor": -0.010051447731143616,
+        "id": "monthly_floor_mar2024",
+        "margin": 0.009546521923012674,
+        "passed": true
+      },
+      {
+        "baseline": 1.3385256295212329,
+        "candidate": 1.3378043928433374,
+        "id": "guardrail_turnover",
+        "margin": -0.0056769022386831125,
+        "metric": "turnover_full_day_processed",
+        "passed": true,
+        "rule": "candidate <= threshold",
+        "threshold": 1.3434812950820205,
+        "worst_day_date": null
+      },
+      {
+        "baseline": 2.896413996269906,
+        "candidate": 2.888125766541262,
+        "id": "guardrail_rank_ic_ir",
+        "margin": 0.2800198670769536,
+        "metric": "rank_ic_ir_full_day_processed",
+        "passed": true,
+        "rule": "candidate >= threshold",
+        "threshold": 2.6081058994643085,
+        "worst_day_date": null
+      },
+      {
+        "baseline": 0.0004216885097752306,
+        "candidate": 0.0004250734750306521,
+        "id": "guardrail_long_short_mean",
+        "margin": 2.590027385577392e-05,
+        "metric": "long_short_mean_full_day_processed",
+        "passed": true,
+        "rule": "candidate >= threshold",
+        "threshold": 0.0003991732011748782,
+        "worst_day_date": null
+      },
+      {
+        "baseline": 37.88784092346248,
+        "candidate": 36.243969947768,
+        "id": "guardrail_long_short_sharpe",
+        "margin": 2.5288038725453745,
+        "metric": "long_short_sharpe_full_day_processed",
+        "passed": true,
+        "rule": "candidate >= threshold",
+        "threshold": 33.715166075222626,
+        "worst_day_date": null
+      },
+      {
+        "baseline": 0.00010334214062157209,
+        "candidate": 3.411796661355879e-05,
+        "id": "guardrail_worst_day",
+        "margin": 0.0001074577746708501,
+        "metric": "worst_day_full_day_processed",
+        "passed": true,
+        "rule": "candidate >= threshold",
+        "threshold": -7.333980805729131e-05,
+        "worst_day_date": "2024-03-22"
+      },
+      {
+        "delta_mean": 0.0,
+        "id": "guardrail_rank_ic_1000_raw_full",
+        "month_deltas": {
+          "jan2024": 0.0,
+          "mar2024": 0.0,
+          "nov2023": 0.0
+        },
+        "passed": true,
+        "threshold": -0.011041346698202451
+      },
+      {
+        "candidate": 0.01554347381288411,
+        "days": 34,
+        "floor": 0.007803072799448664,
+        "id": "stress_high_volatility_rank_ic",
+        "margin": 0.0077404010134354455,
+        "passed": true
+      },
+      {
+        "candidate": 0.0002284886992530398,
+        "days": 34,
+        "floor": 0.00011212065044345239,
+        "id": "stress_high_volatility_long_short",
+        "margin": 0.00011636804880958742,
+        "passed": true
+      },
+      {
+        "candidate": 0.03524914309461004,
+        "days": 31,
+        "floor": 0.030003597079790622,
+        "id": "stress_low_volatility_rank_ic",
+        "margin": 0.005245546014819417,
+        "passed": true
+      },
+      {
+        "candidate": 0.0005885683803081633,
+        "days": 31,
+        "floor": 0.0004019133091600276,
+        "id": "stress_low_volatility_long_short",
+        "margin": 0.00018665507114813565,
+        "passed": true
+      },
+      {
+        "candidate": 0.021838826926696014,
+        "days": 34,
+        "floor": 0.01368630466417655,
+        "id": "stress_high_volume_rank_ic",
+        "margin": 0.008152522262519463,
+        "passed": true
+      },
+      {
+        "candidate": 0.00031985915215020327,
+        "days": 34,
+        "floor": 0.000209385188400518,
+        "id": "stress_high_volume_long_short",
+        "margin": 0.00011047396374968527,
+        "passed": true
+      },
+      {
+        "candidate": 0.028344562260106662,
+        "days": 31,
+        "floor": 0.02317704313164813,
+        "id": "stress_low_volume_rank_ic",
+        "margin": 0.005167519128458531,
+        "passed": true
+      },
+      {
+        "candidate": 0.0004883556255177257,
+        "days": 31,
+        "floor": 0.00029571069722008974,
+        "id": "stress_low_volume_long_short",
+        "margin": 0.00019264492829763598,
+        "passed": true
+      },
+      {
+        "candidate": 0.01475356346381453,
+        "days": 20,
+        "floor": 0.003216261598552525,
+        "id": "stress_high_volatility_high_volume_rank_ic",
+        "margin": 0.011537301865262004,
+        "passed": true
+      },
+      {
+        "candidate": 0.00023031927504638458,
+        "days": 20,
+        "floor": 0.00013121683426176316,
+        "id": "stress_high_volatility_high_volume_long_short",
+        "margin": 9.910244078462142e-05,
+        "passed": true
+      },
+      {
+        "candidate": 0.016671917168697807,
+        "days": 14,
+        "floor": 0.006984260126917507,
+        "id": "stress_high_volatility_low_volume_rank_ic",
+        "margin": 0.0096876570417803,
+        "passed": true
+      },
+      {
+        "candidate": 0.0002258735909768329,
+        "days": 14,
+        "floor": -4.7695549311421866e-05,
+        "id": "stress_high_volatility_low_volume_long_short",
+        "margin": 0.00027356914028825474,
+        "passed": true
+      }
+    ],
+    "checks_failed": 4,
+    "checks_passed": 22,
+    "checks_total": 26,
+    "created_at_utc": "2026-10-25T06:07:22.203483+00:00",
+    "gate_sha256": "d08bb40ef569129bb2366c9dd4221497aeeadf9899ade620a9b168d048a9c9f8",
+    "protocol": {
+      "block_bootstrap": {
+        "block_days": [
+          5,
+          2
+        ],
+        "implementation": "scripts/freeze_v3_open_gate.py bootstrap_draws/interval (same as the frozen noise units)",
+        "month_order": [
+          "nov2023",
+          "jan2024",
+          "mar2024"
+        ],
+        "samples": 20000,
+        "seed": 20261024
+      },
+      "guardrail_view": "processed full-day aggregates",
+      "metric_scope": "local_approximation",
+      "monthly_required": 2,
+      "primary_metric": "pooled development-month paired daily 09:30 RankIC delta",
+      "primary_view": "processed (frozen local style/industry residualization)",
+      "stress_view": "processed 09:30 by prior-day volatility/volume regime",
+      "thresholds": {
+        "guardrails": {
+          "long_short_mean": 0.0003991732011748782,
+          "long_short_sharpe": 33.715166075222626,
+          "rank_ic_ir": 2.6081058994643085,
+          "turnover": 1.3434812950820205,
+          "worst_day": -7.333980805729131e-05
+        },
+        "minimum_gain": 0.0041569177022581115,
+        "monthly_floors": {
+          "jan2024": -0.005492779719542442,
+          "mar2024": -0.010051447731143616,
+          "nov2023": -0.005013710790679721
+        },
+        "rank_ic_1000_threshold": -0.011041346698202451,
+        "raw_consistency_floor": -0.008193730980666832,
+        "stress_floors": {
+          "high_volatility": {
+            "long_short_floor": 0.00011212065044345239,
+            "rank_ic_floor": 0.007803072799448664
+          },
+          "high_volatility_high_volume": {
+            "long_short_floor": 0.00013121683426176316,
+            "rank_ic_floor": 0.003216261598552525
+          },
+          "high_volatility_low_volume": {
+            "long_short_floor": -4.7695549311421866e-05,
+            "rank_ic_floor": 0.006984260126917507
+          },
+          "high_volume": {
+            "long_short_floor": 0.000209385188400518,
+            "rank_ic_floor": 0.01368630466417655
+          },
+          "low_volatility": {
+            "long_short_floor": 0.0004019133091600276,
+            "rank_ic_floor": 0.030003597079790622
+          },
+          "low_volume": {
+            "long_short_floor": 0.00029571069722008974,
+            "rank_ic_floor": 0.02317704313164813
+          }
+        }
+      }
+    },
+    "stage": "seed11_screen",
+    "verification": {
+      "baseline_daily_diffs_vs_frozen": 0.0,
+      "baseline_reproduced": true,
+      "gate_sha256": "d08bb40ef569129bb2366c9dd4221497aeeadf9899ade620a9b168d048a9c9f8",
+      "prediction_invariance_all_windows": true,
+      "t5_archive_cross_check_passed": true,
+      "t5_archive_max_abs_diffs": {
+        "block2_ci_low": 0.0,
+        "block5_ci_low": 0.0,
+        "delta_mean": 0.0,
+        "long_short_mean": 0.0,
+        "long_short_sharpe": 0.0,
+        "month_deltas": 0.0,
+        "rank_ic_ir": 0.0,
+        "raw_delta_mean": 0.0,
+        "stress_max": 0.0,
+        "ten_oclock_delta": 0.0,
+        "turnover": 0.0,
+        "worst_day": 0.0
+      }
+    }
+  },
+  "hypothesis": {
+    "acceptance": "pass every check of the pre-registered gate on seed 11 before training seed 29",
+    "expected_improvement": "pooled processed 09:30 RankIC delta versus V2-CSZ >= one baseline block-5 standard error (0.004156918), with the raw view not degrading and no full-day guardrail breach",
+    "statement": "Freezing the V2 60d CSZ trunk (seed 11) and adding a zero-initialised 320->32->1 residual head that is trained for 1500 steps only on history-valid 09:30 samples, with labels mapped into the V2 checkpoint's frozen per-timestamp z-score statistics, corrects the opening-section residuals the shared wide head cannot express; in-window fit diagnostics are reported here and the paired out-of-sample comparison is a separate predeclared run."
+  },
+  "implementation": {
+    "checkpoint": {
+      "head_state_sha256": "d6fe9078113c1f04725069c1179d97959812cb3db3d3d7cc1e88ed6906a56b50",
+      "legacy_schemas_still_load": true,
+      "schema_version": 4,
+      "zero_init_correction_max_abs": 0.0
+    },
+    "decisions": [
+      "trunk freeze is enforced by the optimiser scope plus inference-mode trunk outputs; requires_grad_(False) on the trunk switches oneDNN to packed kernels and perturbs non-opening outputs by ~1e-7 relative",
+      "only history-valid 09:30 keys with an exchange time of 09:30 receive the correction; every other key is bit-identical to V2-CSZ and missing-history keys fall back to the frozen intercept"
+    ],
+    "files": {
+      "configs/model_v3_open_0930_residual.json": "4bce12e9f38c7706eaaf961cb7528643ab74f5b102aa8a18f3d70259de3ca07e",
+      "modified_tlob/adapter.py": "ffb5d2ef3c99b4167839c1eb6eaa167299a9e5e726dc0ffe43134c03c593ba3b",
+      "modified_tlob/infer.py": "d829000679abe5e08add1cc98ea520a868f2f33cc8ed383fd4d490ad4e176379",
+      "modified_tlob/model.py": "81005c50d6fc9c06c19dcd0d9bbe2a50c81df899ecd46e5f0f4bec0ca7955d83",
+      "modified_tlob/submission.py": "fd7933459c427594f0dd80ef2d8bf43d0b291ce5dec72b6f92a89f1b4e8ee351",
+      "scripts/train_open_residual.py": "34f7dde32df42728c483e6909224c46bc8bffbb05c82304b8a122223483d98e1",
+      "tests/test_open_residual.py": "3fe21de984936c22b668400af18b51cde187138c06e9258dfc52a3356228d3f8"
+    },
+    "invariance_review": {
+      "checks_passed": 14,
+      "checks_total": 14,
+      "max_abs_diffs": {
+        "max_abs_diff_forward_refactor": 0.0,
+        "max_abs_diff_missing_history_intercept": 0.0,
+        "max_abs_diff_non_opening_nonzero_head": 0.0,
+        "max_abs_diff_opening_formula": 0.0,
+        "max_abs_diff_smoke_checkpoint_formula": 0.0,
+        "max_abs_diff_smoke_checkpoint_non_opening": 0.0,
+        "max_abs_diff_smoke_checkpoint_trunk_vs_v2": 0.0,
+        "max_abs_diff_trunk_vs_v2": 0.0,
+        "max_abs_diff_zero_init": 0.0
+      },
+      "observations": [
+        "The 09:30 correction is added to the float32 trunk output before the float64 target_scale multiplication, and the head is evaluated inside the adapter's prediction chunks; a single all-row head call differs by one float32 ulp (1.49e-8) on CPU, so the exact review mirrors production chunking.",
+        "The opening marker is minute-precision (an exact 09:30:30 key also marks True); prediction keys are minute-sampled so this cannot fire outside the opening section.",
+        "The checkpoint's open_residual.sample_time is trusted payload metadata; the produced checkpoints carry '09:30' and packaging hashes pin the weights file."
+      ],
+      "pytest": [
+        "..............                                                           [100%]",
+        "14 passed in 21.63s"
+      ],
+      "reviewed_base_commit": "e27e2e7",
+      "verdict": "pass"
+    }
+  },
+  "limitations": [
+    "local approximation: gross forward label returns, no fees/execution/official score",
+    "the gate's processed view removes style/industry exposure; the raw 09:30 RankIC gain is larger but was pre-registered as a consistency guardrail only",
+    "single seed (11); the dual-seed stage is not reached because the seed-11 screen fails",
+    "the style diagnostic explains the delta but is not a gate input; it is archived as context",
+    "the checkpoint payload carries seed 11 and schema_version 4 but no experiment/version label, so a packaging provenance step would have to supply the v3-open-20261024 tag",
+    "no packaging or platform validation ran for V3-open because the gate stopped the round"
+  ],
+  "not_committed": {
+    "data": "D:/进益资本杯/数据 and all parquet/feather inputs stay outside git (.gitignore)",
+    "dist": "no V3-open package exists; the V2 package in D:/进益资本杯/dist is untouched",
+    "runs": "runs/v3-open-20261024 (archives, JSON evidence, parquet) is ignored by git",
+    "weights": "open-residual checkpoint, modified_tlob_weights.json and predictions stay in runs/"
+  },
+  "preregistration": {
+    "created_at_utc": "2026-10-25T04:41:17.558174+00:00",
+    "decision_rules": {
+      "fail": "any failed check keeps the frozen V2-CSZ baseline as the submission model",
+      "final_promotion": "accept V3-open only if seed_consistency.stage_final passes for both seeds (guardrails and stress buckets are evaluated per seed), and packaging plus weight_identity checks pass",
+      "no_official_score_claim": true,
+      "no_threshold_edit_after_results": true,
+      "seed11_screen": "promote to seed 29 only if primary_0930_rank_ic passes on seed 11, monthly_non_degradation passes, and every degradation guardrail and stress bucket passes"
+    },
+    "evaluation_protocol": {
+      "block_bootstrap": {
+        "block_days": [
+          5,
+          2
+        ],
+        "confidence": 0.95,
+        "rule": "contiguous moving blocks inside each month; blocks never bridge months; pooled draws weighted by days",
+        "samples": 20000,
+        "seed": 20261024
+      },
+      "comparison": "each check is evaluated on the same development days for candidate and baseline; missing or incomplete candidate evidence fails the check",
+      "daily_aggregation": "equal timestamp mean; undefined correlations stay missing",
+      "min_cross_section": 3,
+      "paired_daily_delta": "candidate minus V2-CSZ baseline on the same date and clock",
+      "periods_per_year": 252,
+      "quantile": 0.2,
+      "reference_implementation": [
+        "scripts/label_contrast_evaluation.py: neutralize, score_common, paired_block",
+        "scripts/freeze_v3_open_gate.py: baseline dispersion, block intervals, floors"
+      ]
+    },
+    "freeze_evidence": {
+      "baseline_replay_started_at_utc": "2026-10-24T17:31:21.650005+00:00",
+      "baseline_replay_status": "completed",
+      "candidate_training_runs_present_at_freeze": [],
+      "no_candidate_training_at_freeze": true,
+      "note": "Written before the first 09:30 residual-head candidate training run; smoke runs are implementation checks and are not candidate evidence. The gate is never edited after a candidate result is known.",
+      "smoke_or_implementation_runs_present_at_freeze": [
+        {
+          "experiment_id": "model-v3-open-smoke",
+          "path": "runs/v3-open-20261024/open-residual-smoke/20261025T041138.927896Z_17935537853f",
+          "run_id": "20261025T041138.927896Z_17935537853f",
+          "status": "completed",
+          "steps": 50
+        },
+        {
+          "experiment_id": "model-v3-open-smoke",
+          "path": "runs/v3-open-20261024/open-residual-smoke/20261025T041356.139910Z_1b902453a5da",
+          "run_id": "20261025T041356.139910Z_1b902453a5da",
+          "status": "completed",
+          "steps": 50
+        },
+        {
+          "experiment_id": "model-v3-open-0930-residual",
+          "path": "runs/v3-open-20261024/open-residual-smoke/20261025T042544.432030Z_e85ae436b968",
+          "run_id": "20261025T042544.432030Z_e85ae436b968",
+          "status": "running",
+          "steps": 1
+        }
+      ]
+    },
+    "frozen_before_head_training": true,
+    "gate_id": "v3-open-20261024-gate-v1",
+    "path": {
+      "bytes": 21663,
+      "path": "configs/v3_open_20261024_gate.json",
+      "sha256": "d08bb40ef569129bb2366c9dd4221497aeeadf9899ade620a9b168d048a9c9f8"
+    },
+    "thresholds": {
+      "degradation_guardrails": {
+        "dataset": "pooled development months; full-day aggregates average the eight sampled timestamps per day",
+        "long_short_mean": {
+          "baseline": 0.0004216885097752306,
+          "metric": "full-day mean long-short return",
+          "rule": "candidate >= baseline - 1.0 x baseline block-5 SE",
+          "threshold": 0.0003991732011748782
+        },
+        "long_short_sharpe": {
+          "baseline": 37.88784092346248,
+          "metric": "full-day annualized long-short Sharpe (sqrt(252))",
+          "rule": "candidate >= 5th percentile of the block-bootstrapped baseline distribution",
+          "threshold": 33.715166075222626
+        },
+        "rank_ic_1000_raw_full": {
+          "baseline": 0.10848687444401857,
+          "metric": "10:00 raw-full RankIC (main-clock protection)",
+          "rule": "candidate 10:00 RankIC delta mean >= -1.0 x baseline block-5 SE",
+          "threshold": -0.011041346698202451
+        },
+        "rank_ic_ir": {
+          "baseline": 2.896413996269906,
+          "metric": "full-day RankIC IR (daily mean / sample std, not annualized)",
+          "rule": "candidate >= 5th percentile of the block-bootstrapped baseline distribution",
+          "threshold": 2.6081058994643085
+        },
+        "turnover": {
+          "baseline": 1.3385256295212329,
+          "metric": "full-day mean turnover",
+          "rule": "candidate <= baseline + 1.0 x baseline block-5 SE",
+          "threshold": 1.3434812950820205
+        },
+        "view": "processed",
+        "worst_day": {
+          "baseline": 0.00010334214062157209,
+          "baseline_daily_std": 0.0001766819486788634,
+          "baseline_worst_date": "2024-03-22",
+          "metric": "worst single-day full-day long-short return",
+          "rule": "candidate >= baseline worst day - 1.0 x baseline daily long-short standard deviation",
+          "threshold": -7.333980805729131e-05
+        }
+      },
+      "monthly_non_degradation": {
+        "floors": {
+          "jan2024": -0.005492779719542442,
+          "mar2024": -0.010051447731143616,
+          "nov2023": -0.005013710790679721
+        },
+        "rule": "per-month processed 09:30 RankIC delta >= -1.0 x that month's baseline block-5 SE"
+      },
+      "packaging": {
+        "checks": [
+          {
+            "id": "exact_file_set",
+            "rule": "the upload archive contains exactly the seven frozen file names"
+          },
+          {
+            "id": "payload_hashes",
+            "rule": "every payload file sha256 in provenance.json matches the packaged file bytes"
+          },
+          {
+            "id": "flat_equals_source",
+            "rule": "offline flat-package predictions equal the source-package predictions bit for bit (max absolute difference == 0.0)"
+          },
+          {
+            "id": "no_original_imports",
+            "rule": "the flat package imports neither the jinyiquant nor the modified_tlob folder"
+          },
+          {
+            "id": "offline_only",
+            "rule": "packaging and replay attempts no network call"
+          },
+          {
+            "id": "weights_unchanged",
+            "rule": "provenance reports weights_changed == false for modified_tlob_weights.json"
+          }
+        ],
+        "upload_files": [
+          "inference.ipynb",
+          "jinyiquant_flat.py",
+          "modified_tlob_flat.py",
+          "modified_tlob_weights.json",
+          "provenance.json",
+          "requirements.txt",
+          "submission_config.json"
+        ]
+      },
+      "primary_0930_rank_ic": {
+        "checks": [
+          {
+            "id": "mean_delta_at_least_minimum_gain",
+            "rule": "paired daily 09:30 RankIC delta mean > 0 and >= minimum_gain (one baseline block-5 SE)",
+            "threshold": 0.0041569177022581115
+          },
+          {
+            "id": "block5_lower_positive",
+            "rule": "block-5 95% interval lower bound > 0",
+            "threshold": 0.0
+          },
+          {
+            "id": "block2_lower_positive",
+            "rule": "block-2 95% interval lower bound > 0",
+            "threshold": 0.0
+          },
+          {
+            "id": "months_positive",
+            "rule": "per-month mean delta > 0 in at least 2 of 3 months",
+            "threshold": 2
+          }
+        ],
+        "dataset": "pooled development months",
+        "derivation": "minimum_gain = 1.0 x baseline block-5 standard error of the 09:30 processed daily RankIC; no fixed percentage is used",
+        "minimum_gain": 0.0041569177022581115,
+        "raw_view_consistency": {
+          "rule": "raw_full 09:30 RankIC delta mean >= -1.0 x baseline block-5 SE",
+          "threshold": -0.008193730980666832
+        },
+        "view": "processed"
+      },
+      "seed_consistency": {
+        "seeds_required": [
+          11,
+          29
+        ],
+        "stage_final": [
+          {
+            "id": "same_direction",
+            "rule": "seed 11 and seed 29 pooled processed 09:30 RankIC delta means are both > 0 (same direction)"
+          },
+          {
+            "id": "seed_average_block5_lower_positive",
+            "rule": "the two-seed average paired daily delta (mean of the two seeds on each date) has a block-5 95% interval lower bound > 0"
+          },
+          {
+            "id": "each_seed_two_of_three_months",
+            "rule": "each seed improves in at least 2 of the 3 development months"
+          },
+          {
+            "id": "each_seed_guardrails",
+            "rule": "every degradation guardrail and stress bucket passes for each seed"
+          }
+        ],
+        "stage_seed11": "apply primary_0930_rank_ic and every guardrail to seed 11"
+      },
+      "stress_scenarios": {
+        "buckets": {
+          "high_volatility": {
+            "days": 34,
+            "long_short_floor": 0.00011212065044345239,
+            "rank_ic_floor": 0.007803072799448664
+          },
+          "high_volatility_high_volume": {
+            "days": 20,
+            "long_short_floor": 0.00013121683426176316,
+            "rank_ic_floor": 0.003216261598552525
+          },
+          "high_volatility_low_volume": {
+            "days": 14,
+            "long_short_floor": -4.7695549311421866e-05,
+            "rank_ic_floor": 0.006984260126917507
+          },
+          "high_volume": {
+            "days": 34,
+            "long_short_floor": 0.000209385188400518,
+            "rank_ic_floor": 0.01368630466417655
+          },
+          "low_volatility": {
+            "days": 31,
+            "long_short_floor": 0.0004019133091600276,
+            "rank_ic_floor": 0.030003597079790622
+          },
+          "low_volume": {
+            "days": 31,
+            "long_short_floor": 0.00029571069722008974,
+            "rank_ic_floor": 0.02317704313164813
+          }
+        },
+        "definition": "prior-day volatility state and sampled-volume state versus their trailing 20-day medians (strictly before the state); 09:30 clock",
+        "rule": "candidate bucket 09:30 RankIC mean >= floor; bucket 09:30 long-short mean >= floor; floors are the baseline bucket mean minus 1.0 x the bucket standard error"
+      },
+      "weight_identity": {
+        "checks": [
+          {
+            "id": "weights_sha256_chain",
+            "rule": "the sha256 of the evaluated checkpoint equals the sha256 in the run manifest, the package provenance and the packaged weights file"
+          },
+          {
+            "id": "baseline_weights_frozen",
+            "rule": "the V2 backbone block keeps sha256 3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa"
+          },
+          {
+            "id": "version_label",
+            "rule": "weights metadata carries the version tag 'v3-open-20261024' and the training seed (11 or 29)"
+          },
+          {
+            "id": "config_sha256",
+            "rule": "the model config sha256 recorded in the run manifest equals the committed config used for the run"
+          },
+          {
+            "id": "sample_keys_identity",
+            "rule": "evaluated predictions cover exactly the replay sample keys and target keys"
+          },
+          {
+            "id": "no_weight_edit_after_evaluation",
+            "rule": "the packaged weights sha256 equals the evaluated weights sha256"
+          }
+        ]
+      }
+    }
+  },
+  "reproduction": {
+    "artifacts": {
+      "baseline_metrics": {
+        "bytes": 81661,
+        "path": "runs/v3-open-20261024/baseline_metrics.json",
+        "sha256": "adabf0b5ad7cc47d9adb954d13fb96126c1d3fe5dfed135245d9ddeba30f27c3"
+      },
+      "baseline_recompute_check": {
+        "bytes": 3021,
+        "path": "runs/v3-open-20261024/baseline_recompute_check.json",
+        "sha256": "b218011bef1eeb91339b0f6d2f08b1b3f22a3e1c046c4af53a8279c29d275018"
+      },
+      "gate": {
+        "bytes": 21663,
+        "path": "configs/v3_open_20261024_gate.json",
+        "sha256": "d08bb40ef569129bb2366c9dd4221497aeeadf9899ade620a9b168d048a9c9f8"
+      },
+      "invariance_review": {
+        "bytes": 10348,
+        "path": "runs/v3-open-20261024/invariance_review.json",
+        "sha256": "dd1d79ce7502f57f7ea88a3cc90a1a4f888e76652dedfeb2d8335196104b4d39"
+      },
+      "model_config": {
+        "bytes": 3246,
+        "path": "configs/model_v3_open_0930_residual.json",
+        "sha256": "4bce12e9f38c7706eaaf961cb7528643ab74f5b102aa8a18f3d70259de3ca07e"
+      },
+      "seed11_eval": {
+        "bytes": 77383,
+        "path": "runs/v3-open-20261024/seed11/open_residual_eval.json",
+        "sha256": "de2327c3bcef112e6c567707eac9baadc219e251e61784a6ceff8071b47293b4"
+      },
+      "seed11_gate": {
+        "bytes": 22447,
+        "path": "runs/v3-open-20261024/seed11_gate.json",
+        "sha256": "18fd75192ed7183fe0367ffcbc388cf1be6114bfef90540ec5752ebab0316343"
+      },
+      "seed11_style_diagnostic": {
+        "bytes": 41746,
+        "path": "runs/v3-open-20261024/seed11/delta_style_diagnostic.json",
+        "sha256": "0526b6050a75f12bc0abe904e041b040352d51e4407134325672cc95db4bf83e"
+      },
+      "seed11_training_summary": {
+        "bytes": 8504,
+        "path": "runs/v3-open-20261024/seed11/training_summary.json",
+        "sha256": "2f24362a374868c64cf83ea6acd491adee2f2374d8424411b6452b841bb206ee"
+      }
+    },
+    "commands": [
+      "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/freeze_v3_open_gate.py",
+      "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/train_open_residual.py configs/model_v3_open_0930_residual.json --base-weights D:/进益资本杯/runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json --expected-base-sha256 3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa --steps 1500 --device cuda",
+      "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/predict_open_residual.py --checkpoint runs/v3-open-20261024/open-residual/20261025T052524.593107Z_5c4a968e2d0e/model.pt --output runs/v3-open-20261024/seed11",
+      "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/evaluate_open_residual.py --seed-dir runs/v3-open-20261024/seed11",
+      "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/consolidate_v3_open.py"
+    ]
+  },
+  "results": {
+    "daily_diffs": {
+      "path": "D:\\进益资本杯-v3-open\\runs\\v3-open-20261024\\seed11\\daily_diffs.parquet",
+      "rows": 1560,
+      "sha256": "3c99d363ac359e977fd2bf0e017737a09866709aaa48aaa952c9aded76b15047"
+    },
+    "daily_full_day": {
+      "path": "D:\\进益资本杯-v3-open\\runs\\v3-open-20261024\\seed11\\daily_full_day.parquet",
+      "rows": 390,
+      "sha256": "3bfaeb60a57ca4ea27e34794859b9b8b683a27d55fb3a51347fc955ef8c4408d"
+    },
+    "evaluation_checks": [
+      {
+        "id": "prediction_invariance_archive",
+        "passed": true
+      },
+      {
+        "id": "baseline_metrics_reproduced",
+        "max_abs_diff": 0.0,
+        "passed": true
+      },
+      {
+        "id": "candidate_and_baseline_samples_identical",
+        "passed": true,
+        "windows": [
+          "nov2023",
+          "jan2024",
+          "mar2024"
+        ]
+      },
+      {
+        "expected_rows": 1560,
+        "id": "daily_diffs_complete",
+        "passed": true,
+        "rows": 1560
+      }
+    ],
+    "evaluation_resources": {
+      "wall_seconds": 133.7348033000003
+    },
+    "full_day_paired_delta": {
+      "long_short_return": {
+        "block2": {
+          "ci_high": 1.6314681450036553e-05,
+          "ci_low": -6.2588221190436235e-06,
+          "se": 5.758546828846984e-06
+        },
+        "block5": {
+          "ci_high": 1.3369684517246164e-05,
+          "ci_low": -3.3475391118535524e-06,
+          "se": 4.264597864566255e-06
+        },
+        "daily_std": 4.803872183123575e-05,
+        "days": 65,
+        "mean": 3.384965255421596e-06,
+        "negative_days": 29,
+        "p05_daily": -6.607915113193603e-05,
+        "positive_days": 36,
+        "worst_five_day_mean": -8.124965261221251e-05
+      },
+      "rank_ic": {
+        "block2": {
+          "ci_high": 0.0006444713503647051,
+          "ci_low": -0.0003206138506903092,
+          "se": 0.00024619520435076894
+        },
+        "block5": {
+          "ci_high": 0.0005445326899331274,
+          "ci_low": -0.0003505506271917294,
+          "se": 0.0002283375808991982
+        },
+        "daily_std": 0.0020339672387480264,
+        "days": 65,
+        "mean": 5.494671588379103e-05,
+        "negative_days": 36,
+        "p05_daily": -0.0028059625264064162,
+        "positive_days": 29,
+        "worst_five_day_mean": -0.002881319267687592
+      },
+      "turnover": {
+        "block2": {
+          "ci_high": 0.0009181596512783783,
+          "ci_low": -0.002213889502457332,
+          "se": 0.0007989921310550282
+        },
+        "block5": {
+          "ci_high": 0.0007747979250649053,
+          "ci_low": -0.002322779591639529,
+          "se": 0.00079019834609807
+        },
+        "daily_std": 0.006412977293121222,
+        "days": 65,
+        "mean": -0.0007212366778949636,
+        "negative_days": 36,
+        "p05_daily": -0.009258793969849365,
+        "positive_days": 26,
+        "worst_five_day_mean": -0.009663944723618067
+      }
+    },
+    "full_day_processed_guardrails": {
+      "long_short_mean_full_day_processed": {
+        "baseline": 0.0004216885097752306,
+        "candidate": 0.0004250734750306521,
+        "passed": true,
+        "rule": "candidate >= baseline - 1.0 x baseline block-5 SE",
+        "threshold": 0.0003991732011748782
+      },
+      "long_short_sharpe_full_day_processed": {
+        "baseline": 37.88784092346248,
+        "candidate": 36.243969947768,
+        "passed": true,
+        "rule": "candidate >= 5th percentile of the block-bootstrapped baseline distribution",
+        "threshold": 33.715166075222626
+      },
+      "rank_ic_1000_raw_full": {
+        "baseline": 0.10848687444401857,
+        "candidate_delta": 0.0,
+        "passed": true,
+        "rule": "candidate 10:00 RankIC delta mean >= -1.0 x baseline block-5 SE",
+        "threshold": -0.011041346698202451
+      },
+      "rank_ic_ir_full_day_processed": {
+        "baseline": 2.896413996269906,
+        "candidate": 2.888125766541262,
+        "passed": true,
+        "rule": "candidate >= 5th percentile of the block-bootstrapped baseline distribution",
+        "threshold": 2.6081058994643085
+      },
+      "turnover_full_day_processed": {
+        "baseline": 1.3385256295212329,
+        "candidate": 1.3378043928433374,
+        "passed": true,
+        "rule": "candidate <= baseline + 1.0 x baseline block-5 SE",
+        "threshold": 1.3434812950820205
+      },
+      "worst_day_full_day_processed": {
+        "baseline": 0.00010334214062157209,
+        "candidate": 3.411796661355879e-05,
+        "candidate_date": "2024-03-22",
+        "passed": true,
+        "rule": "candidate >= baseline worst day - 1.0 x baseline daily long-short standard deviation",
+        "threshold": -7.333980805729131e-05
+      }
+    },
+    "monthly": {
+      "jan2024": {
+        "baseline_rank_ic_mean": 0.015664096268297265,
+        "candidate_long_short_mean": 0.0003344255903009769,
+        "candidate_rank_ic_mean": 0.0190625918713532,
+        "days": 22,
+        "floor": -0.005492779719542442,
+        "meets_floor": true,
+        "rank_ic_delta": 0.003398495603055936
+      },
+      "mar2024": {
+        "baseline_rank_ic_mean": 0.030676919530691835,
+        "candidate_long_short_mean": 0.00038169909483892555,
+        "candidate_rank_ic_mean": 0.030171993722560894,
+        "days": 21,
+        "floor": -0.010051447731143616,
+        "meets_floor": true,
+        "rank_ic_delta": -0.0005049258081309414
+      },
+      "nov2023": {
+        "baseline_rank_ic_mean": 0.02744562842110596,
+        "candidate_long_short_mean": 0.0004836905266326127,
+        "candidate_rank_ic_mean": 0.02582784801033736,
+        "days": 22,
+        "floor": -0.005013710790679721,
+        "meets_floor": true,
+        "rank_ic_delta": -0.0016177804107686002
+      }
+    },
+    "nine_thirty_candidate": {
+      "long_short_return": {
+        "block2": {
+          "ci_high": 0.0005813834793127919,
+          "ci_low": 0.00024746629991366677,
+          "se": 8.518295392834826e-05
+        },
+        "block5": {
+          "ci_high": 0.0005977594554165298,
+          "ci_low": 0.00025667772027842487,
+          "se": 8.701064671890432e-05
+        },
+        "daily_std": 0.0006894825349086542,
+        "long_short_sharpe": 9.214562341886662,
+        "long_short_sharpe_floor_p05": 6.453559361033102,
+        "long_short_sharpe_se": 2.2563856185367257,
+        "mean": 0.00040021900867932944,
+        "p05_daily": -0.0007199084044109324,
+        "worst_five_day_mean": -0.0009542639116971197
+      },
+      "rank_ic": {
+        "block2": {
+          "ci_high": 0.034240159245143835,
+          "ci_low": 0.017723228912485463,
+          "se": 0.0042135026358822375
+        },
+        "block5": {
+          "ci_high": 0.033288712235213576,
+          "ci_low": 0.018142155222711374,
+          "se": 0.003863917605230154
+        },
+        "daily_std": 0.038542080942443796,
+        "mean": 0.0249415622395534,
+        "p05_daily": -0.039895363098569524,
+        "rank_ic_ir": 0.647125469867584,
+        "rank_ic_ir_floor_p05": 0.5186592175011329,
+        "rank_ic_ir_se": 0.1296897178694577,
+        "worst_five_day_mean": -0.05100870835940977
+      },
+      "turnover": {
+        "block5": {
+          "ci_high": 1.5986938827200514,
+          "ci_low": 1.5763708562976173,
+          "se": 0.005694649597559723
+        },
+        "daily_std": 0.06312842422993203,
+        "mean": 1.5889787647917006
+      },
+      "worst_days": [
+        {
+          "date": "2024-03-22",
+          "long_short_return": -0.0017123440344124583,
+          "rank_ic": -0.0302967542967543,
+          "window": "mar2024"
+        },
+        {
+          "date": "2024-01-19",
+          "long_short_return": -0.0009458983827815375,
+          "rank_ic": -0.05723977685099929,
+          "window": "jan2024"
+        },
+        {
+          "date": "2023-11-03",
+          "long_short_return": -0.0007982719303712216,
+          "rank_ic": -0.060195803017446314,
+          "window": "nov2023"
+        },
+        {
+          "date": "2024-03-01",
+          "long_short_return": -0.0007615789370447601,
+          "rank_ic": -0.05817375417375418,
+          "window": "mar2024"
+        },
+        {
+          "date": "2024-01-29",
+          "long_short_return": -0.0005532262738756216,
+          "rank_ic": 0.04305652305652307,
+          "window": "jan2024"
+        }
+      ]
+    },
+    "nine_thirty_paired_delta": {
+      "long_short_return": {
+        "block2": {
+          "ci_high": 0.00013051745160029242,
+          "ci_low": -5.0070576952349035e-05,
+          "se": 4.6068374630775884e-05
+        },
+        "block5": {
+          "ci_high": 0.00010695747613796932,
+          "ci_low": -2.6780312894828463e-05,
+          "se": 3.4116782916530045e-05
+        },
+        "daily_std": 0.000384309774649886,
+        "days": 65,
+        "mean": 2.707972204337275e-05,
+        "negative_days": 29,
+        "p05_daily": -0.0005286332090554882,
+        "positive_days": 36,
+        "worst_five_day_mean": -0.0006499972208977
+      },
+      "monthly_long_short_mean_delta": {
+        "jan2024": -1.8343705282405446e-06,
+        "mar2024": 5.631671663897546e-05,
+        "nov2023": 2.8085774319183496e-05
+      },
+      "monthly_rank_ic_mean_delta": {
+        "jan2024": 0.003398495603055936,
+        "mar2024": -0.0005049258081309414,
+        "nov2023": -0.0016177804107686002
+      },
+      "monthly_turnover_mean_delta": {
+        "jan2024": 0.0028487676477626407,
+        "mar2024": -0.004756281407035145,
+        "nov2023": 0.0035893754486718992
+      },
+      "rank_ic": {
+        "block2": {
+          "ci_high": 0.005155770802917653,
+          "ci_low": -0.002564910805522468,
+          "se": 0.0019695616348061533
+        },
+        "block5": {
+          "ci_high": 0.004356261519465034,
+          "ci_low": -0.002804405017533833,
+          "se": 0.0018267006471935885
+        },
+        "daily_std": 0.016271737909984207,
+        "days": 65,
+        "mean": 0.00043957372707033315,
+        "negative_days": 36,
+        "p05_daily": -0.022447700211251385,
+        "positive_days": 29,
+        "worst_five_day_mean": -0.02305055414150074
+      },
+      "turnover": {
+        "block2": {
+          "ci_high": 0.008159760496028502,
+          "ci_low": -0.006874746717458245,
+          "se": 0.0038353334728282516
+        },
+        "block5": {
+          "ci_high": 0.005260992462311576,
+          "ci_low": -0.006606024071972761,
+          "se": 0.0030273001362970246
+        },
+        "daily_std": 0.03219516548078948,
+        "days": 62,
+        "mean": 0.0006463770465229422,
+        "negative_days": 26,
+        "p05_daily": -0.060050251256281224,
+        "positive_days": 30,
+        "worst_five_day_mean": -0.06023618090452252
+      }
+    },
+    "per_clock": {
+      "processed": [
+        {
+          "baseline_ic_mean": 0.030450744904696427,
+          "baseline_long_short_mean": 0.00037313928663595665,
+          "baseline_rank_ic_mean": 0.024501988512483065,
+          "baseline_turnover_mean": 1.5883323877451774,
+          "candidate_ic_mean": 0.030945376030468957,
+          "candidate_long_short_mean": 0.00040021900867932944,
+          "candidate_rank_ic_mean": 0.0249415622395534,
+          "candidate_turnover_mean": 1.5889787647917004,
+          "days": 65,
+          "rank_ic_delta": 0.00043957372707033315,
+          "time": "09:30"
+        },
+        {
+          "baseline_ic_mean": 0.06899178957421548,
+          "baseline_long_short_mean": 0.0006216489038544501,
+          "baseline_rank_ic_mean": 0.07248636230382131,
+          "baseline_turnover_mean": 1.527569771936606,
+          "candidate_ic_mean": 0.06899178957421548,
+          "candidate_long_short_mean": 0.0006216489038544501,
+          "candidate_rank_ic_mean": 0.07248636230382131,
+          "candidate_turnover_mean": 1.5211611905682259,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:00"
+        },
+        {
+          "baseline_ic_mean": 0.06295486908383015,
+          "baseline_long_short_mean": 0.00046758035452822795,
+          "baseline_rank_ic_mean": 0.06618805804274656,
+          "baseline_turnover_mean": 1.1538047931967532,
+          "candidate_ic_mean": 0.06295486908383015,
+          "candidate_long_short_mean": 0.00046758035452822795,
+          "candidate_rank_ic_mean": 0.06618805804274656,
+          "candidate_turnover_mean": 1.1538047931967532,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:30"
+        },
+        {
+          "baseline_ic_mean": 0.05532790446299475,
+          "baseline_long_short_mean": 0.00037251592557722464,
+          "baseline_rank_ic_mean": 0.06098021268825502,
+          "baseline_turnover_mean": 1.1521008890606879,
+          "candidate_ic_mean": 0.05532790446299475,
+          "candidate_long_short_mean": 0.00037251592557722464,
+          "candidate_rank_ic_mean": 0.06098021268825502,
+          "candidate_turnover_mean": 1.1521008890606879,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:00"
+        },
+        {
+          "baseline_ic_mean": 0.06432233218165519,
+          "baseline_long_short_mean": 0.00046600944529542513,
+          "baseline_rank_ic_mean": 0.05900602682607223,
+          "baseline_turnover_mean": 1.2121990722844993,
+          "candidate_ic_mean": 0.06432233218165519,
+          "candidate_long_short_mean": 0.00046600944529542513,
+          "candidate_rank_ic_mean": 0.05900602682607223,
+          "candidate_turnover_mean": 1.2121990722844993,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:30"
+        },
+        {
+          "baseline_ic_mean": 0.0612371836820689,
+          "baseline_long_short_mean": 0.00037816922123296454,
+          "baseline_rank_ic_mean": 0.0658336024762192,
+          "baseline_turnover_mean": 1.4149899497487437,
+          "candidate_ic_mean": 0.0612371836820689,
+          "candidate_long_short_mean": 0.00037816922123296454,
+          "candidate_rank_ic_mean": 0.0658336024762192,
+          "candidate_turnover_mean": 1.4149899497487437,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "13:30"
+        },
+        {
+          "baseline_ic_mean": 0.05880267431085443,
+          "baseline_long_short_mean": 0.00037138747656226295,
+          "baseline_rank_ic_mean": 0.05865494446471148,
+          "baseline_turnover_mean": 1.307802860456127,
+          "candidate_ic_mean": 0.05880267431085443,
+          "candidate_long_short_mean": 0.00037138747656226295,
+          "candidate_rank_ic_mean": 0.05865494446471148,
+          "candidate_turnover_mean": 1.307802860456127,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:00"
+        },
+        {
+          "baseline_ic_mean": 0.06414921183197704,
+          "baseline_long_short_mean": 0.00032305746451533236,
+          "baseline_rank_ic_mean": 0.06064550543930915,
+          "baseline_turnover_mean": 1.3654943950521838,
+          "candidate_ic_mean": 0.06414921183197704,
+          "candidate_long_short_mean": 0.00032305746451533236,
+          "candidate_rank_ic_mean": 0.06064550543930915,
+          "candidate_turnover_mean": 1.3654943950521838,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:30"
+        }
+      ],
+      "raw_common": [
+        {
+          "baseline_ic_mean": 0.03171086952376707,
+          "baseline_long_short_mean": 0.00039696372203233194,
+          "baseline_rank_ic_mean": 0.020447036012317014,
+          "baseline_turnover_mean": 1.5788146377046521,
+          "candidate_ic_mean": 0.04231900107413329,
+          "candidate_long_short_mean": 0.00048085736252536455,
+          "candidate_rank_ic_mean": 0.03767270005535651,
+          "candidate_turnover_mean": 1.5794411573999028,
+          "days": 65,
+          "rank_ic_delta": 0.017225664043039494,
+          "time": "09:30"
+        },
+        {
+          "baseline_ic_mean": 0.10157608444046629,
+          "baseline_long_short_mean": 0.000978049023333093,
+          "baseline_rank_ic_mean": 0.10821786663291863,
+          "baseline_turnover_mean": 1.5317286432160804,
+          "candidate_ic_mean": 0.10157608444046629,
+          "candidate_long_short_mean": 0.000978049023333093,
+          "candidate_rank_ic_mean": 0.10821786663291863,
+          "candidate_turnover_mean": 1.520438732122149,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:00"
+        },
+        {
+          "baseline_ic_mean": 0.07561064403246302,
+          "baseline_long_short_mean": 0.000553586386877565,
+          "baseline_rank_ic_mean": 0.0819093049863852,
+          "baseline_turnover_mean": 1.1549284885968305,
+          "candidate_ic_mean": 0.07561064403246302,
+          "candidate_long_short_mean": 0.000553586386877565,
+          "candidate_rank_ic_mean": 0.0819093049863852,
+          "candidate_turnover_mean": 1.1549284885968305,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:30"
+        },
+        {
+          "baseline_ic_mean": 0.06470713749991525,
+          "baseline_long_short_mean": 0.0004194140359307277,
+          "baseline_rank_ic_mean": 0.07025233877836594,
+          "baseline_turnover_mean": 1.1211155778894473,
+          "candidate_ic_mean": 0.06470713749991525,
+          "candidate_long_short_mean": 0.0004194140359307277,
+          "candidate_rank_ic_mean": 0.07025233877836594,
+          "candidate_turnover_mean": 1.1211155778894473,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:00"
+        },
+        {
+          "baseline_ic_mean": 0.08109963768257246,
+          "baseline_long_short_mean": 0.0005732607184216392,
+          "baseline_rank_ic_mean": 0.07399262939308619,
+          "baseline_turnover_mean": 1.2068681870892926,
+          "candidate_ic_mean": 0.08109963768257246,
+          "candidate_long_short_mean": 0.0005732607184216392,
+          "candidate_rank_ic_mean": 0.07399262939308619,
+          "candidate_turnover_mean": 1.2068681870892926,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:30"
+        },
+        {
+          "baseline_ic_mean": 0.06839094763111052,
+          "baseline_long_short_mean": 0.00042463696285332647,
+          "baseline_rank_ic_mean": 0.0763065647119102,
+          "baseline_turnover_mean": 1.4118357170467724,
+          "candidate_ic_mean": 0.06839094763111052,
+          "candidate_long_short_mean": 0.00042463696285332647,
+          "candidate_rank_ic_mean": 0.0763065647119102,
+          "candidate_turnover_mean": 1.4118357170467724,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "13:30"
+        },
+        {
+          "baseline_ic_mean": 0.06120389332871183,
+          "baseline_long_short_mean": 0.00038784218293901344,
+          "baseline_rank_ic_mean": 0.059607411657966444,
+          "baseline_turnover_mean": 1.3093830691921144,
+          "candidate_ic_mean": 0.06120389332871183,
+          "candidate_long_short_mean": 0.00038784218293901344,
+          "candidate_rank_ic_mean": 0.059607411657966444,
+          "candidate_turnover_mean": 1.3093830691921144,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:00"
+        },
+        {
+          "baseline_ic_mean": 0.05856759947639346,
+          "baseline_long_short_mean": 0.0002692746433749352,
+          "baseline_rank_ic_mean": 0.05516864396276076,
+          "baseline_turnover_mean": 1.3610104367993816,
+          "candidate_ic_mean": 0.05856759947639346,
+          "candidate_long_short_mean": 0.0002692746433749352,
+          "candidate_rank_ic_mean": 0.05516864396276076,
+          "candidate_turnover_mean": 1.3610104367993816,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:30"
+        }
+      ],
+      "raw_full": [
+        {
+          "baseline_ic_mean": 0.03165612919235295,
+          "baseline_long_short_mean": 0.0003964069312630993,
+          "baseline_rank_ic_mean": 0.020414557417448242,
+          "baseline_turnover_mean": 1.5788956881180092,
+          "candidate_ic_mean": 0.04226885003848271,
+          "candidate_long_short_mean": 0.00048082711050773363,
+          "candidate_rank_ic_mean": 0.037640967407971695,
+          "candidate_turnover_mean": 1.57952220781326,
+          "days": 65,
+          "rank_ic_delta": 0.017226409990523453,
+          "time": "09:30"
+        },
+        {
+          "baseline_ic_mean": 0.10156515591154316,
+          "baseline_long_short_mean": 0.000978049023333093,
+          "baseline_rank_ic_mean": 0.1082025280437391,
+          "baseline_turnover_mean": 1.5317286432160804,
+          "candidate_ic_mean": 0.10156515591154316,
+          "candidate_long_short_mean": 0.000978049023333093,
+          "candidate_rank_ic_mean": 0.1082025280437391,
+          "candidate_turnover_mean": 1.520438732122149,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:00"
+        },
+        {
+          "baseline_ic_mean": 0.0755984554833096,
+          "baseline_long_short_mean": 0.0005534543558038188,
+          "baseline_rank_ic_mean": 0.08188566619450338,
+          "baseline_turnover_mean": 1.1550057982218787,
+          "candidate_ic_mean": 0.0755984554833096,
+          "candidate_long_short_mean": 0.0005534543558038188,
+          "candidate_rank_ic_mean": 0.08188566619450338,
+          "candidate_turnover_mean": 1.1550057982218787,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "10:30"
+        },
+        {
+          "baseline_ic_mean": 0.06471006545746927,
+          "baseline_long_short_mean": 0.0004194140359307277,
+          "baseline_rank_ic_mean": 0.07025753393266854,
+          "baseline_turnover_mean": 1.1211155778894473,
+          "candidate_ic_mean": 0.06471006545746927,
+          "candidate_long_short_mean": 0.0004194140359307277,
+          "candidate_rank_ic_mean": 0.07025753393266854,
+          "candidate_turnover_mean": 1.1211155778894473,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:00"
+        },
+        {
+          "baseline_ic_mean": 0.08109919401692821,
+          "baseline_long_short_mean": 0.0005732607184216392,
+          "baseline_rank_ic_mean": 0.07399292558736474,
+          "baseline_turnover_mean": 1.2068681870892926,
+          "candidate_ic_mean": 0.08109919401692821,
+          "candidate_long_short_mean": 0.0005732607184216392,
+          "candidate_rank_ic_mean": 0.07399292558736474,
+          "candidate_turnover_mean": 1.2068681870892926,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "11:30"
+        },
+        {
+          "baseline_ic_mean": 0.06839522599710036,
+          "baseline_long_short_mean": 0.00042463696285332647,
+          "baseline_rank_ic_mean": 0.07630932232802815,
+          "baseline_turnover_mean": 1.4118357170467724,
+          "candidate_ic_mean": 0.06839522599710036,
+          "candidate_long_short_mean": 0.00042463696285332647,
+          "candidate_rank_ic_mean": 0.07630932232802815,
+          "candidate_turnover_mean": 1.4118357170467724,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "13:30"
+        },
+        {
+          "baseline_ic_mean": 0.06120889018262855,
+          "baseline_long_short_mean": 0.0003878211968851856,
+          "baseline_rank_ic_mean": 0.05961678387487591,
+          "baseline_turnover_mean": 1.3094603788171628,
+          "candidate_ic_mean": 0.06120889018262855,
+          "candidate_long_short_mean": 0.0003878211968851856,
+          "candidate_rank_ic_mean": 0.05961678387487591,
+          "candidate_turnover_mean": 1.3094603788171628,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:00"
+        },
+        {
+          "baseline_ic_mean": 0.058563265057581526,
+          "baseline_long_short_mean": 0.00026929288188935513,
+          "baseline_rank_ic_mean": 0.05515831226350578,
+          "baseline_turnover_mean": 1.3610104367993816,
+          "candidate_ic_mean": 0.058563265057581526,
+          "candidate_long_short_mean": 0.00026929288188935513,
+          "candidate_rank_ic_mean": 0.05515831226350578,
+          "candidate_turnover_mean": 1.3610104367993816,
+          "days": 65,
+          "rank_ic_delta": 0.0,
+          "time": "14:30"
+        }
+      ]
+    },
+    "prediction_invariance": {
+      "jan2024": {
+        "candidate_predictions_sha256": "8b84d45196e88fdd321c39f4abe3b833d5b150a91744828c8550834da2902a2d",
+        "changed_rows": 22000,
+        "changed_rows_off_opening": 0,
+        "non_opening_max_abs_diff": 0.0,
+        "non_opening_rows": 154000,
+        "opening_changed_rows": 22000,
+        "opening_rows": 22000,
+        "predictions": 176000,
+        "target_keys": 175808,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2024-01.parquet"
+          ],
+          "label_rows": 176000,
+          "outside_universe_rows": 176,
+          "selected_targets": 175808
+        },
+        "window": "jan2024"
+      },
+      "mar2024": {
+        "candidate_predictions_sha256": "ded57403641781da7f0375654ca351d56d7c4128223d77712a332fc1c0579629",
+        "changed_rows": 21000,
+        "changed_rows_off_opening": 0,
+        "non_opening_max_abs_diff": 0.0,
+        "non_opening_rows": 147000,
+        "opening_changed_rows": 21000,
+        "opening_rows": 21000,
+        "predictions": 168000,
+        "target_keys": 167888,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2024-03.parquet"
+          ],
+          "label_rows": 168000,
+          "outside_universe_rows": 168,
+          "selected_targets": 167888
+        },
+        "window": "mar2024"
+      },
+      "nov2023": {
+        "candidate_predictions_sha256": "22609446832e66abd6b095ce17a5561eae0ca21bc79be3c3da4ca8238369bff7",
+        "changed_rows": 21978,
+        "changed_rows_off_opening": 0,
+        "non_opening_max_abs_diff": 0.0,
+        "non_opening_rows": 154000,
+        "opening_changed_rows": 21978,
+        "opening_rows": 22000,
+        "predictions": 176000,
+        "target_keys": 175784,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2023-11.parquet"
+          ],
+          "label_rows": 175824,
+          "outside_universe_rows": 176,
+          "selected_targets": 175784
+        },
+        "window": "nov2023"
+      }
+    },
+    "primary_processed_0930_rank_ic": {
+      "baseline_pooled_mean": 0.024501988512483065,
+      "block_intervals": {
+        "block2_lower_positive": {
+          "block_days": 2,
+          "ci_high": 0.005155770802917653,
+          "ci_low": -0.002564910805522468
+        },
+        "block5_lower_positive": {
+          "block_days": 5,
+          "ci_high": 0.004356261519465034,
+          "ci_low": -0.002804405017533833
+        }
+      },
+      "candidate_pooled_mean": 0.0249415622395534,
+      "minimum_gain": 0.0041569177022581115,
+      "month_deltas": {
+        "jan2024": 0.003398495603055936,
+        "mar2024": -0.0005049258081309414,
+        "nov2023": -0.0016177804107686002
+      },
+      "months_positive": 1,
+      "pooled_delta_mean": 0.00043957372707033315
+    },
+    "raw_full_0930_rank_ic": {
+      "month_deltas": {
+        "jan2024": 0.036895641565315905,
+        "mar2024": 0.01222585871231901,
+        "nov2023": 0.002330431908562508
+      },
+      "pooled_delta_mean": 0.01722640999052345,
+      "threshold": -0.008193730980666832
+    },
+    "reproduction": {
+      "processed": {
+        "diffs": {
+          "full_day_long_short_mean": 0.0,
+          "full_day_long_short_sharpe": 0.0,
+          "full_day_rank_ic_ir": 0.0,
+          "full_day_turnover_mean": 0.0,
+          "full_day_worst_day": 0.0,
+          "rank_ic_0930_block5_se": 0.0,
+          "rank_ic_0930_pooled_mean": 0.0,
+          "rank_ic_0930_window_mean": 0.0,
+          "turnover_0930_mean": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "passed": true
+      },
+      "raw_common": {
+        "diffs": {
+          "full_day_long_short_mean": 0.0,
+          "full_day_long_short_sharpe": 0.0,
+          "full_day_rank_ic_ir": 0.0,
+          "full_day_turnover_mean": 0.0,
+          "full_day_worst_day": 0.0,
+          "rank_ic_0930_block5_se": 0.0,
+          "rank_ic_0930_pooled_mean": 0.0,
+          "turnover_0930_mean": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "passed": true
+      },
+      "raw_full": {
+        "diffs": {
+          "full_day_long_short_mean": 0.0,
+          "full_day_long_short_sharpe": 0.0,
+          "full_day_rank_ic_ir": 0.0,
+          "full_day_turnover_mean": 0.0,
+          "full_day_worst_day": 0.0,
+          "rank_ic_0930_block5_se": 0.0,
+          "rank_ic_0930_pooled_mean": 0.0,
+          "rank_ic_0930_window_mean": 0.0,
+          "turnover_0930_mean": 0.0
+        },
+        "max_abs_diff": 0.0,
+        "passed": true
+      }
+    },
+    "stress_processed": {
+      "high_volatility": {
+        "days": 34,
+        "long_short_floor": 0.00011212065044345239,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.0002284886992530398,
+        "rank_ic_floor": 0.007803072799448664,
+        "rank_ic_mean": 0.01554347381288411,
+        "rank_ic_passed": true
+      },
+      "high_volatility_high_volume": {
+        "days": 20,
+        "long_short_floor": 0.00013121683426176316,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.00023031927504638458,
+        "rank_ic_floor": 0.003216261598552525,
+        "rank_ic_mean": 0.01475356346381453,
+        "rank_ic_passed": true
+      },
+      "high_volatility_low_volume": {
+        "days": 14,
+        "long_short_floor": -4.7695549311421866e-05,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.0002258735909768329,
+        "rank_ic_floor": 0.006984260126917507,
+        "rank_ic_mean": 0.016671917168697807,
+        "rank_ic_passed": true
+      },
+      "high_volume": {
+        "days": 34,
+        "long_short_floor": 0.000209385188400518,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.00031985915215020327,
+        "rank_ic_floor": 0.01368630466417655,
+        "rank_ic_mean": 0.021838826926696014,
+        "rank_ic_passed": true
+      },
+      "low_volatility": {
+        "days": 31,
+        "long_short_floor": 0.0004019133091600276,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.0005885683803081633,
+        "rank_ic_floor": 0.030003597079790622,
+        "rank_ic_mean": 0.03524914309461004,
+        "rank_ic_passed": true
+      },
+      "low_volume": {
+        "days": 31,
+        "long_short_floor": 0.00029571069722008974,
+        "long_short_passed": true,
+        "long_short_return_mean": 0.0004883556255177257,
+        "rank_ic_floor": 0.02317704313164813,
+        "rank_ic_mean": 0.028344562260106662,
+        "rank_ic_passed": true
+      }
+    },
+    "windows": [
+      {
+        "end": "2023-12-01",
+        "label": "2023-11 development month",
+        "name": "nov2023",
+        "prediction_keys": 176000,
+        "sample_keys_sha256": "093d045640771112cfc386e5e2a8a137ba63f0147b4ddef47b9dca532e00199b",
+        "sections": 176,
+        "start": "2023-11-01",
+        "target_keys": 175784,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2023-11.parquet"
+          ],
+          "label_rows": 175824,
+          "outside_universe_rows": 176,
+          "selected_targets": 175784
+        },
+        "targets_sha256": "5eae2b08d687ff5bc7f31d721812e7ba81446539ed7c9dd6b1b78b94a6768cb7",
+        "trading_days": 22
+      },
+      {
+        "end": "2024-02-01",
+        "label": "2024-01 development month",
+        "name": "jan2024",
+        "prediction_keys": 176000,
+        "sample_keys_sha256": "bf8408696408e8c5f8ed3ac16a4c3bde408c89fd09e508866c3ad695cc2717af",
+        "sections": 176,
+        "start": "2024-01-01",
+        "target_keys": 175808,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2024-01.parquet"
+          ],
+          "label_rows": 176000,
+          "outside_universe_rows": 176,
+          "selected_targets": 175808
+        },
+        "targets_sha256": "c3970120c15b920bfbf01a794159830b54fb4252546c18cb10da2033cdcd0908",
+        "trading_days": 22
+      },
+      {
+        "end": "2024-04-01",
+        "label": "2024-03 development month",
+        "name": "mar2024",
+        "prediction_keys": 168000,
+        "sample_keys_sha256": "02c135e1aff1d30506b132b59e8db376d150d8605f479f76d39c6d116ee15df2",
+        "sections": 168,
+        "start": "2024-03-01",
+        "target_keys": 167888,
+        "targets": {
+          "label_files": [
+            "cpt_jyc_2026_vwap_2024-03.parquet"
+          ],
+          "label_rows": 168000,
+          "outside_universe_rows": 168,
+          "selected_targets": 167888
+        },
+        "targets_sha256": "98eba67a1b524c74ea782fd46194de75374311f105d3f26413fa96808ba1ca65",
+        "trading_days": 21
+      }
+    ]
+  },
+  "revision": 1,
+  "schema_version": 1,
+  "scope": {
+    "development_days": 65,
+    "development_months": [
+      "nov2023",
+      "jan2024",
+      "mar2024"
+    ],
+    "label_horizon_minutes": 30,
+    "local_approximation": true,
+    "locked_ranges_read": [],
+    "not_used": "july2023 (context only), final/locked check ranges, any refit on jan2024/mar2024",
+    "primary_view": "processed",
+    "primary_view_definition": "pooled over the three development months of per-day 09:30 RankIC after the frozen local style/industry residualization (previous-day exposure snapshot, median +/- 3 * 1.4826 * MAD winsorization, section z-score, equal-weight OLS on the 10 style factors + 32 industry dummies)",
+    "report_view": "raw_full",
+    "report_view_definition": "same per-day 09:30 RankIC on the raw official vwap labels without residualization",
+    "timestamps": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ]
+  },
+  "style_diagnostic": {
+    "corr_vs_baseline_score": {
+      "max": 0.4681987721047952,
+      "mean": -0.2153462211974423,
+      "min": -0.6609291305004931
+    },
+    "delta_std_mean": 3.856952681824471e-05,
+    "gate_input": false,
+    "purpose": "supplementary explanation of the frozen-gate outcome; not a gate input",
+    "source": {
+      "bytes": 41746,
+      "path": "runs/v3-open-20261024/seed11/delta_style_diagnostic.json",
+      "sha256": "0526b6050a75f12bc0abe904e041b040352d51e4407134325672cc95db4bf83e"
+    },
+    "style_correlations_mean": {
+      "BETA": -0.21280420694108665,
+      "BTOP": 0.3941200775638323,
+      "EARNYILD": 0.19155746414370953,
+      "GROWTH": -0.08157779352348724,
+      "LEVERAGE": 0.26944407368265333,
+      "LIQUIDTY": -0.15060539466103418,
+      "MOMENTUM": 0.025104966746165722,
+      "RESVOL": -0.2420591533073368,
+      "SIZE": -0.07417406998161612,
+      "SIZENL": 0.08844414602718306
+    },
+    "style_industry_r2": {
+      "mean": 0.2582577361025913,
+      "median": 0.26471602518279114,
+      "p05": 0.1599532706849292,
+      "p95": 0.3328619309001294
+    },
+    "timestamps": 65
+  },
+  "task": "T10 finalise: archive the failed V3-open seed-11 screen and commit the branch",
+  "training": {
+    "actual": {
+      "cpu_seconds": 398.53125,
+      "device": "cuda",
+      "final_mse": 0.8146892030003499,
+      "gpu_peak_memory_mb": 93.6337890625,
+      "head_parameters": 10305,
+      "initial_mse": 0.8154314581858458,
+      "mse_reduction": 0.0009102606700351901,
+      "rss_mb": 1915.75390625,
+      "samples": 59929,
+      "steps": 1500,
+      "trunk_parameters": 1134633,
+      "wall_seconds": 618.5115521
+    },
+    "archive": {
+      "bytes": 35145507,
+      "files": 15,
+      "path": "runs/v3-open-20261024/open-residual/20261025T052524.593107Z_5c4a968e2d0e"
+    },
+    "base_state_sha256": "e392d993b29ba4b3190320c18a1b0c8fe6794170d9807d3cdf93397bb950317f",
+    "base_weights_file_sha256": "3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa",
+    "budget": {
+      "batch_size": 32,
+      "declared_config_max_steps": 9000,
+      "head_steps": 1500,
+      "learning_rate": 0.0001,
+      "optimizer": "Adam_MSE",
+      "optimizer_scope": "head parameters only; trunk outputs are detached frozen features",
+      "sample_time": "09:30",
+      "target_centering": "timestamp_zscore_train_rms_matched",
+      "target_space": "checkpoint standardized target units, scaled by target_scale at inference",
+      "train_range": [
+        "2023-08-01T00:00:00",
+        "2023-11-01T00:00:00"
+      ],
+      "training_samples": 59929
+    },
+    "capacity_note": "the 1500-step head-only fit is the pre-registered optimisation budget, not a capacity experiment; no step/size sweep is run or implied",
+    "checkpoint_schema_version": 4,
+    "checkpoint_sha256": "8330502f772c98bea4d85b737d3b6e60c5d61ecc937d0ea7f2f815036fc4e752",
+    "checks": {
+      "items": [
+        {
+          "name": "base_weights_read_only",
+          "passed": true
+        },
+        {
+          "name": "base_state_unchanged",
+          "passed": true
+        },
+        {
+          "name": "head_checkpoint_schema",
+          "passed": true
+        },
+        {
+          "name": "zero_initialization_identity",
+          "passed": true
+        },
+        {
+          "name": "opening_only_application",
+          "passed": true
+        },
+        {
+          "name": "frozen_target_space",
+          "passed": true
+        },
+        {
+          "name": "checkpoint_roundtrip",
+          "passed": true
+        },
+        {
+          "name": "training_sample_scope",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    "data_identity": {
+      "alignment": {
+        "labels_input_rows": 480000,
+        "labels_retained_rows": 479520,
+        "outside_universe_label_instruments": 1,
+        "outside_universe_label_rows": 480,
+        "policy": "exclude"
+      },
+      "bar_rows": 16465655,
+      "bars_start": "2023-07-22 00:00:00",
+      "data_sha256": "d6747762d7c08d19957dcef2f11d40c2a129e059ac37814e3486fc966150a539",
+      "files": {
+        "bars": [
+          {
+            "bytes": 197511634,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202307.0.feather",
+            "sha256": "7b0888cdff24a36cbcb9cdf285b210c8291be24892d72bcb8c3b87468735d31f"
+          },
+          {
+            "bytes": 217705746,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202308.0.feather",
+            "sha256": "0cc497a3c2d26c0a5fa2fe428fa7d2f2dea29f3b875851cc8e9ff18d4993c30d"
+          },
+          {
+            "bytes": 185514850,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202309.0.feather",
+            "sha256": "fd9f81ef29181a6f544ae424ae714a66419d408a6c878a89614bf480ce86aad6"
+          },
+          {
+            "bytes": 160276538,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_e2e_bar1m\\202310.0.feather",
+            "sha256": "1b6601d25a41911c0763908a82f4274c57d55b79a9db56dcb500f3cbfefbeff4"
+          }
+        ],
+        "instrument_map": [
+          {
+            "bytes": 28281,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+            "sha256": "e41f0a8db4a76d356d6e2b29d69852e360f78983308c66f98956e2b2484255e5"
+          }
+        ],
+        "instruments": [
+          {
+            "bytes": 3576466,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_instruments(1).parquet",
+            "sha256": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3"
+          }
+        ],
+        "labels": [
+          {
+            "bytes": 5544641,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-08.parquet",
+            "sha256": "231de3a8de4928b48494d6b7f81ad043358bcb57d3d43b7d65f5b15821fa1bde"
+          },
+          {
+            "bytes": 4833169,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-09.parquet",
+            "sha256": "fe517e44fd472ec5291042cc7ddce7e67c1f8ba6058d6879025627b43cbf2aea"
+          },
+          {
+            "bytes": 4206774,
+            "path": "D:\\进益资本杯\\数据\\cpt_jyc_2026_vwap\\cpt_jyc_2026_vwap_2023-10.parquet",
+            "sha256": "4519bdfd566e82c2190991aa06795bd812bdb0490bd0ced4db4e99e9be576bba"
+          }
+        ]
+      },
+      "label_rows": 479520,
+      "requested_end": "2023-11-01 00:00:00",
+      "requested_start": "2023-08-01 00:00:00"
+    },
+    "ended_at_utc": "2026-10-25T05:35:43.107991+00:00",
+    "in_sample_prediction_units": {
+      "base_mse": 9.626333399973684e-06,
+      "base_prediction_std": 8.450086083376192e-05,
+      "correction_mean": -2.670172271178035e-05,
+      "correction_std": 4.136476463738014e-05,
+      "fitted_mse": 9.617570926943977e-06,
+      "fitted_prediction_std": 8.497609944120833e-05,
+      "mse_reduction": 0.0009102607052577927,
+      "samples": 59929,
+      "target_std": 0.0031046196818351746
+    },
+    "invocation": "PYTHONPATH=src D:/进益资本杯/.venv-ensemble-cuda/Scripts/python.exe scripts/train_open_residual.py configs/model_v3_open_0930_residual.json --base-weights D:/进益资本杯/runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json --expected-base-sha256 3e44451670320c282f7421b77d773bc2af8190cbdf02a62c2a1f7e6b9284c0aa --steps 1500 --device cuda",
+    "run_id": "20261025T052524.593107Z_5c4a968e2d0e",
+    "started_at_utc": "2026-10-25T05:25:24.594080+00:00",
+    "status": "completed",
+    "weights_sha256": "0807720c15ef4926a60a4e1690fc58ac835a6446950eaa3f19a8d79cacd79fd8"
+  },
+  "verdict": {
+    "decision": {
+      "action": "stop; do not train seed 29; keep V2-CSZ",
+      "seed11_screen": "fail",
+      "seed29_training": "forbidden",
+      "submission_model": "V2-CSZ baseline (seed 11)"
+    },
+    "explanation": "the raw 09:30 RankIC gain (+0.017226) does not survive the pre-registered style/industry residualized view (+0.000440, 10.6% of the noise floor), the block-5/block-2 intervals straddle zero and only 1/3 months improve, so the candidate is rejected",
+    "failures": {
+      "details": [
+        "pooled processed 09:30 RankIC delta +0.000439574 < frozen minimum_gain 0.004156918 (improvement is only 10.6% of the required noise floor)",
+        "5-day block 95% interval for the paired processed 09:30 RankIC delta is [-0.002804405, 0.004356262], so the lower bound is not above zero",
+        "2-day block 95% interval for the paired processed 09:30 RankIC delta is [-0.002564911, 0.005155771], so the lower bound is not above zero",
+        "processed 09:30 RankIC improves in only 1/3 development months (required 2): nov -0.001617780, jan +0.003398496, mar -0.000504926"
+      ],
+      "failed_checks": [
+        "mean_delta_at_least_minimum_gain",
+        "block5_lower_positive",
+        "block2_lower_positive",
+        "months_positive"
+      ],
+      "interpretation": "the frozen gate's primary improvement family is not met, so the seed-11 candidate is rejected for promotion even though the raw-view gain (+0.017226) and every monthly floor/guardrail/stress check pass; the raw-view gain does not carry into the pre-registered style-residualized primary view (+0.000440)",
+      "next_steps": [
+        "keep V2-CSZ as the submission model; no seed-29 run is authorised by this gate",
+        "record the failed hypothesis in the branch evidence rather than editing the gate",
+        "a later opening-head attempt needs a new pre-registered gate written before training"
+      ],
+      "stop_rule": "do not train seed 29; keep V2-CSZ as the submission baseline; the V3-open branch records a failed seed-11 screen",
+      "supplementary_style_diagnostic": {
+        "gate_input": false,
+        "note": "the archive's diagnostic attributes ~25.8% of the 09:30 score delta to the 42 style/industry factors, consistent with the raw gain being mostly style exposure; this file is a candidate artefact, not a gate input",
+        "source": "runs/v3-open-20261024/seed11/delta_style_diagnostic.json",
+        "style_industry_r2_mean": 0.2582577361025913,
+        "top_style_correlations": {
+          "BETA": -0.21280420694108665,
+          "BTOP": 0.3941200775638323,
+          "LEVERAGE": 0.26944407368265333,
+          "RESVOL": -0.2420591533073368
+        }
+      }
+    },
+    "kept_model": {
+      "model": "V2-CSZ (v2_60d_csz, seed 11)",
+      "platform_total_score": 0.2334,
+      "reason": "the frozen gate keeps the baseline unless every promotion check passes"
+    },
+    "package_untouched": {
+      "bytes": 10502810,
+      "exists": true,
+      "mtime_utc": "2026-10-24T01:05:48.933033+00:00",
+      "path": "D:\\进益资本杯\\dist\\v2-submission-20261023.zip",
+      "sha256": "f40159dccc2af7c0f41bcc26c5976345b5d54e998e34a65fe8a6033526dcc712"
+    },
+    "packaged": false,
+    "seed29": {
+      "artifacts_present": false,
+      "trained": false
+    },
+    "stage": "seed11_screen",
+    "submitted": false,
+    "verdict": "fail",
+    "why_not_submitted": [
+      "the frozen gate rejected the candidate at the seed-11 screen, so seed 29, the package and the platform submission were never authorised",
+      "V2-CSZ keeps the submission slot and its V2 package was not modified"
+    ]
+  }
+}
