@@ -33,6 +33,7 @@ from jinyiquant.runner import (
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir, resource_usage
 
 from .adapter import TLOBAdapter
+from .model import parameter_groups
 
 
 class SmallSample(StrictModel):
@@ -94,8 +95,8 @@ def load_plan(path):
     path = Path(path).resolve()
     plan = DiagnosticPlan.model_validate(read_json(path))
     config = load_config(path.parent / plan.base_config)
-    if config.model.kind != "modified_tlob" or config.evaluation_split != "validation":
-        raise ValueError("Diagnostics require TLOB and development validation only")
+    if not config.model.torch_backend or config.evaluation_split != "validation":
+        raise ValueError("Diagnostics require a torch regression model and development validation only")
     controls = []
     for period in plan.negative_control.periods:
         snapshot = config.snapshot()
@@ -187,7 +188,7 @@ def _network_scores(model, batch):
 def _parameter_changes(network, before):
     return {group: float(torch.stack([(parameter.detach().cpu().double() - before[name]).square().sum()
              for name, parameter in network.named_parameters() if name.split(".")[0] == group]).sum().sqrt())
-            for group in ("norm_layer", "emb_layer", "layers", "final_layers")}
+            for group in parameter_groups(network)}
 
 
 def _mse(predictions, targets):

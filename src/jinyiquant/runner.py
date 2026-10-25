@@ -107,7 +107,7 @@ def _prepare_evaluation(config, bundle, train, train_targets, run_dir, checks):
     validation = build_batch(bundle.bars, inference_keys(bundle, split, config.data), config.data)
     no_history = ~validation.effective_rows.any(axis=1)
     fallback_mask = (validation.effective_rows.sum(axis=1) < config.data.min_history
-                     if config.model.kind == "modified_tlob" else no_history)
+                     if config.model.torch_backend else no_history)
     fit_mask = train.effective_rows.sum(axis=1) >= config.data.min_history
     coverage_report = {"train": train.coverage, "evaluation": validation.coverage,
                        "training_samples_used": int(fit_mask.sum()),
@@ -176,7 +176,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     rec.event("data", "validated", training_samples=len(train_targets), final_loaded=False)
     rec.event("preprocessing", "completed", resources=resource_usage())
     model = create_model(config, recorder=rec)
-    if config.model.kind == "modified_tlob":
+    if config.model.torch_backend:
         write_json(run_dir / "device.json", {"selected": str(model.device), "requested": config.model.device})
         manifest = read_json(run_dir / "manifest.json")
         manifest["environment"]["determinism"].update(device=str(model.device),
@@ -211,7 +211,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
         write_json(run_dir / "learning_curve.json", curve)
         rec.event("validation", "curve_checkpoint", checkpoint_selection=False, **row)
     # A sealed final check must never become per-epoch training feedback.
-    if config.model.kind == "modified_tlob" and config.evaluation_split == "validation":
+    if config.model.torch_backend and config.evaluation_split == "validation":
         if not config.logging.learning_curves:
             if config.model.target_centering == "none":
                 eval_batch = build_batch(bundle.bars, eval_targets[["date", "instrument"]], config.data)
@@ -220,7 +220,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
                 # Transformed training targets have no raw-label validation diagnostic; the
                 # adapter rejects mixed scales, and evaluation after saving stays on raw labels.
                 rec.event("training", "validation_diagnostic_skipped", target_centering=config.model.target_centering)
-    if config.logging.learning_curves and config.model.kind == "modified_tlob":
+    if config.logging.learning_curves and config.model.torch_backend:
         fit_options["observer"] = observe_curve
         fit_options["observer_every_steps"] = config.logging.learning_curve_every_steps
     progress = model.fit(train, train_targets.target.to_numpy(), **fit_options)
@@ -229,7 +229,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
               throughput_samples_per_second=progress.get("samples_seen", int(fit_mask.sum())) / max(elapsed, 1e-9),
               resources=resource_usage())
     if config.logging.learning_curves:
-        if config.model.kind != "modified_tlob":
+        if not config.model.torch_backend:
             constant = float(train_targets.target.to_numpy()[fit_mask].mean())
             for checkpoint in ("training_mean_reference", "closed_form_solution"):
                 train_scores = np.full(len(train.keys), constant) if checkpoint == "training_mean_reference" else model.predict(train)
@@ -248,7 +248,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     filename = model_filename(config.model.kind)
     rec.event("saving", "started", path=filename)
     model.save(run_dir / filename)
-    if config.model.kind == "modified_tlob":
+    if config.model.torch_backend:
         model.export_text(run_dir / "modified_tlob_weights.json")
         rec.event("saving", "text_model_saved", path="modified_tlob_weights.json")
     rec.event("saving", "model_saved", path=filename)
@@ -273,7 +273,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
                         atol=config.acceptance.repro_atol, rtol=config.acceptance.repro_rtol))
     normalization = model.validate_training_preprocessing(train, fit_mask)
     checks.append(check("training_only_normalization", **normalization))
-    if config.model.kind == "modified_tlob":
+    if config.model.torch_backend:
         text_model = load_model(run_dir / "modified_tlob_weights.json", config)
         checks.append(check("text_save_load_predictions", np.allclose(model.predict(validation),
                             text_model.predict(validation), atol=config.acceptance.repro_atol,

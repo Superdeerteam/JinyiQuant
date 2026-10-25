@@ -1,4 +1,4 @@
-"""Fixed upstream TLOB trunk adapted to scalar regression. See provenance.json (MIT)."""
+"""Fixed upstream TLOB/MLPLOB trunks adapted to scalar regression. See provenance.json (MIT)."""
 
 import torch
 from torch import nn
@@ -104,3 +104,61 @@ class ModifiedTLOB(nn.Module):
         for layer in self.final_layers:
             x = layer(x)
         return x[:, 0]
+
+
+class MLPLOB(nn.Module):
+    """Upstream dual-axis MLP trunk with a scalar return head.
+
+    Follows upstream ``models/mlplob.py`` for non-LOBSTER inputs: per-sample BiN,
+    a feature projection, then alternating feature-axis and time-axis MLP blocks
+    with the same permutation after every component, and the same quarter
+    compression before the head. Only the three-class head is replaced by one
+    regression output, so no attention or positional embedding is used.
+    """
+
+    def __init__(self, *, hidden_dim=40, num_layers=3, seq_size=128, num_features=12):
+        super().__init__()
+        dimensions = (hidden_dim, num_layers, seq_size, num_features)
+        if any(type(d) is not int or d <= 0 for d in dimensions):
+            raise ValueError("Model dimensions must be positive integers")
+        if hidden_dim < 4 or seq_size < 4 or num_features < 2:
+            raise ValueError("Quarter compression requires hidden_dim/seq_size >= 4 and features >= 2")
+        self.seq_size, self.num_features = seq_size, num_features
+        self.norm_layer = BiN(num_features, seq_size)
+        self.layers = nn.ModuleList([nn.Linear(num_features, hidden_dim), nn.GELU()])
+        for i in range(num_layers):
+            last = i == num_layers - 1
+            wide = 2 if last else 4  # Upstream doubles the last block instead of the 4x interior width.
+            self.layers.append(MLP(hidden_dim, hidden_dim * wide,
+                                   hidden_dim // 4 if last else hidden_dim))
+            self.layers.append(MLP(seq_size, seq_size * wide,
+                                   seq_size // 4 if last else seq_size))
+        total_dim = (hidden_dim // 4) * (seq_size // 4)
+        self.final_layers = nn.ModuleList()
+        while total_dim > 128:
+            self.final_layers.extend([nn.Linear(total_dim, total_dim // 4), nn.GELU()])
+            total_dim //= 4
+        self.final_layers.append(nn.Linear(total_dim, 1))
+
+    def forward(self, x):
+        if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
+            raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
+        if not torch.isfinite(x).all():
+            raise ValueError("Input must be finite after shared missing-value preprocessing")
+        x = self.norm_layer(x.transpose(1, 2)).transpose(1, 2)
+        for layer in self.layers:
+            x = layer(x).transpose(1, 2)
+        x = x.reshape(x.shape[0], -1)
+        for layer in self.final_layers:
+            x = layer(x)
+        return x[:, 0]
+
+
+def parameter_groups(network):
+    """Top-level module names owning parameters, in registration order.
+
+    Training logs and diagnostics report gradient norms per group; upstream MLPLOB
+    has no ``emb_layer``, so the groups are read from the built network instead of
+    a hard-coded TLOB list.
+    """
+    return tuple(dict.fromkeys(name.split(".")[0] for name, _ in network.named_parameters()))

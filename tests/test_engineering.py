@@ -293,6 +293,17 @@ def test_architecture_keeps_orchestration_out_of_reusable_core_modules():
                 assert not names & forbidden, f"{module} imports orchestration: {names}"
 
 
+def test_model_kind_literal_matches_torch_backend_contract():
+    from typing import get_args
+
+    from jinyiquant.config import TORCH_MODEL_KINDS, ModelConfig
+
+    kinds = set(get_args(ModelConfig.model_fields["kind"].annotation))
+    assert kinds == {"ridge", "mean", *TORCH_MODEL_KINDS}
+    assert ModelConfig(kind="mlplob").torch_backend
+    assert not ModelConfig(kind="ridge").torch_backend
+
+
 @pytest.mark.parametrize("explicit_universe", [False, True])
 def test_evaluation_answer_removal_changes_coverage_but_never_predictions(tmp_path, explicit_universe):
     """Label availability/value is future information and cannot choose inference keys."""

@@ -9,6 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .io import digest, read_json
 
+# Torch trunks share the same preprocessing, labels, loss and checkpoints.
+TORCH_MODEL_KINDS = ("modified_tlob", "mlplob")
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False, hide_input_in_errors=True)
@@ -113,7 +116,7 @@ class DataConfig(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    kind: Literal["ridge", "mean", "modified_tlob"] = "ridge"
+    kind: Literal["ridge", "mean", "modified_tlob", "mlplob"] = "ridge"
     alpha: float = Field(default=1.0, gt=0)
     hidden_dim: int = Field(default=40, ge=4, le=512)
     num_layers: int = Field(default=4, ge=1, le=12)
@@ -133,10 +136,14 @@ class ModelConfig(StrictModel):
     cpu_threads: int = Field(default=1, ge=1, le=64)
     log_every_steps: int = Field(default=10, ge=1)
 
+    @property
+    def torch_backend(self) -> bool:
+        return self.kind in TORCH_MODEL_KINDS
+
     @model_validator(mode="after")
     def valid_embedding(self):
-        if self.kind != "modified_tlob" and (self.book_representation != "raw" or self.trade_features != "zero"):
-            raise ValueError("LOB input transformations require modified_tlob")
+        if not self.torch_backend and (self.book_representation != "raw" or self.trade_features != "zero"):
+            raise ValueError("LOB input transformations require a torch regression model")
         if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
             raise ValueError("Sinusoidal embedding requires even hidden_dim")
         return self
@@ -190,11 +197,11 @@ class RunConfig(StrictModel):
 
     @model_validator(mode="after")
     def final_is_deliberate(self):
-        if self.model.kind == "modified_tlob":
+        if self.model.torch_backend:
             from modified_tlob.schema import validate_input_schema
             validate_input_schema(self.data.feature_columns, self.model.book_representation, self.model.trade_features)
             if self.data.lookback < 4:
-                raise ValueError("modified_tlob requires lookback >= 4")
+                raise ValueError("Torch regression models require lookback >= 4")
         if self.splits.train.start < self.data.allowed_start or self.splits.final.end > self.data.allowed_end:
             raise ValueError("All splits must stay within the declared allowed development interval")
         if self.data.monthly_sampling is not None and (

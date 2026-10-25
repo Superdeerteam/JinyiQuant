@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "experiment_id": "mlplob-engineering",
+  "hypothesis": "MLPLOB scalar regression reuses the TLOB input, CSZ label transform, target scaling, loss, checkpoint and evaluation; local CPU engineering acceptance only, no alpha claim",
+  "seed": 42,
+  "output_root": "../runs/mlplob",
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m", "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "source": "official_local_download_with_explicit_mapping", "version": "cpt_jyc_2026",
+    "feature_columns": ["ask_price1", "ask_volume1", "bid_price1", "bid_volume1",
+                        "ask_price2", "ask_volume2", "bid_price2", "bid_volume2",
+                        "ask_price3", "ask_volume3", "bid_price3", "bid_volume3"],
+    "lookback": 128, "min_history": 1, "history_days": 10, "price_scale": 100,
+    "missing_policy": "ffill", "max_ffill_steps": 5, "missing_sentinel": -1,
+    "outside_universe_labels": "exclude",
+    "sample_times": ["09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30"]
+  },
+  "splits": {
+    "train": {"start": "2023-08-01", "end": "2023-08-02"},
+    "validation": {"start": "2023-08-02", "end": "2023-08-03"},
+    "final": {"start": "2023-08-03", "end": "2023-08-04"}
+  },
+  "model": {
+    "kind": "mlplob", "hidden_dim": 40, "num_layers": 3,
+    "book_representation": "raw", "trade_features": "zero",
+    "device": "cpu", "epochs": 1, "max_steps": 120, "batch_size": 32, "learning_rate": 0.0001,
+    "target_scaling": "train_std", "target_centering": "timestamp_zscore_train_rms_matched",
+    "cpu_threads": 4, "log_every_steps": 20
+  },
+  "budget": {"wall_seconds": 1800, "max_rss_mb": 8192, "max_train_samples": 100000},
+  "acceptance": {"min_coverage": 0.99, "repro_atol": 0.000001, "repro_rtol": 0.00001},
+  "logging": {"resource_interval_seconds": 5}
+}

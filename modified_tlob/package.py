@@ -7,6 +7,7 @@ import stat
 from pathlib import Path, PurePosixPath
 
 from jinyiquant.checks import verify_artifacts
+from jinyiquant.config import TORCH_MODEL_KINDS
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -134,8 +135,8 @@ def refresh_inference_package(package_dir, destination, *, recover_missing_histo
 def build_package(run_dir, destination):
     run_dir, destination = Path(run_dir), Path(destination)
     cfg = read_json(run_dir / "config.json")
-    if cfg["model"]["kind"] != "modified_tlob" or cfg["evaluation_split"] != "validation":
-        raise ValueError("Package requires modified_tlob with development validation")
+    if cfg["model"]["kind"] not in TORCH_MODEL_KINDS or cfg["evaluation_split"] != "validation":
+        raise ValueError("Package requires a torch regression model with development validation")
     if read_json(run_dir / "manifest.json")["status"] != "completed" or not verify_artifacts(run_dir)["passed"]:
         raise ValueError("Package requires a completed untampered run")
     if not read_json(run_dir / "checks.json")["passed"]:

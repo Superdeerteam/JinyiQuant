@@ -2,6 +2,8 @@
 
 可选 [modified_tlob 回归模型](modified_tlob/README.md) 使用上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11 环境，CPU 基础锁为 PyTorch 2.5.0，当前 RTX 5060 研究环境为 2.7.1+cu128；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU/GPU 验收状态和平台提交包清单见模块说明。
 
+同一后端另有 MLPLOB 主干（`model.kind="mlplob"`）：输入、CSZ 标签变换、目标缩放、MSE、检查点与评价与 TLOB 完全共用，只把注意力主干换成上游双轴 MLP 与单输出收益回归头，不使用位置编码或 `num_heads`。本地 CPU 冒烟用 `configs/mlplob_cpu.json`，云端 60 日筛选用 `configs/mlplob_v2_60d_csz.json`，运行入口同上。
+
 TLOB 本地训练入口为 `python -m modified_tlob.train <配置>`，本地只推理入口为 `python -m modified_tlob.infer --weights ... --bars ... --keys ... --output-root ...`；提交材料用 `python -m modified_tlob.package <训练运行目录> <新提交目录>` 生成。完整可复制命令、CPU/GPU 选择和输入输出说明见模块 README 的对应章节。
 
 七个模块已统一为可复跑的本地工作流。2023年7月真实数据已完成 CUDA 训练对照及 CPU/GPU 保存加载检查；官方平台、全区间 ≤3 小时和最终检查仍未验收。生成数据上的指标不能作为模型有效性或比赛成绩证据。

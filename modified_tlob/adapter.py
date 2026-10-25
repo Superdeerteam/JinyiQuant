@@ -12,8 +12,10 @@ import pandas as pd
 import torch
 
 from .device import device_resources, select_device
-from .model import ModifiedTLOB
+from .model import MLPLOB, ModifiedTLOB, parameter_groups
 from .schema import validate_input_schema
+
+BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB}
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
                    "missing_sentinel", "price_scale", "history_days", "sample_times", "label_horizon_minutes")
@@ -124,8 +126,17 @@ def timestamp_zscore_train_rms_matched(keys, target, mask):
 
 
 class TLOBAdapter:
+    """Shared regression training/inference loop for the torch LOB backbones.
+
+    ``model.kind`` selects the upstream trunk (TLOB attention or MLPLOB dual-axis
+    MLP); preprocessing, labels, loss, checkpoints and evaluation stay identical.
+    """
+
     def __init__(self, model_config, data_config, *, seed=42, recorder=None):
         self.config = model_config.model_dump() if hasattr(model_config, "model_dump") else dict(model_config)
+        self.config.setdefault("kind", "modified_tlob")
+        if self.config["kind"] not in BACKBONES:
+            raise ValueError(f"Unsupported torch model kind: {self.config['kind']!r}")
         self.config.setdefault("target_scaling", "none")
         self.config.setdefault("target_centering", "none")
         self.config.setdefault("max_steps", None)
@@ -152,9 +163,12 @@ class TLOBAdapter:
         if self.device.type == "cuda":
             torch.cuda.manual_seed_all(seed)
         torch.use_deterministic_algorithms(True)
-        self.architecture = {k: self.config[k] for k in ("hidden_dim", "num_layers", "num_heads", "is_sin_emb")}
+        self.architecture = {k: self.config[k] for k in ("hidden_dim", "num_layers")}
+        if self.config["kind"] == "modified_tlob":
+            self.architecture.update({k: self.config[k] for k in ("num_heads", "is_sin_emb")})
         self.architecture.update(seq_size=data["lookback"], num_features=len(fields))
-        self.network = ModifiedTLOB(**self.architecture).to(self.device)
+        self.network = BACKBONES[self.config["kind"]](**self.architecture).to(self.device)
+        self.parameter_groups = parameter_groups(self.network)
         self.intercept = None
         self.target_scale = 1.0
         self.target_centering_stats = None
@@ -445,7 +459,7 @@ class TLOBAdapter:
                         group: float(torch.stack([parameter.grad.detach().double().square().sum()
                             for name, parameter in self.network.named_parameters()
                             if name.split(".")[0] == group and parameter.grad is not None]).sum().sqrt())
-                        for group in ("norm_layer", "emb_layer", "layers", "final_layers")}
+                        for group in self.parameter_groups}
                     self._event("training", "progress", epoch=epoch + 1, step=steps, loss=raw_loss,
                                 loss_units=PROGRESS_LOSS_UNITS[self.config["target_centering"]],
                                 weighted_loss=weighted_loss,
@@ -537,7 +551,7 @@ class TLOBAdapter:
         if not self.trained:
             raise ValueError("Cannot save an unfitted model")
         return {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
-                "kind": "modified_tlob", "architecture": self.architecture,
+                "kind": self.config["kind"], "architecture": self.architecture,
                 "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
                 "training_mean": self.intercept,
                 "label": TARGET_LABELS[self.config["target_centering"]],
@@ -565,9 +579,12 @@ class TLOBAdapter:
         path = Path(path)
         payload = json.loads(path.read_text(encoding="utf-8")) if path.suffix == ".json" else torch.load(
             path, map_location="cpu", weights_only=True)
-        if payload["schema_version"] not in (1, 2, 3) or payload["kind"] != "modified_tlob":
+        if payload["schema_version"] not in (1, 2, 3) or payload["kind"] not in BACKBONES:
             raise ValueError("Unsupported checkpoint format")
         config = {**payload["model_config"], "device": device}
+        config.setdefault("kind", payload["kind"])
+        if config["kind"] != payload["kind"]:
+            raise ValueError("Checkpoint kind and model configuration disagree")
         if payload["schema_version"] == 3 and not {"book_representation", "trade_features"}.issubset(config):
             raise ValueError("Checkpoint is missing its input transformation contract")
         result = cls(config, payload["preprocessing"], seed=payload["seed"], recorder=recorder)

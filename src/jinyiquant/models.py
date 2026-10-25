@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
+from .config import TORCH_MODEL_KINDS
+
 
 class LinearModel:
     def __init__(self, kind="ridge", alpha=1.0):
@@ -69,7 +71,7 @@ class LinearModel:
 
 
 def create_model(config, *, recorder=None):
-    if config.model.kind == "modified_tlob":
+    if config.model.kind in TORCH_MODEL_KINDS:
         try:
             from modified_tlob.adapter import TLOBAdapter
         except ModuleNotFoundError as exc:
@@ -79,11 +81,11 @@ def create_model(config, *, recorder=None):
 
 
 def model_filename(kind):
-    return "model.pt" if kind == "modified_tlob" else "model.npz"
+    return "model.pt" if kind in TORCH_MODEL_KINDS else "model.npz"
 
 
 def load_model(path, config, *, recorder=None):
-    if config.model.kind == "modified_tlob":
+    if config.model.kind in TORCH_MODEL_KINDS:
         from modified_tlob.adapter import TLOBAdapter
         return TLOBAdapter.load(path, device=config.model.device, recorder=recorder)
     return LinearModel.load(path)
