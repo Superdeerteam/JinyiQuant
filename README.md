@@ -545,6 +545,20 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 
 **边界与下一步：** 两个 19,800 步臂都是单种子；验证窗仅 10 日；本地近似口径，不含费用与冲击；seed 11 基线是 20261023 另一次云端运行的归档预测重算。晋升前需先补 19,800 步的 seed 29/47；若仅训练量效应稳健，应优先「60 日窗 + 更长训练」而不是 132 日组合。配置见 [60d/19800](configs/model_v2_60d_csz_19800.json)、[seed29](configs/model_v2_60d_csz_seed29.json)、[seed47](configs/model_v2_60d_csz_seed47.json)、[132d/19800](configs/monthly_132d_csz_19800.json)；对照脚本 [compare_coverage_volume.py](scripts/compare_coverage_volume.py)，计划与结果 [plan](configs/monthly_coverage_vs_volume_20261025_plan.json) / [comparison](configs/monthly_coverage_vs_volume_20261025.json)，结构化记录 [monthly_coverage_20261025.json](modified_tlob/monthly_coverage_20261025.json)。
 
+### 同一时点成组采样与 MSE+成对排序损失（20261025，实现与预注册）
+
+用户方向：云端容器正在完成 epoch 份额扫描并选出最优模型；随后从 UTC 19:20 起每 20 分钟检查本地是否出现最新最优模型，并以该模型为基准，把训练采样改为“同一时点成组采样”、训练目标改为 MSE+成对排序损失（排序项系数在训练前定好），同时保留同采样器的纯 MSE 对照。参考 [Temporal Relational Ranking](https://arxiv.org/abs/1809.09441) 与[作者代码](https://github.com/fulifeng/Temporal_Relational_Stock_Ranking)。
+
+**实现（提交 `d3e459d`）。** `model.sampling=timestamp_grouped` 时，每个优化步只取同一完整时间戳（日期+时点）的截面：按完整时间戳分组，组内打乱后按 `batch_size` 切块，不足一批的组尾丢弃，其余行每轮各用一次；排序项按论文式(8)实现为 `relu(-(s_i-s_j)(y_i-y_j))` 的 `n²` 有序对均值，标签用同批次训练目标（逐时间戳 CSZ 变换不改变同时间戳内的排序）。`ranking_loss_weight` 在训练前固定；`ModelConfig` 校验“有排序项必须成组采样、权重与开关同步、batch≥4”；训练日志新增 `objective_loss/ranking_loss/sampling`，检查点记录损失标签与采样器。[7 项行为测试](tests/test_timestamp_grouped_ranking.py)覆盖分组与批次确定性、hinge 方向及梯度、配置拒绝、两臂日志和检查点回读。
+
+**证据（云端 60 日冒烟）。** 20 步 `smoke-grouped-rank` 完成 79,920 条推理，RankIC 0.021473、换手 1.540946；5 步 `pilot-grouped-60d` 在 60 日训练池记录 `groups=480, samples=479432, samples_used_per_epoch=476160, dropped_tail_per_epoch=3272`（丢弃 0.68% 的组尾），5 个进度步的 ranking_loss 0.031–0.050、MSE 0.49–1.76，GPU 训练与推理均正常。这些只是管线冒烟，不是模型质量证据。
+
+**与作者代码的差异（记录）。** 作者代码的成对项写成 `reduce_mean(relu(+(gap_pred)(gap_gt)))`，与本轮采用的论文式(8)符号相反；本轮按论文公式实现，α 训练前固定为 1.0（作者 CLI 默认值；论文网格 {0.1,1,10}，不按验证集挑选）。
+
+**预注册的后续对照。** 以云端扫描选出的最优模型配方为 base（判定顺序：通过预登记门槛且三种子的臂；否则“≥2 种子、换手≤1.3211”中平均 RankIC 最高者；否则 V2 60d/9000），在相同数据、预算与种子上从零重训两臂：同采样器纯 MSE 对照、同采样器 MSE+1.0×成对 hinge；先 seed 11 成对，再补 29/47，不复用旧权重微调。主要判据：候选−对照的同种子配对逐日 RankIC，种子平均后 5 日块 95% 区间下界>0 且均值增益≥0.0023（V2 基线跨种子标准差 0.002285 的 1 倍）；换手均值≤1.3211，多空均值不低于对照。α 不再调整。
+
+**状态。** 扫描仍在云端运行（13500/18000/22500、b64 与 seed29 车道），预计 19:20–19:50 UTC 完成；19:20 UTC 起的 20 分钟本地监测已排定，产物经 [cloud_runs.py](scripts/cloud_runs.py) 拉取与核验。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。
