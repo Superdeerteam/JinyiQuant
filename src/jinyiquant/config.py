@@ -130,6 +130,9 @@ class ModelConfig(StrictModel):
     target_centering: Literal[
         "none", "timestamp_mean_train", "timestamp_zscore_train_rms_matched"] = "none"
     time_loss_weighting: Literal["none", "train_variance", "date_decay_10d"] = "none"
+    sampling: Literal["shuffle", "timestamp_grouped"] = "shuffle"
+    ranking_loss: Literal["none", "pairwise_hinge"] = "none"
+    ranking_loss_weight: float = Field(default=0.0, ge=0)
     book_representation: Literal["raw", "relative_mid_bps"] = "raw"
     trade_features: Literal["zero", "log1p"] = "zero"
     device: Literal["auto", "cpu", "cuda"] = "auto"
@@ -146,6 +149,12 @@ class ModelConfig(StrictModel):
             raise ValueError("LOB input transformations require a torch regression model")
         if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
             raise ValueError("Sinusoidal embedding requires even hidden_dim")
+        if self.ranking_loss != "none" and self.sampling != "timestamp_grouped":
+            raise ValueError("A pairwise ranking loss requires same-timestamp grouped sampling")
+        if (self.ranking_loss == "none") != (self.ranking_loss_weight == 0):
+            raise ValueError("ranking_loss and ranking_loss_weight must be enabled together")
+        if self.ranking_loss_weight > 0 and self.batch_size < 4:
+            raise ValueError("Pairwise ranking requires batch_size >= 4")
         return self
 
 

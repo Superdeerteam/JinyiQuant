@@ -125,6 +125,55 @@ def timestamp_zscore_train_rms_matched(keys, target, mask):
 
 
 
+def timestamp_groups(keys, mask):
+    """Usable sample positions grouped by their full timestamp (date and slot time).
+
+    Grouped sampling replaces the global random shuffle with one cross-section per
+    optimizer step, so every pairwise ranking comparison is same-timestamp only.
+    """
+    dates = pd.to_datetime(keys["date"])
+    if dates.isna().any():
+        raise ValueError("Grouped sampling requires a timestamp for every training row")
+    selected = np.flatnonzero(np.asarray(mask, dtype=bool))
+    frame = pd.DataFrame({"timestamp": dates.to_numpy()[selected], "index": selected})
+    groups = [values.to_numpy() for _, values in frame.groupby("timestamp", sort=True)["index"]]
+    if len(groups) < 2:
+        raise ValueError("Grouped sampling requires at least two training timestamps")
+    return groups
+
+
+def grouped_epoch_batches(groups, batch_size, generator):
+    """One shuffled pass over timestamps, split into exactly-sized same-timestamp batches.
+
+    Each timestamp's usable rows are shuffled and chunked; the remainder that does not
+    fill a batch is dropped so every batch holds exactly ``batch_size`` same-timestamp
+    rows. All other rows are used exactly once per epoch.
+    """
+    batches = []
+    for position in torch.randperm(len(groups), generator=generator).tolist():
+        indices = groups[position]
+        order = torch.randperm(len(indices), generator=generator).numpy()
+        shuffled = indices[order]
+        for offset in range(0, len(shuffled) - batch_size + 1, batch_size):
+            batches.append(shuffled[offset:offset + batch_size])
+    if not batches:
+        raise ValueError("Grouped sampling produced no complete same-timestamp batch")
+    return batches
+
+
+def pairwise_hinge_ranking_loss(scores, targets):
+    """Mean pairwise hinge loss over one same-timestamp group.
+
+    ``relu(-(s_i - s_j) * (y_i - y_j))`` over all ordered pairs, divided by ``n**2``,
+    matching the reference ``tf.reduce_mean`` with an all-ones mask
+    (Feng et al., Temporal Relational Ranking, AAAI 2018). ``targets`` must be the
+    same batch targets, so ordering is the same-timestamp label ordering.
+    """
+    score_gap = scores.unsqueeze(1) - scores.unsqueeze(0)
+    target_gap = targets.unsqueeze(1) - targets.unsqueeze(0)
+    return torch.clamp(-(score_gap * target_gap), min=0).mean()
+
+
 class TLOBAdapter:
     """Shared regression training/inference loop for the torch LOB backbones.
 
@@ -141,6 +190,9 @@ class TLOBAdapter:
         self.config.setdefault("target_centering", "none")
         self.config.setdefault("max_steps", None)
         self.config.setdefault("time_loss_weighting", "none")
+        self.config.setdefault("sampling", "shuffle")
+        self.config.setdefault("ranking_loss", "none")
+        self.config.setdefault("ranking_loss_weight", 0.0)
         self.config.setdefault("book_representation", "raw")
         self.config.setdefault("trade_features", "zero")
         if self.config["target_scaling"] not in ("none", "train_std"):
@@ -149,6 +201,15 @@ class TLOBAdapter:
             raise ValueError("Unsupported target centering")
         if self.config["time_loss_weighting"] not in ("none", "train_variance", "date_decay_10d"):
             raise ValueError("Unsupported loss weighting")
+        if self.config["sampling"] not in ("shuffle", "timestamp_grouped"):
+            raise ValueError("Unsupported sampling mode")
+        if self.config["ranking_loss"] not in ("none", "pairwise_hinge"):
+            raise ValueError("Unsupported ranking loss")
+        self.ranking_loss_weight = float(self.config["ranking_loss_weight"])
+        if not np.isfinite(self.ranking_loss_weight) or self.ranking_loss_weight < 0:
+            raise ValueError("Unsupported ranking loss weight")
+        if (self.config["ranking_loss"] == "none") != (self.ranking_loss_weight == 0):
+            raise ValueError("Ranking loss and its weight must be enabled together")
         data = data_config.model_dump(mode="json") if hasattr(data_config, "model_dump") else dict(data_config)
         self.preprocessing = {k: data[k] for k in PREPROCESS_KEYS}
         self.training_sample_times = tuple(data.get("training_sample_times") or data["sample_times"])
@@ -419,25 +480,48 @@ class TLOBAdapter:
             last_observed_step = steps
 
         observe(0)
+        grouped = self.config["sampling"] == "timestamp_grouped"
+        groups = timestamp_groups(batch.keys, mask) if grouped else None
+        usable = len(y)
+        if grouped:
+            usable = sum((len(group) // self.config["batch_size"]) * self.config["batch_size"]
+                         for group in groups)
+            self._event("training", "grouped_sampling_fitted", groups=len(groups),
+                        group_key="full_timestamp", batch_size=self.config["batch_size"], samples=len(y),
+                        samples_used_per_epoch=int(usable), dropped_tail_per_epoch=int(len(y) - usable),
+                        ranking_loss=self.config["ranking_loss"],
+                        ranking_loss_weight=self.ranking_loss_weight)
         for epoch in range(self.config["epochs"]):
             self.network.train()
-            order = torch.randperm(len(y), generator=generator).numpy()
+            if grouped:
+                batches = grouped_epoch_batches(groups, self.config["batch_size"], generator)
+            else:
+                order = torch.randperm(len(y), generator=generator).numpy()
+                batches = [order[offset:offset + self.config["batch_size"]]
+                           for offset in range(0, len(y), self.config["batch_size"])]
             total = 0.0
             weighted_total = 0.0
             optimization_total = 0.0
+            objective_total = 0.0
+            ranking_total = 0.0
             epoch_samples = 0
-            for offset in range(0, len(y), self.config["batch_size"]):
-                indices = order[offset:offset + self.config["batch_size"]]
+            for indices in batches:
                 xb = torch.from_numpy(x[indices]).to(self.device)
                 yb = torch.from_numpy(optimization_targets[indices]).to(self.device)
                 optimizer.zero_grad(set_to_none=True)
                 predictions = self.network(xb)
                 unweighted_loss = torch.nn.functional.mse_loss(predictions, yb)
                 if time_weights is None:
-                    loss = unweighted_loss
+                    mse_term = unweighted_loss
                 else:
                     weights = torch.from_numpy(time_weights[indices]).to(self.device)
-                    loss = (weights * (predictions - yb).square()).sum() / weights.sum()
+                    mse_term = (weights * (predictions - yb).square()).sum() / weights.sum()
+                ranking_loss = None
+                if self.ranking_loss_weight:
+                    ranking_loss = pairwise_hinge_ranking_loss(predictions, yb)
+                    loss = mse_term + self.ranking_loss_weight * ranking_loss
+                else:
+                    loss = mse_term
                 if not torch.isfinite(loss):
                     raise FloatingPointError("Nonfinite training loss")
                 loss.backward()
@@ -448,12 +532,17 @@ class TLOBAdapter:
                 steps += 1
                 epoch_samples += len(indices)
                 samples_seen += len(indices)
-                optimization_loss = loss.item()
+                optimization_loss = mse_term.item()
+                objective_loss = loss.item()
                 raw_loss = unweighted_loss.item() * self.target_scale ** 2
                 weighted_loss = optimization_loss * self.target_scale ** 2
                 total += raw_loss * len(indices)
                 weighted_total += weighted_loss * len(indices)
                 optimization_total += optimization_loss * len(indices)
+                objective_total += objective_loss * len(indices)
+                ranking_value = None if ranking_loss is None else float(ranking_loss.detach())
+                if ranking_value is not None:
+                    ranking_total += ranking_value * len(indices)
                 if steps % self.config["log_every_steps"] == 0:
                     gradient_norms = {
                         group: float(torch.stack([parameter.grad.detach().double().square().sum()
@@ -462,9 +551,10 @@ class TLOBAdapter:
                         for group in self.parameter_groups}
                     self._event("training", "progress", epoch=epoch + 1, step=steps, loss=raw_loss,
                                 loss_units=PROGRESS_LOSS_UNITS[self.config["target_centering"]],
-                                weighted_loss=weighted_loss,
-                                optimization_loss=optimization_loss,
-                                gradient_norms=gradient_norms,
+                                weighted_loss=weighted_loss, optimization_loss=optimization_loss,
+                                objective_loss=objective_loss, ranking_loss=ranking_value,
+                                ranking_loss_weight=self.ranking_loss_weight,
+                                sampling=self.config["sampling"], gradient_norms=gradient_norms,
                                 learning_rate=optimizer.param_groups[0]["lr"],
                                 elapsed_seconds=time.monotonic() - started,
                                 samples_seen=samples_seen,
@@ -474,13 +564,15 @@ class TLOBAdapter:
                     observe(epoch + epoch_samples / len(y))
                 if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
                     break
-            complete_epoch = epoch_samples == len(y)
+            complete_epoch = epoch_samples == usable
             epochs_completed += int(complete_epoch)
             actual_epochs = epoch + epoch_samples / len(y)
             self._event("training", "epoch_completed" if complete_epoch else "epoch_stopped",
                         epoch=epoch + 1, epochs=actual_epochs, step=steps, loss=total / epoch_samples,
                         weighted_loss=weighted_total / epoch_samples,
                         optimization_loss=optimization_total / epoch_samples,
+                        objective_loss=objective_total / epoch_samples,
+                        ranking_loss=(ranking_total / epoch_samples if self.ranking_loss_weight else None),
                         epoch_samples=epoch_samples, samples_seen=samples_seen, complete_epoch=complete_epoch,
                         learning_rate=optimizer.param_groups[0]["lr"], resources=device_resources(self.device))
             observe(epoch + 1 if complete_epoch else actual_epochs)
@@ -499,9 +591,19 @@ class TLOBAdapter:
             if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
                 break
         self.trained = True
+        optimizer_name = {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
+                          "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]]
+        if self.ranking_loss_weight:
+            optimizer_name = f"{optimizer_name}+{self.ranking_loss_weight:g}x_pairwise_hinge"
         return {"loss": total / epoch_samples, "learning_rate": self.config["learning_rate"],
                 "weighted_loss": weighted_total / epoch_samples,
-                "optimization_loss": optimization_total / epoch_samples, "target_scale": self.target_scale,
+                "optimization_loss": optimization_total / epoch_samples,
+                "objective_loss": objective_total / epoch_samples,
+                "ranking_loss": (ranking_total / epoch_samples if self.ranking_loss_weight else None),
+                "ranking_loss_weight": self.ranking_loss_weight,
+                "ranking_loss_kind": self.config["ranking_loss"],
+                "sampling": self.config["sampling"],
+                "target_scale": self.target_scale,
                 "target_scaling": self.config["target_scaling"],
                 "target_centering": self.config["target_centering"],
                 "raw_target_std": training_std,
@@ -512,8 +614,7 @@ class TLOBAdapter:
                 "mask_excluded": int((~mask).sum()),
                 "loss_units": TRAINING_LOSS_UNITS[self.config["target_centering"]],
                 "time_loss_weighting": self.config["time_loss_weighting"],
-                "optimizer": {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
-                              "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]],
+                "optimizer": optimizer_name,
                 "steps": steps, "samples": len(y), "samples_seen": samples_seen,
                 "epochs": actual_epochs, "epochs_completed": epochs_completed,
                 "stop_reason": "max_steps" if steps == self.config["max_steps"] else "epochs"}
@@ -547,6 +648,13 @@ class TLOBAdapter:
         return {"passed": True, "normalization": "per_sample_BiN_no_population_fit",
                 "input_features": self.preprocessing["feature_columns"], "mask_appended": False}
 
+    def _loss_label(self):
+        label = {"none": "MSE", "train_variance": "time_weighted_MSE",
+                 "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]]
+        if self.ranking_loss_weight:
+            label = f"{label}+{self.ranking_loss_weight:g}x_{self.config['ranking_loss']}"
+        return label
+
     def _payload(self):
         if not self.trained:
             raise ValueError("Cannot save an unfitted model")
@@ -556,8 +664,8 @@ class TLOBAdapter:
                 "training_mean": self.intercept,
                 "label": TARGET_LABELS[self.config["target_centering"]],
                 "prediction_units": PREDICTION_UNITS[self.config["target_centering"]],
-                "loss": {"none": "MSE", "train_variance": "time_weighted_MSE",
-                         "date_decay_10d": "date_weighted_MSE"}[self.config["time_loss_weighting"]],
+                "loss": self._loss_label(),
+                "sampling": self.config["sampling"],
                 "target_scale": self.target_scale,
                 "target_centering": self.config["target_centering"],
                 "target_centering_stats": self.target_centering_stats,
