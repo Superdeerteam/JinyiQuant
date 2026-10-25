@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "experiment_id": "monthly-coverage-vs-volume-20261025",
+  "created_at_utc": "2026-10-25T13:40:01.788708+00:00",
+  "scope": "Single-seed screening of a 132-day monthly-sampled training set against an equal-19,800-step 60-day control, plus seed 29/47 replicates of the archived V2 60d/9000 baseline to bound seed noise. Validation window 2023-11-01..2023-11-14 only; confirmation, locked and final ranges untouched.",
+  "access_policy": "2023-11 research validation window only; final 2024-10-08..2025-01-01 stays closed.",
+  "hypothesis": "At equal 19,800-step update budget the 132-day monthly-sampled training set (22 months, 6 complete days each) raises validation RankIC over the contiguous 60-day V2 window; the 60-day arm at the same 19,800 steps measures how much of any gain is update volume alone, and the seed 29/47 replicates of the 60d/9000 baseline bound the seed-to-seed noise that a single-seed screening must exceed.",
+  "design": {
+    "budget_matching": "132 days x 4,800 samples/day = 633,600 samples = 19,800 steps x 32; the 60-day control uses the same 19,800 steps, so both arms share the update count and differ in epoch share (0.601 vs 1.322).",
+    "coverage_arm": "configs/monthly_132d_csz_19800.json, monthly_sampling 2022-01..2023-11, six complete days per month by centered stratified index",
+    "volume_control": "configs/model_v2_60d_csz_19800.json, V2 60-day window and recipe, only max_steps changed",
+    "seed_replicates": "configs/model_v2_60d_csz_seed29.json and _seed47.json, identical to the V2 60d/9000 baseline except the seed",
+    "evaluation": "local approximation on the validation split, 10 days / 80 sections / 79,920 scored samples, identical keys in every arm"
+  },
+  "arms": {
+    "60d_9000_seed11": {
+      "run_dir": "runs/model-versions/v2-cloud-20261023/60d",
+      "run_id": "60d",
+      "seed": 11,
+      "max_steps": 9000,
+      "bar_rows": 18960607,
+      "label_rows": 559440,
+      "samples_seen": 288000,
+      "epoch_share": 0.600711,
+      "wall_seconds": 1111.6,
+      "status": "completed",
+      "metrics_source": "run metrics.json",
+      "metrics": {
+        "rank_ic_mean": 0.08602792660492739,
+        "long_short_return_mean": 0.0006124003880005656,
+        "turnover_mean": 1.3260319454414933,
+        "min_daily_long_short_return": 0.00027436335584099145,
+        "rank_ic_ir": 4.138734018043302,
+        "sample_count": 79920,
+        "day_count": 10
+      }
+    },
+    "60d_9000_seed29": {
+      "run_dir": "runs/v2-60d-csz-seed29/20261025T121839.379725Z_7bfd98c023b5",
+      "run_id": "20261025T121839.379725Z_7bfd98c023b5",
+      "seed": 29,
+      "max_steps": 9000,
+      "bar_rows": 18960607,
+      "label_rows": 559440,
+      "samples_seen": 288000,
+      "epoch_share": 0.600711,
+      "wall_seconds": 2278.8,
+      "status": "completed",
+      "metrics_source": "run metrics.json",
+      "metrics": {
+        "rank_ic_mean": 0.08324019247702241,
+        "long_short_return_mean": 0.0006061428212677274,
+        "turnover_mean": 1.1912598707824837,
+        "min_daily_long_short_return": 0.0003136723743237087,
+        "rank_ic_ir": 4.2758464150947635,
+        "sample_count": 79920,
+        "day_count": 10
+      }
+    },
+    "60d_9000_seed47": {
+      "run_dir": "runs/v2-60d-csz-seed47/20261025T125639.258836Z_675cd55b8f3b",
+      "run_id": "20261025T125639.258836Z_675cd55b8f3b",
+      "seed": 47,
+      "max_steps": 9000,
+      "bar_rows": 18960607,
+      "label_rows": 559440,
+      "samples_seen": 288000,
+      "epoch_share": 0.600711,
+      "wall_seconds": 2337.3,
+      "status": "completed",
+      "metrics_source": "run metrics.json",
+      "metrics": {
+        "rank_ic_mean": 0.08149842494527201,
+        "long_short_return_mean": 0.0005619147888992864,
+        "turnover_mean": 1.0881909547738693,
+        "min_daily_long_short_return": 0.00028084247682538094,
+        "rank_ic_ir": 3.1661958038579607,
+        "sample_count": 79920,
+        "day_count": 10
+      }
+    },
+    "60d_19800_seed11": {
+      "run_dir": "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+      "run_id": "20261025T111253.841923Z_a647dae8eee4",
+      "seed": 11,
+      "max_steps": 19800,
+      "bar_rows": 18960607,
+      "label_rows": 559440,
+      "samples_seen": 633576,
+      "epoch_share": 1.321514,
+      "wall_seconds": 3944.5,
+      "status": "completed",
+      "metrics_source": "run metrics.json",
+      "metrics": {
+        "rank_ic_mean": 0.09048117076592685,
+        "long_short_return_mean": 0.0006535957605232418,
+        "turnover_mean": 1.153508614501077,
+        "min_daily_long_short_return": 0.0004226861397360191,
+        "rank_ic_ir": 4.174699172898058,
+        "sample_count": 79920,
+        "day_count": 10
+      }
+    },
+    "132d_19800_seed11": {
+      "run_dir": "runs/monthly-132d-csz-19800/20261025T112346.762241Z_3b2efb6eb2db",
+      "run_id": "20261025T112346.762241Z_3b2efb6eb2db",
+      "seed": 11,
+      "max_steps": 19800,
+      "bar_rows": 69109183,
+      "label_rows": 1134864,
+      "samples_seen": 633600,
+      "epoch_share": 0.601102,
+      "wall_seconds": 4661.2,
+      "status": "failed_after_inference",
+      "metrics_source": "recomputed locally from the run's saved predictions.parquet and targets.parquet with the same evaluator",
+      "failure": {
+        "exit_code": -9,
+        "stage": "post-training prediction_checks",
+        "signal": "SIGKILL (out of memory)",
+        "peak_rss_mb": 50313.73046875,
+        "cause": "prediction_checks copies the full 69.1M-row bars frame; the 60GB host was also running a seed arm at that moment",
+        "saved_artifacts": [
+          "model.pt",
+          "modified_tlob_weights.json",
+          "predictions.parquet",
+          "submission.parquet",
+          "targets.parquet"
+        ],
+        "missing_artifacts": [
+          "metrics.json",
+          "daily.csv",
+          "scored_predictions.parquet",
+          "behavioral checks"
+        ]
+      },
+      "metrics": {
+        "rank_ic_mean": 0.09230223594543752,
+        "long_short_return_mean": 0.0006332479203217948,
+        "turnover_mean": 1.3654253409906676,
+        "min_daily_long_short_return": 0.00040973929030849773,
+        "rank_ic_ir": 4.512255925672436,
+        "sample_count": 79920,
+        "day_count": 10
+      }
+    }
+  },
+  "paired_comparison": {
+    "method": "daily differences, moving 5-day block bootstrap, 2000 draws, seed 20261025",
+    "document": "configs/monthly_coverage_vs_volume_20261025.json",
+    "pairs": {
+      "coverage_at_equal_updates": {
+        "baseline": "60d_19800_seed11",
+        "candidate": "132d_19800_seed11",
+        "question": "Does monthly regime coverage add anything after holding the update budget at 19,800 steps?",
+        "metrics": {
+          "rank_ic": {
+            "mean": 0.0018210651795106739,
+            "interval": [
+              -0.0018917202398934796,
+              0.004282761913819391
+            ],
+            "positive_days": 5,
+            "negative_days": 5
+          },
+          "long_short_return": {
+            "mean": -2.0347840201447066e-05,
+            "interval": [
+              -8.739373637891573e-05,
+              2.7710318290994056e-06
+            ],
+            "positive_days": 3,
+            "negative_days": 7
+          },
+          "turnover": {
+            "mean": 0.21191672648959087,
+            "interval": [
+              0.20276381909547742,
+              0.21344221105527642
+            ],
+            "positive_days": 10,
+            "negative_days": 0
+          }
+        }
+      },
+      "volume_at_fixed_window": {
+        "baseline": "60d_9000_seed11",
+        "candidate": "60d_19800_seed11",
+        "question": "How much does the extra 10,800 updates alone buy on the unchanged 60-day window?",
+        "metrics": {
+          "rank_ic": {
+            "mean": 0.004453244160999453,
+            "interval": [
+              0.003799293773432405,
+              0.0108969547153048
+            ],
+            "positive_days": 7,
+            "negative_days": 3
+          },
+          "long_short_return": {
+            "mean": 4.119537252267621e-05,
+            "interval": [
+              1.3988532458520157e-05,
+              0.00012365925973841174
+            ],
+            "positive_days": 5,
+            "negative_days": 5
+          },
+          "turnover": {
+            "mean": -0.17252333094041644,
+            "interval": [
+              -0.17399497487437193,
+              -0.16331658291457293
+            ],
+            "positive_days": 0,
+            "negative_days": 10
+          }
+        }
+      },
+      "candidate_vs_v2_baseline": {
+        "baseline": "60d_9000_seed11",
+        "candidate": "132d_19800_seed11",
+        "question": "Total effect of the 132-day arm against the archived V2 60d/9000 baseline.",
+        "metrics": {
+          "rank_ic": {
+            "mean": 0.006274309340510126,
+            "interval": [
+              0.002527332862753341,
+              0.011500839790718694
+            ],
+            "positive_days": 9,
+            "negative_days": 1
+          },
+          "long_short_return": {
+            "mean": 2.084753232122914e-05,
+            "interval": [
+              1.675956428761956e-05,
+              4.139453230908251e-05
+            ],
+            "positive_days": 6,
+            "negative_days": 4
+          },
+          "turnover": {
+            "mean": 0.039393395549174426,
+            "interval": [
+              0.03756281407035171,
+              0.0453517587939698
+            ],
+            "positive_days": 9,
+            "negative_days": 1
+          }
+        }
+      }
+    }
+  },
+  "seed_noise": {
+    "seeds": [
+      11,
+      29,
+      47
+    ],
+    "mean": {
+      "rank_ic_mean": 0.08358884800907394,
+      "long_short_return_mean": 0.0005934859993891932,
+      "turnover_mean": 1.2018275903326154,
+      "min_daily_long_short_return": 0.0002896260689966937,
+      "rank_ic_ir": 3.8602587456653423
+    },
+    "std": {
+      "rank_ic_mean": 0.002284790325440784,
+      "long_short_return_mean": 2.7519907052940372e-05,
+      "turnover_mean": 0.1192721330940588,
+      "min_daily_long_short_return": 2.1075183322870814e-05,
+      "rank_ic_ir": 0.6049731215095732
+    },
+    "range": {
+      "rank_ic_mean": [
+        0.08149842494527201,
+        0.08602792660492739
+      ],
+      "long_short_return_mean": [
+        0.0005619147888992864,
+        0.0006124003880005656
+      ],
+      "turnover_mean": [
+        1.0881909547738693,
+        1.3260319454414933
+      ],
+      "min_daily_long_short_return": [
+        0.00027436335584099145,
+        0.0003136723743237087
+      ],
+      "rank_ic_ir": [
+        3.1661958038579607,
+        4.2758464150947635
+      ]
+    }
+  },
+  "decision": {
+    "promote": "no",
+    "retain": "V2 60d/9000 (CSZ) remains the baseline model; no weights, records or submission files were replaced.",
+    "coverage_read": "At equal 19,800 updates the 132-day arm is +0.0018 RankIC over the 60-day arm with a paired 5-day-block interval spanning zero (-0.0019..+0.0043); that is below the 0.0023 seed-to-seed standard deviation of the baseline, so it is not evidence of a coverage gain.",
+    "turnover_read": "The same comparison raises turnover by +0.212 (10/10 days worse) and the 1.3654 level exceeds the pre-registered V2 screening cap 1.3451, so the arm would fail that guardrail on its own.",
+    "volume_read": "Raising the 60-day window from 9,000 to 19,800 steps is the change that actually moves RankIC (+0.0045, about two seed standard deviations) and lowers turnover (-0.173) under the paired interval; single seed, so a clue rather than a confirmed effect.",
+    "attribution": "Of the +0.0063 RankIC the 132-day arm gains over the archived V2 baseline, about +0.0045 is reproducible by training the same 60 days longer; the coverage component (+0.0018) sits inside seed noise and costs turnover.",
+    "next": "Before any promotion, run the 19,800-step arms at seeds 29/47. If only the volume effect survives, prefer the 60-day window with a longer schedule over the 132-day composition."
+  },
+  "evidence_boundary": [
+    "Single seed (11) for both 19,800-step arms; the 132d arm was additionally not completed end-to-end.",
+    "The 132d run was SIGKILLed during post-training behavioral checks (peak RSS 50.3GB on a 60GB host shared with a seed arm). Training and inference had finished, so metrics were recomputed from its saved predictions with the same evaluator, but no behavioral checks exist for it and it is recorded as failed, not accepted.",
+    "Ten-day validation window and 5-day block bootstrap give wide intervals; daily sections are not independent across stocks.",
+    "Local approximate metrics; no official platform score, fees or slippage are modeled.",
+    "The seed-11 baseline is the archived 20261023 cloud run from another host/GPU, recomputed from its saved predictions, so hardware differences are inherited."
+  ],
+  "reproduction": {
+    "repository_commit": "configs/model_v2_60d_csz_19800.json, configs/model_v2_60d_csz_seed29.json, configs/model_v2_60d_csz_seed47.json, configs/monthly_132d_csz_19800.json, configs/monthly_coverage_vs_volume_20261025_plan.json, scripts/compare_coverage_volume.py",
+    "cloud_workspace": "/root/v5 on the matpool RTX A4000 container; repo/数据 symlinks /root/v5/数据, whose monthly bars sha256 values were verified against the local download before use",
+    "launch": "cd /root/v5/repo && PYTHONPATH=src:. python -m jinyiquant run <config>",
+    "comparison": "uv run python scripts/compare_coverage_volume.py configs/monthly_coverage_vs_volume_20261025_plan.json"
+  }
+}

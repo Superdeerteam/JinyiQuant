@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "experiment_id": "monthly-coverage-vs-volume-20261025",
+  "hypothesis": "At equal 19,800-step update budget the 132-day monthly-sampled training set (22 months, 6 complete days each) raises validation RankIC over the contiguous 60-day V2 window; the 60-day arm at the same 19,800 steps measures how much of any gain is update volume alone, and the seed 29/47 replicates of the 60d/9000 baseline bound the seed-to-seed noise that a single-seed screening must exceed.",
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 20261025,
+  "block_days": 5,
+  "arms": {
+    "60d_9000_seed11": "../runs/model-versions/v2-cloud-20261023/60d",
+    "60d_9000_seed29": "../runs/v2-60d-csz-seed29/20261025T121839.379725Z_7bfd98c023b5",
+    "60d_9000_seed47": "../runs/v2-60d-csz-seed47/20261025T125639.258836Z_675cd55b8f3b",
+    "60d_19800_seed11": "../runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+    "132d_19800_seed11": "../runs/monthly-132d-csz-19800/20261025T112346.762241Z_3b2efb6eb2db"
+  },
+  "pairs": [
+    {
+      "label": "coverage_at_equal_updates",
+      "baseline": "60d_19800_seed11",
+      "candidate": "132d_19800_seed11",
+      "question": "Does monthly regime coverage add anything after holding the update budget at 19,800 steps?"
+    },
+    {
+      "label": "volume_at_fixed_window",
+      "baseline": "60d_9000_seed11",
+      "candidate": "60d_19800_seed11",
+      "question": "How much does the extra 10,800 updates alone buy on the unchanged 60-day window?"
+    },
+    {
+      "label": "candidate_vs_v2_baseline",
+      "baseline": "60d_9000_seed11",
+      "candidate": "132d_19800_seed11",
+      "question": "Total effect of the 132-day arm against the archived V2 60d/9000 baseline."
+    }
+  ],
+  "seed_groups": {
+    "v2_60d_9000_seed_spread": {
+      "11": "60d_9000_seed11",
+      "29": "60d_9000_seed29",
+      "47": "60d_9000_seed47"
+    }
+  }
+}

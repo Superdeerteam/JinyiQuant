@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "experiment_id": "monthly-coverage-vs-volume-20261025",
+  "hypothesis": "At equal 19,800-step update budget the 132-day monthly-sampled training set (22 months, 6 complete days each) raises validation RankIC over the contiguous 60-day V2 window; the 60-day arm at the same 19,800 steps measures how much of any gain is update volume alone, and the seed 29/47 replicates of the 60d/9000 baseline bound the seed-to-seed noise that a single-seed screening must exceed.",
+  "arms": {
+    "60d_9000_seed11": {
+      "directory": "D:\\进益资本杯\\runs\\model-versions\\v2-cloud-20261023\\60d",
+      "seed": 11,
+      "metrics": {
+        "rank_ic_mean": 0.08602792660492739,
+        "long_short_return_mean": 0.0006124003880005656,
+        "turnover_mean": 1.3260319454414933,
+        "min_daily_long_short_return": 0.00027436335584099145,
+        "rank_ic_ir": 4.138734018043302
+      }
+    },
+    "60d_9000_seed29": {
+      "directory": "D:\\进益资本杯\\runs\\v2-60d-csz-seed29\\20261025T121839.379725Z_7bfd98c023b5",
+      "seed": 29,
+      "metrics": {
+        "rank_ic_mean": 0.08324019247702241,
+        "long_short_return_mean": 0.0006061428212677274,
+        "turnover_mean": 1.1912598707824837,
+        "min_daily_long_short_return": 0.0003136723743237087,
+        "rank_ic_ir": 4.2758464150947635
+      }
+    },
+    "60d_9000_seed47": {
+      "directory": "D:\\进益资本杯\\runs\\v2-60d-csz-seed47\\20261025T125639.258836Z_675cd55b8f3b",
+      "seed": 47,
+      "metrics": {
+        "rank_ic_mean": 0.08149842494527201,
+        "long_short_return_mean": 0.0005619147888992864,
+        "turnover_mean": 1.0881909547738693,
+        "min_daily_long_short_return": 0.00028084247682538094,
+        "rank_ic_ir": 3.1661958038579607
+      }
+    },
+    "60d_19800_seed11": {
+      "directory": "D:\\进益资本杯\\runs\\v2-60d-csz-19800\\20261025T111253.841923Z_a647dae8eee4",
+      "seed": 11,
+      "metrics": {
+        "rank_ic_mean": 0.09048117076592685,
+        "long_short_return_mean": 0.0006535957605232418,
+        "turnover_mean": 1.153508614501077,
+        "min_daily_long_short_return": 0.0004226861397360191,
+        "rank_ic_ir": 4.174699172898058
+      }
+    },
+    "132d_19800_seed11": {
+      "directory": "D:\\进益资本杯\\runs\\monthly-132d-csz-19800\\20261025T112346.762241Z_3b2efb6eb2db",
+      "seed": 11,
+      "metrics": {
+        "rank_ic_mean": 0.09230223594543752,
+        "long_short_return_mean": 0.0006332479203217948,
+        "turnover_mean": 1.3654253409906676,
+        "min_daily_long_short_return": 0.00040973929030849773,
+        "rank_ic_ir": 4.512255925672436
+      }
+    }
+  },
+  "pairs": [
+    {
+      "label": "coverage_at_equal_updates",
+      "question": "Does monthly regime coverage add anything after holding the update budget at 19,800 steps?",
+      "baseline": "60d_19800_seed11",
+      "candidate": "132d_19800_seed11",
+      "days": 10,
+      "differences": "candidate minus baseline",
+      "metrics": {
+        "rank_ic": {
+          "status": "estimated",
+          "mean": 0.0018210651795106739,
+          "interval": [
+            -0.0018917202398934796,
+            0.004282761913819391
+          ],
+          "positive_days": 5,
+          "negative_days": 5
+        },
+        "long_short_return": {
+          "status": "estimated",
+          "mean": -2.0347840201447066e-05,
+          "interval": [
+            -8.739373637891573e-05,
+            2.7710318290994056e-06
+          ],
+          "positive_days": 3,
+          "negative_days": 7
+        },
+        "turnover": {
+          "status": "estimated",
+          "mean": 0.21191672648959087,
+          "interval": [
+            0.20276381909547742,
+            0.21344221105527642
+          ],
+          "positive_days": 10,
+          "negative_days": 0
+        }
+      }
+    },
+    {
+      "label": "volume_at_fixed_window",
+      "question": "How much does the extra 10,800 updates alone buy on the unchanged 60-day window?",
+      "baseline": "60d_9000_seed11",
+      "candidate": "60d_19800_seed11",
+      "days": 10,
+      "differences": "candidate minus baseline",
+      "metrics": {
+        "rank_ic": {
+          "status": "estimated",
+          "mean": 0.004453244160999453,
+          "interval": [
+            0.003799293773432405,
+            0.0108969547153048
+          ],
+          "positive_days": 7,
+          "negative_days": 3
+        },
+        "long_short_return": {
+          "status": "estimated",
+          "mean": 4.119537252267621e-05,
+          "interval": [
+            1.3988532458520157e-05,
+            0.00012365925973841174
+          ],
+          "positive_days": 5,
+          "negative_days": 5
+        },
+        "turnover": {
+          "status": "estimated",
+          "mean": -0.17252333094041644,
+          "interval": [
+            -0.17399497487437193,
+            -0.16331658291457293
+          ],
+          "positive_days": 0,
+          "negative_days": 10
+        }
+      }
+    },
+    {
+      "label": "candidate_vs_v2_baseline",
+      "question": "Total effect of the 132-day arm against the archived V2 60d/9000 baseline.",
+      "baseline": "60d_9000_seed11",
+      "candidate": "132d_19800_seed11",
+      "days": 10,
+      "differences": "candidate minus baseline",
+      "metrics": {
+        "rank_ic": {
+          "status": "estimated",
+          "mean": 0.006274309340510126,
+          "interval": [
+            0.002527332862753341,
+            0.011500839790718694
+          ],
+          "positive_days": 9,
+          "negative_days": 1
+        },
+        "long_short_return": {
+          "status": "estimated",
+          "mean": 2.084753232122914e-05,
+          "interval": [
+            1.675956428761956e-05,
+            4.139453230908251e-05
+          ],
+          "positive_days": 6,
+          "negative_days": 4
+        },
+        "turnover": {
+          "status": "estimated",
+          "mean": 0.039393395549174426,
+          "interval": [
+            0.03756281407035171,
+            0.0453517587939698
+          ],
+          "positive_days": 9,
+          "negative_days": 1
+        }
+      }
+    }
+  ],
+  "seed_groups": {
+    "v2_60d_9000_seed_spread": {
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08358884800907394,
+        "long_short_return_mean": 0.0005934859993891932,
+        "turnover_mean": 1.2018275903326154,
+        "min_daily_long_short_return": 0.0002896260689966937,
+        "rank_ic_ir": 3.8602587456653423
+      },
+      "std": {
+        "rank_ic_mean": 0.002284790325440784,
+        "long_short_return_mean": 2.7519907052940372e-05,
+        "turnover_mean": 0.1192721330940588,
+        "min_daily_long_short_return": 2.1075183322870814e-05,
+        "rank_ic_ir": 0.6049731215095732
+      },
+      "range": {
+        "rank_ic_mean": [
+          0.08149842494527201,
+          0.08602792660492739
+        ],
+        "long_short_return_mean": [
+          0.0005619147888992864,
+          0.0006124003880005656
+        ],
+        "turnover_mean": [
+          1.0881909547738693,
+          1.3260319454414933
+        ],
+        "min_daily_long_short_return": [
+          0.00027436335584099145,
+          0.0003136723743237087
+        ],
+        "rank_ic_ir": [
+          3.1661958038579607,
+          4.2758464150947635
+        ]
+      }
+    }
+  }
+}
