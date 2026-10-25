@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "experiment_id": "epoch-share-selection-20261025",
+  "hypothesis": "Holding the V2 60-day window, CSZ labels and recipe fixed, the best schedule is chosen by cross-seed means: a candidate must gain at least 0.0046 paired daily RankIC over the 60d/9000 baseline with a 95% interval above zero, keep mean turnover at or below 1.3211, and repeat outside the validation month.",
+  "bootstrap_samples": 2000,
+  "bootstrap_seed": 20261025,
+  "block_days": 5,
+  "guardrail": {
+    "turnover_max": 1.3211,
+    "min_rank_ic_gain": 0.0046
+  },
+  "decision_rule": "Promotion needs three seeds; two-seed rows are screening only. The baseline is the 60d/9000 batch-32 arm with seeds 11/29/47.",
+  "baseline": {
+    "label": "60d_9000_b32",
+    "runs": {
+      "11": "../runs/model-versions/v2-cloud-20261023/60d",
+      "29": "../runs/v2-60d-csz-seed29/20261025T121839.379725Z_7bfd98c023b5",
+      "47": "../runs/v2-60d-csz-seed47/20261025T125639.258836Z_675cd55b8f3b"
+    }
+  },
+  "candidates": [
+    {
+      "label": "60d_13500_b32",
+      "runs": {
+        "11": "../runs/v2-60d-csz-step13500-seed11/20261025T135426.466075Z_4716e5fc2645"
+      }
+    },
+    {
+      "label": "60d_19800_b32",
+      "runs": {
+        "11": "../runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+        "29": "../runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef"
+      }
+    }
+  ]
+}

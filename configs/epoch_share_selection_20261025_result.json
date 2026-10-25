@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "experiment_id": "epoch-share-selection-20261025",
+  "hypothesis": "Holding the V2 60-day window, CSZ labels and recipe fixed, the best schedule is chosen by cross-seed means: a candidate must gain at least 0.0046 paired daily RankIC over the 60d/9000 baseline with a 95% interval above zero, keep mean turnover at or below 1.3211, and repeat outside the validation month.",
+  "baseline": {
+    "label": "60d_9000_b32",
+    "seeds": [
+      11,
+      29,
+      47
+    ],
+    "per_seed": [
+      {
+        "seed": 11,
+        "rank_ic_mean": 0.08602792660492739,
+        "long_short_return_mean": 0.0006124003880005656,
+        "turnover_mean": 1.3260319454414933,
+        "min_daily_long_short_return": 0.00027436335584099145
+      },
+      {
+        "seed": 29,
+        "rank_ic_mean": 0.08324019247702241,
+        "long_short_return_mean": 0.0006061428212677274,
+        "turnover_mean": 1.1912598707824837,
+        "min_daily_long_short_return": 0.0003136723743237087
+      },
+      {
+        "seed": 47,
+        "rank_ic_mean": 0.08149842494527201,
+        "long_short_return_mean": 0.0005619147888992864,
+        "turnover_mean": 1.0881909547738693,
+        "min_daily_long_short_return": 0.00028084247682538094
+      }
+    ],
+    "mean": {
+      "rank_ic_mean": 0.08358884800907394,
+      "long_short_return_mean": 0.0005934859993891932,
+      "turnover_mean": 1.2018275903326154,
+      "min_daily_long_short_return": 0.0002896260689966937
+    },
+    "std": {
+      "rank_ic_mean": 0.002284790325440784,
+      "long_short_return_mean": 2.7519907052940372e-05,
+      "turnover_mean": 0.1192721330940588,
+      "min_daily_long_short_return": 2.1075183322870814e-05
+    }
+  },
+  "candidates": [
+    {
+      "label": "60d_13500_b32",
+      "seeds": [
+        11
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08703679394277371,
+        "long_short_return_mean": 0.0006268582832366127,
+        "turnover_mean": 1.1246320890165111,
+        "min_daily_long_short_return": 0.0002659791963058516
+      },
+      "std": {
+        "rank_ic_mean": null,
+        "long_short_return_mean": null,
+        "turnover_mean": null,
+        "min_daily_long_short_return": null
+      },
+      "per_seed": [
+        {
+          "seed": 11,
+          "rank_ic_mean": 0.08703679394277371,
+          "long_short_return_mean": 0.0006268582832366127,
+          "turnover_mean": 1.1246320890165111,
+          "min_daily_long_short_return": 0.0002659791963058516
+        }
+      ],
+      "paired_vs_baseline": {
+        "rank_ic": {
+          "mean": 0.0010088673378463094,
+          "interval": [
+            -0.0006169781275930514,
+            0.007149464511031672
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": 0.0010088673378463094
+          }
+        },
+        "long_short_return": {
+          "mean": 1.4457895236046975e-05,
+          "interval": [
+            -1.3815225351431533e-05,
+            8.265777857524231e-05
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": 1.4457895236046975e-05
+          }
+        },
+        "turnover": {
+          "mean": -0.2013998564249821,
+          "interval": [
+            -0.20452261306532668,
+            -0.19484924623115582
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": -0.2013998564249821
+          }
+        }
+      },
+      "guardrail": {
+        "turnover_max": 1.3211,
+        "turnover_ok": true,
+        "min_rank_ic_gain": 0.0046,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "pass": false
+      }
+    },
+    {
+      "label": "60d_19800_b32",
+      "seeds": [
+        11,
+        29
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08242436491611448,
+        "long_short_return_mean": 0.0005920133452306823,
+        "turnover_mean": 1.1867821249102657,
+        "min_daily_long_short_return": 0.0002945920139326312
+      },
+      "std": {
+        "rank_ic_mean": 0.011394044102211549,
+        "long_short_return_mean": 8.709068691042982e-05,
+        "turnover_mean": 0.04705584968843715,
+        "min_daily_long_short_return": 0.00018115244997147668
+      },
+      "per_seed": [
+        {
+          "seed": 11,
+          "rank_ic_mean": 0.09048117076592685,
+          "long_short_return_mean": 0.0006535957605232418,
+          "turnover_mean": 1.153508614501077,
+          "min_daily_long_short_return": 0.0004226861397360191
+        },
+        {
+          "seed": 29,
+          "rank_ic_mean": 0.0743675590663021,
+          "long_short_return_mean": 0.000530430929938123,
+          "turnover_mean": 1.2200556353194545,
+          "min_daily_long_short_return": 0.0001664978881292432
+        }
+      ],
+      "paired_vs_baseline": {
+        "rank_ic": {
+          "mean": -0.00220969462486043,
+          "interval": [
+            -0.002874442892588324,
+            0.0034411187901852583
+          ],
+          "seeds": [
+            11,
+            29
+          ],
+          "per_seed_mean": {
+            "11": 0.004453244160999453,
+            "29": -0.008872633410720313
+          }
+        },
+        "long_short_return": {
+          "mean": -1.7258259403464136e-05,
+          "interval": [
+            -3.2970178544392003e-05,
+            5.1855670449369176e-05
+          ],
+          "seeds": [
+            11,
+            29
+          ],
+          "per_seed_mean": {
+            "11": 4.119537252267621e-05,
+            "29": -7.571189132960448e-05
+          }
+        },
+        "turnover": {
+          "mean": -0.07186378320172292,
+          "interval": [
+            -0.07518844221105532,
+            -0.06061557788944725
+          ],
+          "seeds": [
+            11,
+            29
+          ],
+          "per_seed_mean": {
+            "11": -0.17252333094041644,
+            "29": 0.028795764536970615
+          }
+        }
+      },
+      "guardrail": {
+        "turnover_max": 1.3211,
+        "turnover_ok": true,
+        "min_rank_ic_gain": 0.0046,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "pass": false
+      }
+    }
+  ],
+  "guardrail": {
+    "turnover_max": 1.3211,
+    "min_rank_ic_gain": 0.0046
+  },
+  "decision_rule": "Promotion needs three seeds; two-seed rows are screening only. The baseline is the 60d/9000 batch-32 arm with seeds 11/29/47.",
+  "ranking_by_mean_rank_ic": [
+    "60d_13500_b32",
+    "60d_19800_b32"
+  ],
+  "passing": []
+}

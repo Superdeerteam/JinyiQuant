@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "experiment_id": "epoch-share-sweep-20261025",
+  "created_at_utc": "2026-10-25T13:59:00+00:00",
+  "status": "running; thresholds fixed before any sweep arm finished",
+  "hypothesis": "With the V2 60-day training window and recipe fixed, validation quality depends on the epoch share (samples seen / training pool) rather than on the raw step count: beyond the 0.601-epoch baseline used by V1/V2, more passes improve RankIC and lower turnover until a knee; the batch-64/9,900-step arm separates 'more passes over data' from 'more optimizer updates' because it keeps 1.322 epoch share at half the updates.",
+  "factors": {
+    "window": "V2 60d, 2023-08-01..2023-11-01 (pool 479,432 samples), unchanged",
+    "epoch_shares": {"0.601": 9000, "0.901": 13500, "1.201": 18000, "1.322": 19800, "1.502": 22500},
+    "batch_32_steps": [9000, 13500, 18000, 19800, 22500],
+    "update_count_control": {"batch": 64, "steps": 9900, "epoch_share": 1.322, "updates": 9900},
+    "seeds": [11, 29],
+    "held_fixed": "network, lr 1e-4 constant, CSZ labels, lookback 128, 8 clocks, target scaling, MSE, batch order seed rule"
+  },
+  "evaluation_windows": {
+    "nov2023": "2023-11-01..2023-12-01 (the V2 validation window, already used)",
+    "jan2024": "2024-01-01..2024-02-01 (research window, already used)",
+    "mar2024": "2024-03-01..2024-04-01 (research window, already used)"
+  },
+  "primary_metrics": ["rank_ic", "turnover", "long_short_return"],
+  "decision_rule": {
+    "seeds": "shape read from seeds 11/29; any promotion needs seed 47 completed as well",
+    "window_aggregation": "three research windows; paired daily differences per window, 5-day moving-block bootstrap 95% interval, pooled per-seed mean",
+    "minimum_improvement": "3-seed mean paired RankIC difference must have a 95% interval excluding zero; the noise floor is 2x the measured cross-seed sd of the 60d/9000 baseline (0.002285 -> 0.0046) and the interval criterion is used instead of a fixed percentage",
+    "turnover_guardrail": "mean turnover must not exceed the 60d/9000 three-seed mean plus one cross-seed sd (1.2018 + 0.1193 = 1.3211)",
+    "knee": "the smallest epoch share whose gain over the next larger share is inside one standard error is treated as the knee; steps beyond the knee are not promoted"
+  },
+  "ensemble_readout": {
+    "rule": "equal-weight average of the three seeds' scores on identical keys (existing FixedSeedEnsemble convention), evaluated on the same windows; reported as a deployment option, not as a promotion claim",
+    "expectation": "seed-averaging should shrink the 0.0023 RankIC seed dispersion and the 0.12 turnover dispersion"
+  },
+  "pre_registered_before_results": true,
+  "notes": "Sweep arms are trained on the matpool A4000 container; multi-window replay uses frozen weights and identical keys per window. No final/confirmation range is opened."
+}

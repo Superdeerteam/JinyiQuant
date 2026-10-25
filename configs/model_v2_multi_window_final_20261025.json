@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "experiment_id": "model-v2-multi-window-final-20261025",
+  "hypothesis": "Score every schedule arm from the epoch-share sweep on identical development windows outside the validation month to check whether any RankIC or turnover gain repeats.",
+  "output_root": "/root/v5/runs/multi-window-final-20261025",
+  "seed": 20261025,
+  "bootstrap_draws": 20000,
+  "chunk_days": 11,
+  "predict_batch_size": 128,
+  "data": {
+    "bars_path": "/root/v5/数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "/root/v5/数据/cpt_jyc_2026_vwap",
+    "instruments_path": "/root/v5/数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "/root/v5/数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "windows": [
+    {
+      "name": "nov2023",
+      "label": "2023-11 development month",
+      "start": "2023-11-01T00:00:00",
+      "end": "2023-12-01T00:00:00"
+    },
+    {
+      "name": "jan2024",
+      "label": "2024-01 development month",
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-02-01T00:00:00"
+    },
+    {
+      "name": "mar2024",
+      "label": "2024-03 development month",
+      "start": "2024-03-01T00:00:00",
+      "end": "2024-04-01T00:00:00"
+    }
+  ],
+  "versions": [
+    {
+      "name": "s13500_b32_seed11",
+      "label": "60d 13500 steps batch 32 seed 11",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-step13500-seed11/20261025T135426.466075Z_4716e5fc2645/modified_tlob_weights.json"
+    },
+    {
+      "name": "s19800_b32_seed11",
+      "label": "60d 19800 steps batch 32 seed 11",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4/modified_tlob_weights.json"
+    },
+    {
+      "name": "s19800_b32_seed29",
+      "label": "60d 19800 steps batch 32 seed 29",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef/modified_tlob_weights.json"
+    },
+    {
+      "name": "s9000_b32_seed11",
+      "label": "V2 60d/9000 seed 11 (archived baseline)",
+      "role": "baseline",
+      "weights": "/root/v5/runs/model-versions/v2-cloud-20261023/60d/modified_tlob_weights.json"
+    },
+    {
+      "name": "s9000_b32_seed29",
+      "label": "60d 9000 steps batch 32 seed 29",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-seed29/20261025T121839.379725Z_7bfd98c023b5/modified_tlob_weights.json"
+    },
+    {
+      "name": "s9000_b32_seed47",
+      "label": "60d 9000 steps batch 32 seed 47",
+      "role": "candidate",
+      "weights": "/root/v5/repo/runs/v2-60d-csz-seed47/20261025T125639.258836Z_675cd55b8f3b/modified_tlob_weights.json"
+    }
+  ],
+  "pairs": [
+    [
+      "s13500_b32_seed11",
+      "s9000_b32_seed11"
+    ],
+    [
+      "s19800_b32_seed11",
+      "s9000_b32_seed11"
+    ],
+    [
+      "s19800_b32_seed29",
+      "s9000_b32_seed29"
+    ]
+  ]
+}
