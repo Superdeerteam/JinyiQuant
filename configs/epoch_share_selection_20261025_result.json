@@ -47,15 +47,15 @@
   },
   "candidates": [
     {
-      "label": "60d_13500_b32",
+      "label": "60d_9900_b64",
       "seeds": [
         11
       ],
       "mean": {
-        "rank_ic_mean": 0.08703679394277371,
-        "long_short_return_mean": 0.0006268582832366127,
-        "turnover_mean": 1.1246320890165111,
-        "min_daily_long_short_return": 0.0002659791963058516
+        "rank_ic_mean": 0.09018859122875664,
+        "long_short_return_mean": 0.0006223173620566625,
+        "turnover_mean": 1.2140075376884423,
+        "min_daily_long_short_return": 0.00025881999247503296
       },
       "std": {
         "rank_ic_mean": null,
@@ -66,50 +66,154 @@
       "per_seed": [
         {
           "seed": 11,
-          "rank_ic_mean": 0.08703679394277371,
-          "long_short_return_mean": 0.0006268582832366127,
-          "turnover_mean": 1.1246320890165111,
-          "min_daily_long_short_return": 0.0002659791963058516
+          "rank_ic_mean": 0.09018859122875664,
+          "long_short_return_mean": 0.0006223173620566625,
+          "turnover_mean": 1.2140075376884423,
+          "min_daily_long_short_return": 0.00025881999247503296
         }
       ],
       "paired_vs_baseline": {
         "rank_ic": {
-          "mean": 0.0010088673378463094,
+          "mean": 0.0041606646238292536,
           "interval": [
-            -0.0006169781275930514,
-            0.007149464511031672
+            0.0007482422515037418,
+            0.008510869602692627
           ],
           "seeds": [
             11
           ],
           "per_seed_mean": {
-            "11": 0.0010088673378463094
+            "11": 0.0041606646238292536
           }
         },
         "long_short_return": {
-          "mean": 1.4457895236046975e-05,
+          "mean": 9.916974056096897e-06,
           "interval": [
-            -1.3815225351431533e-05,
-            8.265777857524231e-05
+            4.465583273055259e-06,
+            6.185902400549787e-05
           ],
           "seeds": [
             11
           ],
           "per_seed_mean": {
-            "11": 1.4457895236046975e-05
+            "11": 9.916974056096897e-06
           }
         },
         "turnover": {
-          "mean": -0.2013998564249821,
+          "mean": -0.11202440775305103,
           "interval": [
-            -0.20452261306532668,
-            -0.19484924623115582
+            -0.11206030150753774,
+            -0.09974874371859302
           ],
           "seeds": [
             11
           ],
           "per_seed_mean": {
-            "11": -0.2013998564249821
+            "11": -0.11202440775305103
+          }
+        }
+      },
+      "guardrail": {
+        "turnover_max": 1.3211,
+        "turnover_ok": true,
+        "min_rank_ic_gain": 0.0046,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": true,
+        "pass": false
+      }
+    },
+    {
+      "label": "60d_13500_b32",
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08297075079377468,
+        "long_short_return_mean": 0.0005777251790195899,
+        "turnover_mean": 1.167686647523331,
+        "min_daily_long_short_return": 0.00024801132582909067
+      },
+      "std": {
+        "rank_ic_mean": 0.004712943564127249,
+        "long_short_return_mean": 4.255568676136949e-05,
+        "turnover_mean": 0.14134896001618466,
+        "min_daily_long_short_return": 2.365065268774378e-05
+      },
+      "per_seed": [
+        {
+          "seed": 11,
+          "rank_ic_mean": 0.08703679394277371,
+          "long_short_return_mean": 0.0006268582832366127,
+          "turnover_mean": 1.1246320890165111,
+          "min_daily_long_short_return": 0.0002659791963058516
+        },
+        {
+          "seed": 29,
+          "rank_ic_mean": 0.07780526902455488,
+          "long_short_return_mean": 0.0005538219731488647,
+          "turnover_mean": 1.0528715003589375,
+          "min_daily_long_short_return": 0.00025683806422912263
+        },
+        {
+          "seed": 47,
+          "rank_ic_mean": 0.08407018941399542,
+          "long_short_return_mean": 0.0005524952806732924,
+          "turnover_mean": 1.325556353194544,
+          "min_daily_long_short_return": 0.00022121671695229776
+        }
+      ],
+      "paired_vs_baseline": {
+        "rank_ic": {
+          "mean": -0.000618097215299277,
+          "interval": [
+            -0.0022458915457623635,
+            0.0005133572609276211
+          ],
+          "seeds": [
+            11,
+            29,
+            47
+          ],
+          "per_seed_mean": {
+            "11": 0.0010088673378463094,
+            "29": -0.005434923452467544,
+            "47": 0.0025717644687234032
+          }
+        },
+        "long_short_return": {
+          "mean": -1.5760820369603187e-05,
+          "interval": [
+            -3.6231488262607916e-05,
+            4.709847523401541e-06
+          ],
+          "seeds": [
+            11,
+            29,
+            47
+          ],
+          "per_seed_mean": {
+            "11": 1.4457895236046975e-05,
+            "29": -5.232084811886266e-05,
+            "47": -9.419508225993876e-06
+          }
+        },
+        "turnover": {
+          "mean": -0.03414094280928451,
+          "interval": [
+            -0.03718592964824121,
+            -0.03239112227805694
+          ],
+          "seeds": [
+            11,
+            29,
+            47
+          ],
+          "per_seed_mean": {
+            "11": -0.2013998564249821,
+            "29": -0.13838837042354624,
+            "47": 0.2373653984206748
           }
         }
       },
@@ -301,6 +405,158 @@
         "rank_ic_ci_above_zero": false,
         "pass": false
       }
+    },
+    {
+      "label": "60d_22500_b32",
+      "seeds": [
+        11
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08906062756142916,
+        "long_short_return_mean": 0.0006073972748168524,
+        "turnover_mean": 1.1840452261306535,
+        "min_daily_long_short_return": 0.00025451409360158846
+      },
+      "std": {
+        "rank_ic_mean": null,
+        "long_short_return_mean": null,
+        "turnover_mean": null,
+        "min_daily_long_short_return": null
+      },
+      "per_seed": [
+        {
+          "seed": 11,
+          "rank_ic_mean": 0.08906062756142916,
+          "long_short_return_mean": 0.0006073972748168524,
+          "turnover_mean": 1.1840452261306535,
+          "min_daily_long_short_return": 0.00025451409360158846
+        }
+      ],
+      "paired_vs_baseline": {
+        "rank_ic": {
+          "mean": 0.0030327009565017647,
+          "interval": [
+            0.000185526563424257,
+            0.006986108207192271
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": 0.0030327009565017647
+          }
+        },
+        "long_short_return": {
+          "mean": -5.003113183713233e-06,
+          "interval": [
+            -2.2661525860730017e-05,
+            7.553480569085362e-05
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": -5.003113183713233e-06
+          }
+        },
+        "turnover": {
+          "mean": -0.14198671931083998,
+          "interval": [
+            -0.1469131371141422,
+            -0.13605527638190962
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": -0.14198671931083998
+          }
+        }
+      },
+      "guardrail": {
+        "turnover_max": 1.3211,
+        "turnover_ok": true,
+        "min_rank_ic_gain": 0.0046,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": true,
+        "pass": false
+      }
+    },
+    {
+      "label": "60d_22500_b32",
+      "seeds": [
+        11
+      ],
+      "mean": {
+        "rank_ic_mean": 0.08906062756142916,
+        "long_short_return_mean": 0.0006073972748168524,
+        "turnover_mean": 1.1840452261306535,
+        "min_daily_long_short_return": 0.00025451409360158846
+      },
+      "std": {
+        "rank_ic_mean": null,
+        "long_short_return_mean": null,
+        "turnover_mean": null,
+        "min_daily_long_short_return": null
+      },
+      "per_seed": [
+        {
+          "seed": 11,
+          "rank_ic_mean": 0.08906062756142916,
+          "long_short_return_mean": 0.0006073972748168524,
+          "turnover_mean": 1.1840452261306535,
+          "min_daily_long_short_return": 0.00025451409360158846
+        }
+      ],
+      "paired_vs_baseline": {
+        "rank_ic": {
+          "mean": 0.0030327009565017647,
+          "interval": [
+            0.000185526563424257,
+            0.006986108207192271
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": 0.0030327009565017647
+          }
+        },
+        "long_short_return": {
+          "mean": -5.003113183713233e-06,
+          "interval": [
+            -2.2661525860730017e-05,
+            7.553480569085362e-05
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": -5.003113183713233e-06
+          }
+        },
+        "turnover": {
+          "mean": -0.14198671931083998,
+          "interval": [
+            -0.1469131371141422,
+            -0.13605527638190962
+          ],
+          "seeds": [
+            11
+          ],
+          "per_seed_mean": {
+            "11": -0.14198671931083998
+          }
+        }
+      },
+      "guardrail": {
+        "turnover_max": 1.3211,
+        "turnover_ok": true,
+        "min_rank_ic_gain": 0.0046,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": true,
+        "pass": false
+      }
     }
   ],
   "guardrail": {
@@ -309,9 +565,12 @@
   },
   "decision_rule": "Promotion needs three seeds; two-seed rows are screening only. The baseline is the 60d/9000 batch-32 arm with seeds 11/29/47.",
   "ranking_by_mean_rank_ic": [
-    "60d_13500_b32",
+    "60d_9900_b64",
+    "60d_22500_b32",
+    "60d_22500_b32",
     "60d_18000_b32",
-    "60d_19800_b32"
+    "60d_19800_b32",
+    "60d_13500_b32"
   ],
   "passing": []
 }
