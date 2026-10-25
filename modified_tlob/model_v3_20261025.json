@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment_id": "model-v3-20261025",
-  "created_at_utc": "2026-10-25T18:32:44.532677+00:00",
+  "created_at_utc": "2026-10-25T21:07:39.050441+00:00",
   "scope": "Epoch-share sweep on the frozen V2 60-day window (seeds 11/29/47 where complete), a batch-64 update-count control, three-window replay of every arm outside the validation month, and the promotion of V3 as a three-seed ensemble. Validation window 2023-11-01..14; replay windows 2023-11, 2024-01, 2024-03 (all already-used research windows).",
   "hypothesis": "With the V2 recipe fixed, the epoch share (samples seen / pool) governs validation quality and turnover; at equal seed the 0.9-1.5 epoch arms should beat the 0.6-epoch baseline, and a three-seed average should remove the seed noise that dominates single runs.",
   "design": {
@@ -178,6 +178,30 @@
       "long_short_return_mean": 0.0006073972748168524,
       "turnover_mean": 1.1840452261306535,
       "min_daily_long_short_return": 0.00025451409360158846
+    },
+    {
+      "run_dir": "runs/v2-60d-csz-step22500-seed29/20261025T182552.655963Z_82338bd957d1",
+      "experiment_id": "model-v2-60d-csz-step22500-seed29",
+      "seed": 29,
+      "max_steps": 22500,
+      "batch_size": 32,
+      "epoch_share": 1.501727,
+      "rank_ic_mean": 0.09038352711581805,
+      "long_short_return_mean": 0.000626180925360962,
+      "turnover_mean": 1.2825556353194547,
+      "min_daily_long_short_return": 0.00022753689636226162
+    },
+    {
+      "run_dir": "runs/v2-60d-csz-step22500-seed47/20261025T193512.790660Z_1a78da0bf710",
+      "experiment_id": "model-v2-60d-csz-step22500-seed47",
+      "seed": 47,
+      "max_steps": 22500,
+      "batch_size": 32,
+      "epoch_share": 1.501727,
+      "rank_ic_mean": 0.07734443430218979,
+      "long_short_return_mean": 0.0005235832188263221,
+      "turnover_mean": 1.1682699210337402,
+      "min_daily_long_short_return": 9.96154005465999e-05
     }
   ],
   "seed_summary": {
@@ -230,11 +254,13 @@
     },
     "22500_b32": {
       "seeds": [
-        11
+        11,
+        29,
+        47
       ],
-      "rank_ic_mean": 0.08906062756142916,
-      "rank_ic_sd": null,
-      "turnover_mean": 1.1840452261306535
+      "rank_ic_mean": 0.08559619632647901,
+      "rank_ic_sd": 0.007176781882353452,
+      "turnover_mean": 1.211623594161283
     }
   },
   "selection": {
@@ -357,19 +383,21 @@
       {
         "label": "60d_22500_b32",
         "seeds": [
-          11
+          11,
+          29,
+          47
         ],
         "mean": {
-          "rank_ic_mean": 0.08906062756142916,
-          "long_short_return_mean": 0.0006073972748168524,
-          "turnover_mean": 1.1840452261306535,
-          "min_daily_long_short_return": 0.00025451409360158846
+          "rank_ic_mean": 0.08559619632647901,
+          "long_short_return_mean": 0.0005857204730013788,
+          "turnover_mean": 1.211623594161283,
+          "min_daily_long_short_return": 0.00019388879683681663
         },
         "std": {
-          "rank_ic_mean": null,
-          "long_short_return_mean": null,
-          "turnover_mean": null,
-          "min_daily_long_short_return": null
+          "rank_ic_mean": 0.007176781882353452,
+          "long_short_return_mean": 5.4625865203697335e-05,
+          "turnover_mean": 0.061933277887365364,
+          "min_daily_long_short_return": 8.274990772678587e-05
         },
         "guardrail": {
           "turnover_max": 1.3211,
@@ -416,6 +444,24 @@
         "interval": [
           0.004747008248293075,
           0.011295218921112588
+        ]
+      }
+    },
+    "22500_ensemble_reference": {
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "rank_ic_mean": 0.09344695607431076,
+      "long_short_return_mean": 0.0006383774718338746,
+      "turnover_mean": 1.1126256281407039,
+      "min_daily_long_short_return": 0.00020410760051139688,
+      "vs_baseline_seed11": {
+        "mean": 0.007419029469383378,
+        "interval": [
+          0.006676068470840282,
+          0.012753296036303938
         ]
       }
     }
@@ -914,15 +960,15 @@
   "decision": {
     "new_baseline": "V3 = 60d/19800 CSZ, three-seed equal-weight ensemble (seeds 11/29/47)",
     "schedule_change": "rejected",
-    "schedule_read": "No single-seed schedule passes: cross-seed RankIC means are 0.08359 (9000), 0.08297 (13500), 0.08294 (18000) and 0.08448 (19800) while the cross-seed sd grows from 0.0023 to 0.0088; per-seed paired differences change sign, so more training buys variance, not quality.",
+    "schedule_read": "No schedule passes the pre-registered rule: cross-seed RankIC means are 0.08359 (9000), 0.08297 (13500), 0.08294 (18000), 0.08448 (19800) and 0.08560 (22500) while the cross-seed sd grows from 0.0023 to 0.0088; 22500 looked like a pass at two seeds (+0.00509) but its third seed fell to -0.00415, leaving a +0.00201 mean with one seed negative. More training buys variance, not quality.",
     "batch_read": "batch64/9900 (same 1.322 epoch share, half the updates) scores 0.09019 versus 0.09048 for batch32/19800 at seed 11, so samples-seen rather than optimizer-step count carries the (single-seed) difference.",
-    "ensemble_read": "The three-seed ensemble is the only change that survives every check: +0.0063 paired daily RankIC over the single-seed V2 baseline (5-day block 95% CI +0.0047..+0.0113), turnover 1.127 versus 1.326, and positive on all three replay windows (+0.0073 nov, +0.0055 jan, +0.0027 mar versus the V2 seed-11 model).",
+    "ensemble_read": "The 22,500 ensemble scores 0.093447 on validation but its recipe has a +0.0020 three-seed mean with one negative seed and no multi-window replay, so it is recorded as a reference only and V3 stays on 19,800. The three-seed ensemble is the only change that survives every check: +0.0063 paired daily RankIC over the single-seed V2 baseline (5-day block 95% CI +0.0047..+0.0113), turnover 1.127 versus 1.326, and positive on all three replay windows (+0.0073 nov, +0.0055 jan, +0.0027 mar versus the V2 seed-11 model).",
     "coverage_read": "The 132-day monthly-sampled arm was rejected in the previous round: no cross-seed RankIC gain, turnover +0.21 on every window, and one replay window negative.",
     "retain": "V2 (60d/9000) remains as the archived previous baseline; its weights and records are untouched.",
     "next": "Deploy the ensemble through the blend checkpoint (verified with the local flat checker) and re-check the platform run; if the platform rejects the blend, fall back to the single-seed 60d/9000 package."
   },
   "evidence_boundary": [
-    "Two seeds only for 18000 and 22500; batch64 only seed 11; the schedule conclusions are therefore screening-level.",
+    "Three seeds for 9000/13500/19800/22500, two for 18000, one for batch64; the 22500 arm passed at two seeds and failed once the third landed, which is exactly the selection trap this protocol guards against.",
     "Ten-day validation window with 5-day blocks gives wide intervals; daily cross-sections are not independent.",
     "The 19800 recipe alone is not promotable (single seeds disagree); only the ensemble clears the guardrail.",
     "Ensemble cost: three checkpoints and roughly three times the inference work of a single model.",
@@ -930,7 +976,7 @@
     "The blend checkpoint format was verified with the offline flat checker (synthetic DAI inputs, network blocked); platform acceptance is still unverified."
   ],
   "reproduction": {
-    "commit": "43282b72eb3d4631307d685b2b4189456e806411",
+    "commit": "6ab3c0cd11486a104b1afc463b624f04449cc941",
     "configs": [
       "configs/model_v2_60d_csz_step13500_seed11.json",
       "configs/model_v2_60d_csz_step22500_seed11.json",
