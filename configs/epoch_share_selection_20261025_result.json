@@ -481,82 +481,6 @@
         "rank_ic_ci_above_zero": true,
         "pass": false
       }
-    },
-    {
-      "label": "60d_22500_b32",
-      "seeds": [
-        11
-      ],
-      "mean": {
-        "rank_ic_mean": 0.08906062756142916,
-        "long_short_return_mean": 0.0006073972748168524,
-        "turnover_mean": 1.1840452261306535,
-        "min_daily_long_short_return": 0.00025451409360158846
-      },
-      "std": {
-        "rank_ic_mean": null,
-        "long_short_return_mean": null,
-        "turnover_mean": null,
-        "min_daily_long_short_return": null
-      },
-      "per_seed": [
-        {
-          "seed": 11,
-          "rank_ic_mean": 0.08906062756142916,
-          "long_short_return_mean": 0.0006073972748168524,
-          "turnover_mean": 1.1840452261306535,
-          "min_daily_long_short_return": 0.00025451409360158846
-        }
-      ],
-      "paired_vs_baseline": {
-        "rank_ic": {
-          "mean": 0.0030327009565017647,
-          "interval": [
-            0.000185526563424257,
-            0.006986108207192271
-          ],
-          "seeds": [
-            11
-          ],
-          "per_seed_mean": {
-            "11": 0.0030327009565017647
-          }
-        },
-        "long_short_return": {
-          "mean": -5.003113183713233e-06,
-          "interval": [
-            -2.2661525860730017e-05,
-            7.553480569085362e-05
-          ],
-          "seeds": [
-            11
-          ],
-          "per_seed_mean": {
-            "11": -5.003113183713233e-06
-          }
-        },
-        "turnover": {
-          "mean": -0.14198671931083998,
-          "interval": [
-            -0.1469131371141422,
-            -0.13605527638190962
-          ],
-          "seeds": [
-            11
-          ],
-          "per_seed_mean": {
-            "11": -0.14198671931083998
-          }
-        }
-      },
-      "guardrail": {
-        "turnover_max": 1.3211,
-        "turnover_ok": true,
-        "min_rank_ic_gain": 0.0046,
-        "rank_ic_gain_ok": false,
-        "rank_ic_ci_above_zero": true,
-        "pass": false
-      }
     }
   ],
   "guardrail": {
@@ -566,7 +490,6 @@
   "decision_rule": "Promotion needs three seeds; two-seed rows are screening only. The baseline is the 60d/9000 batch-32 arm with seeds 11/29/47.",
   "ranking_by_mean_rank_ic": [
     "60d_9900_b64",
-    "60d_22500_b32",
     "60d_22500_b32",
     "60d_18000_b32",
     "60d_19800_b32",
