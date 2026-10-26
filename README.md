@@ -701,6 +701,22 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 
 **产物与复现。** 训练配置 [seed11](configs/dual_patch_v3_60d_csz_19800.json) / [seed29](configs/dual_patch_v3_60d_csz_19800_seed29.json) / [seed47](configs/dual_patch_v3_60d_csz_19800_seed47.json)，验证对照 [计划](configs/dual_patch_v3_60d_csz_20261026_plan.json) 与 [记录](modified_tlob/dual_patch_v3_20261026.json)，跨月 [计划](configs/multiscale_replay_20261026_plan.json) / [记录](modified_tlob/multiscale_replay_20261026.json)，复验 [计划](configs/multiscale_replay_verify_20261026_plan.json) / [记录](modified_tlob/multiscale_replay_verify_20261026.json)，比较脚本 [compare_multiscale_replay.py](scripts/compare_multiscale_replay.py)，汇总记录 [dual_patch_multiscale_20261026.json](modified_tlob/dual_patch_multiscale_20261026.json)。三次训练 run 与两次 replay run 见汇总记录的 `artifacts.runs`。
 
+### 平台五项指标基线与本轮预注册（20261026）
+
+自本轮起，以 `best-three-trunk-equal-20261026` 九模型等权融合（TLOB/MLPLOB/双尺度Patch × seed 11/29/47，各 1/9）为固定分析基线；此前 V3 单主干三种子基线的结论保留为历史档案。按平台评分口径在五个已用开发月（2023-11、2024-01、2024-03、2024-04、2024-06，合计 104 个交易日）做本地近似。平台分数是五项指标在全体提交中的百分位等权平均；公榜分数未提供，本表不使用任何公榜分数。
+
+| 平台分项 | 本地中性化值 | 本地参考面板百分位 |
+|---|---|---|
+| IC 均值 | 0.0609 | 0.93 |
+| IC_IR | 2.68 | **0.60** |
+| 多空夏普 | 40.0 | 0.73 |
+| 压力场景（高波动/高成交额取低者 RankIC） | 0.0540 | 0.80 |
+| 换手率（越低越好） | 1.102 | 1.00 |
+
+五等权百分位代理 0.813，距 0.85 差 0.037。分项缺口为 IC_IR +0.050、夏普 +0.023、压力 +0.010，IC 与换手为负贡献；**IC_IR（跨期稳定性）是最大且唯一超过总缺口的来源**。逐月 IC_IR 从 2023-11 的 5.43 降到 2024-04 的 2.46，等权成员中 TLOB 三种子的 IC_IR 最低（2.42–2.58），把混合值拉到 2.68。参考面板是本地冻结候选集（9 个检查点 + 7 个预声明等权组合，基线百分位以其余 15 臂为对照），不是比赛全体提交，0.813 不是平台分数，仅用于排序与缺口分解。面板内 MLP+Patch 50:50 已达 0.933，但这是已用月份的样本内结果，只作为候选线索，需通过终检，不能据此直接替换基线。
+
+本轮比较指标、晋级门槛与终检区间已预先固定：[计划](configs/round5_official_five_20261026_plan.json)。主指标为五项等权代理，5 日块自助 4000 次；守卫线 IC≥0.0599、IC_IR≥2.681、夏普≥38.99、压力≥0.0530、换手≤1.112；**终检区间 2024-10-08 至 2025-01-01，仅查看一次**，不用于选模。逐月结果与口径见[记录](modified_tlob/round5_platform_five_20261026.json)，重放脚本 [report_platform_metrics.py](scripts/report_platform_metrics.py)。基线权重与九成员 spec 已冻结（`runs/submission-best-20261026/build/`），九模型 flat 提交包尚未构建或离线校验。
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

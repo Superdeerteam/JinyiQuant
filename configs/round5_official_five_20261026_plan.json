@@ -1,0 +1,143 @@
+{
+ "schema_version": 1,
+ "experiment_id": "round5-official-five-20261026",
+ "status": "protocol_fixed_pending_candidate",
+ "objective": "Raise the equal-weight five-component proxy of the frozen nine-model blend toward the 0.85 target without degrading any of the other four components beyond the pre-declared guardrails.",
+ "official_score": {
+  "formula": "0.2*R_IC + 0.2*R_ICIR + 0.2*R_SR + 0.2*R_Stress + 0.2*R_Turnover",
+  "rank": "each raw metric is ranked as a percentile over all valid submissions; turnover is ranked in reverse",
+  "target": 0.85,
+  "source": "https://bigquant.com/square/competition/45b41c7a-0ac8-42e9-9fe3-0c33dcfb9bca (scoring section, retrieved 2026-10-26)"
+ },
+ "baseline": {
+  "experiment_id": "best-three-trunk-equal-20261026",
+  "description": "TLOB + MLPLOB + dual_patch, seeds 11/29/47, fixed 1/9 weight per checkpoint",
+  "code_commit": "7e1366ec2e4e5b7082e79a19906f5695ce114f42",
+  "packaging_patch_sha256": "c727fc0278bc0750175b8b3834b2fe9439ef1b9314971c52f5dfb5b8900d128f",
+  "blend_weights_sha256": "93df1dfb89eb187033f8e0f0225f39ea9ce86a5078d12514af1f7c098393ae5a",
+  "five_neutralized_pooled_104d": {
+   "ic": 0.06091,
+   "ic_ir": 2.680903,
+   "long_short_sharpe": 39.993601,
+   "stress": 0.053985,
+   "turnover": 1.101947
+  },
+  "spec_sha256": "836d23c8beced719e554b21c42ebb42b9d9a78aa281559806adddca2818a4569",
+  "package_status": "blend weights and nine-member spec frozen at runs/submission-best-20261026/build; the nine-model flat package was not built or checked offline before this protocol",
+  "role": "current fixed analysis baseline; supersedes the V3 three-seed TLOB baseline, whose records stay as history"
+ },
+ "local_approximation": {
+  "record": "modified_tlob/round5_platform_five_20261026.json",
+  "script": "scripts/report_platform_metrics.py",
+  "neutralization": "previous-trading-day exposure, median +/- 3*1.4826*MAD winsorization, cross-section z-score, equal-weight OLS on 10 style factors and 32 industry dummies",
+  "stress": "minimum of the pooled high-volatility and high-amount daily rank IC; high/low volatility and high/low amount are defined from the official vwap/amount series with a 20-day rolling median and the 8 sampled clocks",
+  "ic": "daily Pearson IC of the neutralized score; ic_ir is mean/std(ddof=1), not annualized; sharpe is gross and annualized by sqrt(252); turnover is mean daily 0.5*sum|dw|",
+  "reference_panel": "fixed 15-arm reference panel: the 16 local arms minus the baseline (9 frozen checkpoints + 6 pairwise equal-weight combinations); the baseline's own percentiles use the same denominator 15, so removing it does not change them. A new candidate is scored against the 15 fixed arms with (worse + 0.5*ties)/15 and is never inserted into the panel.",
+  "today_proxy": {
+   "composite": 0.813333,
+   "gap_to_target": 0.036667,
+   "percentiles": {
+    "ic": 0.933333,
+    "ic_ir": 0.6,
+    "sharpe": 0.733333,
+    "stress": 0.8,
+    "turnover": 1.0
+   },
+   "gap_contributions": {
+    "ic": -0.016667,
+    "ic_ir": 0.05,
+    "sharpe": 0.023333,
+    "stress": 0.01,
+    "turnover": -0.03
+   }
+  },
+  "interpretation": "IC, stress and turnover are already above the 0.85 percentile line on the local panel; IC_IR carries the largest positive shortfall (+0.050, larger than the whole +0.037 proxy gap) and Sharpe carries the second (+0.023). The proxy level is not the platform score because the competition field is unobserved; only the ordering is transferable."
+ },
+ "comparison_metrics": {
+  "primary": "equal-weight composite of the five component percentiles against the fixed 15-arm reference panel",
+  "components": [
+   "ic",
+   "ic_ir",
+   "long_short_sharpe",
+   "stress",
+   "turnover"
+  ],
+  "priority_lever": "ic_ir",
+  "uncertainty": "5-day moving-block bootstrap, 4000 draws, seed 20261026, over the 104 pooled days; each draw recomputes all five components for both arms and their percentiles against the fixed panel; report the 95% interval of the composite difference",
+  "robustness": "the candidate must improve IC_IR in both the screen months (2023-11, 2024-01, 2024-03) and the verify months (2024-04, 2024-06)"
+ },
+ "promotion_rule": {
+  "composite_min": 0.85,
+  "composite_interval": "5-day block 95% interval excludes zero",
+  "robustness": "both screen and verify IC_IR differences positive",
+  "guardrails": {
+   "ic_min": 0.05991,
+   "ic_ir_min": 2.680903,
+   "sharpe_min": 38.993601,
+   "stress_min": 0.052985,
+   "turnover_max": 1.111947
+  },
+  "otherwise": "retain the nine-model equal blend as the submission baseline"
+ },
+ "candidate_rule": {
+  "families": [
+   "fixed convex reweighting of the nine frozen checkpoints, no retraining, weights declared before evaluation",
+   "retrained variant with one declared stability change (regime-balanced sampling, month-balanced loss or an equivalent single-factor change) using the same data, recipe and budget as the 20261026 runs"
+  ],
+  "declaration": "the exact weights or training change must be written into a candidate plan before any candidate metric is computed; no post-hoc weight or threshold search",
+  "note": "the local panel shows TLOB seeds carry the lowest IC_IR (2.42-2.58) and the equal blend inherits that drag; a MLP+Patch 50:50 reweighting already reaches composite 0.933 in-sample, but it was observed on already-used months and is not promotion evidence by itself"
+ },
+ "windows": {
+  "screen": [
+   {
+    "name": "nov2023",
+    "start": "2023-11-01T00:00:00",
+    "end": "2023-12-01T00:00:00",
+    "days": 22
+   },
+   {
+    "name": "jan2024",
+    "start": "2024-01-01T00:00:00",
+    "end": "2024-02-01T00:00:00",
+    "days": 22
+   },
+   {
+    "name": "mar2024",
+    "start": "2024-03-01T00:00:00",
+    "end": "2024-04-01T00:00:00",
+    "days": 21
+   }
+  ],
+  "verify": [
+   {
+    "name": "apr2024",
+    "start": "2024-04-01T00:00:00",
+    "end": "2024-05-01T00:00:00",
+    "days": 20
+   },
+   {
+    "name": "jun2024",
+    "start": "2024-06-01T00:00:00",
+    "end": "2024-07-01T00:00:00",
+    "days": 19
+   }
+  ],
+  "final_check": {
+   "name": "q4_2024_final",
+   "start": "2024-10-08T00:00:00",
+   "end": "2025-01-01T00:00:00",
+   "role": "final holdout",
+   "max_views": 1,
+   "purpose": "one-shot verification of the frozen round-5 candidate after all selection is complete; never used for training, weighting, threshold or candidate choice"
+  }
+ },
+ "access_policy": "The five development months and the 2023-11 validation window are already-used research data. The 2024-10-08..2025-01-01 final interval stays closed until the candidate is frozen; a final read must be logged in runs/audit.sqlite3 with the stated purpose and is counted against max_views=1. No 2025+ data.",
+ "decision": {
+  "rule": "promote the candidate only if the composite proxy is >= 0.85, its 5-day block 95% interval excludes zero, IC_IR improves in both screen and verify months, and all five guardrails hold; otherwise retain the nine-model equal blend",
+  "action": "decided_by_script_guardrail"
+ },
+ "budget": {
+  "candidate_plan_required": true,
+  "note": "wall time, RSS and training steps are fixed in the candidate plan before the run; this protocol itself opens no new data and trains nothing"
+ }
+}
