@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual-patch-v3-60d-csz-20261026",
+  "hypothesis": "With the V3 data recipe fixed (60 trading days, raw 12-dim L1-L3 windows, CSZ labels, train_std scaling, 19,800 steps, seeds 11/29/47), the dual-scale PatchTST trunk (4 coarse 32-bar patches and 16 fine 8-bar patches inside the network) may match or beat the TLOB trunk; the comparison is an equal-weight three-seed ensemble on the same validation window. Guardrails are carried over unchanged from the V3 arm study (minimum +0.0023 RankIC, turnover ceiling 1.3211) and are not fitted here.",
+  "design": {
+    "block_days": 5,
+    "bootstrap_samples": 4000,
+    "bootstrap_seed": 20261026,
+    "guardrail": {
+      "min_rank_ic_gain": 0.0023,
+      "turnover_max": 1.3211
+    }
+  },
+  "arms": {
+    "v3_shuffle19800": {
+      "role": "base",
+      "seeds": [
+        "v2-60d-csz-19800",
+        "v2-60d-csz-19800-seed29",
+        "v2-60d-csz-19800-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09234883942058289,
+        "turnover_mean": 1.127440775305097,
+        "long_short_return_mean": 0.0006493823488517845,
+        "min_daily_long_short_return": 0.00037465835117957483,
+        "long_short_sharpe": 49.866773387426804,
+        "rank_ic_ir": 4.22645082438015,
+        "score_std": 0.00022343903928762217,
+        "score_abs_mean": 0.00018633783772873804
+      }
+    },
+    "dual_patch_v3": {
+      "role": "candidate",
+      "seeds": [
+        "dual-patch-v3-60d-csz-19800",
+        "dual-patch-v3-60d-csz-19800-seed29",
+        "dual-patch-v3-60d-csz-19800-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09295229167042793,
+        "turnover_mean": 1.1239860014357503,
+        "long_short_return_mean": 0.0006456790712108921,
+        "min_daily_long_short_return": 0.0002505179689734208,
+        "long_short_sharpe": 43.46614890952206,
+        "rank_ic_ir": 3.6618092352992275,
+        "score_std": 0.00024413741934116039,
+        "score_abs_mean": 0.00019837901814384845
+      }
+    }
+  },
+  "pairs": [
+    {
+      "left": "dual_patch_v3",
+      "right": "v3_shuffle19800",
+      "deltas": {
+        "rank_ic": {
+          "mean": 0.00060345,
+          "interval": [
+            -0.00127469,
+            0.0024816
+          ]
+        },
+        "long_short_return": {
+          "mean": -3.7e-06,
+          "interval": [
+            -2.594e-05,
+            5.6e-07
+          ]
+        },
+        "turnover": {
+          "mean": -0.00345477,
+          "interval": [
+            -0.01011307,
+            0.01633166
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    }
+  ],
+  "decision": {
+    "rule": "promote dual_patch_v3 only if the paired RankIC gain >= 0.0023, its 5-day block interval excludes zero, and ensemble turnover <= 1.3211; otherwise retain v3_shuffle19800 as the submission baseline",
+    "action": "decided_by_script_guardrail"
+  }
+}

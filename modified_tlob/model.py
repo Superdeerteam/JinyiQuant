@@ -1,4 +1,10 @@
-"""Fixed upstream TLOB/MLPLOB trunks adapted to scalar regression. See provenance.json (MIT)."""
+"""Fixed upstream TLOB/MLPLOB trunks adapted to scalar regression. See provenance.json (MIT).
+
+``DualPatchTLOB`` is a project extension: it keeps the same 128-bar raw LOB input,
+BiN and scalar head contract but replaces the trunk with two channel-independent
+PatchTST-style encoders over non-overlapping 4-patch (32-bar) and 16-patch (8-bar)
+scales (Nie et al., PatchTST, ICLR 2023).
+"""
 
 import torch
 from torch import nn
@@ -152,6 +158,97 @@ class MLPLOB(nn.Module):
         for layer in self.final_layers:
             x = layer(x)
         return x[:, 0]
+
+
+DUAL_PATCH_CHANNEL_DIM = 8
+
+
+class PatchEncoder(nn.Module):
+    """Channel-independent PatchTST-style encoder for one temporal scale.
+
+    The lookback is cut into non-overlapping patches; every feature channel is
+    tokenized separately with the shared patch embedding, positional encoding and
+    transformer, matching the channel-independent design of PatchTST.
+    """
+
+    def __init__(self, *, seq_size, patch_count, hidden_dim, num_layers, num_heads):
+        super().__init__()
+        if type(patch_count) is not int or patch_count < 2 or patch_count > seq_size or seq_size % patch_count:
+            raise ValueError("patch_count must be an integer >= 2 that divides the lookback exactly")
+        if type(hidden_dim) is not int or type(num_heads) is not int or hidden_dim % num_heads:
+            raise ValueError("Patch attention requires hidden_dim divisible by num_heads")
+        self.patch_count = patch_count
+        self.patch_length = seq_size // patch_count
+        self.embed = nn.Linear(self.patch_length, hidden_dim)
+        self.position = nn.Parameter(torch.empty(1, patch_count, hidden_dim))
+        nn.init.uniform_(self.position, -0.02, 0.02)
+        layer = nn.TransformerEncoderLayer(
+            d_model=hidden_dim, nhead=num_heads, dim_feedforward=hidden_dim * 4, dropout=0.0,
+            activation="gelu", batch_first=True, norm_first=True)
+        self.encoder = nn.TransformerEncoder(layer, num_layers=num_layers, enable_nested_tensor=False)
+        self.norm = nn.LayerNorm(hidden_dim)
+
+    def forward(self, x):
+        if x.ndim != 3:
+            raise ValueError("PatchEncoder expects [batch, features, lookback]")
+        batch, features, seq_size = x.shape
+        if seq_size != self.patch_count * self.patch_length:
+            raise ValueError("PatchEncoder lookback differs from its patch contract")
+        patches = x.reshape(batch * features, self.patch_count, self.patch_length)
+        tokens = self.embed(patches) + self.position
+        return self.norm(self.encoder(tokens))
+
+
+class DualPatchTLOB(nn.Module):
+    """Dual-scale patch trunk over the unchanged 128x12 raw order-book window.
+
+    Two channel-independent patch encoders summarize non-overlapping 32-bar
+    (4-patch, slower structure) and 8-bar (16-patch, fast changes) scales. Each
+    branch projects every channel's patch tokens to a short embedding, the branch
+    embeddings are concatenated and a scalar regression head fuses them. BiN and
+    the scalar output contract are shared with the other trunks.
+    """
+
+    def __init__(self, *, hidden_dim=40, num_layers=3, seq_size=128, num_features=12,
+                 num_heads=4, patch_counts=(4, 16)):
+        super().__init__()
+        dimensions = (hidden_dim, num_layers, seq_size, num_features, num_heads)
+        if any(type(d) is not int or d <= 0 for d in dimensions):
+            raise ValueError("Model dimensions must be positive integers")
+        if hidden_dim < 4 or seq_size < 4 or num_features < 2:
+            raise ValueError("Dual patch requires hidden_dim/seq_size >= 4 and features >= 2")
+        counts = tuple(patch_counts)
+        if len(counts) != 2 or any(type(c) is not int for c in counts) or len(set(counts)) != 2:
+            raise ValueError("patch_counts requires two distinct integer scales")
+        if any(count < 2 or seq_size % count for count in counts):
+            raise ValueError("patch_counts must be >= 2 and divide the lookback exactly")
+        if counts[0] > counts[1]:
+            raise ValueError("patch_counts must be ordered coarse-to-fine (fewer patches first)")
+        self.seq_size, self.num_features = seq_size, num_features
+        self.patch_counts = counts
+        self.channel_dim = DUAL_PATCH_CHANNEL_DIM
+        self.norm_layer = BiN(num_features, seq_size)
+        self.branches = nn.ModuleList([
+            PatchEncoder(seq_size=seq_size, patch_count=count, hidden_dim=hidden_dim,
+                         num_layers=num_layers, num_heads=num_heads) for count in counts])
+        self.channel_heads = nn.ModuleList([
+            nn.Linear(count * hidden_dim, self.channel_dim) for count in counts])
+        fused = len(counts) * num_features * self.channel_dim
+        self.head = nn.Sequential(nn.Linear(fused, hidden_dim), nn.GELU(), nn.Linear(hidden_dim, 1))
+
+    def forward(self, x):
+        if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
+            raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
+        if not torch.isfinite(x).all():
+            raise ValueError("Input must be finite after shared missing-value preprocessing")
+        normalized = self.norm_layer(x.transpose(1, 2))
+        batch = normalized.shape[0]
+        embeddings = []
+        for encoder, channel_head in zip(self.branches, self.channel_heads):
+            tokens = encoder(normalized)
+            channel = tokens.reshape(batch, self.num_features, -1)
+            embeddings.append(channel_head(channel).reshape(batch, -1))
+        return self.head(torch.cat(embeddings, dim=1))[:, 0]
 
 
 def parameter_groups(network):

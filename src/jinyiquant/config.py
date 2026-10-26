@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .io import digest, read_json
 
 # Torch trunks share the same preprocessing, labels, loss and checkpoints.
-TORCH_MODEL_KINDS = ("modified_tlob", "mlplob")
+TORCH_MODEL_KINDS = ("modified_tlob", "mlplob", "dual_patch")
 
 
 class StrictModel(BaseModel):
@@ -116,11 +116,12 @@ class DataConfig(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    kind: Literal["ridge", "mean", "modified_tlob", "mlplob"] = "ridge"
+    kind: Literal["ridge", "mean", "modified_tlob", "mlplob", "dual_patch"] = "ridge"
     alpha: float = Field(default=1.0, gt=0)
     hidden_dim: int = Field(default=40, ge=4, le=512)
     num_layers: int = Field(default=4, ge=1, le=12)
     num_heads: int = Field(default=1, ge=1, le=8)
+    patch_counts: tuple[int, int] = (4, 16)
     is_sin_emb: bool = True
     epochs: int = Field(default=2, ge=1, le=1000)
     max_steps: int | None = Field(default=None, ge=1)
@@ -149,6 +150,13 @@ class ModelConfig(StrictModel):
             raise ValueError("LOB input transformations require a torch regression model")
         if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
             raise ValueError("Sinusoidal embedding requires even hidden_dim")
+        if self.kind == "dual_patch":
+            if self.hidden_dim % self.num_heads:
+                raise ValueError("Patch attention requires hidden_dim divisible by num_heads")
+            if any(count < 2 for count in self.patch_counts) or len(set(self.patch_counts)) != 2:
+                raise ValueError("patch_counts requires two distinct scales >= 2")
+            if self.patch_counts[0] > self.patch_counts[1]:
+                raise ValueError("patch_counts must be ordered coarse-to-fine (fewer patches first)")
         if self.ranking_loss != "none" and self.sampling != "timestamp_grouped":
             raise ValueError("A pairwise ranking loss requires same-timestamp grouped sampling")
         if (self.ranking_loss == "none") != (self.ranking_loss_weight == 0):
@@ -211,6 +219,9 @@ class RunConfig(StrictModel):
             validate_input_schema(self.data.feature_columns, self.model.book_representation, self.model.trade_features)
             if self.data.lookback < 4:
                 raise ValueError("Torch regression models require lookback >= 4")
+            if self.model.kind == "dual_patch" and any(
+                    self.data.lookback % count for count in self.model.patch_counts):
+                raise ValueError("dual_patch patch_counts must divide data.lookback exactly")
         if self.splits.train.start < self.data.allowed_start or self.splits.final.end > self.data.allowed_end:
             raise ValueError("All splits must stay within the declared allowed development interval")
         if self.data.monthly_sampling is not None and (

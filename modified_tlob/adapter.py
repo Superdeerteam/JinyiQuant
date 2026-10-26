@@ -12,10 +12,10 @@ import pandas as pd
 import torch
 
 from .device import device_resources, select_device
-from .model import MLPLOB, ModifiedTLOB, parameter_groups
+from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, parameter_groups
 from .schema import validate_input_schema
 
-BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB}
+BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB, "dual_patch": DualPatchTLOB}
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
                    "missing_sentinel", "price_scale", "history_days", "sample_times", "label_horizon_minutes")
@@ -39,7 +39,8 @@ BLEND_KIND = "modified_tlob_blend"
 BLEND_SCHEMA_VERSION = 4
 BLEND_SHARED_KEYS = ("target_scaling", "target_centering", "time_loss_weighting", "book_representation",
                      "trade_features")
-BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": ()}
+BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": (),
+                        "dual_patch": ("num_heads", "patch_counts")}
 
 
 def timestamp_zscore_train_rms_matched(keys, target, mask):
@@ -179,11 +180,24 @@ def pairwise_hinge_ranking_loss(scores, targets):
     return torch.clamp(-(score_gap * target_gap), min=0).mean()
 
 
+def _architecture_with_patch_counts(architecture):
+    """Canonicalize the dual-scale patch counts for checkpoint comparisons.
+
+    ``torch.save`` preserves the tuple while JSON text export stores a list, so the
+    loader compares tuple forms instead of the serialized container.
+    """
+    architecture = dict(architecture)
+    if "patch_counts" in architecture:
+        architecture["patch_counts"] = tuple(architecture["patch_counts"])
+    return architecture
+
+
 class TLOBAdapter:
     """Shared regression training/inference loop for the torch LOB backbones.
 
-    ``model.kind`` selects the upstream trunk (TLOB attention or MLPLOB dual-axis
-    MLP); preprocessing, labels, loss, checkpoints and evaluation stay identical.
+    ``model.kind`` selects the upstream trunk (TLOB attention, MLPLOB dual-axis MLP
+    or the project's dual-scale patch encoder); preprocessing, labels, loss,
+    checkpoints and evaluation stay identical.
     """
 
     def __init__(self, model_config, data_config, *, seed=42, recorder=None):
@@ -191,6 +205,8 @@ class TLOBAdapter:
         self.config.setdefault("kind", "modified_tlob")
         if self.config["kind"] not in BACKBONES:
             raise ValueError(f"Unsupported torch model kind: {self.config['kind']!r}")
+        if self.config["kind"] == "dual_patch":
+            self.config["patch_counts"] = tuple(self.config.get("patch_counts", (4, 16)))
         self.config.setdefault("target_scaling", "none")
         self.config.setdefault("target_centering", "none")
         self.config.setdefault("max_steps", None)
@@ -232,6 +248,8 @@ class TLOBAdapter:
         self.architecture = {k: self.config[k] for k in ("hidden_dim", "num_layers")}
         if self.config["kind"] == "modified_tlob":
             self.architecture.update({k: self.config[k] for k in ("num_heads", "is_sin_emb")})
+        elif self.config["kind"] == "dual_patch":
+            self.architecture.update({k: self.config[k] for k in ("num_heads", "patch_counts")})
         self.architecture.update(seq_size=data["lookback"], num_features=len(fields))
         self.network = BACKBONES[self.config["kind"]](**self.architecture).to(self.device)
         self.parameter_groups = parameter_groups(self.network)
@@ -713,7 +731,7 @@ class TLOBAdapter:
             raise ValueError("LOB input transformations require checkpoint schema_version=3")
         if payload["schema_version"] == 1 and result.config["target_scaling"] != "none":
             raise ValueError("Target scaling requires checkpoint schema_version=2")
-        if result.architecture != payload["architecture"]:
+        if result.architecture != _architecture_with_patch_counts(payload["architecture"]):
             raise ValueError("Checkpoint architecture/preprocessing mismatch")
         state = payload["state_dict"]
         if text_state:

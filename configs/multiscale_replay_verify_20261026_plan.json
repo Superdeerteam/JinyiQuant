@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "experiment_id": "multiscale-replay-verify-20261026",
+  "hypothesis": "Re-verify the pre-declared patch-inclusive equal-weight blends on two unused development months (2024-04 and 2024-06) with the same nine frozen checkpoints, raw and prior-day-exposure neutralized scores; no weights are refitted and no month was used in the 2023-11/2024-01/2024-03 screen.",
+  "output_root": "../runs/multiscale-replay-verify-20261026",
+  "seed": 20261026,
+  "bootstrap_draws": 20000,
+  "chunk_days": 6,
+  "predict_batch_size": 256,
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "windows": [
+    {
+      "name": "apr2024",
+      "label": "2024-04 development month",
+      "start": "2024-04-01T00:00:00",
+      "end": "2024-05-01T00:00:00"
+    },
+    {
+      "name": "jun2024",
+      "label": "2024-06 development month",
+      "start": "2024-06-01T00:00:00",
+      "end": "2024-07-01T00:00:00"
+    }
+  ],
+  "versions": [
+    {
+      "name": "tlob_s11",
+      "label": "TLOB 60d/19800 seed 11",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4/modified_tlob_weights.json"
+    },
+    {
+      "name": "tlob_s29",
+      "label": "TLOB 60d/19800 seed 29",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef/modified_tlob_weights.json"
+    },
+    {
+      "name": "tlob_s47",
+      "label": "TLOB 60d/19800 seed 47",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21/modified_tlob_weights.json"
+    },
+    {
+      "name": "mlp_s11",
+      "label": "MLPLOB 60d/19800 seed 11",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607/modified_tlob_weights.json"
+    },
+    {
+      "name": "mlp_s29",
+      "label": "MLPLOB 60d/19800 seed 29",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d/modified_tlob_weights.json"
+    },
+    {
+      "name": "mlp_s47",
+      "label": "MLPLOB 60d/19800 seed 47",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7/modified_tlob_weights.json"
+    },
+    {
+      "name": "patch_s11",
+      "label": "Dual-scale patch 60d/19800 seed 11",
+      "role": "member",
+      "weights": "../replay_weights/patch_s11.json"
+    },
+    {
+      "name": "patch_s29",
+      "label": "Dual-scale patch 60d/19800 seed 29",
+      "role": "member",
+      "weights": "../replay_weights/patch_s29.json"
+    },
+    {
+      "name": "patch_s47",
+      "label": "Dual-scale patch 60d/19800 seed 47",
+      "role": "member",
+      "weights": "../replay_weights/patch_s47.json"
+    }
+  ],
+  "pairs": [
+    [
+      "tlob_s11",
+      "patch_s11"
+    ],
+    [
+      "mlp_s11",
+      "patch_s11"
+    ]
+  ]
+}
