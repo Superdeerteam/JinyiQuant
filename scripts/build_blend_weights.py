@@ -4,7 +4,9 @@ Members keep their own fitted ``target_scale`` and missing-history fallback, so 
 blend only fixes the member weights; no refitting, rank transform or normalization is
 introduced. The output is the schema-4 checkpoint that ``TLOBAdapter.load`` and the
 platform package consume. Members may use either torch trunk (``modified_tlob`` or
-``mlplob``) as long as they share one kind, preprocessing and prediction scale.
+``mlplob``), including a mixture of both, as long as they share preprocessing,
+prediction scale and the common recipe keys; trunk-specific keys must match within
+each trunk group.
 """
 
 import argparse
@@ -19,7 +21,13 @@ for _path in (ROOT / "src", ROOT):
         sys.path.insert(0, str(_path))
 
 from jinyiquant.io import file_sha256, utc_now  # noqa: E402
-from modified_tlob.adapter import BACKBONES, BLEND_KIND, BLEND_SCHEMA_VERSION, blend_shared_keys  # noqa: E402
+from modified_tlob.adapter import (  # noqa: E402
+    BACKBONE_SHARED_KEYS,
+    BACKBONES,
+    BLEND_KIND,
+    BLEND_SCHEMA_VERSION,
+    BLEND_SHARED_KEYS,
+)
 
 ALIASES = "name=path:weight"
 
@@ -48,12 +56,11 @@ def load_payload(path):
 
 def validate(members):
     reference = members[0][2]
-    kind = reference["kind"]
-    if any(payload["kind"] != kind for _, _, payload in members):
-        raise ValueError("Blend members must share one trunk kind")
-    shared = blend_shared_keys(kind)
+    kinds = [payload["kind"] for _, _, payload in members]
+    if any(kind not in BACKBONES for kind in kinds):
+        raise ValueError("Blend members must be plain torch backbone checkpoints")
     for name, _, payload in members:
-        for key in shared:
+        for key in BLEND_SHARED_KEYS:
             left = payload["model_config"].get(key)
             right = reference["model_config"].get(key)
             if left != right:
@@ -62,6 +69,16 @@ def validate(members):
             raise ValueError(f"{name}: preprocessing differs from {members[0][0]}")
         if payload.get("target_scale") != reference.get("target_scale"):
             raise ValueError(f"{name}: target_scale differs from {members[0][0]}")
+    groups = {}
+    for name, path, payload in members:
+        groups.setdefault(payload["kind"], []).append((name, path, payload))
+    for kind, group in groups.items():
+        for key in BACKBONE_SHARED_KEYS[kind]:
+            for name, _, payload in group[1:]:
+                left = payload["model_config"].get(key)
+                right = group[0][2]["model_config"].get(key)
+                if left != right:
+                    raise ValueError(f"{name}: model {key}={left!r} differs from {group[0][0]} ({right!r})")
 
 
 def git_commit():
@@ -86,13 +103,15 @@ def build(members, expected, *, experiment_id, note=""):
             raise ValueError(f"{name}: weight checksum changed: {digest}")
         entries.append({"name": name, "weight": weight, "sha256": digest, "payload": payload})
     validate([(name, path, entry["payload"]) for (name, path, _), entry in zip(members, entries)])
+    kinds = [entry["payload"]["kind"] for entry in entries]
     return {
         "schema_version": BLEND_SCHEMA_VERSION, "kind": BLEND_KIND,
         "members": entries,
         "blend": {"method": "score_weighted_mean", "weights": dict(zip(names, weights)),
                   "units": "member_target_scale_restored_return_score",
                   "fallback": "weighted sum of each member's training-mean fallback",
-                  "kind": entries[0]["payload"]["kind"]},
+                  "kind": kinds[0] if len(set(kinds)) == 1 else "mixed",
+                  "member_kinds": dict(zip(names, kinds))},
         "created_at_utc": utc_now(), "experiment_id": experiment_id,
         "code": {"commit": git_commit()},
         "source": {"builder": "scripts/build_blend_weights.py", "note": note},

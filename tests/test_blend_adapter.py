@@ -125,11 +125,48 @@ def test_mlplob_blend_reuses_the_same_trunk_contract(tmp_path):
     np.testing.assert_allclose(model.predict(batch()), expected, rtol=0, atol=1e-12)
 
 
-def test_blend_rejects_mixed_trunks(tmp_path):
-    left = export(trained(1, kind="modified_tlob"), tmp_path / "left.json")
-    right = export(trained(2, kind="mlplob"), tmp_path / "right.json")
-    with pytest.raises(ValueError, match="kind differs"):
+def test_blend_mixes_both_trunks_with_the_fixed_weighted_average(tmp_path):
+    left, right = trained(1, kind="modified_tlob"), trained(2, kind="mlplob")
+    payload = blend_payload(export(left, tmp_path / "left.json"), export(right, tmp_path / "right.json"))
+    model = TLOBAdapter.load(write(tmp_path / "blend.json", payload), device="cpu")
+    assert isinstance(model, TLOBBlend) and model.kinds == ("modified_tlob", "mlplob")
+    expected = 0.75 * left.predict(batch()) + 0.25 * right.predict(batch())
+    np.testing.assert_allclose(model.predict(batch()), expected, rtol=0, atol=1e-12)
+    assert model.preprocessing == left.preprocessing == right.preprocessing
+    assert model.target_scale == pytest.approx(0.003)
+
+
+def test_mixed_blend_rejects_a_different_common_input_transform(tmp_path):
+    left = export(trained(1), tmp_path / "left.json")
+    right = export(trained(2, kind="mlplob", book_representation="relative_mid_bps"),
+                   tmp_path / "right.json")
+    with pytest.raises(ValueError, match="book_representation"):
         TLOBAdapter.load(write(tmp_path / "blend.json", blend_payload(left, right)), device="cpu")
+
+
+def test_blend_rejects_trunk_specific_recipe_mismatch_within_one_trunk(tmp_path):
+    left = export(trained(1, kind="modified_tlob", num_heads=1), tmp_path / "left.json")
+    right = export(trained(2, kind="modified_tlob", num_heads=2), tmp_path / "right.json")
+    with pytest.raises(ValueError, match="num_heads"):
+        TLOBAdapter.load(write(tmp_path / "blend.json", blend_payload(left, right)), device="cpu")
+
+
+def test_builder_records_mixed_trunks_and_keeps_common_checks(tmp_path):
+    left, right = trained(1, kind="modified_tlob"), trained(2, kind="mlplob")
+    export(left, tmp_path / "left.json")
+    export(right, tmp_path / "right.json")
+    payload = build_blend_weights.build(
+        [("tlob", tmp_path / "left.json", 0.5), ("mlplob", tmp_path / "right.json", 0.5)],
+        {}, experiment_id="mixed-blend-test")
+    assert payload["kind"] == "modified_tlob_blend"
+    assert payload["blend"]["kind"] == "mixed"
+    assert payload["blend"]["member_kinds"] == {"tlob": "modified_tlob", "mlplob": "mlplob"}
+    other = trained(3, kind="mlplob", target_centering="timestamp_mean_train")
+    export(other, tmp_path / "other.json")
+    with pytest.raises(ValueError, match="target_centering"):
+        build_blend_weights.build([("tlob", tmp_path / "left.json", 0.5),
+                                   ("mlplob", tmp_path / "other.json", 0.5)], {},
+                                  experiment_id="bad")
 
 
 def test_builder_validates_members_and_writes_schema_four(tmp_path):

@@ -1,8 +1,9 @@
 """Build a frozen-weight package source for a fixed score blend.
 
-The package carries both member checkpoints inside one schema-4 weights file plus the
+The package carries the member checkpoints inside one schema-4 weights file plus the
 exact member training configs, run ids and code, so the seven-file platform bundle can
-be flattened and timed without touching either original training project.
+be flattened and timed without touching the original training projects. Members may
+use different torch trunks; the training config records the trunk composition.
 """
 
 import argparse
@@ -60,6 +61,11 @@ def build_package(spec_path, destination):
         raise ValueError("Blend checkpoint must be the schema-4 fixed score blend")
     names = [entry["name"] for entry in blend["members"]]
     weights = {entry["name"]: float(entry["weight"]) for entry in blend["members"]}
+    kinds = {entry["name"]: entry["payload"]["kind"] for entry in blend["members"]}
+    trunk = next(iter(set(kinds.values()))) if len(set(kinds.values())) == 1 else "mixed"
+    declared = blend.get("blend", {}).get("kind")
+    if declared is not None and declared != trunk:
+        raise ValueError(f"Blend trunk label {declared!r} disagrees with its members ({trunk!r})")
     if names != [member["name"] for member in spec["members"]]:
         raise ValueError(f"Member order/name mismatch: checkpoint {names}")
     if weights != {member["name"]: float(member["weight"]) for member in spec["members"]}:
@@ -100,7 +106,7 @@ def build_package(spec_path, destination):
     shutil.copyfile(blend_path, destination / "modified_tlob_weights.json")
     write_json(destination / "training_config.json", {
         "schema_version": 1, "kind": BLEND_KIND, "experiment_id": spec["experiment_id"],
-        "trunk": blend.get("blend", {}).get("kind"),
+        "trunk": trunk, "member_kinds": kinds,
         "blend": {"method": "score_weighted_mean", "weights": weights,
                   "units": "member_target_scale_restored_return_score"},
         "blend_weights_sha256": blend_sha, "members": member_records,

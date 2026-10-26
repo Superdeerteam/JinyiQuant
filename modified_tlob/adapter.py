@@ -42,13 +42,6 @@ BLEND_SHARED_KEYS = ("target_scaling", "target_centering", "time_loss_weighting"
 BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": ()}
 
 
-def blend_shared_keys(kind):
-    """Recipe keys that must match across members of one fixed score blend."""
-    if kind not in BACKBONES:
-        raise ValueError(f"Unsupported blend member kind: {kind!r}")
-    return BLEND_SHARED_KEYS + BACKBONE_SHARED_KEYS[kind]
-
-
 def timestamp_zscore_train_rms_matched(keys, target, mask):
     """Cross-sectional z-score labels rescaled to the centered training-pool variance.
 
@@ -789,8 +782,9 @@ class TLOBBlend:
     Member scores restore their own fitted ``target_scale`` (including the
     missing-history fallback), so the weighted sum is already in comparable units
     and no refitting, rank transform or normalization is applied at prediction time.
-    Members may differ in capacity but must share one trunk kind, preprocessing,
-    prediction scale and the frozen recipe keys checked by ``blend_shared_keys``.
+    Members may differ in trunk and capacity; every member must share preprocessing,
+    prediction scale and the common recipe keys, and trunk-specific keys must match
+    within each trunk group. ``kinds`` records the trunk composition in member order.
     """
 
     kind = BLEND_KIND
@@ -806,25 +800,33 @@ class TLOBBlend:
         if abs(sum(weights) - 1.0) > 1e-9:
             raise ValueError("Blend weights must sum to one")
         reference = members[0]
-        kind = reference.config["kind"]
-        shared = blend_shared_keys(kind)
+        groups = {}
         for index, member in enumerate(members):
+            kind = member.config.get("kind")
+            if kind not in BACKBONES:
+                raise ValueError(f"Blend member {index} has an unsupported trunk kind")
             if not member.trained:
                 raise ValueError("Blend members must be fitted checkpoints")
-            if member.config["kind"] != kind:
-                raise ValueError(f"Blend member {index} kind differs from member 0")
             if member.preprocessing != reference.preprocessing:
                 raise ValueError(f"Blend member {index} preprocessing differs from member 0")
             if member.target_scale != reference.target_scale:
                 raise ValueError("Blend members must share one prediction scale")
-            for key in shared:
+            for key in BLEND_SHARED_KEYS:
                 if member.config.get(key) != reference.config.get(key):
                     raise ValueError(f"Blend member {index} {key} differs from member 0")
+            groups.setdefault(kind, []).append((index, member))
+        for kind, group in groups.items():
+            first_index, first = group[0]
+            for index, member in group[1:]:
+                for key in BACKBONE_SHARED_KEYS[kind]:
+                    if member.config.get(key) != first.config.get(key):
+                        raise ValueError(f"Blend member {index} {key} differs from member {first_index}")
         self.members = tuple(members)
         self.weights = weights
         self.names = tuple(names) if names else tuple(str(index) for index in range(len(members)))
         if len(self.names) != len(self.members) or len(set(self.names)) != len(self.members):
             raise ValueError("Blend member names must be unique")
+        self.kinds = tuple(groups)
         self.preprocessing = dict(reference.preprocessing)
         self.config = dict(reference.config)
         self.architecture = dict(reference.architecture)
