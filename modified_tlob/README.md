@@ -263,6 +263,20 @@ $env:PYTHONPATH = 'src;.'
 
 检查器在隔离进程中分别运行原包和从 ZIP 解压的新包，并明确禁止新包导入原 `jinyiquant`/`modified_tlob` 目录及联网。它自动检查七文件清单、权重与配置哈希、全部预测键和数值、依赖版本及运行时源码快照，生成独立 `checks.json`。本地原参考权重在相同合成行情上的256条预测差异为0；该结果验证打包等价，不是线上平台验收或收益改进证据。
 
+## 多种子固定权重集成包
+
+集成不重新训练，只把若干已冻结检查点装进一个 schema-4 `modified_tlob_blend` 权重文件；成员保持自己的 `target_scale` 和缺历史回退，推理时按固定权重求和，不做重拟合、排序变换或归一化。支持 `modified_tlob` 与 `mlplob` 两种主干，成员必须共享主干类型、预处理、预测尺度和配方键；成员权重须为非负且和为 1。
+
+```powershell
+$env:PYTHONPATH = 'src;.'
+& $tlobPython scripts/build_blend_weights.py --member "seed11=<run1>/modified_tlob_weights.json:0.3333333333333333" --member "seed29=<run2>/modified_tlob_weights.json:0.3333333333333333" --member "seed47=<run3>/modified_tlob_weights.json:0.3333333333333333" --output dist/blend/blend_weights.json --experiment-id <id>
+& $tlobPython scripts/build_blend_package.py dist/blend/spec.json dist/blend-full
+& $tlobPython scripts/package_flat_submission.py dist/blend-full dist/blend-flat
+& $tlobPython scripts/check_flat_submission.py dist/blend-full dist/blend-flat.zip --output runs/blend-check
+```
+
+`spec.json` 固定成员顺序与权重、成员权重 sha256、各成员训练配置与运行 id，以及平台提交配置（价格尺度、时限、覆盖门槛、历史策略）；生成器逐项校验后写入 `training_config.json` 和 `submission_config.json`。`check_flat_submission.py` 对集成包从成员配置读取预处理字段，其余校验与单模型包相同。
+
 ## 09:30 历史补读与缺历史回退
 
 原提交包的 `min_coverage=0.99` 是本地研究的有效历史覆盖门槛，既不是每只股票必须有128条历史，也不是官方的输出缺失率规则。默认严格模式继续保留该门槛；面向上传的容错模式必须显式生成：

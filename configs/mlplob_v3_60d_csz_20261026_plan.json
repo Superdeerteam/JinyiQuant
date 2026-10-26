@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "experiment_id": "mlplob-v3-60d-csz-20261026",
+  "hypothesis": "With the V3 data recipe fixed (60 trading days, raw 12-dim L1-L3 windows, CSZ labels, train_std scaling, 19,800 steps, seeds 11/29/47), the upstream dual-axis MLP trunk (MLPLOB, no attention) may match or beat the TLOB trunk; the comparison is an equal-weight three-seed ensemble scored on the same validation window. Guardrails are carried over unchanged from the V3 arm study (minimum +0.0023 RankIC, turnover ceiling 1.3211) and are not fitted here.",
+  "bootstrap_samples": 4000,
+  "bootstrap_seed": 20261026,
+  "block_days": 5,
+  "guardrail": {
+    "min_rank_ic_gain": 0.0023,
+    "turnover_max": 1.3211
+  },
+  "arms": {
+    "v3_shuffle19800": {
+      "role": "base",
+      "runs": [
+        "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+        "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+        "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21"
+      ]
+    },
+    "mlplob_v3": {
+      "role": "candidate",
+      "runs": [
+        "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607",
+        "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d",
+        "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7"
+      ]
+    }
+  },
+  "pairs": [
+    [
+      "mlplob_v3",
+      "v3_shuffle19800"
+    ]
+  ],
+  "decision": {
+    "rule": "promote mlplob_v3 only if the paired RankIC gain >= 0.0023, its 5-day block interval excludes zero, and ensemble turnover <= 1.3211; otherwise retain v3_shuffle19800 as the submission baseline",
+    "action": "decided_by_script_guardrail"
+  }
+}

@@ -1,0 +1,137 @@
+{
+ "schema_version": 1,
+ "experiment_id": "mlplob-v3-60d-csz-20261026",
+ "hypothesis": "With the V3 data recipe fixed (60 trading days, raw 12-dim L1-L3 windows, CSZ labels, train_std scaling, 19,800 steps, seeds 11/29/47), the upstream dual-axis MLP trunk (MLPLOB, no attention) may match or beat the TLOB trunk; the comparison is an equal-weight three-seed ensemble scored on the same validation window. Guardrails are carried over unchanged from the V3 arm study (minimum +0.0023 RankIC, turnover ceiling 1.3211) and are not fitted here.",
+ "design": {
+  "block_days": 5,
+  "bootstrap_samples": 4000,
+  "bootstrap_seed": 20261026,
+  "guardrail": {
+   "min_rank_ic_gain": 0.0023,
+   "turnover_max": 1.3211
+  }
+ },
+ "arms": {
+  "v3_shuffle19800": {
+   "role": "base",
+   "seeds": [
+    "v2-60d-csz-19800",
+    "v2-60d-csz-19800-seed29",
+    "v2-60d-csz-19800-seed47"
+   ],
+   "metrics": {
+    "rank_ic_mean": 0.09234883942058289,
+    "turnover_mean": 1.127440775305097,
+    "long_short_return_mean": 0.0006493823488517845,
+    "min_daily_long_short_return": 0.00037465835117957483,
+    "long_short_sharpe": 49.866773387426804,
+    "rank_ic_ir": 4.22645082438015,
+    "score_std": 0.00022343903928762217,
+    "score_abs_mean": 0.00018633783772873804
+   },
+   "runs": [
+    "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+    "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+    "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21"
+   ]
+  },
+  "mlplob_v3": {
+   "role": "candidate",
+   "seeds": [
+    "mlplob-v3-60d-csz-19800",
+    "mlplob-v3-60d-csz-19800",
+    "mlplob-v3-60d-csz-19800"
+   ],
+   "metrics": {
+    "rank_ic_mean": 0.09293593041939735,
+    "turnover_mean": 1.1132089016511126,
+    "long_short_return_mean": 0.000654415613485363,
+    "min_daily_long_short_return": 0.0002756866745711468,
+    "long_short_sharpe": 42.62831614441435,
+    "rank_ic_ir": 3.1727225802535557,
+    "score_std": 0.0002382275506893199,
+    "score_abs_mean": 0.0001936340807695813
+   },
+   "runs": [
+    "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607",
+    "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d",
+    "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7"
+   ]
+  }
+ },
+ "pairs": [
+  {
+   "left": "mlplob_v3",
+   "right": "v3_shuffle19800",
+   "deltas": {
+    "rank_ic": {
+     "mean": 0.00058709,
+     "interval": [
+      -0.00322664,
+      0.00398244
+     ]
+    },
+    "long_short_return": {
+     "mean": 5.03e-06,
+     "interval": [
+      -1.032e-05,
+      9.63e-06
+     ]
+    },
+    "turnover": {
+     "mean": -0.01423187,
+     "interval": [
+      -0.01781228,
+      0.00201005
+     ]
+    }
+   },
+   "guardrail": {
+    "min_rank_ic_gain": 0.0023,
+    "turnover_max": 1.3211,
+    "rank_ic_gain_ok": false,
+    "rank_ic_ci_above_zero": false,
+    "turnover_ok": true,
+    "pass": false
+   }
+  }
+ ],
+ "decision": {
+  "rule": "promote mlplob_v3 only if the paired RankIC gain >= 0.0023, its 5-day block interval excludes zero, and ensemble turnover <= 1.3211; otherwise retain v3_shuffle19800 as the submission baseline",
+  "action": "decided_by_script_guardrail"
+ },
+ "runs": {
+  "v3_shuffle19800": [
+   "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+   "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+   "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21"
+  ],
+  "mlplob_v3": [
+   "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607",
+   "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d",
+   "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7"
+  ]
+ },
+ "submission": {
+  "blend_checkpoint": "dist/mlplob-submission-20261026-full/blend_weights.json",
+  "blend_sha256": "d3d8178a2aa84526438243ba008816a485b76443b9453f39399a41dd51d4ae93",
+  "package": "dist/mlplob-submission-20261026-package",
+  "flat_bundle": "dist/mlplob-submission-20261026",
+  "archive": "dist/mlplob-submission-20261026.zip",
+  "archive_sha256": "9d35cfb83638171fd19f6c7fb06dd2392215b84a5385db5ed9a8553e59ed81b5",
+  "weights_sha256": "d3d8178a2aa84526438243ba008816a485b76443b9453f39399a41dd51d4ae93",
+  "flat_checks": {
+   "normal": "passed",
+   "opening_gap": "passed",
+   "scope": "frozen real weights on synthetic DAI inputs, network blocked, notebook executed; platform acceptance not verified"
+  },
+  "member_sha256": {
+   "s19800_seed11": "20def2da424af01c25e158e320bce048e9558ac2c1a9c54ccba162fb1b3b0f6f",
+   "s19800_seed29": "2fcbb2e79848bc08a7927140e8dd96ceb16f8a7c0ad6b9cd9cab322d294314bc",
+   "s19800_seed47": "21f4ec210153f865c38cb733262945fcfbeb81319784dfaef13bfc8b6842979d"
+  },
+  "archive_bytes": 9977651,
+  "source_commit": "5359d059456a0f70a5ea0141d690c084fbf34b90"
+ },
+ "conclusion": "MLPLOB matches the V3 TLOB ensemble on the 10-day validation window: RankIC 0.092936 vs 0.092349 (paired delta +0.00059, 5-day block 95% CI -0.00323..+0.00398), turnover 1.1132 vs 1.1274, gross long-short 0.000654 vs 0.000649. The pre-registered promotion guardrail (gain >= 0.0023 and CI above zero) is not met, so V3 stays the baseline; MLPLOB is retained as a verified alternative trunk with a deployable three-seed export."
+}

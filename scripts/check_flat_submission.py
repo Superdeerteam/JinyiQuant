@@ -44,7 +44,10 @@ def worker(package, baseline_config, output, *, flat, scenario="normal"):
     import numpy as np
     import pandas as pd
 
-    config = json.loads(baseline_config.read_text(encoding="utf-8"))["data"]
+    training = json.loads(baseline_config.read_text(encoding="utf-8"))
+    # Single-model packages carry data at the top level; blend packages carry the
+    # frozen member configs, whose first member defines the same preprocessing.
+    config = training.get("data") or training["members"][0]["config"]["data"]
     features = config["feature_columns"]
     instruments = [f"S{i:03d}" for i in range(16)]
     dates = []

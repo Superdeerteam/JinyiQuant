@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "experiment_id": "mlplob-v2-60d-csz",
-  "hypothesis": "MLPLOB (dual-axis MLP, no attention) replaces the TLOB trunk while keeping the V2 60d data read, CSZ label transform, target scaling, optimizer budget and validation evaluation fixed; single-seed screening only, not independent confirmation.",
-  "output_root": "/root/shared-nvme/v2-20261023/runs/mlplob-60d",
-  "seed": 11,
+  "experiment_id": "mlplob-v3-60d-csz-19800-seed29",
+  "hypothesis": "MLPLOB (dual-axis MLP, no attention) replaces the TLOB trunk while keeping the V3 60-day read, raw 12-dim input, CSZ label transform, target scaling, MSE, 19,800-step budget and validation evaluation fixed; fixed-seed ensemble member and later fixed-seed ensemble parity, not independent confirmation.",
+  "output_root": "/root/v5/repo/runs/mlplob-v3-60d-csz-19800",
+  "seed": 29,
   "data": {
-    "bars_path": "/root/shared-nvme/v2-20261023/data/bars",
-    "labels_path": "/root/shared-nvme/v2-20261023/data/labels",
-    "instruments_path": "/root/shared-nvme/v2-20261023/data/instruments.parquet",
-    "instrument_map_path": "/root/shared-nvme/v2-20261023/data/instrument_map.csv",
-    "cache_dir": "/root/shared-nvme/v2-20261023/cache/60d",
+    "bars_path": "/root/v5/数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "/root/v5/数据/cpt_jyc_2026_vwap",
+    "instruments_path": "/root/v5/数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "/root/v5/数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": "/root/v5/repo/cache/v2-60d-csz-20261025",
     "source": "official_local_download_with_explicit_mapping",
     "version": "cpt_jyc_2026",
     "feature_columns": [
@@ -80,7 +80,7 @@
     "book_representation": "raw",
     "trade_features": "zero",
     "epochs": 12,
-    "max_steps": 9000,
+    "max_steps": 19800,
     "batch_size": 32,
     "learning_rate": 0.0001,
     "target_scaling": "train_std",
@@ -91,7 +91,7 @@
     "log_every_steps": 100
   },
   "budget": {
-    "wall_seconds": 3600,
+    "wall_seconds": 9000,
     "max_rss_mb": 48000,
     "max_train_samples": 500000
   },

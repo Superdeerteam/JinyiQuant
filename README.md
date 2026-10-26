@@ -2,7 +2,7 @@
 
 可选 [modified_tlob 回归模型](modified_tlob/README.md) 使用上游双轴主干、官方收益标签与 MSE，复用统一运行档案。该后端使用独立 Python 3.11 环境，CPU 基础锁为 PyTorch 2.5.0，当前 RTX 5060 研究环境为 2.7.1+cu128；原 Python 3.13 Ridge/Mean 工作流保留。安装、CPU/GPU 验收状态和平台提交包清单见模块说明。
 
-同一后端另有 MLPLOB 主干（`model.kind="mlplob"`）：输入、CSZ 标签变换、目标缩放、MSE、检查点与评价与 TLOB 完全共用，只把注意力主干换成上游双轴 MLP 与单输出收益回归头，不使用位置编码或 `num_heads`。本地 CPU 冒烟用 `configs/mlplob_cpu.json`，云端 60 日筛选用 `configs/mlplob_v2_60d_csz.json`，运行入口同上。
+同一后端另有 MLPLOB 主干（`model.kind="mlplob"`）：输入、CSZ 标签变换、目标缩放、MSE、检查点与评价与 TLOB 完全共用，只把注意力主干换成上游双轴 MLP 与单输出收益回归头，不使用位置编码或 `num_heads`。本地 CPU 冒烟用 `configs/mlplob_cpu.json`，V3 同配方的 60 日三种子用 `configs/mlplob_v3_60d_csz_19800.json` 与 `_seed29/_seed47` 变体，运行入口同上。
 
 TLOB 本地训练入口为 `python -m modified_tlob.train <配置>`，本地只推理入口为 `python -m modified_tlob.infer --weights ... --bars ... --keys ... --output-root ...`；提交材料用 `python -m modified_tlob.package <训练运行目录> <新提交目录>` 生成。完整可复制命令、CPU/GPU 选择和输入输出说明见模块 README 的对应章节。
 
@@ -611,6 +611,19 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 **证据边界：** 13,500/19,800/22,500 为三种子，18,000 两种子，batch-64 仅 seed 11；验证窗 10 日、5 日块区间较宽；三窗均为已用研究窗；集成的推理成本约为单模型 3 倍；本地近似口径，不含费用与冲击；blend 提交包只通过离线 flat 检查（合成 DAI、禁网、含开盘缺历史场景），平台尚未验证。
 
 **产物与复现：** 配方 [model_v3_60d_csz_ensemble.json](configs/model_v3_60d_csz_ensemble.json)，记录 [model_v3_20261025.json](modified_tlob/model_v3_20261025.json)，选型脚本 [select_epoch_share.py](scripts/select_epoch_share.py) + [计划](configs/epoch_share_selection_20261025_plan.json) / [结果](configs/epoch_share_selection_20261025_result.json)，三窗计划 [model_v2_multi_window_final_20261025.json](configs/model_v2_multi_window_final_20261025.json)，提交包 `dist/v3-submission-20261025/`（blend 检查点权重 sha256 前 8 位 `d0cb487a`）。
+
+**MLPLOB 替换主干（20261026）：** 在 V3 数据配方逐项不变（2023-08-01 至 11-01 的 60 个交易日、原始 12 维 L1-L3 盘口、128 根历史、CSZ 标签、train_std、batch-32、19,800 步、seed 11/29/47）的前提下，把 TLOB 注意力主干换成上游双轴 MLP，复用同一训练、缩放、评价与打包路径。
+
+| 三种子等权集成 | 验证 RankIC | 换手 | 多空 |
+|---|---|---|---|
+| V3（TLOB 主干） | 0.092349 | 1.1274 | 0.000649 |
+| MLPLOB 主干 | 0.092936 | 1.1132 | 0.000654 |
+
+**结论：** 配对日度差 +0.00059，5 日块 95% 区间 −0.00323..+0.00398 含零，未过预注册门槛（增益 ≥ 0.0023 且区间不含零），**V3 维持基线**；MLPLOB 作为同口径、可导出、推理更轻的替代主干保留，单种子 RankIC 0.088985/0.084444/0.088076 不作独立结论。
+
+**提交导出接齐：** `research/blend-20261025` 的固定权重集成导出已并入当前主干并适配两种主干：`TLOBAdapter.load` 识别 schema-4 `modified_tlob_blend` 检查点，新增 [build_blend_weights.py](scripts/build_blend_weights.py) 与 [build_blend_package.py](scripts/build_blend_package.py)，`check_flat_submission.py` 支持读取集成成员配置；成员只共享主干类型、预处理、预测尺度与冻结配方键，权重固定、不在推理时拟合或排序变换。MLPLOB 三种子七文件包为 `dist/mlplob-submission-20261026/`（权重 sha256 前 8 位 `d3d8178a`，压缩包 `9d35cfb8`），普通与开盘缺历史两场景离线 flat 校验通过（禁网、notebook 执行、预测最大差 0），平台尚未验收。
+
+**产物与复现：** 配方 [mlplob_v3_60d_csz_19800.json](configs/mlplob_v3_60d_csz_19800.json)（seed29/47 同构变体），对照计划 [mlplob_v3_60d_csz_20261026_plan.json](configs/mlplob_v3_60d_csz_20261026_plan.json)，记录 [mlplob_v3_20261026.json](modified_tlob/mlplob_v3_20261026.json)。
 
 
 ## 仓库发布边界

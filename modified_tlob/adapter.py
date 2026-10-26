@@ -35,6 +35,18 @@ TRAINING_LOSS_UNITS = {
 }
 PROGRESS_LOSS_UNITS = {"none": "raw_label_mse", "timestamp_mean_train": "centered_label_mse",
                        "timestamp_zscore_train_rms_matched": "rms_matched_transformed_label_mse"}
+BLEND_KIND = "modified_tlob_blend"
+BLEND_SCHEMA_VERSION = 4
+BLEND_SHARED_KEYS = ("target_scaling", "target_centering", "time_loss_weighting", "book_representation",
+                     "trade_features")
+BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": ()}
+
+
+def blend_shared_keys(kind):
+    """Recipe keys that must match across members of one fixed score blend."""
+    if kind not in BACKBONES:
+        raise ValueError(f"Unsupported blend member kind: {kind!r}")
+    return BLEND_SHARED_KEYS + BACKBONE_SHARED_KEYS[kind]
 
 
 def timestamp_zscore_train_rms_matched(keys, target, mask):
@@ -687,6 +699,12 @@ class TLOBAdapter:
         path = Path(path)
         payload = json.loads(path.read_text(encoding="utf-8")) if path.suffix == ".json" else torch.load(
             path, map_location="cpu", weights_only=True)
+        return cls.from_payload(payload, device=device, recorder=recorder, text_state=path.suffix == ".json")
+
+    @classmethod
+    def from_payload(cls, payload, *, device="cpu", recorder=None, text_state=False):
+        if payload.get("kind") == BLEND_KIND:
+            return _blend_from_payload(cls, payload, device=device, recorder=recorder)
         if payload["schema_version"] not in (1, 2, 3) or payload["kind"] not in BACKBONES:
             raise ValueError("Unsupported checkpoint format")
         config = {**payload["model_config"], "device": device}
@@ -705,7 +723,7 @@ class TLOBAdapter:
         if result.architecture != payload["architecture"]:
             raise ValueError("Checkpoint architecture/preprocessing mismatch")
         state = payload["state_dict"]
-        if path.suffix == ".json":
+        if text_state:
             state = {k: torch.tensor(meta["data"], dtype=getattr(torch, meta["dtype"])).reshape(meta["shape"])
                      for k, meta in state.items()}
         if not all(torch.isfinite(t).all() for t in state.values()):
@@ -739,3 +757,90 @@ class TLOBAdapter:
                 raise ValueError("Date-weighted checkpoint is missing its training weight statistics")
         result.trained = True
         return result
+
+
+def _blend_from_payload(adapter_cls, payload, *, device, recorder):
+    if payload.get("schema_version") != BLEND_SCHEMA_VERSION:
+        raise ValueError("Unsupported blend checkpoint schema")
+    entries = payload.get("members")
+    if not isinstance(entries, list) or len(entries) < 2:
+        raise ValueError("Blend checkpoint requires at least two members")
+    members, weights, names = [], [], []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict) or not isinstance(entry.get("payload"), dict):
+            raise ValueError("Blend member entry is malformed")
+        member_payload = entry["payload"]
+        if member_payload.get("kind") not in BACKBONES:
+            raise ValueError("Blend members must be plain torch backbone checkpoints")
+        name = entry.get("name", f"member_{index}")
+        weight = entry.get("weight")
+        if not isinstance(name, str) or not name or not isinstance(weight, (int, float)):
+            raise ValueError("Blend member requires a string name and numeric weight")
+        names.append(name)
+        weights.append(float(weight))
+        members.append(adapter_cls.from_payload(member_payload, device=device, recorder=recorder,
+                                                text_state=True))
+    return TLOBBlend(members, weights, names=names)
+
+
+class TLOBBlend:
+    """Fixed-weight average of frozen checkpoints, scored in the shared return units.
+
+    Member scores restore their own fitted ``target_scale`` (including the
+    missing-history fallback), so the weighted sum is already in comparable units
+    and no refitting, rank transform or normalization is applied at prediction time.
+    Members may differ in capacity but must share one trunk kind, preprocessing,
+    prediction scale and the frozen recipe keys checked by ``blend_shared_keys``.
+    """
+
+    kind = BLEND_KIND
+
+    def __init__(self, members, weights, *, names=None):
+        if len(members) < 2:
+            raise ValueError("Blend requires at least two members")
+        if len(weights) != len(members):
+            raise ValueError("Blend weights must align with members")
+        weights = tuple(float(weight) for weight in weights)
+        if any(not np.isfinite(weight) or weight < 0 for weight in weights):
+            raise ValueError("Blend weights must be finite and nonnegative")
+        if abs(sum(weights) - 1.0) > 1e-9:
+            raise ValueError("Blend weights must sum to one")
+        reference = members[0]
+        kind = reference.config["kind"]
+        shared = blend_shared_keys(kind)
+        for index, member in enumerate(members):
+            if not member.trained:
+                raise ValueError("Blend members must be fitted checkpoints")
+            if member.config["kind"] != kind:
+                raise ValueError(f"Blend member {index} kind differs from member 0")
+            if member.preprocessing != reference.preprocessing:
+                raise ValueError(f"Blend member {index} preprocessing differs from member 0")
+            if member.target_scale != reference.target_scale:
+                raise ValueError("Blend members must share one prediction scale")
+            for key in shared:
+                if member.config.get(key) != reference.config.get(key):
+                    raise ValueError(f"Blend member {index} {key} differs from member 0")
+        self.members = tuple(members)
+        self.weights = weights
+        self.names = tuple(names) if names else tuple(str(index) for index in range(len(members)))
+        if len(self.names) != len(self.members) or len(set(self.names)) != len(self.members):
+            raise ValueError("Blend member names must be unique")
+        self.preprocessing = dict(reference.preprocessing)
+        self.config = dict(reference.config)
+        self.architecture = dict(reference.architecture)
+        self.device = reference.device
+        self.target_scale = reference.target_scale
+        self.intercept = float(sum(weight * member.intercept for weight, member in zip(weights, self.members)))
+        self.trained = True
+
+    def predict(self, batch):
+        # Keep member mini-batches aligned with the blend contract after loading.
+        batch_size = int(self.config.get("batch_size", 32))
+        scores = None
+        for weight, member in zip(self.weights, self.members):
+            member.config["batch_size"] = batch_size
+            values = np.asarray(member.predict(batch), dtype=np.float64)
+            scores = weight * values if scores is None else scores + weight * values
+        if scores is None or not np.isfinite(scores).all():
+            raise FloatingPointError("Nonfinite blend predictions")
+        return scores
