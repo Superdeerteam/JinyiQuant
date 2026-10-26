@@ -573,9 +573,9 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 - α=1 hinge − 成组纯 MSE：RankIC **−0.04888** [−0.05245, −0.04077]。三个 seed 全部塌缩：验证分数为常数（std=0），训练 hinge 在 1,000 步内降到 1e-3、最终 ~1e-6，而 MSE 轨迹与对照几乎同步，说明排序项把输出压成退化常数而非学到排序。
 - α=0.1 seed11 − 同 seed 成组纯 MSE：−0.00113 [−0.00361, +0.00379]（无差别）；相对 V3 seed11 为 **−0.00575** [−0.00973, −0.00374]。α=0.1 不塌缩（训练 hinge 结尾 ~0.013），但未超过同采样器对照。
 
-**决策：不晋升，保留 V3。** 成组采样相对 shuffle 有可测退化；α=1 排序项导致表示塌缩，α=0.1 不塌缩但 seed11 无增益。α=1.0 为训练前预注册值，α=0.1 是在看到 1.0 塌缩后追加的探索臂；seed29/47 已于 01:09 UTC 启动补三种子集成。结构化记录见 [grouped_ranking_20261025.json](modified_tlob/grouped_ranking_20261025.json)，比较脚本 [compare_grouped_arms.py](scripts/compare_grouped_arms.py)，计划 [grouped_ranking_20261025_plan.json](configs/grouped_ranking_20261025_plan.json)。
+**决策：不晋升，保留 V3。** 成组采样相对 shuffle 有可测退化；α=1 排序项导致表示塌缩，α=0.1 不塌缩但 seed11 无增益。α=1.0 为训练前预注册值，α=0.1 是在看到 1.0 塌缩后追加的探索臂；seed29/47 于 01:09 UTC 启动，但容器在 02:25 UTC 前不可达，产物未取回，该臂仍为单种子。结构化记录见 [grouped_ranking_20261025.json](modified_tlob/grouped_ranking_20261025.json)，比较脚本 [compare_grouped_arms.py](scripts/compare_grouped_arms.py)，计划 [grouped_ranking_20261025_plan.json](configs/grouped_ranking_20261025_plan.json)。
 
-**边界。** α=0.1 目前只有 seed11（29/47 在跑）；成组两臂未做 2024-01/03 跨窗回放；验证窗仅 10 日、本地近似口径；塌缩原因只定位到“验证输出常数 + 训练 hinge 归零”，未做逐层权重诊断。
+**边界。** α=0.1 只有 seed11（seed29/47 的云端运行因容器失联未取回产物）；成组两臂未做 2024-01/03 跨窗回放；验证窗仅 10 日、本地近似口径；塌缩原因只定位到“验证输出常数 + 训练 hinge 归零”，未做逐层权重诊断。
 
 
 ### V3 基线：60d/19800 CSZ 三种子集成（20261025，云端扫描收口）

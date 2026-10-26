@@ -79,5 +79,5 @@
       "v3_shuffle19800_s11"
     ]
   ],
-  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. No arm is promoted."
+  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. The alpha=0.1 seed29/47 runs started at 2026-10-26T01:09:33Z but the cloud container became unreachable at 02:25 UTC, so their artifacts were not retrieved and the arm stays a single-seed exploration. No arm is promoted."
 }
