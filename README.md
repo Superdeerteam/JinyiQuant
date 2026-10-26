@@ -621,7 +621,7 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 
 **结论：** 配对日度差 +0.00059，5 日块 95% 区间 −0.00323..+0.00398 含零，未过预注册门槛（增益 ≥ 0.0023 且区间不含零），**V3 维持基线**；MLPLOB 作为同口径、可导出、推理更轻的替代主干保留，单种子 RankIC 0.088985/0.084444/0.088076 不作独立结论。
 
-**提交导出接齐：** `research/blend-20261025` 的固定权重集成导出已并入当前主干并适配两种主干：`TLOBAdapter.load` 识别 schema-4 `modified_tlob_blend` 检查点，新增 [build_blend_weights.py](scripts/build_blend_weights.py) 与 [build_blend_package.py](scripts/build_blend_package.py)，`check_flat_submission.py` 支持读取集成成员配置；成员只共享主干类型、预处理、预测尺度与冻结配方键，权重固定、不在推理时拟合或排序变换。MLPLOB 三种子七文件包为 `dist/mlplob-submission-20261026/`（权重 sha256 前 8 位 `d3d8178a`，压缩包 `9d35cfb8`），普通与开盘缺历史两场景离线 flat 校验通过（禁网、notebook 执行、预测最大差 0），平台尚未验收。
+**提交导出接齐：** `research/blend-20261025` 的固定权重集成导出已并入当前主干并适配两种主干：`TLOBAdapter.load` 识别 schema-4 `modified_tlob_blend` 检查点，新增 [build_blend_weights.py](scripts/build_blend_weights.py) 与 [build_blend_package.py](scripts/build_blend_package.py)，`check_flat_submission.py` 支持读取集成成员配置；成员只共享主干类型、预处理、预测尺度与冻结配方键，权重固定、不在推理时拟合或排序变换。MLPLOB 三种子七文件包为 `dist/mlplob-submission-20261026/`（权重 sha256 前 8 位 `d3d8178a`，压缩包 `cc46b0b7`），普通与开盘缺历史两场景离线 flat 校验通过（禁网、notebook 执行、预测最大差 0），平台尚未验收。
 
 **产物与复现：** 配方 [mlplob_v3_60d_csz_19800.json](configs/mlplob_v3_60d_csz_19800.json)（seed29/47 同构变体），对照计划 [mlplob_v3_60d_csz_20261026_plan.json](configs/mlplob_v3_60d_csz_20261026_plan.json)，记录 [mlplob_v3_20261026.json](modified_tlob/mlplob_v3_20261026.json)。
 

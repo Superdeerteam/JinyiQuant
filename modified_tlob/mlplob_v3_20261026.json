@@ -118,7 +118,7 @@
   "package": "dist/mlplob-submission-20261026-package",
   "flat_bundle": "dist/mlplob-submission-20261026",
   "archive": "dist/mlplob-submission-20261026.zip",
-  "archive_sha256": "9d35cfb83638171fd19f6c7fb06dd2392215b84a5385db5ed9a8553e59ed81b5",
+  "archive_sha256": "cc46b0b78378465689b43a7c30849673c1d9b595754d6462e9909035ba590001",
   "weights_sha256": "d3d8178a2aa84526438243ba008816a485b76443b9453f39399a41dd51d4ae93",
   "flat_checks": {
    "normal": "passed",
@@ -130,8 +130,8 @@
    "s19800_seed29": "2fcbb2e79848bc08a7927140e8dd96ceb16f8a7c0ad6b9cd9cab322d294314bc",
    "s19800_seed47": "21f4ec210153f865c38cb733262945fcfbeb81319784dfaef13bfc8b6842979d"
   },
-  "archive_bytes": 9977651,
-  "source_commit": "5359d059456a0f70a5ea0141d690c084fbf34b90"
+  "archive_bytes": 9977654,
+  "source_commit": "df5865492d5776d9104269199b1c5aab8bcf0a1f"
  },
  "conclusion": "MLPLOB matches the V3 TLOB ensemble on the 10-day validation window: RankIC 0.092936 vs 0.092349 (paired delta +0.00059, 5-day block 95% CI -0.00323..+0.00398), turnover 1.1132 vs 1.1274, gross long-short 0.000654 vs 0.000649. The pre-registered promotion guardrail (gain >= 0.0023 and CI above zero) is not met, so V3 stays the baseline; MLPLOB is retained as a verified alternative trunk with a deployable three-seed export."
 }
