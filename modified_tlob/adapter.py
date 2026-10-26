@@ -5,6 +5,7 @@ import json
 import os
 import random
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,8 @@ PROGRESS_LOSS_UNITS = {"none": "raw_label_mse", "timestamp_mean_train": "centere
                        "timestamp_zscore_train_rms_matched": "rms_matched_transformed_label_mse"}
 BLEND_KIND = "modified_tlob_blend"
 BLEND_SCHEMA_VERSION = 4
+SHARDED_BLEND_KIND = "modified_tlob_sharded_blend"
+UPLOAD_WEIGHT_LIMIT = 50_000_000
 BLEND_SHARED_KEYS = ("target_scaling", "target_centering", "time_loss_weighting", "book_representation",
                      "trade_features")
 BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": (),
@@ -708,8 +711,13 @@ class TLOBAdapter:
     @classmethod
     def load(cls, path, *, device="cpu", recorder=None):
         path = Path(path)
-        payload = json.loads(path.read_text(encoding="utf-8")) if path.suffix == ".json" else torch.load(
-            path, map_location="cpu", weights_only=True)
+        if path.suffix == ".json":
+            with path.open(encoding="utf-8") as source:
+                payload = json.load(source)
+            if payload.get("kind") == SHARDED_BLEND_KIND:
+                return _load_sharded_blend(cls, path, payload, device=device, recorder=recorder)
+        else:
+            payload = torch.load(path, map_location="cpu", weights_only=True)
         return cls.from_payload(payload, device=device, recorder=recorder, text_state=path.suffix == ".json")
 
     @classmethod
@@ -770,6 +778,51 @@ class TLOBAdapter:
         return result
 
 
+def _load_sharded_blend(adapter_cls, path, payload, *, device, recorder):
+    """Read one text checkpoint at a time, retaining only loaded model tensors."""
+    entries = payload.get("members")
+    if payload.get("schema_version") != 1 or not isinstance(entries, list) or len(entries) < 2:
+        raise ValueError("Sharded blend requires schema 1 and at least two members")
+    members, weights, names, files = [], [], [], set()
+    root = path.resolve().parent
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Malformed sharded blend member")
+        name, filename, weight = entry.get("name"), entry.get("file"), entry.get("weight")
+        if (not isinstance(name, str) or not name or name in names
+                or not isinstance(weight, (int, float)) or not np.isfinite(weight) or weight < 0):
+            raise ValueError("Sharded blend requires unique names and finite nonnegative weights")
+        if (not isinstance(filename, str) or not filename.startswith("modified_tlob_weights_")
+                or not filename.endswith(".json") or any(char in filename for char in "/\\:")
+                or filename in files):
+            raise ValueError("Unsafe or duplicate weight shard filename")
+        shard = root / filename
+        if shard.is_symlink() or shard.resolve().parent != root:
+            raise ValueError("Weight shard must be a regular file beside its manifest")
+        size = shard.stat().st_size
+        if size != entry.get("bytes") or size >= UPLOAD_WEIGHT_LIMIT:
+            raise ValueError(f"Weight shard size mismatch or upload limit exceeded: {filename}")
+        digest = hashlib.sha256()
+        with shard.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != entry.get("sha256"):
+            raise ValueError(f"Weight shard checksum mismatch: {filename}")
+        with shard.open(encoding="utf-8") as source:
+            member_payload = json.load(source)
+        if member_payload.get("kind") not in BACKBONES:
+            raise ValueError("Weight shards must contain plain torch backbone checkpoints")
+        members.append(adapter_cls.from_payload(member_payload, device=device, recorder=recorder,
+                                                text_state=True))
+        del member_payload
+        names.append(name)
+        weights.append(float(weight))
+        files.add(filename)
+        if recorder is not None:
+            recorder.event("loading", "weight_shard_loaded", member=name, path=filename, bytes=size)
+    return TLOBBlend(members, weights, names=names)
+
+
 def _blend_from_payload(adapter_cls, payload, *, device, recorder):
     if payload.get("schema_version") != BLEND_SCHEMA_VERSION:
         raise ValueError("Unsupported blend checkpoint schema")
@@ -794,15 +847,24 @@ def _blend_from_payload(adapter_cls, payload, *, device, recorder):
     return TLOBBlend(members, weights, names=names)
 
 
+def _blend_shared_preprocessing(member):
+    """Member preprocessing minus the lookback, which the blend slices per member."""
+    return {key: value for key, value in member.preprocessing.items() if key != "lookback"}
+
+
 class TLOBBlend:
     """Fixed-weight average of frozen checkpoints, scored in the shared return units.
 
     Member scores restore their own fitted ``target_scale`` (including the
     missing-history fallback), so the weighted sum is already in comparable units
     and no refitting, rank transform or normalization is applied at prediction time.
-    Members may differ in trunk and capacity; every member must share preprocessing,
-    prediction scale and the common recipe keys, and trunk-specific keys must match
-    within each trunk group. ``kinds`` records the trunk composition in member order.
+    Members may differ in trunk, capacity and lookback; every member must share the
+    rest of preprocessing, prediction scale and the common recipe keys, and
+    trunk-specific keys must match within each trunk group. The batch is built once
+    at the longest lookback and each member scores its trailing rows, so a 128-bar
+    checkpoint keeps consuming exactly the 128 bars it was trained on while a
+    256-bar arm sees the longer shared history. ``kinds`` records the trunk
+    composition in member order.
     """
 
     kind = BLEND_KIND
@@ -818,15 +880,19 @@ class TLOBBlend:
         if abs(sum(weights) - 1.0) > 1e-9:
             raise ValueError("Blend weights must sum to one")
         reference = members[0]
-        groups = {}
+        groups, lookbacks = {}, []
         for index, member in enumerate(members):
             kind = member.config.get("kind")
             if kind not in BACKBONES:
                 raise ValueError(f"Blend member {index} has an unsupported trunk kind")
             if not member.trained:
                 raise ValueError("Blend members must be fitted checkpoints")
-            if member.preprocessing != reference.preprocessing:
+            if _blend_shared_preprocessing(member) != _blend_shared_preprocessing(reference):
                 raise ValueError(f"Blend member {index} preprocessing differs from member 0")
+            lookback = member.preprocessing.get("lookback")
+            if type(lookback) is not int or lookback < 4:
+                raise ValueError(f"Blend member {index} requires an integer lookback of at least 4")
+            lookbacks.append(lookback)
             if member.target_scale != reference.target_scale:
                 raise ValueError("Blend members must share one prediction scale")
             for key in BLEND_SHARED_KEYS:
@@ -845,13 +911,25 @@ class TLOBBlend:
         if len(self.names) != len(self.members) or len(set(self.names)) != len(self.members):
             raise ValueError("Blend member names must be unique")
         self.kinds = tuple(groups)
-        self.preprocessing = dict(reference.preprocessing)
+        longest = max(lookbacks)
+        self.preprocessing = {**_blend_shared_preprocessing(reference), "lookback": longest}
         self.config = dict(reference.config)
-        self.architecture = dict(reference.architecture)
+        self.architecture = {**reference.architecture, "seq_size": longest}
         self.device = reference.device
         self.target_scale = reference.target_scale
         self.intercept = float(sum(weight * member.intercept for weight, member in zip(weights, self.members)))
         self.trained = True
+
+    @staticmethod
+    def _member_batch(member, batch):
+        """Trailing rows reproduce exactly the window the member was trained on."""
+        lookback = member.preprocessing["lookback"]
+        if batch.x.shape[1] < lookback:
+            raise ValueError(f"Blend batch carries {batch.x.shape[1]} bars but member requires {lookback}")
+        if batch.x.shape[1] == lookback:
+            return batch
+        return replace(batch, x=batch.x[:, -lookback:], observed=batch.observed[:, -lookback:],
+                       history_dates=batch.history_dates[:, -lookback:])
 
     def predict(self, batch):
         # Keep member mini-batches aligned with the blend contract after loading.
@@ -859,7 +937,7 @@ class TLOBBlend:
         scores = None
         for weight, member in zip(self.weights, self.members):
             member.config["batch_size"] = batch_size
-            values = np.asarray(member.predict(batch), dtype=np.float64)
+            values = np.asarray(member.predict(self._member_batch(member, batch)), dtype=np.float64)
             scores = weight * values if scores is None else scores + weight * values
         if scores is None or not np.isfinite(scores).all():
             raise FloatingPointError("Nonfinite blend predictions")

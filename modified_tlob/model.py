@@ -1,9 +1,11 @@
 """Fixed upstream TLOB/MLPLOB trunks adapted to scalar regression. See provenance.json (MIT).
 
-``DualPatchTLOB`` is a project extension: it keeps the same 128-bar raw LOB input,
-BiN and scalar head contract but replaces the trunk with two channel-independent
-PatchTST-style encoders over non-overlapping 4-patch (32-bar) and 16-patch (8-bar)
-scales (Nie et al., PatchTST, ICLR 2023).
+``DualPatchTLOB`` is a project extension: it keeps the raw LOB input, BiN and scalar
+head contract but replaces the trunk with two channel-independent PatchTST-style
+encoders over non-overlapping coarse and fine scales (Nie et al., PatchTST, ICLR 2023).
+The patch length defines each scale, so extending the lookback adds patches instead of
+stretching a patch: the 128-bar recipe uses 4x32 and 16x8, and the 256-bar arm uses
+8x32 and 32x8.
 """
 
 import torch
@@ -200,13 +202,14 @@ class PatchEncoder(nn.Module):
 
 
 class DualPatchTLOB(nn.Module):
-    """Dual-scale patch trunk over the unchanged 128x12 raw order-book window.
+    """Dual-scale patch trunk over the raw order-book window.
 
-    Two channel-independent patch encoders summarize non-overlapping 32-bar
-    (4-patch, slower structure) and 8-bar (16-patch, fast changes) scales. Each
-    branch projects every channel's patch tokens to a short embedding, the branch
-    embeddings are concatenated and a scalar regression head fuses them. BiN and
-    the scalar output contract are shared with the other trunks.
+    Two channel-independent patch encoders summarize non-overlapping 32-bar (coarse,
+    slower structure) and 8-bar (fine, fast changes) scales, one patch count per
+    lookback: 4x32/16x8 at 128 bars, 8x32/32x8 at 256 bars. Each branch projects every
+    channel's patch tokens to a short embedding, the branch embeddings are
+    concatenated and a scalar regression head fuses them. BiN and the scalar output
+    contract are shared with the other trunks.
     """
 
     def __init__(self, *, hidden_dim=40, num_layers=3, seq_size=128, num_features=12,

@@ -4,9 +4,10 @@ Members keep their own fitted ``target_scale`` and missing-history fallback, so 
 blend only fixes the member weights; no refitting, rank transform or normalization is
 introduced. The output is the schema-4 checkpoint that ``TLOBAdapter.load`` and the
 platform package consume. Members may use either torch trunk (``modified_tlob`` or
-``mlplob``), including a mixture of both, as long as they share preprocessing,
-prediction scale and the common recipe keys; trunk-specific keys must match within
-each trunk group.
+``mlplob``), including a mixture of both, and may differ in lookback; they must share
+the rest of preprocessing, prediction scale and the common recipe keys, while
+trunk-specific keys must match within each trunk group. The blend is built once at the
+longest member lookback and each member scores its trailing rows.
 """
 
 import argparse
@@ -54,6 +55,11 @@ def load_payload(path):
     return payload
 
 
+def shared_preprocessing(payload):
+    """Payload preprocessing minus the lookback, which the blend slices per member."""
+    return {key: value for key, value in payload["preprocessing"].items() if key != "lookback"}
+
+
 def validate(members):
     reference = members[0][2]
     kinds = [payload["kind"] for _, _, payload in members]
@@ -65,8 +71,11 @@ def validate(members):
             right = reference["model_config"].get(key)
             if left != right:
                 raise ValueError(f"{name}: model {key}={left!r} differs from {members[0][0]} ({right!r})")
-        if payload["preprocessing"] != reference["preprocessing"]:
+        if shared_preprocessing(payload) != shared_preprocessing(reference):
             raise ValueError(f"{name}: preprocessing differs from {members[0][0]}")
+        lookback = payload["preprocessing"].get("lookback")
+        if type(lookback) is not int or lookback < 4:
+            raise ValueError(f"{name}: lookback must be an integer of at least 4")
         if payload.get("target_scale") != reference.get("target_scale"):
             raise ValueError(f"{name}: target_scale differs from {members[0][0]}")
     groups = {}

@@ -1,4 +1,4 @@
-"""Flatten the checked platform inference dependency graph into seven upload files."""
+"""Flatten checked inference code and shard large text weights below the upload limit."""
 
 import argparse
 import ast
@@ -14,6 +14,9 @@ UPLOAD_FILES = {
     "modified_tlob_weights.json", "provenance.json", "requirements.txt", "submission_config.json",
     "modified_tlob_flat.py", "jinyiquant_flat.py", "inference.ipynb",
 }
+UPLOAD_FILE_LIMIT = 50_000_000
+DEFAULT_WEIGHT_FILE_BYTES = 49_000_000
+SHARDED_BLEND_KIND = "modified_tlob_sharded_blend"
 JINYI_MODULES = ("io", "data", "tracking")
 TLOB_MODULES = ("schema", "device", "normalization", "model", "adapter", "submission")
 
@@ -31,7 +34,7 @@ def capture_source(run_dir):
             "working_tree_status": None, "snapshot": "source.zip",
             "snapshot_sha256": file_sha256(run_dir / "source.zip"),
             "content_sha256": digest(inventory), "files": inventory,
-            "layout": "seven_flat_files"}
+            "layout": "flat_files_with_optional_weight_shards"}
 '''
 
 SCHEMA_FORWARD = '''
@@ -108,7 +111,47 @@ def merged_source(package_dir, package, modules, license_text=""):
     return result
 
 
-def build_flat_package(package_dir, destination):
+def write_upload_weights(source, destination, *, max_file_bytes=DEFAULT_WEIGHT_FILE_BYTES):
+    """Preserve small checkpoints; split a large blend into lossless member JSON files."""
+    if type(max_file_bytes) is not int or not 0 < max_file_bytes < UPLOAD_FILE_LIMIT:
+        raise ValueError("Weight file target must be positive and below 50,000,000 bytes")
+    source, destination = Path(source), Path(destination)
+    target = destination / "modified_tlob_weights.json"
+    source_sha = file_sha256(source)
+    if source.stat().st_size < max_file_bytes:
+        shutil.copyfile(source, target)
+        return {"modified_tlob_weights.json"}, {"encoding": "original_json", "source_sha256": source_sha,
+                                                "weights_sha256": source_sha, "values_unchanged": True}
+    with source.open(encoding="utf-8") as stream:
+        payload = json.load(stream)
+    entries = payload.get("members")
+    if (payload.get("kind") != "modified_tlob_blend" or payload.get("schema_version") != 4
+            or not isinstance(entries, list) or len(entries) < 2):
+        raise ValueError("Oversized text checkpoint must be a schema-4 blend for member sharding")
+    manifest = {"schema_version": 1, "kind": SHARDED_BLEND_KIND, "source_weights_sha256": source_sha,
+                "blend": payload.get("blend", {}), "members": []}
+    files = {target.name}
+    for index, entry in enumerate(entries):
+        filename = f"modified_tlob_weights_{index:03d}.json"
+        shard = destination / filename
+        with shard.open("w", encoding="utf-8", newline="\n") as stream:
+            json.dump(entry["payload"], stream, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        size = shard.stat().st_size
+        if size >= max_file_bytes:
+            raise ValueError(f"Member {entry['name']} requires {size} bytes; exceeds shard target {max_file_bytes}")
+        manifest["members"].append({"name": entry["name"], "weight": entry["weight"], "file": filename,
+                                    "bytes": size, "sha256": file_sha256(shard),
+                                    "source_member_sha256": entry.get("sha256")})
+        files.add(filename)
+    write_json(target, manifest)
+    if target.stat().st_size >= max_file_bytes:
+        raise ValueError("Sharded checkpoint manifest exceeds the weight file target")
+    return files, {"encoding": "member_json_shards", "source_sha256": source_sha,
+                   "weights_sha256": file_sha256(target), "values_unchanged": True,
+                   "member_count": len(entries), "file_target_bytes": max_file_bytes}
+
+
+def build_flat_package(package_dir, destination, *, max_weight_file_bytes=DEFAULT_WEIGHT_FILE_BYTES):
     package_dir, destination = Path(package_dir).resolve(), Path(destination).resolve()
     archive_path = destination.with_suffix(".zip")
     if destination.exists() or archive_path.exists():
@@ -130,8 +173,15 @@ def build_flat_package(package_dir, destination):
     destination.mkdir(parents=True, exist_ok=False)
     for name, text in sources.items():
         (destination / name).write_text(text, encoding="utf-8", newline="\n")
-    for name in ("modified_tlob_weights.json", "submission_config.json"):
-        shutil.copyfile(package_dir / name, destination / name)
+    weight_files, weight_storage = write_upload_weights(
+        package_dir / "modified_tlob_weights.json", destination, max_file_bytes=max_weight_file_bytes)
+    if weight_storage["encoding"] == "member_json_shards":
+        if SHARDED_BLEND_KIND not in sources["modified_tlob_flat.py"]:
+            raise ValueError("Source package adapter does not support sharded weights; refresh its inference source")
+        contract["weights_sha256"] = weight_storage["weights_sha256"]
+        write_json(destination / "submission_config.json", contract)
+    else:
+        shutil.copyfile(package_dir / "submission_config.json", destination / "submission_config.json")
     notebook = json.loads((package_dir / "inference.ipynb").read_text(encoding="utf-8"))
     for cell in notebook["cells"]:
         if cell["cell_type"] == "code":
@@ -153,7 +203,8 @@ def build_flat_package(package_dir, destination):
         "schema_version": 1, "created_at": utc_now(), "source_commit": code_commit,
         "source_package_manifest_sha256": file_sha256(manifest_path),
         "training_run_id": manifest["training_run_id"],
-        "weights_sha256": contract["weights_sha256"], "weights_changed": False,
+        "weights_sha256": contract["weights_sha256"],
+        "weights_changed": weight_storage["encoding"] != "original_json", "weight_storage": weight_storage,
         "history_policy": contract.get("history_policy", {"mode": "strict"}),
         "scope": "Frozen-weight platform inference; original training project remains separate.",
         "source_modules": {f"{package}/{module}.py": manifest["files"][f"{package}/{module}.py"]
@@ -167,13 +218,18 @@ def build_flat_package(package_dir, destination):
         "payload_sha256": {path.name: file_sha256(path) for path in sorted(destination.iterdir())},
     }
     write_json(destination / "provenance.json", provenance)
-    assert {p.name for p in destination.iterdir()} == UPLOAD_FILES
+    upload_files = UPLOAD_FILES | weight_files
+    assert {p.name for p in destination.iterdir()} == upload_files
     assert file_sha256(destination / "modified_tlob_weights.json") == contract["weights_sha256"]
+    oversized = {path.name: path.stat().st_size for path in destination.iterdir()
+                 if path.stat().st_size >= UPLOAD_FILE_LIMIT}
+    if oversized:
+        raise ValueError(f"Upload files must be below 50,000,000 bytes: {oversized}")
     with zipfile.ZipFile(archive_path, "x", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for name in sorted(UPLOAD_FILES):
+        for name in sorted(upload_files):
             archive.write(destination / name, name)
     with zipfile.ZipFile(archive_path) as archive:
-        assert archive.testzip() is None and set(archive.namelist()) == UPLOAD_FILES
+        assert archive.testzip() is None and set(archive.namelist()) == upload_files
     return destination
 
 
@@ -181,8 +237,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package_dir", type=Path)
     parser.add_argument("destination", type=Path)
+    parser.add_argument("--max-weight-file-bytes", type=int, default=DEFAULT_WEIGHT_FILE_BYTES)
     args = parser.parse_args()
-    print(build_flat_package(args.package_dir, args.destination))
+    print(build_flat_package(args.package_dir, args.destination,
+                             max_weight_file_bytes=args.max_weight_file_bytes))
 
 
 if __name__ == "__main__":

@@ -406,8 +406,9 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
     build_batch; inference can use the bars and universe without the label table.
 
     With ``monthly_sampling`` the training interval keeps only evenly spaced
-    complete trading days (and one previous trading day of bar history for the
-    128-bar window), one monthly source file at a time, cached per projection.
+    complete trading days (and one previous trading day of bar history, the
+    original 128-bar recipe's warm-up), one monthly source file at a time, cached
+    per projection.
     """
     features = list(_get(config, "feature_columns"))
     if FORBIDDEN_FEATURES.intersection(features):

@@ -38,6 +38,18 @@ def test_causal_window_fill_mask_and_future_invariance():
     np.testing.assert_array_equal(mutated.observed, batch.observed)
 
 
+def test_longer_lookback_keeps_the_same_trailing_window():
+    dates = pd.date_range("2020-01-02 09:55", periods=6, freq="min")
+    source = pd.DataFrame({"date": dates, "instrument": ["A"] * 6,
+                           "close": np.arange(6.0) + 10.0, "volume": np.arange(6.0) + 1.0})
+    keys = pd.DataFrame({"date": [pd.Timestamp("2020-01-02 10:00")], "instrument": ["A"]})
+    long = build_batch(source, keys, config(lookback=5, missing_policy="zero"))
+    short = build_batch(source, keys, config(lookback=3))
+    np.testing.assert_array_equal(long.x[:, -3:], short.x)
+    np.testing.assert_array_equal(long.observed[:, -3:], short.observed)
+    np.testing.assert_array_equal(long.history_dates[:, -3:], short.history_dates)
+
+
 def test_missing_stock_retains_key_padding_and_reports_coverage():
     keys = pd.DataFrame({"date": pd.to_datetime(["2020-01-02 10:00"] * 2), "instrument": ["B", "A"]})
     batch = build_batch(bars(), keys, config())

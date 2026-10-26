@@ -54,6 +54,15 @@ def test_dual_scale_geometry_and_gradients_reach_both_branches():
     assert any(name.startswith("branches.1") for name in changed)
 
 
+def test_long_history_geometry_keeps_the_32_and_8_bar_scales():
+    torch.manual_seed(0)
+    model = DualPatchTLOB(hidden_dim=8, num_layers=1, seq_size=256, num_features=12, num_heads=2,
+                          patch_counts=(8, 32))
+    assert [(branch.patch_count, branch.patch_length) for branch in model.branches] == [(8, 32), (32, 8)]
+    prediction = model(torch.randn(2, 256, 12))
+    assert prediction.shape == (2,) and torch.isfinite(prediction).all()
+
+
 def test_wrong_patch_or_input_contract_fails_closed():
     for kwargs in ({"patch_counts": (3, 16)}, {"patch_counts": (4, 4)}, {"patch_counts": (16, 4)},
                    {"patch_counts": (1, 16)}, {"seq_size": 10, "patch_counts": (4, 16)},

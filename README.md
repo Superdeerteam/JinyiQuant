@@ -717,6 +717,18 @@ V2 60d/9000 的三种子波动：RankIC 0.083589 ± 0.002285（0.0815–0.0860�
 
 本轮比较指标、晋级门槛与终检区间已预先固定：[计划](configs/round5_official_five_20261026_plan.json)。主指标为五项等权代理，5 日块自助 4000 次；守卫线 IC≥0.0599、IC_IR≥2.681、夏普≥38.99、压力≥0.0530、换手≤1.112；**终检区间 2024-10-08 至 2025-01-01，仅查看一次**，不用于选模。逐月结果与口径见[记录](modified_tlob/round5_platform_five_20261026.json)，重放脚本 [report_platform_metrics.py](scripts/report_platform_metrics.py)。基线权重与九成员 spec 已冻结（`runs/submission-best-20261026/build/`），九模型 flat 提交包尚未构建或离线校验。
 
+### Patch 长历史 256 与按成员截取的融合（20261026，改动）
+
+用户方向：把双尺度 Patch 主干的历史从 128 根扩到 256 根，保留 12 维原始盘口字段、CSZ 标签与主干预设；融合时按成员分别截取各自需要的尾部历史，旧 128 根检查点继续消费原来的 128 根。
+
+**实现。** `DualPatchTLOB` 类、数据字段、标签与训练入口不变，只把 `data.lookback` 改为 256。沿用 PatchTST“窗口变长时增加 patch 数、保持 patch 长度”的设定（[论文](https://arxiv.org/abs/2211.14730)、[作者代码](https://github.com/yuqinie98/PatchTST)）：每条 patch 仍为 32 根 / 8 根，配置改为 8 条粗尺度 + 32 条细尺度（原为 4 + 16）。新增三种子配置 [seed11](configs/dual_patch256_v3_60d_csz_19800.json) / [seed29](configs/dual_patch256_v3_60d_csz_19800_seed29.json) / [seed47](configs/dual_patch256_v3_60d_csz_19800_seed47.json)，其余配方（60 日、CSZ、train_std、19,800 步、batch 32、验证窗）与 128 根 Patch 一致。
+
+**融合契约。** `TLOBBlend` 允许成员只在 `lookback` 上不同：共享批按最长成员构造一次，每个成员只对尾部 `lookback` 行打分；除 `lookback` 外的预处理键、预测尺度与公共配方键仍须一致，[build_blend_weights.py](scripts/build_blend_weights.py) 使用同一规则。混合 lookback 的融合体把 `preprocessing.lookback` 与 `architecture.seq_size` 设为成员最大值，平台与本地推理由此读取最长历史。
+
+**验证。** 新增 3 项行为检查：长窗口尾部与非重叠短窗口逐位相等（数据层）；混合 lookback 融合的输出等于“短成员在尾部窗口、长成员在全窗口”的固定权重和，批短于成员窗口时显式报错；256 根 Patch 几何仍为 32/8 根且前向有限。真实缓存 2023-08-01 与 2023-11-01 的 09:30 首窗（1000 只、10 日预热）：中位有效历史 256、尾部 128 根与 128 根窗口逐位一致、覆盖率 0.999（1 只全窗无报价走训练均值回退）；既有 128 根 run 的训练历史诊断显示 479,432 个样本的窗口 128 行全部有效、最新有效报价年龄 ≤6 分钟，因此 256 根的样本掩码与原配方相同、`target_scale` 一致，可直接与原成员融合。全量离线测试与 ruff 通过。
+
+**状态。** 本轮只完成改动与契约验证，256 根 Patch 尚未训练；下一步按三种子训练。既有 128 根 run 的峰值 RSS 为 19.6 GB、用时 23 分钟（A16），256 根窗口数组约翻倍，故三种子配置把 `budget.max_rss_mb` 提到 40 GB 并仍建议用云端 60 GB 内存机器；训练后再与九模型基线构建 10 成员融合包。**V3 九模型等权基线保持不变。**
+
 ## 仓库发布边界
 
 仓库只包含代码、测试、配置模板、依赖锁、说明及不含证券级样本的结构化研究报告，不上传行情、股票池、答案、证券映射CSV、缓存、模型或运行档案。`.gitignore` 与 `scripts/check_repository_payload.py` 共同检查；提交前执行 `uv run python scripts/check_repository_payload.py --mode staged`，`--mode tracked` 检查完整仓库文件清单。GitHub Actions 在 Windows/Linux 检查依赖、静态规则、行为测试和仓库文件清单。

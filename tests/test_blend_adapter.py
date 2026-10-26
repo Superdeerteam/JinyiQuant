@@ -24,11 +24,12 @@ def data_config(**overrides):
     return DataConfig(**values)
 
 
-def batch(levels=3):
+def batch(levels=3, lookback=8):
     rng = np.random.default_rng(31)
-    x = rng.normal(size=(7, 8, 4 * levels)).astype(np.float32)
+    x = rng.normal(size=(7, lookback, 4 * levels)).astype(np.float32)
     keys = pd.DataFrame({"date": pd.date_range("2020-01-02 10:00", periods=7), "instrument": "A"})
-    return Batch(keys, x, np.ones_like(x, dtype=bool), np.full((7, 8), np.datetime64("NaT", "ns")), {})
+    return Batch(keys, x, np.ones_like(x, dtype=bool),
+                 np.full((7, lookback), np.datetime64("NaT", "ns")), {})
 
 
 def trained(seed, *, preprocessing=None, kind="modified_tlob", **model):
@@ -93,9 +94,23 @@ def test_blend_rejects_weights_that_do_not_sum_to_one(tmp_path):
 
 def test_blend_rejects_mismatched_preprocessing(tmp_path):
     left = export(trained(1), tmp_path / "left.json")
-    right = export(trained(2, preprocessing=data_config(lookback=16)), tmp_path / "right.json")
+    right = export(trained(2, preprocessing=data_config(history_days=2)), tmp_path / "right.json")
     with pytest.raises(ValueError, match="preprocessing differs"):
         TLOBAdapter.load(write(tmp_path / "blend.json", blend_payload(left, right)), device="cpu")
+
+
+def test_blend_scores_each_member_on_its_own_trailing_lookback(tmp_path):
+    short = trained(1, preprocessing=data_config(lookback=8))
+    long = trained(2, preprocessing=data_config(lookback=16))
+    payload = blend_payload(export(short, tmp_path / "short.json"), export(long, tmp_path / "long.json"))
+    model = TLOBAdapter.load(write(tmp_path / "blend.json", payload), device="cpu")
+    assert model.preprocessing["lookback"] == 16 and model.architecture["seq_size"] == 16
+    full = batch(lookback=16)
+    tail = Batch(full.keys, full.x[:, -8:], full.observed[:, -8:], full.history_dates[:, -8:], {})
+    expected = 0.75 * short.predict(tail) + 0.25 * long.predict(full)
+    np.testing.assert_allclose(model.predict(full), expected, rtol=0, atol=1e-12)
+    with pytest.raises(ValueError, match="requires 16"):
+        model.predict(batch(lookback=8))
 
 
 def test_blend_rejects_mismatched_prediction_scale(tmp_path):
@@ -166,6 +181,23 @@ def test_builder_records_mixed_trunks_and_keeps_common_checks(tmp_path):
     with pytest.raises(ValueError, match="target_centering"):
         build_blend_weights.build([("tlob", tmp_path / "left.json", 0.5),
                                    ("mlplob", tmp_path / "other.json", 0.5)], {},
+                                  experiment_id="bad")
+
+
+def test_builder_accepts_mixed_lookbacks_but_not_other_preprocessing_drift(tmp_path):
+    short = trained(1, preprocessing=data_config(lookback=8))
+    long = trained(2, preprocessing=data_config(lookback=16))
+    export(short, tmp_path / "short.json")
+    export(long, tmp_path / "long.json")
+    payload = build_blend_weights.build(
+        [("short", tmp_path / "short.json", 0.5), ("long", tmp_path / "long.json", 0.5)],
+        {}, experiment_id="mixed-lookback-test")
+    assert payload["kind"] == "modified_tlob_blend"
+    other = trained(3, preprocessing=data_config(history_days=2))
+    export(other, tmp_path / "other.json")
+    with pytest.raises(ValueError, match="preprocessing differs"):
+        build_blend_weights.build([("short", tmp_path / "short.json", 0.5),
+                                   ("other", tmp_path / "other.json", 0.5)], {},
                                   experiment_id="bad")
 
 
