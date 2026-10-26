@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "experiment_id": "grouped-ranking-20261025",
+  "hypothesis": "With the V3 recipe (60d/19800 CSZ, seed budget 19,800 steps) fixed, a same-timestamp grouped sampler and an MSE+pairwise-hinge objective may improve cross-sectional ranking; the pure-MSE arm with the same sampler isolates the ranking term, and alpha is fixed before training (1.0 pre-registered, 0.1 as the low-grid follow-up after the 1.0 arm collapsed).",
+  "bootstrap_samples": 4000,
+  "bootstrap_seed": 20261025,
+  "block_days": 5,
+  "guardrail": {
+    "min_rank_ic_gain": 0.0023,
+    "turnover_max": 1.3211
+  },
+  "arms": {
+    "v3_shuffle19800": {
+      "role": "base",
+      "runs": [
+        "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+        "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+        "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21"
+      ]
+    },
+    "grouped_mse": {
+      "role": "control",
+      "runs": [
+        "runs/v3-19800-group32-mse-seed11/20261025T192024.358595Z_0342674b7285",
+        "runs/v3-19800-group32-mse-seed29/20261025T202835.862604Z_0bef76d97c27",
+        "runs/v3-19800-group32-mse-seed47/20261025T213812.713848Z_b280107b0803"
+      ]
+    },
+    "grouped_rank_a1": {
+      "role": "candidate",
+      "runs": [
+        "runs/v3-19800-group32-rank-seed11/20261025T192025.283025Z_6f4f2b543241",
+        "runs/v3-19800-group32-rank-seed29/20261025T202843.858896Z_3cce4e05410a",
+        "runs/v3-19800-group32-rank-seed47/20261025T213606.467118Z_b40a7b3bd1ac"
+      ]
+    },
+    "grouped_rank_a01_s11": {
+      "role": "exploration",
+      "runs": [
+        "runs/v3-19800-r01-group32-rank-seed11/20261025T204156.730201Z_0054b841b816"
+      ]
+    },
+    "grouped_mse_s11": {
+      "role": "control_seed11",
+      "runs": [
+        "runs/v3-19800-group32-mse-seed11/20261025T192024.358595Z_0342674b7285"
+      ]
+    },
+    "v3_shuffle19800_s11": {
+      "role": "base_seed11",
+      "runs": [
+        "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4"
+      ]
+    }
+  },
+  "pairs": [
+    [
+      "grouped_mse",
+      "v3_shuffle19800"
+    ],
+    [
+      "grouped_rank_a1",
+      "grouped_mse"
+    ],
+    [
+      "grouped_rank_a01_s11",
+      "grouped_mse_s11"
+    ],
+    [
+      "grouped_rank_a01_s11",
+      "v3_shuffle19800_s11"
+    ],
+    [
+      "grouped_rank_a01_s11",
+      "grouped_mse"
+    ],
+    [
+      "grouped_mse_s11",
+      "v3_shuffle19800_s11"
+    ]
+  ],
+  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. No arm is promoted."
+}

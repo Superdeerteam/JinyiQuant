@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "experiment_id": "grouped-ranking-20261025",
+  "hypothesis": "With the V3 recipe (60d/19800 CSZ, seed budget 19,800 steps) fixed, a same-timestamp grouped sampler and an MSE+pairwise-hinge objective may improve cross-sectional ranking; the pure-MSE arm with the same sampler isolates the ranking term, and alpha is fixed before training (1.0 pre-registered, 0.1 as the low-grid follow-up after the 1.0 arm collapsed).",
+  "design": {
+    "block_days": 5,
+    "bootstrap_samples": 4000,
+    "bootstrap_seed": 20261025,
+    "guardrail": {
+      "min_rank_ic_gain": 0.0023,
+      "turnover_max": 1.3211
+    }
+  },
+  "arms": {
+    "v3_shuffle19800": {
+      "role": "base",
+      "seeds": [
+        "v2-60d-csz-19800",
+        "v2-60d-csz-19800-seed29",
+        "v2-60d-csz-19800-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09234883942058289,
+        "turnover_mean": 1.127440775305097,
+        "long_short_return_mean": 0.0006493823488517845,
+        "min_daily_long_short_return": 0.00037465835117957483,
+        "long_short_sharpe": 49.866773387426804,
+        "rank_ic_ir": 4.22645082438015,
+        "score_std": 0.00022343903928762217,
+        "score_abs_mean": 0.00018633783772873804
+      }
+    },
+    "grouped_mse": {
+      "role": "control",
+      "seeds": [
+        "v3-19800-group32-mse-seed11",
+        "v3-19800-group32-mse-seed29",
+        "v3-19800-group32-mse-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09052528435248877,
+        "turnover_mean": 1.193646805455851,
+        "long_short_return_mean": 0.0006197151033079248,
+        "min_daily_long_short_return": 0.0003366281018263747,
+        "long_short_sharpe": 53.00608019489909,
+        "rank_ic_ir": 3.9325779325074572,
+        "score_std": 0.0002492386827541497,
+        "score_abs_mean": 0.0002071134334760158
+      }
+    },
+    "grouped_rank_a1": {
+      "role": "candidate",
+      "seeds": [
+        "v3-19800-group32-rank-seed11",
+        "v3-19800-group32-rank-seed29",
+        "v3-19800-group32-rank-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.04164674781395195,
+        "turnover_mean": 1.3591820710696338,
+        "long_short_return_mean": 0.0003368868171959766,
+        "min_daily_long_short_return": 9.167527242266195e-05,
+        "long_short_sharpe": 38.1809439123223,
+        "rank_ic_ir": 1.7960427854720027,
+        "score_std": 2.813103399023559e-08,
+        "score_abs_mean": 8.878057135665515e-07
+      }
+    },
+    "grouped_rank_a01_s11": {
+      "role": "exploration",
+      "seeds": [
+        "v3-19800-r01-group32-rank-seed11"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.08473078446814183,
+        "turnover_mean": 1.271697774587222,
+        "long_short_return_mean": 0.0005715703828036163,
+        "min_daily_long_short_return": 0.00030911726466056574,
+        "long_short_sharpe": 38.46041021032477,
+        "rank_ic_ir": 3.814288797574236,
+        "score_std": 0.00014339424179698256,
+        "score_abs_mean": 0.00011555546766610125
+      }
+    },
+    "grouped_mse_s11": {
+      "role": "control_seed11",
+      "seeds": [
+        "v3-19800-group32-mse-seed11"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.08586086211798319,
+        "turnover_mean": 1.2566313711414214,
+        "long_short_return_mean": 0.0005477518555413573,
+        "min_daily_long_short_return": 0.00021087841925768213,
+        "long_short_sharpe": 33.764660984298466,
+        "rank_ic_ir": 3.5153178140551877,
+        "score_std": 0.0004249135075020504,
+        "score_abs_mean": 0.0003966601337378826
+      }
+    },
+    "v3_shuffle19800_s11": {
+      "role": "base_seed11",
+      "seeds": [
+        "v2-60d-csz-19800"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09048117076592685,
+        "turnover_mean": 1.153508614501077,
+        "long_short_return_mean": 0.0006535957605232418,
+        "min_daily_long_short_return": 0.0004226861397360191,
+        "long_short_sharpe": 62.56771936871458,
+        "rank_ic_ir": 4.174699172898058,
+        "score_std": 0.000257175363353152,
+        "score_abs_mean": 0.00020327355396420815
+      }
+    }
+  },
+  "pairs": [
+    {
+      "left": "grouped_mse",
+      "right": "v3_shuffle19800",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.00182356,
+          "interval": [
+            -0.00345063,
+            -0.00102105
+          ]
+        },
+        "long_short_return": {
+          "mean": -2.967e-05,
+          "interval": [
+            -5.879e-05,
+            -2.601e-05
+          ]
+        },
+        "turnover": {
+          "mean": 0.06620603,
+          "interval": [
+            0.05238693,
+            0.08567839
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    },
+    {
+      "left": "grouped_rank_a1",
+      "right": "grouped_mse",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.04887854,
+          "interval": [
+            -0.05245127,
+            -0.04076833
+          ]
+        },
+        "long_short_return": {
+          "mean": -0.00028283,
+          "interval": [
+            -0.00028978,
+            -0.00025923
+          ]
+        },
+        "turnover": {
+          "mean": 0.16553527,
+          "interval": [
+            0.15898241,
+            0.17995184
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": false,
+        "pass": false
+      }
+    },
+    {
+      "left": "grouped_rank_a01_s11",
+      "right": "grouped_mse_s11",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.00113008,
+          "interval": [
+            -0.00360945,
+            0.00379107
+          ]
+        },
+        "long_short_return": {
+          "mean": 2.382e-05,
+          "interval": [
+            -2.67e-06,
+            5.031e-05
+          ]
+        },
+        "turnover": {
+          "mean": 0.0150664,
+          "interval": [
+            0.01028356,
+            0.02204774
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    },
+    {
+      "left": "grouped_rank_a01_s11",
+      "right": "v3_shuffle19800_s11",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.00575039,
+          "interval": [
+            -0.009734,
+            -0.00374433
+          ]
+        },
+        "long_short_return": {
+          "mean": -8.203e-05,
+          "interval": [
+            -0.00012215,
+            -7.223e-05
+          ]
+        },
+        "turnover": {
+          "mean": 0.11818916,
+          "interval": [
+            0.10484566,
+            0.13084171
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    },
+    {
+      "left": "grouped_rank_a01_s11",
+      "right": "grouped_mse",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.0057945,
+          "interval": [
+            -0.00790381,
+            -0.00290337
+          ]
+        },
+        "long_short_return": {
+          "mean": -4.814e-05,
+          "interval": [
+            -8.274e-05,
+            -2.363e-05
+          ]
+        },
+        "turnover": {
+          "mean": 0.07805097,
+          "interval": [
+            0.06778536,
+            0.08561558
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    },
+    {
+      "left": "grouped_mse_s11",
+      "right": "v3_shuffle19800_s11",
+      "deltas": {
+        "rank_ic": {
+          "mean": -0.00462031,
+          "interval": [
+            -0.01071042,
+            -0.00129811
+          ]
+        },
+        "long_short_return": {
+          "mean": -0.00010584,
+          "interval": [
+            -0.00013671,
+            -7.498e-05
+          ]
+        },
+        "turnover": {
+          "mean": 0.10312276,
+          "interval": [
+            0.09221106,
+            0.1111809
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    }
+  ],
+  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. No arm is promoted."
+}
