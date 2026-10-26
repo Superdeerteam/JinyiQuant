@@ -265,7 +265,7 @@ $env:PYTHONPATH = 'src;.'
 
 ## 多种子固定权重集成包
 
-集成不重新训练，只把若干已冻结检查点装进一个 schema-4 `modified_tlob_blend` 权重文件；成员保持自己的 `target_scale` 和缺历史回退，推理时按固定权重求和，不做重拟合、排序变换或归一化。支持 `modified_tlob` 与 `mlplob` 两种主干，成员必须共享主干类型、预处理、预测尺度和配方键；成员权重须为非负且和为 1。
+集成不重新训练，只把若干已冻结检查点装进一个 schema-4 `modified_tlob_blend` 权重文件；成员保持自己的 `target_scale` 和缺历史回退，推理时按固定权重求和，不做重拟合、排序变换或归一化。支持 `modified_tlob` 与 `mlplob` 两种主干及其混合：所有成员必须共享预处理、预测尺度和公共配方键，主干专属键（如 `num_heads`/`is_sin_emb`）在同主干成员内校验；成员权重须为非负且和为 1。
 
 ```powershell
 $env:PYTHONPATH = 'src;.'

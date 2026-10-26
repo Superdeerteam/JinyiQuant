@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "experiment_id": "tlob-mlplob-fixed-blend-20261026",
+  "hypothesis": "With the V3 recipe fixed (60 trading days, raw 12-dim L1-L3 windows, CSZ labels, train_std, 19,800 steps, seeds 11/29/47), a fixed equal-weight score blend of the TLOB attention three-seed ensemble and the MLPLOB dual-axis MLP three-seed ensemble (1/6 per checkpoint, 50/50 by trunk family) may improve cross-sectional ranking and reduce turnover versus either single-trunk ensemble. Member weights are declared before scoring and are not fitted or selected on this window.",
+  "design": {
+    "recipe": "V3 60 trading days / 19,800 steps / CSZ labels / train_std / batch-32",
+    "members": "TLOB seeds 11/29/47 + MLPLOB seeds 11/29/47, six frozen checkpoints",
+    "weights": {
+      "per_checkpoint": 0.16666666666666666,
+      "modified_tlob_family": 0.5,
+      "mlplob_family": 0.5
+    },
+    "weight_source": "fixed equal weights declared before scoring; no fitting, selection or rank transform",
+    "validation_window": "2023-11-01..2023-11-15 (10 trading days; previously used research window)",
+    "block_days": 5,
+    "bootstrap_samples": 4000,
+    "bootstrap_seed": 20261026,
+    "guardrail": {
+      "min_rank_ic_gain": 0.0023,
+      "turnover_max": 1.3211
+    }
+  },
+  "arms": {
+    "v3_tlob_3seed": {
+      "role": "base",
+      "seeds": [
+        "v2-60d-csz-19800",
+        "v2-60d-csz-19800-seed29",
+        "v2-60d-csz-19800-seed47"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09234883942058289,
+        "turnover_mean": 1.127440775305097,
+        "long_short_return_mean": 0.0006493823488517845,
+        "min_daily_long_short_return": 0.00037465835117957483,
+        "long_short_sharpe": 49.866773387426804,
+        "rank_ic_ir": 4.22645082438015,
+        "score_std": 0.00022343903928762217,
+        "score_abs_mean": 0.00018633783772873804
+      }
+    },
+    "mlplob_3seed": {
+      "role": "control",
+      "seeds": [
+        "mlplob-v3-60d-csz-19800",
+        "mlplob-v3-60d-csz-19800",
+        "mlplob-v3-60d-csz-19800"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09293593041939735,
+        "turnover_mean": 1.1132089016511126,
+        "long_short_return_mean": 0.000654415613485363,
+        "min_daily_long_short_return": 0.0002756866745711468,
+        "long_short_sharpe": 42.62831614441435,
+        "rank_ic_ir": 3.1727225802535557,
+        "score_std": 0.0002382275506893199,
+        "score_abs_mean": 0.0001936340807695813
+      }
+    },
+    "mixed_6checkpoint": {
+      "role": "candidate",
+      "seeds": [
+        "v2-60d-csz-19800",
+        "v2-60d-csz-19800-seed29",
+        "v2-60d-csz-19800-seed47",
+        "mlplob-v3-60d-csz-19800",
+        "mlplob-v3-60d-csz-19800",
+        "mlplob-v3-60d-csz-19800"
+      ],
+      "metrics": {
+        "rank_ic_mean": 0.09382126926525722,
+        "turnover_mean": 1.1015254845656857,
+        "long_short_return_mean": 0.0006636980333684818,
+        "min_daily_long_short_return": 0.000287885712938765,
+        "long_short_sharpe": 41.36105583634884,
+        "rank_ic_ir": 3.5399570129180518,
+        "score_std": 0.00022738949253065974,
+        "score_abs_mean": 0.0001872790127035134
+      }
+    }
+  },
+  "pairs": [
+    {
+      "left": "mixed_6checkpoint",
+      "right": "v3_tlob_3seed",
+      "deltas": {
+        "rank_ic": {
+          "mean": 0.00147243,
+          "interval": [
+            -0.00070126,
+            0.00364612
+          ]
+        },
+        "long_short_return": {
+          "mean": 1.432e-05,
+          "interval": [
+            1.56e-06,
+            2.231e-05
+          ]
+        },
+        "turnover": {
+          "mean": -0.02591529,
+          "interval": [
+            -0.02591529,
+            -0.01834171
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    },
+    {
+      "left": "mixed_6checkpoint",
+      "right": "mlplob_3seed",
+      "deltas": {
+        "rank_ic": {
+          "mean": 0.00088534,
+          "interval": [
+            -0.00033632,
+            0.00261506
+          ]
+        },
+        "long_short_return": {
+          "mean": 9.28e-06,
+          "interval": [
+            -7.1e-06,
+            2.885e-05
+          ]
+        },
+        "turnover": {
+          "mean": -0.01168342,
+          "interval": [
+            -0.02047739,
+            -0.00797739
+          ]
+        }
+      },
+      "guardrail": {
+        "min_rank_ic_gain": 0.0023,
+        "turnover_max": 1.3211,
+        "rank_ic_gain_ok": false,
+        "rank_ic_ci_above_zero": false,
+        "turnover_ok": true,
+        "pass": false
+      }
+    }
+  ],
+  "decision": {
+    "result": "mixed_6checkpoint_not_promoted",
+    "action": "retain v3_tlob_3seed as the submission baseline; keep the mixed package as a verified candidate",
+    "reason": "paired RankIC gain versus both single-trunk ensembles is below the carried-over 0.0023 threshold and its 5-day block interval contains zero; turnover and gross long-short improve",
+    "platform_verified": false
+  },
+  "conclusion": "混合六检查点的 RankIC 为 0.093821（V3 0.092349、MLPLOB 0.092936），换手 1.1015（V3 1.1274），毛多空 0.000664（V3 0.000649）。相对 V3 的配对 RankIC 差 +0.00147，5 日块 95% 区间 -0.00070..+0.00365 含零；换手差 -0.0259（区间 -0.0259..-0.0183），毛多空差 +1.43e-5（区间 +1.56e-6..+2.23e-5）。换手与毛多空改善，但预注册 RankIC 门槛未过，V3 维持提交基线；混合检查点与七文件包已验证可加载、可推理，作为候选保留。",
+  "runs": {
+    "v3_tlob_3seed": [
+      "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+      "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+      "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21"
+    ],
+    "mlplob_3seed": [
+      "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607",
+      "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d",
+      "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7"
+    ],
+    "mixed_6checkpoint": [
+      "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4",
+      "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef",
+      "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21",
+      "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607",
+      "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d",
+      "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7"
+    ]
+  },
+  "blend": {
+    "path": "dist/tlob-mlplob-blend-20261026/blend_weights.json",
+    "sha256": "10771f7fecac3bc11adac87d1cdafc87e1198bea46b4bbde798210793e991efe",
+    "bytes": 94506298,
+    "schema_version": 4,
+    "kind": "modified_tlob_blend",
+    "blend_kind": "mixed",
+    "member_kinds": {
+      "tlob_s11": "modified_tlob",
+      "tlob_s29": "modified_tlob",
+      "tlob_s47": "modified_tlob",
+      "mlplob_s11": "mlplob",
+      "mlplob_s29": "mlplob",
+      "mlplob_s47": "mlplob"
+    },
+    "member_sha256": {
+      "tlob_s11": "dd43f06028591bc0aefe18698d35cc7fb4c1c3d30caf2b468f8fd6d7e131f3a1",
+      "tlob_s29": "9890dd83a3ae0df1e6415c34f3f6af5e7318d660221ade84c5587e54bf66599f",
+      "tlob_s47": "c4139bc5d4e604627b389db6a7adec95d2e39f2779a1e019bc94c46cb43b13d2",
+      "mlplob_s11": "20def2da424af01c25e158e320bce048e9558ac2c1a9c54ccba162fb1b3b0f6f",
+      "mlplob_s29": "2fcbb2e79848bc08a7927140e8dd96ceb16f8a7c0ad6b9cd9cab322d294314bc",
+      "mlplob_s47": "21f4ec210153f865c38cb733262945fcfbeb81319784dfaef13bfc8b6842979d"
+    },
+    "code_commit": "7f370c31b5a31816d06c43d1bb82e5ad9b722f2f",
+    "created_at_utc": "2026-10-26T09:20:00.592578+00:00"
+  },
+  "submission": {
+    "package": "dist/tlob-mlplob-submission-20261026-package",
+    "flat_bundle": "dist/tlob-mlplob-submission-20261026",
+    "archive": "dist/tlob-mlplob-submission-20261026.zip",
+    "archive_sha256": "c40621fbf84d181be7792f5e5eed72e6bbdde87afde03d602a3251b01b7ae53d",
+    "archive_bytes": 41123306,
+    "weights_sha256": "10771f7fecac3bc11adac87d1cdafc87e1198bea46b4bbde798210793e991efe",
+    "package_manifest_sha256": "092ae72258c6d966535aee17ac2d3d2057d4b37a5b4988b51975043e451c80b2",
+    "training_config_sha256": "9752a04935fbc016004b8353897ad2a4bca79defc6c7614362fb32c3a07d4bb0",
+    "flat_checks": {
+      "normal": true,
+      "opening_gap": true,
+      "max_abs_prediction_difference": 0.0,
+      "scope": "frozen real weights on synthetic DAI inputs, network blocked, notebook executed; platform acceptance not verified"
+    },
+    "platform_acceptance": "not_verified"
+  },
+  "references": [
+    "https://arxiv.org/abs/2502.15757",
+    "https://github.com/LeonardoBerti00/TLOB"
+  ],
+  "inference_cost_local": {
+    "device": "cpu",
+    "batch_rows": 256,
+    "measurement": "best of three timed predictions after one warmup on one random preprocessed batch",
+    "blend_seconds": 2.5791,
+    "tlob_member_seconds": 0.6541,
+    "mlplob_member_seconds": 0.1935,
+    "scope": "local CPU only; platform GPU, memory and wall-time acceptance remain unverified"
+  },
+  "evidence_boundary": "Single already-used 10-day validation window; local approximate metrics exclude fees and impact; the mixed blend was not scored on the sealed final window; local flat checks are not platform acceptance; inference cost is a local CPU batch measurement, not a platform time/memory acceptance."
+}
