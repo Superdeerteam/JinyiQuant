@@ -53,6 +53,7 @@ COMPONENTS = [
         "train_window": ["2023-04-14", "2023-10-31"],
         "seeds": [53, 59, 61],
         "points": ["0.66", "1.32", "2.64", "3.96", "5.28"],
+        "min_coverage": 0.65,
         "role": "training-amount curve at the registered 132-day window, on seeds that the registered probe does not use",
     },
     {
@@ -61,6 +62,7 @@ COMPONENTS = [
         "train_window": ["2023-08-01", "2023-10-31"],
         "seeds": [11, 29, 47],
         "points": ["0.66", "1.32", "2.64"],
+        "min_coverage": 0.65,
         "role": "same-environment 60-day control curve; the registered control is not re-run and is not replaced",
     },
     {
@@ -178,7 +180,8 @@ def build_plan(component: dict, seed: int, recipe_rel: str) -> str:
         ],
         "one_continuous_trajectory": True,
         "lr_schedule": "constant",
-        "exposure": template["exposure"],
+        "exposure": {**template["exposure"],
+                     "min_coverage": component.get("min_coverage", 1.0)},
         "resume": template["resume"],
         "derived_reference": {
             "estimate_not_budget": True,
@@ -301,9 +304,21 @@ def build_prereg(artifacts: dict[str, dict]) -> dict:
     }
 
 
-def generate() -> dict:
+def generate(only: list[str] | None = None) -> dict:
+    """Regenerate selected components only; untouched rungs keep their exact bytes."""
     artifacts: dict[str, dict] = {}
+    previous = None
+    if only:
+        prereg_path = CONFIGS / PREREG_NAME
+        previous = json.loads(prereg_path.read_text(encoding="utf-8")) if prereg_path.exists() else {}
     for component in COMPONENTS:
+        if only and component["id"] not in only:
+            kept = next((c for c in (previous or {}).get("components", [])
+                         if c["id"] == component["id"]), None)
+            if kept is None:
+                raise SystemExit(f"component {component['id']} is not in the previous prereg")
+            artifacts[component["id"]] = {"recipes": kept.get("recipes", []), "plans": kept["plans"]}
+            continue
         recipes, plans = [], []
         for seed in component["seeds"]:
             recipe_rel = build_recipe(component, seed)
@@ -377,9 +392,11 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--generate", action="store_true")
     group.add_argument("--register", action="store_true")
     group.add_argument("--check", action="store_true")
+    parser.add_argument("--only", nargs="+", default=None,
+                        help="regenerate only these component ids; other rungs keep their bytes")
     args = parser.parse_args(argv)
     if args.generate:
-        report = generate()
+        report = generate(args.only)
     elif args.register:
         report = register()
     else:
