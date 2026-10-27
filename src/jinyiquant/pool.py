@@ -120,7 +120,7 @@ class StreamingPool:
     @classmethod
     def build(cls, bars: pd.DataFrame, keys: pd.DataFrame, config: Any, *,
               history_quality_summary: bool = True) -> "StreamingPool":
-        """Index ``keys`` against ``bars`` exactly like :func:`build_batch` would.
+        """Index ``keys`` against the bars frame exactly like :func:`build_batch` would.
 
         ``history_quality_summary`` reproduces the materialised coverage summary with one
         chunked pass over the keys and no retained windows; it is the only build step whose
@@ -128,17 +128,34 @@ class StreamingPool:
         when a caller only needs the index.
         """
         features = list(config_option(config, "feature_columns"))
-        history_feature_count = 12 if tuple(features) == lob_trade_columns() else len(features)
         if FORBIDDEN_FEATURES.intersection(features):
             raise ValueError("Future label columns cannot be input features")
         bars = validate_keys(bars, "bars")
-        keys = validate_keys(keys[KEYS], "sample keys")
         if any(column not in bars for column in features):
             raise ValueError("Missing configured feature columns")
+        return cls.from_arrays(bar_arrays(bars, features), keys, config,
+                               history_quality_summary=history_quality_summary)
+
+    @classmethod
+    def from_arrays(cls, arrays: BarArrays, keys: pd.DataFrame, config: Any, *,
+                    history_quality_summary: bool = True) -> "StreamingPool":
+        """Index ``keys`` against a canonical bar matrix that was built elsewhere.
+
+        ``load_data(..., stream_bars=True)`` produces that matrix in bounded chunks, so a
+        window that never fits as a pandas frame can still be trained on; the matrix is the
+        same one :meth:`build` derives from a frame, so the pool is identical either way.
+        """
+        features = list(config_option(config, "feature_columns"))
+        history_feature_count = 12 if tuple(features) == lob_trade_columns() else len(features)
+        if FORBIDDEN_FEATURES.intersection(features):
+            raise ValueError("Future label columns cannot be input features")
+        if arrays.width != len(features):
+            raise ValueError(f"Bar matrix width {arrays.width} does not match "
+                             f"{len(features)} configured features")
+        keys = validate_keys(keys[KEYS], "sample keys")
         times = config_option(config, "sample_times", [])
         key_dates = validate_sample_times(keys, times)
         settings = window_parameters(config)
-        arrays = bar_arrays(bars, features)
         codes = instrument_codes(arrays, keys["instrument"])
         begin, stop = window_geometry(arrays, codes, key_dates, settings["lookback"])
         observed_count, effective_count = _bar_counts(arrays, codes, begin, stop, history_feature_count)
@@ -216,10 +233,19 @@ class StreamingPool:
         return pd.concat(frames, ignore_index=True)
 
 
-def training_pool(bars: pd.DataFrame, keys: pd.DataFrame, config: Any, *, streaming: bool = False):
+def training_pool(bars: pd.DataFrame, keys: pd.DataFrame, config: Any, *, streaming: bool = False,
+                  arrays: BarArrays | None = None):
     """The default materialised :class:`Batch`, or a :class:`StreamingPool` when asked for.
 
     The switch is off by default and lives here - not in the run configuration - so no
-    existing pipeline can silently change which pool it trains on.
+    existing pipeline can silently change which pool it trains on. ``arrays`` supplies the
+    canonical matrix a bounded bar read already produced; it implies the streaming pool and
+    skips the frame entirely.
     """
-    return StreamingPool.build(bars, keys, config) if streaming else build_batch(bars, keys, config)
+    if not streaming:
+        if arrays is not None:
+            raise ValueError("A prebuilt BarArrays only feeds the streaming pool")
+        return build_batch(bars, keys, config)
+    if arrays is not None:
+        return StreamingPool.from_arrays(arrays, keys, config)
+    return StreamingPool.build(bars, keys, config)

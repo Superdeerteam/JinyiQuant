@@ -48,6 +48,10 @@ SEALED_START = pd.Timestamp("2024-10-08")
 SEALED_END = pd.Timestamp("2025-01-01")
 MAX_REPORTED_BOUNDARY_SAMPLES = 5
 
+# Rows per bounded bar block for the streamed reader: the transient float64 chunk plus its
+# float32 copy stay around 40 MB, independent of how many days the window spans.
+DEFAULT_BAR_CHUNK_ROWS = 262_144
+
 
 def config_option(config, name: str, default=None):
     """Read one option from a mapping or an attribute object (resolved configs)."""
@@ -215,12 +219,21 @@ __all__ = ["Batch", "DataBundle", "DaySelection", "build_batch", "complete_tradi
 
 @dataclass
 class DataBundle:
-    bars: pd.DataFrame
+    """One reading of the data contract.
+
+    ``bars`` is the window frame of the default path. With ``stream_bars=True`` the same
+    window is instead delivered as ``arrays`` (the canonical float32 matrix) and ``bars`` is
+    ``None``; a caller that still wants a frame fails loudly on it rather than seeing an
+    empty one.
+    """
+
+    bars: pd.DataFrame | None
     labels: pd.DataFrame
     metadata: dict[str, Any]
     instruments: pd.DataFrame | None = None
     cache_events: list[dict[str, Any]] = field(default_factory=list)
     data_events: list[dict[str, Any]] = field(default_factory=list)
+    arrays: "BarArrays | None" = None
 
     @property
     def universe(self) -> pd.DataFrame | None:
@@ -272,6 +285,26 @@ def _arrow_filter(schema: pa.Schema, start: Any, end: Any) -> ds.Expression | No
 
 def _columns(available: list[str], requested: list[str]) -> list[str]:
     return list(dict.fromkeys(column for column in requested if column in available))
+
+
+def _file_blocks(path: Path, requested: list[str], start: Any, end: Any,
+                 selection: DaySelection | None, chunk_rows: int):
+    """One source file's rows in ascending date order, at most ``chunk_rows`` rows per block.
+
+    A source file is the coarsest block: the writers of these archives emit a month's record
+    batches in arbitrary order (each batch sorted, the batches not), so the file is read once
+    and its rows ordered by date before slicing. Blocks are then chronological, which is what
+    lets pass 2 place a chunk without ever holding the window.
+    """
+    if chunk_rows < 1:
+        raise ValueError("chunk_rows must be positive")
+    frame = _selected(_read_file(path, requested, start, end), selection)
+    if frame.empty:
+        return
+    stamps = frame["date"].to_numpy(dtype="datetime64[ns]")
+    order = np.argsort(stamps, kind="stable")
+    for begin in range(0, len(order), chunk_rows):
+        yield frame.iloc[order[begin:begin + chunk_rows]]
 
 
 def _read_file(path: Path, requested: list[str], start: Any, end: Any) -> pd.DataFrame:
@@ -426,6 +459,14 @@ def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_
     return frame, extra
 
 
+def _source_files(path: Path, start: Any, end: Any, cache_dir: Path | None) -> list[Path]:
+    """Source files of one role that overlap ``[start, end)``, in a stable order."""
+    return sorted(file for file in path.rglob("*") if file.is_file()
+                  and file.suffix.lower() in {".parquet", ".feather", ".arrow", ".csv"}
+                  and (cache_dir is None or not file.resolve().is_relative_to(cache_dir.parent.resolve()))
+                  and _month_overlaps(file.name, start, end)) if path.is_dir() else [path]
+
+
 def _read(path_value: Any, requested: list[str], start: Any, end: Any,
           cache_dir: Path | None = None, cache_events: list[dict] | None = None,
           selection: DaySelection | None = None, *, sealed_access: FinalAccessClaim | None = None
@@ -439,10 +480,7 @@ def _read(path_value: Any, requested: list[str], start: Any, end: Any,
     if str(path).lower().endswith((".tar.gz", ".tgz", ".tar")):
         raise ValueError("Extract selected monthly feather files from the bar archive first; "
                          "provide instrument_map_path for instrument_id. Full archive scans are not automatic.")
-    files = sorted(file for file in path.rglob("*") if file.is_file()
-                   and file.suffix.lower() in {".parquet", ".feather", ".arrow", ".csv"}
-                   and (cache_dir is None or not file.resolve().is_relative_to(cache_dir.parent.resolve()))
-                   and _month_overlaps(file.name, start, end)) if path.is_dir() else [path]
+    files = _source_files(path, start, end, cache_dir)
     if not files:
         raise ValueError(f"No data files overlap requested dates: {path}")
     frames, records = [], []
@@ -555,8 +593,15 @@ def _sampling_fields(value: Any) -> dict[str, Any] | None:
 
 
 def load_data(config: Any, start: Any = None, end: Any = None, *,
-              sealed_access: FinalAccessClaim | None = None) -> DataBundle:
+              sealed_access: FinalAccessClaim | None = None, stream_bars: bool = False,
+              chunk_rows: int = DEFAULT_BAR_CHUNK_ROWS) -> DataBundle:
     """Read only selected dates/columns; bars include configured historical warm-up.
+
+    ``stream_bars`` reads the same bar window in bounded chunks straight into the canonical
+    float32 arrays (:func:`bar_arrays_streamed`) instead of one pandas frame, and returns them
+    as ``bundle.arrays`` with ``bundle.bars`` left ``None``. Projection, mapping, labels,
+    universe alignment and provenance records are unchanged, so both readings are
+    interchangeable for callers that only window the bars.
 
     Label values are retained separately. No label-derived columns enter bars or
     build_batch; inference can use the bars and universe without the label table.
@@ -643,10 +688,22 @@ def load_data(config: Any, start: Any = None, end: Any = None, *,
             "calendar_source": "independent instruments table",
             "rule": "centered stratified index floor((2i+1)n/(2k)) inside each calendar month",
             "reader": "one monthly source projection per cache entry"}
-    bars, records["bars"] = read_role("bars", config_option(config, "bars_path"),
-                                      ["date", "instrument", "instrument_id", *features], warm_start, end,
-                                      bars_selection)
-    bars = preprocess_bars(_map_instruments(bars, mapping, "bars"), config)
+    arrays, bars_streamed = None, None
+    if stream_bars:
+        # Same projection, filters and preprocessing as the frame path below, assembled in
+        # bounded chunks so the window never exists as one frame.
+        arrays, records["bars"], bars_streamed = bar_arrays_streamed(
+            config_option(config, "bars_path"), config, start=warm_start, end=end,
+            selection=bars_selection, mapping=mapping, chunk_rows=chunk_rows,
+            sealed_access=sealed_access)
+        cache_events.append({"event": "cache_bypassed", "role": "bars",
+                             "reason": "bounded_chunked_bars"})
+        bars = None
+    else:
+        bars, records["bars"] = read_role("bars", config_option(config, "bars_path"),
+                                          ["date", "instrument", "instrument_id", *features], warm_start, end,
+                                          bars_selection)
+        bars = preprocess_bars(_map_instruments(bars, mapping, "bars"), config)
     label_path = config_option(config, "labels_path")
     if label_path:
         labels, records["labels"] = read_role("labels", label_path,
@@ -698,7 +755,8 @@ def load_data(config: Any, start: Any = None, end: Any = None, *,
                 "requested_start": None if start is None else str(pd.Timestamp(start)),
                 "requested_end": None if end is None else str(pd.Timestamp(end)),
                 "bars_start": None if warm_start is None else str(warm_start),
-                "bar_rows": len(bars), "label_rows": len(labels), "alignment": alignment,
+                "bar_rows": int(arrays.rows) if arrays is not None else len(bars),
+                "bars_streamed": bars_streamed, "label_rows": len(labels), "alignment": alignment,
                 "missing_targets": int((~np.isfinite(labels["target"].to_numpy(dtype=float))).sum()),
                 "feature_columns": features, "price_scale": config_option(config, "price_scale", 1.0),
                 "label_definition": ("provided target; end_price/future_vwap - 1 is inferred from the "
@@ -706,7 +764,7 @@ def load_data(config: Any, start: Any = None, end: Any = None, *,
                 "timezone": "Asia/Shanghai (naive)", "history_days": history_days,
                 "monthly_sampling": sampling_audit}
     return DataBundle(bars=bars, labels=labels, metadata=metadata, instruments=instruments,
-                      cache_events=cache_events, data_events=data_events)
+                      cache_events=cache_events, data_events=data_events, arrays=arrays)
 
 
 def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
@@ -816,16 +874,253 @@ class BarArrays:
                 "instrument_offsets": int(self.offsets.nbytes)}
 
 
+def _feature_matrix(frame: pd.DataFrame, features: Sequence[str]) -> np.ndarray:
+    """The one float64 -> float32 feature conversion: whole window and one chunk alike."""
+    return frame[list(features)].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32, copy=True)
+
+
 def bar_arrays(bars: pd.DataFrame, features: Sequence[str]) -> BarArrays:
     """Sort once and keep one float32 bar copy; every non-finite value becomes NaN."""
     frame = bars.sort_values(["instrument", "date"], kind="stable")
     codes, names = pd.factorize(frame["instrument"])
-    values = frame[list(features)].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32, copy=True)
+    values = _feature_matrix(frame, features)
     values[~np.isfinite(values)] = np.nan
     counts = np.bincount(codes, minlength=len(names)).astype(np.int64)
     return BarArrays(values=values, dates=frame["date"].to_numpy(dtype="datetime64[ns]"),
                      offsets=np.concatenate((np.zeros(1, np.int64), np.cumsum(counts))),
                      names=np.asarray(names, dtype=object))
+
+
+# --------------------------------------------------------------------------- bounded bar loading
+# The 927-day window no longer fits because of the canonical bar matrix, not the window
+# tensor. Reading the whole window into one pandas frame costs several float64 copies of it
+# (132 days: 5 GB resident, 19.3 GB transient), which extrapolates past the host at 927 days.
+# The two-pass reader below builds the same float32 arrays with peak memory
+# ``target arrays + one source chunk``:
+#
+#   pass 1  key columns only      -> per-instrument row counts (the layout)
+#   pass 2  one bounded chunk     -> values written straight into the preallocated matrix
+#
+# ``tests/test_bar_streaming.py`` recomputes over arbitrary chunk boundaries and
+# ``scripts/verify_bar_streaming.py`` hashes both paths on a real window.
+
+class BarArraysBuilder:
+    """Two-pass assembly of the canonical instrument-major bar matrix from keyed chunks.
+
+    ``observe`` takes pass 1 (the key columns of every chunk) and ``append`` takes pass 2 (the
+    preprocessed values of the *same* chunks in the same order). The layout is exactly
+    ``bars.sort_values(["instrument", "date"], kind="stable")``: instrument is the outer order
+    and each instrument's rows are in time order, so the result is bit-identical to
+    :func:`bar_arrays` over the concatenated window while every temporary is bounded by one
+    chunk. Source chunk order is irrelevant - pass 1 records each chunk's date span per
+    instrument and pass 2 places chunks by span, rejecting spans that interleave or repeat a
+    key. Source files written by parallel writers (row batches in arbitrary order) therefore
+    assemble correctly, and an inconsistent source fails loudly instead of reordering rows.
+    """
+
+    def __init__(self, features: Sequence[str], *, chunk_rows: int = DEFAULT_BAR_CHUNK_ROWS):
+        if chunk_rows < 1:
+            raise ValueError("chunk_rows must be positive")
+        self.features = list(features)
+        self.chunk_rows = int(chunk_rows)
+        self.chunks = 0
+        self.observed_rows = 0
+        self.peak_chunk_rows = 0
+        self.values: np.ndarray | None = None
+        self.dates: np.ndarray | None = None
+        self.offsets: np.ndarray | None = None
+        self.names: np.ndarray | None = None
+        self._seen: set[str] = set()
+        self._spans: list[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = []
+        self._code_of: dict[str, int] | None = None
+        self._pending: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+        self._appended: list[int] = []
+        self._written = None
+
+    # ------------------------------------------------------------------ pass 1
+    def observe(self, chunk: pd.DataFrame) -> None:
+        """Record one chunk's per-instrument date span and row count (the layout input)."""
+        self.chunks += 1
+        if chunk.empty:
+            empty = np.zeros(0, np.int64)
+            self._spans.append((np.empty(0, dtype=object), empty,
+                                np.zeros(0, "datetime64[ns]"), np.zeros(0, "datetime64[ns]")))
+            return
+        keys = validate_keys(chunk[KEYS], "bars chunk")
+        self.observed_rows += len(keys)
+        self.peak_chunk_rows = max(self.peak_chunk_rows, len(keys))
+        names = keys["instrument"].to_numpy(dtype=object)
+        stamps = keys["date"].to_numpy(dtype="datetime64[ns]")
+        unique, codes = np.unique(names, return_inverse=True)
+        counts = np.bincount(codes, minlength=len(unique)).astype(np.int64)
+        bounds = np.concatenate(([0], np.cumsum(counts)))
+        grouped = stamps[np.argsort(codes, kind="stable")]
+        self._spans.append((unique, counts,
+                            np.minimum.reduceat(grouped, bounds[:-1]),
+                            np.maximum.reduceat(grouped, bounds[:-1])))
+        self._seen.update(unique.tolist())
+
+    # ------------------------------------------------------------------ layout
+    def layout(self) -> None:
+        """Freeze instrument order and offsets and allocate the target arrays once.
+
+        Each ``(chunk, instrument)`` pair becomes a run with a date span; ordering the runs of
+        one instrument by span start reproduces the time order of the whole window without
+        ever holding it.
+        """
+        if self._code_of is not None:
+            return
+        names = pd.Index(sorted(self._seen)) if self._seen else pd.Index([], dtype=object)
+        self._code_of = {name: code for code, name in enumerate(names)}
+        if not names.size:
+            self.values = np.empty((0, len(self.features)), dtype=np.float32)
+            self.dates = np.empty(0, dtype="datetime64[ns]")
+            self.offsets = np.zeros(1, np.int64)
+            self.names = np.asarray([], dtype=object)
+            self._written = np.zeros(0, np.int64)
+            return
+        codes, counts, mins, maxs, sizes = [], [], [], [], []
+        for unique, count, low, high in self._spans:
+            codes.append(np.fromiter((self._code_of[name] for name in unique), np.int64, len(unique)))
+            counts.append(count)
+            mins.append(low.astype(np.int64))
+            maxs.append(high.astype(np.int64))
+            sizes.append(len(unique))
+        codes, counts = np.concatenate(codes), np.concatenate(counts)
+        mins, maxs = np.concatenate(mins), np.concatenate(maxs)
+        totals = np.bincount(codes, weights=counts, minlength=len(names)).astype(np.int64)
+        offsets = np.concatenate((np.zeros(1, np.int64), np.cumsum(totals))).astype(np.int64)
+        order = np.lexsort((mins, codes))
+        ordered_codes, ordered_counts = codes[order], counts[order]
+        ordered_min, ordered_max = mins[order], maxs[order]
+        clash = np.zeros(len(order), dtype=bool)
+        clash[1:] = (ordered_codes[1:] == ordered_codes[:-1]) & (ordered_min[1:] <= ordered_max[:-1])
+        if clash.any():
+            name = names[ordered_codes[np.flatnonzero(clash)[0]]]
+            raise ValueError(f"bars chunks overlap in time for {name}: a date range is split "
+                             "across two chunks, so their order is ambiguous")
+        written_before = np.concatenate((np.zeros(1, np.int64), np.cumsum(ordered_counts)))[:-1]
+        group = np.concatenate(([0], np.flatnonzero(ordered_codes[1:] != ordered_codes[:-1]) + 1))
+        group_sizes = np.diff(np.concatenate((group, [len(order)])))
+        starts_ordered = offsets[ordered_codes] + written_before - np.repeat(written_before[group], group_sizes)
+        starts = np.empty_like(starts_ordered)
+        starts[order] = starts_ordered
+        bounds = np.concatenate(([0], np.cumsum(sizes)))
+        self._pending = [(codes[bounds[i]:bounds[i + 1]], counts[bounds[i]:bounds[i + 1]],
+                          starts[bounds[i]:bounds[i + 1]]) for i in range(self.chunks)]
+        self.values = np.empty((int(offsets[-1]), len(self.features)), dtype=np.float32)
+        self.dates = np.empty(int(offsets[-1]), dtype="datetime64[ns]")
+        self.offsets = offsets
+        self.names = np.asarray(list(names), dtype=object)
+        self._written = np.zeros(len(names), dtype=np.int64)
+
+    # ------------------------------------------------------------------ pass 2
+    def append(self, chunk: pd.DataFrame) -> None:
+        """Write one chunk's preprocessed values into the matrix at its laid-out positions."""
+        self.layout()
+        index = len(self._appended)
+        if index >= self.chunks:
+            raise ValueError("bar chunks were appended more often than observed")
+        codes, expected, starts = self._pending[index]
+        frame = chunk.reset_index(drop=True)
+        if len(frame) > self.chunk_rows:
+            raise ValueError(f"bar chunk of {len(frame)} rows exceeds chunk_rows={self.chunk_rows}")
+        if not len(frame):
+            if len(expected):
+                raise ValueError("bar source changed between the layout and value passes")
+            self._appended.append(index)
+            return
+        chunk_codes = np.fromiter((self._code_of[name] for name in frame["instrument"].to_numpy(dtype=object)),
+                                  dtype=np.int64, count=len(frame))
+        counts = np.bincount(chunk_codes, minlength=len(self.names))
+        if not np.array_equal(counts[codes], expected):
+            raise ValueError("bar source changed between the layout and value passes")
+        stamps = frame["date"].to_numpy(dtype="datetime64[ns]")
+        # Instrument-major inside the chunk, then its own time order: the global stable sort is
+        # the concatenation of these blocks because the layout proved the spans are disjoint.
+        order = np.lexsort((stamps, chunk_codes))
+        ordered_codes = chunk_codes[order]
+        start_of = np.zeros(len(self.names), dtype=np.int64)
+        start_of[codes] = starts
+        group_start = np.searchsorted(ordered_codes, ordered_codes, side="left")
+        destination = start_of[ordered_codes] + (np.arange(len(order)) - group_start)
+        values = _feature_matrix(frame.iloc[order], self.features)
+        values[~np.isfinite(values)] = np.nan
+        self.values[destination] = values
+        self.dates[destination] = stamps[order]
+        self._written += np.bincount(ordered_codes, minlength=len(self.names))
+        self._appended.append(index)
+
+    # ------------------------------------------------------------------ result
+    def result(self) -> BarArrays:
+        """The canonical arrays; refuses a half-filled matrix instead of returning one."""
+        self.layout()
+        if self._appended != list(range(self.chunks)):
+            raise ValueError(f"{len(self._appended)} of {self.chunks} bar chunks were never filled")
+        if not np.array_equal(self._written, np.diff(self.offsets)):
+            raise ValueError("bar matrix is not fully written; refusing a partial result")
+        return BarArrays(values=self.values, dates=self.dates, offsets=self.offsets, names=self.names)
+
+
+def _selected(frame: pd.DataFrame, selection: DaySelection | None) -> pd.DataFrame:
+    """Apply a monthly day selection exactly as the cached projection does."""
+    return frame if selection is None else frame.loc[selection.keep(frame["date"])].reset_index(drop=True)
+
+
+def bar_arrays_streamed(path_value: Any, config: Any, *, start: Any = None, end: Any = None,
+                        selection: DaySelection | None = None, mapping: pd.DataFrame | None = None,
+                        chunk_rows: int = DEFAULT_BAR_CHUNK_ROWS,
+                        sealed_access: FinalAccessClaim | None = None
+                        ) -> tuple[BarArrays, list[dict], dict]:
+    """Build the canonical ``BarArrays`` straight from source files, one bounded chunk at a time.
+
+    Same projection, filters, instrument mapping and preprocessing as
+    ``load_data`` + :func:`bar_arrays`; the only difference is that no frame ever holds the
+    whole window, so peak memory is the target arrays plus one chunk. Verified caches are
+    bypassed (they key on a whole-window projection), so the source is read twice: pass 1
+    reads the key columns, pass 2 the configured features. Returns the arrays, the same
+    per-file provenance records ``_read`` produces, and an audit of the chunking.
+    """
+    if start is not None or end is not None:
+        assert_development_read(start, end, sealed_access=sealed_access)
+    if not path_value:
+        raise ValueError("Bounded bar streaming needs data.bars_path")
+    path = Path(path_value)
+    if not path.exists():
+        raise FileNotFoundError(f"Data source does not exist: {path}")
+    if str(path).lower().endswith((".tar.gz", ".tgz", ".tar", ".rar")):
+        raise ValueError("Bounded bar streaming reads extracted monthly feather/parquet files; "
+                         "extract the archive first or load the window as a frame")
+    features = list(config_option(config, "feature_columns"))
+    if FORBIDDEN_FEATURES.intersection(features):
+        raise ValueError("Future label columns cannot be input features")
+    files = _source_files(path, start, end, None)
+    if not files:
+        raise ValueError(f"No data files overlap requested dates: {path}")
+    key_columns = list(dict.fromkeys([*KEYS, "instrument_id"]))
+    value_columns = list(dict.fromkeys([*key_columns, *features]))
+    builder = BarArraysBuilder(features, chunk_rows=chunk_rows)
+    states, records = {}, []
+    for file in files:
+        before = file.stat()
+        states[file] = (before.st_size, before.st_mtime_ns)
+        records.append(_digest(file))
+        for chunk in _file_blocks(file, key_columns, start, end, selection, chunk_rows):
+            builder.observe(_map_instruments(chunk, mapping, "bars"))
+    builder.layout()
+    for file in files:
+        for chunk in _file_blocks(file, value_columns, start, end, selection, chunk_rows):
+            builder.append(preprocess_bars(_map_instruments(chunk, mapping, "bars"), config))
+        after = file.stat()
+        if (after.st_size, after.st_mtime_ns) != states[file]:
+            raise ValueError(f"Data changed during read: {file}")
+    arrays = builder.result()
+    audit = {"mode": "bounded_chunks", "chunk_rows": builder.chunk_rows, "chunks": builder.chunks,
+             "max_chunk_rows": int(builder.peak_chunk_rows), "source_files": len(files),
+             "passes": 2, "rows": arrays.rows, "instruments": len(arrays.names),
+             "cache": "bypassed (whole-window projection keys)",
+             "layout": "instrument-major, date ascending (same as bars.sort_values(['instrument','date']))"}
+    return arrays, records, audit
 
 
 def instrument_codes(arrays: BarArrays, instruments: pd.Series) -> np.ndarray:
