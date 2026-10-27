@@ -6,7 +6,6 @@ import hashlib
 import json
 import sqlite3
 import sys
-from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -258,24 +257,31 @@ def test_cli_query_reads_the_built_index(tmp_path, monkeypatch, capsys):
 @pytest.mark.skipif(not (ROOT / "runs").is_dir(), reason="runs/ fact source not present")
 def test_real_runs_index_matches_the_manifest_fact_source(tmp_path):
     runs_root = ROOT / "runs"
-    manifests = discover_manifests(runs_root)
-    assert manifests, "runs/ must keep at least one manifest as the fact source"
-    samples = manifests[:3]
+    manifests_before = discover_manifests(runs_root)
+    assert manifests_before, "runs/ must keep at least one manifest as the fact source"
+    samples = manifests_before[:3]
     before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in samples}
     summary = build_index(runs_root, tmp_path / "index")
     after = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in samples}
     assert before == after
     entries = read_entries(tmp_path / "index")
-    # One entry per manifest, and the population is whatever the fact source holds right now.
-    assert len(entries) == len(manifests) == summary["entries"]["total"]
-    assert [(ROOT / entry["manifest_path"]).resolve() for entry in entries] == \
-        [path.resolve() for path in manifests]
-    # Status counters are recomputed from the manifests instead of frozen at one population.
-    raw_status = Counter(json.loads(path.read_text(encoding="utf-8")).get("status")
-                         for path in manifests)
-    assert Counter(entry["status"] for entry in entries) == raw_status
-    assert Counter(summary["status_counts"]) == Counter(
-        {"null" if key is None else str(key): count for key, count in raw_status.items()})
+    manifests_after = discover_manifests(runs_root)
+    indexed = [(ROOT / entry["manifest_path"]).resolve() for entry in entries]
+    # One entry per manifest: no phantom rows, no duplicates, nothing dropped. runs/ is a live
+    # tree (teammates append and clean up archives while tests run), so the 1:1 statement is
+    # written as an invariant that collapses to strict equality whenever the tree stays quiet.
+    assert len(indexed) == len(set(indexed)) == len(entries) == summary["entries"]["total"]
+    assert set(indexed) <= {path.resolve() for path in manifests_after}
+    stable = {path.resolve() for path in manifests_before} & {path.resolve() for path in manifests_after}
+    assert stable <= set(indexed)
+    # Status counters mirror each indexed manifest's own document, not a frozen population size.
+    statuses: dict[str, int] = {}
+    for entry in entries:
+        document = json.loads((ROOT / entry["manifest_path"]).read_text(encoding="utf-8"))
+        assert entry["status"] == document.get("status"), entry["index_key"]
+        key = "null" if entry["status"] is None else str(entry["status"])
+        statuses[key] = statuses.get(key, 0) + 1
+    assert summary["status_counts"] == dict(sorted(statuses.items()))
     assert all(not entry["manifest_path"].startswith("runs/frozen/") for entry in entries)
     assert summary["snapshots"]["frozen_manifest_count"] == 17
     assert summary["snapshots"]["frozen_manifest_statuses"].get("running") == 1
@@ -300,6 +306,6 @@ def test_real_runs_index_matches_the_manifest_fact_source(tmp_path):
     stored_summary = runs_root / "index" / SUMMARY_FILENAME
     if stored_summary.is_file():
         stored = json.loads(stored_summary.read_text(encoding="utf-8"))
-        if stored["entries"]["total"] == len(manifests):
+        if stored["entries"]["total"] == summary["entries"]["total"]:
             assert stored["artifacts"]["jsonl"]["sha256"] == \
                 summary["artifacts"]["jsonl"]["sha256"]
