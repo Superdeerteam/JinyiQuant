@@ -13,6 +13,53 @@ from torch import nn
 
 from .normalization import BiN
 
+FINITE_CHECK_EVERY_DEFAULT = 50
+
+
+class InputFiniteCheck:
+    """Amortized "input must be finite" guard for the trunk entry points.
+
+    ``torch.isfinite(x).all()`` is a device reduction whose scalar result is read on
+    the host, so it drains the stream on every call and prevents CUDA-graph capture.
+    The guard therefore stays unconditional wherever that drain is free (CPU) and, on
+    CUDA, runs on the first call plus every ``every_n``-th call afterwards.
+    ``every_n=1`` restores the original unconditional per-call check.
+    """
+
+    def __init__(self, every_n=FINITE_CHECK_EVERY_DEFAULT):
+        self.every_n = FINITE_CHECK_EVERY_DEFAULT
+        self.calls = self.checks = 0
+        self.set_every_n(every_n)
+
+    def set_every_n(self, every_n):
+        if type(every_n) is not int or every_n < 1:
+            raise ValueError("finite_check_every must be a positive integer")
+        self.every_n = every_n
+        return self
+
+    def reset(self):
+        self.calls = self.checks = 0
+        return self
+
+    def due(self, device_type):
+        """Whether this call runs the check: always where a stream drain is free."""
+        self.calls += 1
+        return not (self.every_n > 1 and device_type == "cuda" and (self.calls - 1) % self.every_n)
+
+    def __call__(self, x):
+        if self.due(x.device.type):
+            self.checks += 1
+            if not torch.isfinite(x).all():
+                raise ValueError("Input must be finite after shared missing-value preprocessing")
+
+
+def configure_finite_check(network, every_n):
+    """Point a built backbone's input guard at the configured sampling interval."""
+    check = getattr(network, "finite_check", None)
+    if not isinstance(check, InputFiniteCheck):
+        raise ValueError("Backbone is missing its input finiteness guard")
+    return check.reset().set_every_n(every_n)
+
 
 class ComputeQKV(nn.Module):
     def __init__(self, hidden_dim, num_heads):
@@ -86,6 +133,7 @@ class ModifiedTLOB(nn.Module):
             self.register_buffer("pos_encoder", sinusoidal_positional_embedding(seq_size, hidden_dim))
         else:
             self.pos_encoder = nn.Parameter(torch.randn(1, seq_size, hidden_dim))
+        self.finite_check = InputFiniteCheck()
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             last = i == num_layers - 1
@@ -101,8 +149,11 @@ class ModifiedTLOB(nn.Module):
     def forward(self, x):
         if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
             raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
-        if not torch.isfinite(x).all():
-            raise ValueError("Input must be finite after shared missing-value preprocessing")
+        self.finite_check(x)
+        return self._forward_impl(x)
+
+    def _forward_impl(self, x):
+        """Validated, branch-free trunk math: the only region that may be compiled."""
         x = self.norm_layer(x.transpose(1, 2)).transpose(1, 2)
         x = self.emb_layer(x) + self.pos_encoder
         for layer in self.layers:
@@ -133,6 +184,7 @@ class MLPLOB(nn.Module):
             raise ValueError("Quarter compression requires hidden_dim/seq_size >= 4 and features >= 2")
         self.seq_size, self.num_features = seq_size, num_features
         self.norm_layer = BiN(num_features, seq_size)
+        self.finite_check = InputFiniteCheck()
         self.layers = nn.ModuleList([nn.Linear(num_features, hidden_dim), nn.GELU()])
         for i in range(num_layers):
             last = i == num_layers - 1
@@ -151,8 +203,11 @@ class MLPLOB(nn.Module):
     def forward(self, x):
         if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
             raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
-        if not torch.isfinite(x).all():
-            raise ValueError("Input must be finite after shared missing-value preprocessing")
+        self.finite_check(x)
+        return self._forward_impl(x)
+
+    def _forward_impl(self, x):
+        """Validated, branch-free trunk math: the only region that may be compiled."""
         x = self.norm_layer(x.transpose(1, 2)).transpose(1, 2)
         for layer in self.layers:
             x = layer(x).transpose(1, 2)
@@ -231,6 +286,7 @@ class DualPatchTLOB(nn.Module):
         self.patch_counts = counts
         self.channel_dim = DUAL_PATCH_CHANNEL_DIM
         self.norm_layer = BiN(num_features, seq_size)
+        self.finite_check = InputFiniteCheck()
         self.branches = nn.ModuleList([
             PatchEncoder(seq_size=seq_size, patch_count=count, hidden_dim=hidden_dim,
                          num_layers=num_layers, num_heads=num_heads) for count in counts])
@@ -242,8 +298,11 @@ class DualPatchTLOB(nn.Module):
     def forward(self, x):
         if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
             raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
-        if not torch.isfinite(x).all():
-            raise ValueError("Input must be finite after shared missing-value preprocessing")
+        self.finite_check(x)
+        return self._forward_impl(x)
+
+    def _forward_impl(self, x):
+        """Validated, branch-free trunk math: the only region that may be compiled."""
         normalized = self.norm_layer(x.transpose(1, 2))
         batch = normalized.shape[0]
         embeddings = []

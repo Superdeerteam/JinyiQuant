@@ -18,7 +18,7 @@ from jinyiquant.config import DataConfig, ModelConfig  # noqa: E402
 from jinyiquant.data import Batch, build_batch, preprocess_bars  # noqa: E402
 from modified_tlob.adapter import TLOBAdapter  # noqa: E402
 from modified_tlob.device import select_device  # noqa: E402
-from modified_tlob.model import ModifiedTLOB  # noqa: E402
+from modified_tlob.model import InputFiniteCheck, ModifiedTLOB  # noqa: E402
 from modified_tlob.normalization import BiN  # noqa: E402
 from modified_tlob.schema import lob_columns  # noqa: E402
 
@@ -671,3 +671,107 @@ def test_gpu_trained_weights_cpu_load(tmp_path):
     m.save(tmp_path / "gpu.pt")
     restored = TLOBAdapter.load(tmp_path / "gpu.pt", device="cpu")
     np.testing.assert_allclose(restored.predict(b), m.predict(b), atol=1e-6, rtol=1e-5)
+
+
+def test_input_finite_guard_amortizes_only_where_the_drain_is_not_free():
+    guard = InputFiniteCheck(every_n=4)
+    # First call plus every 4th call on an asynchronous device: the stream drain is
+    # the per-step cost there, so the guard samples instead of syncing every call.
+    assert [guard.due("cuda") for _ in range(9)] == [True, False, False, False] * 2 + [True]
+    # A CPU drain is free, so the check stays unconditional.
+    assert all(guard.due("cpu") for _ in range(5))
+    guard.set_every_n(1)
+    assert all(guard.due("cuda") for _ in range(3))
+    for invalid in (0, -1, None, 2.0, True):
+        with pytest.raises(ValueError, match="positive integer"):
+            guard.set_every_n(invalid)
+
+
+def test_nonfinite_input_is_still_rejected_after_a_passing_call():
+    model = ModifiedTLOB(seq_size=8)
+    assert model.finite_check.every_n == 50
+    model(torch.zeros(1, 8, 12))
+    nan = torch.zeros(1, 8, 12)
+    nan[0, 0, 0] = float("nan")
+    with pytest.raises(ValueError, match="finite"):
+        model(nan)
+    assert model.finite_check.calls == 2 and model.finite_check.checks == 2
+
+
+def test_configured_finite_check_interval_reaches_the_backbone():
+    model = TLOBAdapter({**adapter().config, "finite_check_every": 7}, data_config())
+    assert model.network.finite_check.every_n == model.finite_check_every == 7
+
+
+def test_sampled_finite_guards_do_not_change_the_trajectory():
+    """Strict per-step guards and the configured sampling must be the same trajectory."""
+    trajectories = []
+    for every in (1, 50):
+        m = TLOBAdapter({**adapter().config, "finite_check_every": every}, data_config())
+        progress = m.fit(batch(), np.linspace(-.01, .01, 7))
+        trajectories.append((progress, m.predict(batch())))
+    strict, sampled = trajectories
+
+    def trajectory(progress):
+        # The guard interval and its kernel-path report are run knobs, not trajectory state.
+        return {key: value for key, value in progress.items()
+                if key not in ("finite_check_every", "compile")}
+
+    assert trajectory(strict[0]) == trajectory(sampled[0])
+    assert strict[0]["compile"]["status"] == sampled[0]["compile"]["status"] == "eager"
+    np.testing.assert_array_equal(strict[1], sampled[1])
+
+
+def test_compiled_forward_must_match_eager_before_it_is_used(monkeypatch):
+    events = []
+    model = TLOBAdapter({**adapter().config, "compile_mode": "default"}, data_config(),
+                        recorder=SimpleNamespace(event=lambda stage, event, **v: events.append((event, v))))
+    monkeypatch.setattr(torch, "compile", lambda fn, **kwargs: fn, raising=False)
+    progress = model.fit(batch(), np.linspace(-.01, .01, 7))
+    assert progress["compile"]["status"] == "compiled"
+    assert progress["compile"]["max_abs_forward_difference"] == 0
+    assert [event for event, _ in events].count("compile_enabled") == 1
+    assert not [event for event, _ in events if event == "compile_fallback"]
+
+
+def test_compile_equivalence_mismatch_disables_the_compiled_path(monkeypatch):
+    events = []
+    model = TLOBAdapter({**adapter().config, "compile_mode": "default"}, data_config(),
+                        recorder=SimpleNamespace(event=lambda stage, event, **v: events.append((event, v))))
+    monkeypatch.setattr(torch, "compile", lambda fn, **kwargs: (lambda x: fn(x) + 1e-3), raising=False)
+    eager = {**adapter().config}
+    progress = model.fit(batch(), np.linspace(-.01, .01, 7))
+    assert progress["compile"]["status"] == "fallback"
+    assert "differs from eager" in progress["compile"]["fallback"]
+    fallback = next(context for event, context in events if event == "compile_fallback")
+    assert fallback["level"] == "WARNING" and fallback["requested"] == "default"
+    reference = TLOBAdapter(eager, data_config())
+    reference.fit(batch(), np.linspace(-.01, .01, 7))
+    np.testing.assert_array_equal(model.predict(batch()), reference.predict(batch()))
+
+
+def test_compile_failure_falls_back_to_eager_with_a_warning_event(monkeypatch):
+    events = []
+    model = TLOBAdapter({**adapter().config, "compile_mode": "reduce-overhead"}, data_config(),
+                        recorder=SimpleNamespace(event=lambda stage, event, **v: events.append((event, v))))
+
+    def broken(fn, **kwargs):
+        raise RuntimeError("simulated inductor failure")
+
+    monkeypatch.setattr(torch, "compile", broken, raising=False)
+    progress = model.fit(batch(), np.linspace(-.01, .01, 7))
+    assert progress["compile"]["status"] == "fallback"
+    assert "simulated inductor failure" in progress["compile"]["fallback"]
+    context = next(context for event, context in events if event == "compile_fallback")
+    assert context["level"] == "WARNING"
+    reference = TLOBAdapter(adapter().config, data_config())
+    reference.fit(batch(), np.linspace(-.01, .01, 7))
+    np.testing.assert_array_equal(model.predict(batch()), reference.predict(batch()))
+
+
+def test_eager_mode_never_touches_torch_compile(monkeypatch):
+    model = adapter()
+    monkeypatch.setattr(torch, "compile", pytest.fail, raising=False)
+    progress = model.fit(batch(), np.linspace(-.01, .01, 7))
+    assert progress["compile"] == {**progress["compile"], "requested": "eager", "status": "eager"}
+    assert progress["finite_check_every"] == 50

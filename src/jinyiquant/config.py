@@ -141,6 +141,14 @@ class ModelConfig(StrictModel):
     device: Literal["auto", "cpu", "cuda"] = "auto"
     cpu_threads: int = Field(default=1, ge=1, le=64)
     log_every_steps: int = Field(default=10, ge=1)
+    # Sampling interval for the host-visible input/loss/gradient finiteness guards.
+    # 1 restores the unconditional per-call check; larger values amortize the stream
+    # drain (each guard is fail-closed, only detected within at most this many steps).
+    finite_check_every: int = Field(default=50, ge=1)
+    # "eager" keeps the reference kernel path. The other values compile the trunk math
+    # for training only; "aot-eager" is the no-Triton backend for non-Linux hosts. Any
+    # compile or equivalence failure falls back to eager with a warning event.
+    compile_mode: Literal["eager", "default", "reduce-overhead", "aot-eager"] = "eager"
 
     @property
     def torch_backend(self) -> bool:
@@ -150,6 +158,8 @@ class ModelConfig(StrictModel):
     def valid_embedding(self):
         if not self.torch_backend and (self.book_representation != "raw" or self.trade_features != "zero"):
             raise ValueError("LOB input transformations require a torch regression model")
+        if not self.torch_backend and self.compile_mode != "eager":
+            raise ValueError("Compiled kernels require a torch regression model")
         if self.kind == "modified_tlob" and self.is_sin_emb and self.hidden_dim % 2:
             raise ValueError("Sinusoidal embedding requires even hidden_dim")
         if self.kind == "dual_patch":

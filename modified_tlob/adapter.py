@@ -16,13 +16,17 @@ import torch
 from jinyiquant.io import write_json
 
 from .device import device_resources, select_device
-from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, parameter_groups
+from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, configure_finite_check, parameter_groups
 from .schema import validate_input_schema
 
 BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB, "dual_patch": DualPatchTLOB}
 TRAINING_ONLY_MODULE = "jinyiquant.trajectory"
-# Requested compile mode -> torch.compile keyword argument; None keeps the eager path.
-COMPILE_MODES = {"eager": None, "default": "default", "reduce-overhead": "reduce-overhead"}
+# Requested compile mode -> torch.compile keyword arguments; {} keeps the eager path.
+# "aot-eager" is the only backend that runs without Triton, so it is the diagnostic
+# option on platforms where inductor is unavailable (Windows).
+COMPILE_OPTIONS = {"eager": {}, "default": {"mode": "default"},
+                   "reduce-overhead": {"mode": "reduce-overhead"},
+                   "aot-eager": {"backend": "aot_eager"}}
 # A compiled trunk must reproduce the eager forward bit-for-bit within this bound.
 COMPILE_EQUIVALENCE_ATOL = 1e-6
 
@@ -221,6 +225,17 @@ def pairwise_hinge_ranking_loss(scores, targets):
     return torch.clamp(-(score_gap * target_gap), min=0).mean()
 
 
+def _gradients_are_finite(parameters):
+    """Single stream drain for the whole gradient set.
+
+    The per-tensor form used to read one host scalar per parameter tensor, which on
+    an asynchronous accelerator drained the stream once per tensor instead of once
+    per check.
+    """
+    flat = [grad.reshape(-1) for grad in (p.grad for p in parameters) if grad is not None]
+    return bool(flat) and bool(torch.isfinite(torch.cat(flat)).all())
+
+
 def _architecture_with_patch_counts(architecture):
     """Canonicalize the dual-scale patch counts for checkpoint comparisons.
 
@@ -258,6 +273,8 @@ class TLOBAdapter:
         self.config.setdefault("ranking_loss_weight", 0.0)
         self.config.setdefault("book_representation", "raw")
         self.config.setdefault("trade_features", "zero")
+        self.config.setdefault("finite_check_every", 50)
+        self.config.setdefault("compile_mode", "eager")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
         if self.config["target_centering"] not in TARGET_CENTERING_MODES:
@@ -299,6 +316,8 @@ class TLOBAdapter:
             self.architecture.update({k: self.config[k] for k in ("num_heads", "patch_counts")})
         self.architecture.update(seq_size=data["lookback"], num_features=len(fields))
         self.network = BACKBONES[self.config["kind"]](**self.architecture).to(self.device)
+        self.finite_check_every = self.config["finite_check_every"]
+        configure_finite_check(self.network, self.finite_check_every)
         self.parameter_groups = parameter_groups(self.network)
         self.intercept = None
         self.target_scale = 1.0
@@ -618,6 +637,53 @@ class TLOBAdapter:
         exposure = checkpoint.get("exposure_counts")
         return position, None if exposure is None else exposure.numpy().astype(np.int64)
 
+    def _training_forward(self, probe):
+        """Forward callable for the optimization loop, with the compile fallback contract.
+
+        ``report["status"]`` is ``eager`` (not requested), ``compiled`` or ``fallback``, and
+        every fallback emits a warning event, so a silent degradation is impossible. A
+        compiled trunk must reproduce the eager forward on one real batch within
+        ``COMPILE_EQUIVALENCE_ATOL`` before it is allowed to drive the trajectory; only the
+        validated branch-free ``_forward_impl`` math is compiled, never the input guards.
+        """
+        requested = self.config["compile_mode"]
+        report = {"requested": requested, "status": "eager", "fallback": None,
+                  "equivalence_atol": COMPILE_EQUIVALENCE_ATOL,
+                  "finite_check_every": self.finite_check_every, "probe_shape": list(probe.shape)}
+        options = COMPILE_OPTIONS[requested]
+        if not options:
+            self._event("training", "kernel_path", **report)
+            return self.network, report
+        report["options"] = options
+        try:
+            compile_fn = getattr(torch, "compile", None)
+            if compile_fn is None:
+                raise RuntimeError("torch.compile is unavailable in this torch build")
+            compiled = compile_fn(self.network._forward_impl, **options)
+            with torch.enable_grad():
+                expected, actual = self.network(probe), compiled(probe)
+            difference = float((expected - actual).abs().max().detach())
+            if not bool(torch.isfinite(actual).all()):
+                raise RuntimeError("compiled forward returned non-finite values")
+            if difference > COMPILE_EQUIVALENCE_ATOL:
+                raise RuntimeError(f"compiled forward differs from eager by {difference:.3g} "
+                                   f"> {COMPILE_EQUIVALENCE_ATOL:g}")
+        except Exception as exc:  # any compile/validate failure must fall back to eager
+            report.update(status="fallback", reason="compile_failed",
+                          fallback=f"{type(exc).__name__}: {exc}"[:600])
+            self._event("training", "compile_fallback", level="WARNING", **report)
+            return self.network, report
+
+        def predict(x):
+            # The amortized input guard stays outside the graph, so compiled and eager
+            # trajectories keep exactly the same host-visible checks.
+            self.network.finite_check(x)
+            return compiled(x)
+
+        report.update(status="compiled", max_abs_forward_difference=difference)
+        self._event("training", "compile_enabled", **report)
+        return predict, report
+
     def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None,
             observer_every_steps=None, resume=None, step_budget=None, checkpoint_at_steps=None,
             checkpoint_dir=None, track_exposure=False):
@@ -700,6 +766,11 @@ class TLOBAdapter:
         self.training_keys = batch.keys.loc[mask]
         self.used_positions = used_positions
         fingerprint = self._training_fingerprint(self.training_keys, optimization_targets, used_positions)
+        # Compile after the pool is fixed so the probe batch has the real training shape.
+        self.network.train()
+        probe = torch.from_numpy(x[:min(batch_size, len(x))]).to(self.device)
+        predict_forward, compile_report = self._training_forward(probe)
+        terms_dim = 4 if self.ranking_loss_weight else 3
         exposure_counts = np.zeros(len(y), dtype=np.int64) if track_exposure else None
         steps, samples_seen, epochs_completed = 0, 0, 0
         start_epoch, start_batch, steps_per_epoch = 0, 0, {}
@@ -762,12 +833,15 @@ class TLOBAdapter:
                     raise ValueError("Checkpoint sampling position does not reproduce the saved batch order")
             epoch_samples = int(sum(len(indices) for indices in epoch_batches[:offset]))
             total = weighted_total = optimization_total = objective_total = ranking_total = 0.0
+            # Host-visible step statistics are accumulated on the device and read once per
+            # log interval and once per epoch, instead of three stream drains per step.
+            epoch_totals = torch.zeros(terms_dim, dtype=torch.float64, device=self.device)
             for position in range(offset, len(epoch_batches)):
                 indices = epoch_batches[position]
                 xb = torch.from_numpy(x[indices]).to(self.device)
                 yb = torch.from_numpy(optimization_targets[indices]).to(self.device)
                 optimizer.zero_grad(set_to_none=True)
-                predictions = self.network(xb)
+                predictions = predict_forward(xb)
                 unweighted_loss = torch.nn.functional.mse_loss(predictions, yb)
                 if time_weights is None:
                     mse_term = unweighted_loss
@@ -780,11 +854,13 @@ class TLOBAdapter:
                     loss = mse_term + self.ranking_loss_weight * ranking_loss
                 else:
                     loss = mse_term
-                if not torch.isfinite(loss):
+                # Sampling keeps the guards fail-closed while amortizing their stream drains;
+                # one is still paid on the first step and every finite_check_every steps.
+                checking = steps % self.finite_check_every == 0
+                if checking and not torch.isfinite(loss):
                     raise FloatingPointError("Nonfinite training loss")
                 loss.backward()
-                gradients = [p.grad for p in self.network.parameters() if p.grad is not None]
-                if not gradients or not all(torch.isfinite(g).all() for g in gradients):
+                if checking and not _gradients_are_finite(self.network.parameters()):
                     raise FloatingPointError("Nonfinite gradients")
                 optimizer.step()
                 steps += 1
@@ -793,18 +869,14 @@ class TLOBAdapter:
                 samples_seen += len(indices)
                 if exposure_counts is not None:
                     exposure_counts[indices] += 1
-                optimization_loss = mse_term.item()
-                objective_loss = loss.item()
-                raw_loss = unweighted_loss.item() * self.target_scale ** 2
-                weighted_loss = optimization_loss * self.target_scale ** 2
-                total += raw_loss * len(indices)
-                weighted_total += weighted_loss * len(indices)
-                optimization_total += optimization_loss * len(indices)
-                objective_total += objective_loss * len(indices)
-                ranking_value = None if ranking_loss is None else float(ranking_loss.detach())
-                if ranking_value is not None:
-                    ranking_total += ranking_value * len(indices)
+                terms = torch.stack([unweighted_loss.detach(), mse_term.detach(), loss.detach()]
+                                    + ([] if ranking_loss is None else [ranking_loss.detach()]))
+                epoch_totals += terms.double() * len(indices)
                 if steps % self.config["log_every_steps"] == 0:
+                    step_terms = (terms.double() * self.target_scale ** 2).tolist()
+                    raw_loss, weighted_loss, objective_loss = step_terms[:3]
+                    optimization_loss = step_terms[1] / self.target_scale ** 2
+                    ranking_value = step_terms[3] if ranking_loss is not None else None
                     gradient_norms = {
                         group: float(torch.stack([parameter.grad.detach().double().square().sum()
                             for name, parameter in self.network.named_parameters()
@@ -847,6 +919,12 @@ class TLOBAdapter:
                 complete_epoch = epoch_samples == usable
                 epochs_completed += int(complete_epoch)
                 actual_epochs = epoch + epoch_samples / len(y)
+                epoch_readout = epoch_totals.tolist()
+                total = epoch_readout[0] * self.target_scale ** 2
+                weighted_total = epoch_readout[1] * self.target_scale ** 2
+                optimization_total, objective_total = epoch_readout[1], epoch_readout[2]
+                if self.ranking_loss_weight:
+                    ranking_total = epoch_readout[3]
                 final_loss = total / epoch_samples
                 self._event("training", "epoch_completed" if complete_epoch else "epoch_stopped",
                             epoch=epoch + 1, epochs=actual_epochs, step=steps, loss=final_loss,
@@ -907,7 +985,8 @@ class TLOBAdapter:
                 "steps": steps, "samples": len(y), "samples_seen": samples_seen,
                 "epochs": actual_epochs, "epochs_completed": epochs_completed,
                 "resumed": resume is not None, "track_exposure": exposure_counts is not None,
-                "usable_samples": usable, "stop_reason": stop_reason}
+                "usable_samples": usable, "stop_reason": stop_reason,
+                "finite_check_every": self.finite_check_every, "compile": compile_report}
 
     def exposure_report(self, *, declared: dict | None = None) -> dict:
         """Per-day and per-epoch sample exposure for the trajectory that just ran."""
