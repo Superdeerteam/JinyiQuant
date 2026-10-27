@@ -302,6 +302,37 @@ def test_cloud_job_manifest_lists_code_data_commands_and_retrieval():
     assert manifest["retrieve"]["checkpoints"] and manifest["retrieve"]["budget_points"]
 
 
+def test_cloud_job_manifest_selects_the_run_window_from_a_local_data_root(tmp_path):
+    from jinyiquant.config import load_config
+    from scripts.cloud_trajectory_manifest import data_inventory, read_windows
+
+    windows = read_windows(load_config(ROOT / "configs/mlplob_v3_60d_csz_19800.json"))
+    assert [str(day.date()) for day in windows["bars"]] == ["2023-07-22", "2023-11-15"]
+    assert [str(day.date()) for day in windows["labels"]] == ["2023-08-01", "2023-11-15"]
+
+    local = tmp_path / "数据"
+    (local / "bars").mkdir(parents=True)
+    (local / "labels").mkdir()
+    for name in ("202306.0.feather", "202307.0.feather", "202311.0.feather",
+                 "202312.0.feather", "bmeta.bin"):
+        (local / "bars" / name).write_bytes(name.encode())
+    for name in ("cpt_jyc_2026_vwap_2023-07.parquet", "cpt_jyc_2026_vwap_2023-08.parquet",
+                 "cpt_jyc_2026_vwap_2024-01.parquet"):
+        (local / "labels" / name).write_bytes(name.encode())
+    (local / "instruments.parquet").write_bytes(b"instruments")
+    (local / "map.csv").write_bytes(b"mapping")
+    data = SimpleNamespace(bars_path="/root/v5/数据/bars", labels_path="/root/v5/数据/labels",
+                           instruments_path="/root/v5/数据/instruments.parquet",
+                           instrument_map_path="/root/v5/数据/map.csv", cache_dir=None)
+    rows = data_inventory(data, local_root=local, windows=windows)
+    assert {row["shard"] for row in rows} == {
+        "202307.0.feather", "202311.0.feather",
+        "cpt_jyc_2026_vwap_2023-08.parquet", "instruments.parquet", "map.csv"}
+    assert all(row["exists"] and row["sha256"] and row["bytes"] for row in rows)
+    assert all(row["path"].startswith("/root/v5/数据/") for row in rows)
+    assert all(Path(row["local_path"]).is_file() for row in rows)
+
+
 def test_trajectory_config_only_relaxes_the_budget_control(tmp_path):
     from scripts.run_training_trajectory import trajectory_config
 
