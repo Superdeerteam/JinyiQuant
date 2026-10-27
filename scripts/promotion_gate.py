@@ -16,7 +16,10 @@ Evidence rules enforced here (never waived by options):
 * the primary improvement must reach the measured threshold, the block interval
   must exclude zero, the effect must repeat across declared periods, and every
   secondary metric must stay inside its measured regression line;
-* the resource budget is checked against the pre-registered platform caliber.
+* the resource budget is checked against the pre-registered platform caliber: the
+  24 GiB limit bounds the inference/submission path only, training memory is
+  reported and never gated, and a registered scope patch may narrow that
+  applicability but never move a threshold or supply the ordering timestamp.
 
 Exit codes: 0 = accept, 3 = reject, 4 = evidence inconclusive, 2 = refused
 invalid input (nothing is decided; the artifacts are still written).
@@ -53,6 +56,14 @@ RESULT_LABELS = {"accept": "保留", "reject": "回退", "inconclusive": "证据
 SEALED_INTERVAL = ("2024-10-08", "2025-01-01")
 SEALED_PERIOD = ("2024-10-08", "2024-12-31")
 INDEX_REGISTRY = ROOT / "runs/index/viewed_windows.json"
+# The 24 GiB platform limit bounds the inference/submission notebook, not training.
+RESOURCE_ARTIFACT_KINDS = {
+    "training": "training", "train": "training", "fit": "training", "pilot": "training",
+    "inference": "inference_submission", "infer": "inference_submission",
+    "inference_submission": "inference_submission", "submission": "inference_submission",
+    "platform": "inference_submission", "package": "inference_submission",
+}
+EXPECTED_RESOURCE_GATE = {"training": "report_only", "inference_submission": "gated"}
 INHERITABLE_BLOCKS = ("economic_risk_boundary", "metric_caliber_layers",
                       "pre_registration_completeness", "resource_budget", "supersedes")
 POLICY_IDENTITY_KEYS = ("primary_metric", "direction", "min_improvement", "max_metric_regressions",
@@ -455,23 +466,151 @@ def period_sign_evidence(comparison: dict) -> dict:
             "fraction_positive": (len(positive) / len(effects)) if effects else 0.0}
 
 
+def canonical_digest(document) -> str:
+    """SHA256 of the canonical JSON line written by write_json (byte-level traceability)."""
+    payload = (json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+               + "\n").encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def resolve_scope_patch(prereg_path: Path, prereg: dict, registration: dict) -> dict | None:
+    """Read the applicability patch recorded inside the registration audit trail.
+
+    A scope patch may only narrow where the 24 GiB platform limit applies (the
+    inference/submission path, not training). It is appended to the registration
+    record, the pre-amendment registration bytes stay reproducible by hash, and it
+    never supplies the registration timestamp used by the ordering check.
+    """
+    entries = list(registration.get("scope_patches") or [])
+    amended = registration
+    extended = (prereg.get("extends") or {}).get("path")
+    if not entries and extended:
+        extended_registration = (ROOT / extended).with_name(f"{Path(extended).stem}.registration.json")
+        if extended_registration.is_file():
+            candidate = read_json(extended_registration)
+            if candidate.get("scope_patches"):
+                candidate["_source"] = rel(extended_registration)
+                entries = list(candidate.get("scope_patches") or [])
+                amended = candidate
+    if not entries:
+        return None
+    if len(entries) > 1:
+        raise Refused(f"{len(entries)} scope patches are recorded; exactly one may be applied")
+    document = entries[0]
+    if document.get("kind") != "scope_patch":
+        raise Refused("registration scope_patches entry is not a scope patch")
+    target = document.get("patched_registration") or {}
+    if target.get("prereg_sha256") != amended.get("prereg_sha256"):
+        raise Refused("scope patch does not anchor the registered pre-registration hash")
+    if sha256_file(prereg_path) != target.get("prereg_sha256") and not extended:
+        raise Refused("scope patch does not anchor the registered pre-registration bytes")
+    if target.get("registered_at") != amended.get("registered_at"):
+        raise Refused("scope patch names a different registration timestamp")
+    history = amended.get("amendment_history") or []
+    if not history:
+        raise Refused("a scope patch must sit beside an amendment history record")
+    previous = history[0]
+    if previous.get("previous_registration_sha256") != target.get("registration_sha256"):
+        raise Refused("scope patch does not anchor the pre-amendment registration bytes")
+    pre_amendment = previous.get("previous_registration")
+    if canonical_digest(pre_amendment) != previous["previous_registration_sha256"]:
+        raise Refused("the amendment history does not reproduce the pre-amendment registration bytes")
+    if pre_amendment.get("scope_patches"):
+        raise Refused("the pre-amendment registration already carried a scope patch")
+    patch_created = parse_timestamp(document.get("created_at"), "scope patch created_at")
+    if patch_created < parse_timestamp(amended.get("registered_at"), "registration.registered_at"):
+        raise Refused("scope patch predates the registration")
+    budget = prereg.get("resource_budget") or {}
+    supersedes = document.get("supersedes") or {}
+    if supersedes.get("resource_budget.applies_to") != budget.get("applies_to"):
+        raise Refused("scope patch describes a different supersession than the registered scope")
+    sets = document.get("sets") or {}
+    new_applies = sets.get("resource_budget.applies_to")
+    if not isinstance(new_applies, str) or not new_applies or new_applies == budget.get("applies_to"):
+        raise Refused("scope patch must replace the registered applies_to text")
+    unchanged = document.get("unchanged") or {}
+    for key in ("platform_ram_limit_mib", "headroom_fraction", "promotion_peak_rss_mib"):
+        if unchanged.get(key) != budget.get(key):
+            raise Refused(f"scope patch disagrees with the registered {key}; thresholds may not change")
+    policy = prereg["object_policy_template"]
+    for key in ("primary_metric", "min_improvement", "max_metric_regressions"):
+        if unchanged.get(key) != policy.get(key):
+            raise Refused(f"scope patch disagrees with the registered {key}")
+    if unchanged.get("net5_limit") != prereg.get("net5_limit"):
+        raise Refused("scope patch disagrees with the registered net5_limit")
+    bootstrap = {name: policy[name] for name in ("bootstrap_samples", "block_days", "confidence", "seed")}
+    if unchanged.get("bootstrap") != bootstrap:
+        raise Refused("scope patch disagrees with the registered bootstrap settings")
+    if unchanged.get("threshold_basis_sha256") != policy["threshold_basis"]["calibration_sha256"]:
+        raise Refused("scope patch must cite the registered threshold basis")
+    if sets.get("resource_gate") != EXPECTED_RESOURCE_GATE:
+        raise Refused(f"scope patch may only narrow: resource_gate must be {EXPECTED_RESOURCE_GATE}")
+    gated = ((document.get("scope") or {}).get("gated") or {})
+    if (gated.get("artifact_kind") != "inference_submission"
+            or gated.get("limit_mib") != budget.get("promotion_peak_rss_mib")):
+        raise Refused("scope patch must keep the inference limit and its artifact kind")
+    source = amended.get("_source") or rel(prereg_path.with_name(f"{prereg_path.stem}.registration.json"))
+    return {"path": source, "record": "registration.scope_patches[0]",
+            "sha256": canonical_digest(document), "patch_id": document.get("patch_id"),
+            "created_at": document.get("created_at"), "direction": document.get("direction"),
+            "reason": document.get("reason"), "applies_to": new_applies,
+            "training_memory": sets.get("resource_budget.training_memory"),
+            "resource_gate": sets["resource_gate"], "gated_limit_mib": gated["limit_mib"],
+            "pre_amendment_registration_sha256": previous["previous_registration_sha256"],
+            "ordering_registered_at": amended["registered_at"],
+            "takes_part_in_ordering": False}
+
+
+def effective_resource_budget(prereg: dict, patch: dict | None) -> dict:
+    budget = dict(prereg.get("resource_budget") or {})
+    if patch is not None:
+        budget["applies_to"] = patch["applies_to"]
+        budget["training_memory"] = patch.get("training_memory") or "report_only"
+        budget["inference_memory"] = "gated"
+        budget["scope_patch"] = patch["path"]
+        budget["resource_gate"] = dict(patch["resource_gate"])
+        budget["resource_gate_source"] = "scope_patch"
+    else:
+        # The registered scope covers "training run and submission inference package",
+        # so without the narrowing patch every artifact kind is gated.
+        budget["resource_gate"] = {"training": "gated", "inference_submission": "gated"}
+        budget["resource_gate_source"] = "registered"
+    return budget
+
+
 def resolve_resources(path: Path | None, candidate: dict) -> dict:
     """Resource evidence must be explicit; nothing is inferred from a missing number."""
     evidence = {"provided": False, "peak_rss_mib": None, "wall_seconds": None, "source": None,
+                "artifact_kind": None, "artifact_kind_source": None,
                 "unit_note": "peak_rss_mib = 2**20 bytes; manifest peak_rss_mb is decimal MB and is "
                              "converted with 1e6/2**20"}
     if path is not None:
         document = read_json(path)
         if "peak_rss_mib" not in document:
             raise Refused(f"{rel(path)} must report peak_rss_mib")
+        kind_text = document.get("artifact_kind")
+        if kind_text is None:
+            kind, source = None, "undeclared"
+        elif not isinstance(kind_text, str) or kind_text.strip().lower() not in RESOURCE_ARTIFACT_KINDS:
+            raise Refused(f"{rel(path)} declares unsupported artifact_kind {kind_text!r}; expected one "
+                          f"of {sorted(set(RESOURCE_ARTIFACT_KINDS))}")
+        else:
+            kind, source = RESOURCE_ARTIFACT_KINDS[kind_text.strip().lower()], "declared"
         evidence.update(provided=True, peak_rss_mib=float(document["peak_rss_mib"]),
-                        wall_seconds=document.get("wall_seconds"), source=rel(path))
+                        wall_seconds=document.get("wall_seconds"), source=rel(path),
+                        artifact_kind=kind, artifact_kind_source=source)
         return evidence
     directory = ROOT / candidate["source"]
     manifest = directory / "manifest.json"
     if manifest.is_file():
-        resources = read_json(manifest).get("resources") or {}
+        document = read_json(manifest)
+        resources = document.get("resources") or {}
         peak_mb = resources.get("peak_rss_mb")
+        kind_text = document.get("kind")
+        kind = RESOURCE_ARTIFACT_KINDS.get(str(kind_text).strip().lower()) if kind_text else None
+        evidence.update(artifact_kind=kind,
+                        artifact_kind_source=(f"manifest.kind={kind_text!r}" if kind else
+                                              f"manifest.kind={kind_text!r} unmapped"))
         if isinstance(peak_mb, (int, float)) and np.isfinite(peak_mb):
             evidence.update(provided=True, peak_rss_mib=float(peak_mb) * MIB_PER_MB,
                             wall_seconds=resources.get("wall_seconds"), source=rel(manifest),
@@ -510,6 +649,7 @@ def evaluate_gate(args) -> tuple[dict, dict]:
     registration = verify_registration(prereg_path, registration_path)
     prereg = registration["prereg"]
     basis = verify_basis(prereg, registration["registered_at"])
+    scope_patch = resolve_scope_patch(prereg_path, prereg, registration["registration"])
 
     baseline_path = args.baseline or prereg["baseline_object"]["path"]
     baseline = load_object(Path(baseline_path), "baseline")
@@ -563,7 +703,10 @@ def evaluate_gate(args) -> tuple[dict, dict]:
         raise Refused("evidence_rules must declare required_positive_fraction")
     sign = period_sign_evidence(comparison)
     resources = resolve_resources(args.resources, candidate)
-    memory_limit = float(prereg["resource_budget"]["promotion_peak_rss_mib"])
+    resource_budget = effective_resource_budget(prereg, scope_patch)
+    memory_limit = float(resource_budget["promotion_peak_rss_mib"])
+    resource_gate = resource_budget["resource_gate"]
+    resource_gated = resource_gate.get(resources["artifact_kind"]) == "gated"
     interval = comparison.get("confidence_interval")
     improvement = comparison.get("improvement")
 
@@ -600,9 +743,14 @@ def evaluate_gate(args) -> tuple[dict, dict]:
                         f"periods; the pre-registered rule needs {required_positive}")
     if not resources["provided"]:
         missing.append("resource evidence absent: peak host RSS was not measured for the candidate")
-    elif resources["peak_rss_mib"] > memory_limit:
+    elif resources["artifact_kind"] is None:
+        missing.append(f"resource artifact kind could not be classified "
+                       f"({resources.get('artifact_kind_source')}): the 24 GiB platform limit applies to "
+                       "the inference/submission path, and training memory is report-only, so the "
+                       "limit cannot be applied to this artifact")
+    elif resource_gated and resources["peak_rss_mib"] > memory_limit:
         failures.append(f"peak host RSS {resources['peak_rss_mib']:.1f} MiB exceeds the pre-registered "
-                        f"24 GiB platform line {memory_limit:.0f} MiB")
+                        f"24 GiB inference/submission line {memory_limit:.0f} MiB")
 
     status = "accept" if not failures and not missing else ("reject" if failures else "inconclusive")
 
@@ -619,6 +767,7 @@ def evaluate_gate(args) -> tuple[dict, dict]:
             "candidate_started_at_source": candidate["started_at_source"] or "argument",
             "preregistered_at": str(registration["registered_at"]),
             "prereg_before_candidate": bool(candidate_started >= registration["registered_at"]),
+            "scope_patch_used_for_ordering": False,
         },
         "threshold_basis": {"path": basis["path"], "sha256": basis["sha256"],
                             "checks": basis["checks"],
@@ -646,8 +795,16 @@ def evaluate_gate(args) -> tuple[dict, dict]:
                  "passed": net5_regression <= net5_limit},
         "period_repeat": sign | {"required_positive_periods": required_positive},
         "resources": resources | {"promotion_peak_rss_mib": memory_limit,
+                                  "applies_to": resource_budget["applies_to"],
+                                  "training_memory": resource_budget.get("training_memory"),
+                                  "scope_patch": resource_budget.get("scope_patch"),
+                                  "resource_gate": resource_gate,
+                                  "resource_gate_source": resource_budget["resource_gate_source"],
+                                  "gated": bool(resource_gated),
                                   "passed": bool(resources["provided"]
-                                                 and resources["peak_rss_mib"] <= memory_limit)},
+                                                 and (not resource_gated
+                                                      or resources["peak_rss_mib"] <= memory_limit))},
+        "scope_patch": scope_patch,
         "evidence_rules": rules,
         "cost_scenario": {
             "stress_single_side_rate": 0.0005,
@@ -683,6 +840,11 @@ def evaluate_gate(args) -> tuple[dict, dict]:
         "policy_sha256": comparison.get("policy_sha256"),
         "sealed": bool(sealed_evidence),
         "result_labels": labels or dict(RESULT_LABELS),
+        "resource_scope": {"applies_to": resource_budget["applies_to"],
+                           "artifact_kind": resources["artifact_kind"],
+                           "gated": bool(resource_gated),
+                           "training_memory": resource_budget.get("training_memory"),
+                           "scope_patch": scope_patch["path"] if scope_patch else None},
         "sealed_interval_untouched": True,
         "git_commit": git_commit(),
     }

@@ -34,6 +34,10 @@ SECONDARY_SCALES = {"ic_mean": 0.0022, "ic_ir": 0.15, "long_short_sharpe": 1.2,
                     "long_short_return_mean": 3e-5, "min_daily_long_short_return": 4e-5,
                     "turnover_mean": 0.012}
 NET5_SCALE = 2e-4
+ORIGINAL_APPLIES_TO = "training run and submission inference package, host RSS across all subprocesses"
+NEW_APPLIES_TO = ("platform inference/submission path only (DAI data read, model load, full-interval "
+                  "inference and score write-out inside the submission notebook); training memory is "
+                  "reported only and never gated")
 
 
 def _round_up(grid: float, value: float) -> float:
@@ -164,7 +168,8 @@ def write_prereg(root: Path, basis: Path, derived: dict, baseline: Path, *,
         "baseline_object": {"path": str(baseline)},
         "periods": {"declared": periods or PERIODS},
         "resource_budget": {"platform_ram_limit_mib": 24576, "headroom_fraction": 0.15,
-                            "promotion_peak_rss_mib": 20889},
+                            "promotion_peak_rss_mib": 20889,
+                            "applies_to": ORIGINAL_APPLIES_TO},
         "evidence_rules": {"date_evidence_unit": "consecutive trading-day blocks inside a period",
                            "seeds_are_not_date_evidence": True,
                            "stocks_within_a_day_are_not_resampled": True,
@@ -193,15 +198,69 @@ def write_prereg(root: Path, basis: Path, derived: dict, baseline: Path, *,
     prereg_path = root / "prereg.json"
     _write_json(prereg_path, prereg)
     registration_path = root / "registration.json"
-    _write_json(registration_path, {"schema_version": 1, "prereg_sha256": _sha(prereg_path),
+    _write_json(registration_path, {"schema_version": 1, "registration_id": "b4-gate-unit-test",
+                                    "prereg_sha256": _sha(prereg_path),
                                     "registered_at": registered_at})
     return prereg_path, registration_path
+
+
+def write_scope_patch(root: Path, prereg_path: Path, registration_path: Path, *,
+                      created_at: str = "2026-10-27T00:30:00+00:00",
+                      limit_mib: int = 20889, min_improvement: float | None = None,
+                      resource_gate: dict | None = None,
+                      new_applies_to: str = NEW_APPLIES_TO) -> dict:
+    """Append a scope patch to the registration record; it may never move a number."""
+    prereg = json.loads(prereg_path.read_text(encoding="utf-8"))
+    registration = json.loads(registration_path.read_text(encoding="utf-8"))
+    assert not registration.get("scope_patches"), "registration already carries a scope patch"
+    original_sha = _sha(registration_path)
+    policy = prereg["object_policy_template"]
+    document = {
+        "schema_version": 1, "patch_id": "unit-test-scope-patch", "kind": "scope_patch",
+        "created_at": created_at,
+        "patched_registration": {
+            "registration_id": registration["registration_id"],
+            "registered_at": registration["registered_at"],
+            "prereg_path": str(prereg_path), "prereg_sha256": _sha(prereg_path),
+            "registration_path": str(registration_path),
+            "registration_sha256": original_sha},
+        "supersedes": {"resource_budget.applies_to": prereg["resource_budget"]["applies_to"]},
+        "sets": {"resource_budget.applies_to": new_applies_to,
+                 "resource_budget.training_memory": "report_only",
+                 "resource_gate": resource_gate or {"training": "report_only",
+                                                    "inference_submission": "gated"}},
+        "scope": {"gated": {"artifact_kind": "inference_submission", "limit_mib": limit_mib},
+                  "report_only": {"artifact_kind": "training", "path": "training run"}},
+        "unchanged": {
+            "platform_ram_limit_mib": prereg["resource_budget"]["platform_ram_limit_mib"],
+            "headroom_fraction": prereg["resource_budget"]["headroom_fraction"],
+            "promotion_peak_rss_mib": limit_mib,
+            "primary_metric": policy["primary_metric"],
+            "min_improvement": policy["min_improvement"] if min_improvement is None else min_improvement,
+            "max_metric_regressions": policy["max_metric_regressions"],
+            "net5_limit": prereg["net5_limit"],
+            "bootstrap": {key: policy[key] for key in ("bootstrap_samples", "block_days",
+                                                       "confidence", "seed")},
+            "threshold_basis_sha256": policy["threshold_basis"]["calibration_sha256"]},
+        "direction": "narrowing a mis-specified applicability, not relaxing a quality threshold",
+        "reason": "unit test scope patch",
+    }
+    amended = dict(registration)
+    amended["scope_patches"] = [document]
+    amended["amendment_history"] = [{"amended_at": created_at, "change": "unit test scope patch",
+                                     "previous_registration_sha256": original_sha,
+                                     "previous_registration": registration}]
+    _write_json(registration_path, amended)
+    assert root  # keep the helper signature explicit about the workspace root
+    return {"path": registration_path, "original_sha256": original_sha}
 
 
 def build_case(tmp_path: Path, *, candidate_shift: float = 0.006, noise: float = 0.0,
                periods: list[list[str]] | None = None,
                candidate_started_at: str = CANDIDATE_STARTED_AT,
-               resources: float | None = 18000.0, isolate_primary: bool = False) -> dict:
+               resources: float | None = 18000.0, isolate_primary: bool = False,
+               artifact_kind: str = "inference_submission",
+               scope_patch: bool = False) -> dict:
     dates = DATES if periods is None else [
         day.strftime("%Y-%m-%d") for period in periods
         for day in pd.bdate_range(period[0], period[1])]
@@ -223,7 +282,10 @@ def build_case(tmp_path: Path, *, candidate_shift: float = 0.006, noise: float =
     resources_path = None
     if resources is not None:
         resources_path = tmp_path / "resources.json"
-        _write_json(resources_path, {"peak_rss_mib": resources, "wall_seconds": 120.0})
+        _write_json(resources_path, {"peak_rss_mib": resources, "wall_seconds": 120.0,
+                                     "artifact_kind": artifact_kind})
+    if scope_patch:
+        write_scope_patch(tmp_path, prereg_path, registration_path)
     return {"prereg": prereg_path, "registration": registration_path, "candidate": candidate_dir,
             "baseline": baseline_dir, "resources": resources_path}
 
@@ -441,3 +503,81 @@ def test_pre_registration_without_the_economic_boundary_block_is_refused(tmp_pat
     result = decision(tmp_path / "out-blocks")
     assert code == 2
     assert "economic_risk_boundary" in result["refused_reason"]
+
+
+def test_training_artifact_over_the_inference_line_is_not_rejected(tmp_path):
+    case = build_case(tmp_path, candidate_shift=0.006, resources=22000.0,
+                      artifact_kind="training", scope_patch=True)
+    code = run_gate(case, tmp_path / "out-training")
+    result = decision(tmp_path / "out-training")
+    gate = json.loads((tmp_path / "out-training" / "gate.json").read_text(encoding="utf-8"))
+    assert code == 0
+    assert result["status"] == "accept"
+    assert result["failed_gates"] == []
+    assert gate["resources"]["gated"] is False
+    assert gate["resources"]["resource_gate_source"] == "scope_patch"
+    assert gate["resources"]["peak_rss_mib"] == pytest.approx(22000.0)
+    assert gate["resources"]["training_memory"] == "report_only"
+    assert result["resource_scope"] == {
+        "applies_to": NEW_APPLIES_TO, "artifact_kind": "training", "gated": False,
+        "training_memory": "report_only", "scope_patch": gate["scope_patch"]["path"]}
+
+
+def test_inference_artifact_over_the_line_is_rejected(tmp_path):
+    case = build_case(tmp_path, candidate_shift=0.006, resources=22000.0,
+                      artifact_kind="inference_submission", scope_patch=True)
+    code = run_gate(case, tmp_path / "out-inference")
+    result = decision(tmp_path / "out-inference")
+    assert code == 3
+    assert result["status"] == "reject"
+    assert any("inference/submission line 20889" in item for item in result["failed_gates"])
+    # A legal inference peak still passes the same case.
+    case["resources"] = tmp_path / "resources-legal.json"
+    _write_json(case["resources"], {"peak_rss_mib": 20000.0, "artifact_kind": "inference_submission"})
+    code = run_gate(case, tmp_path / "out-inference-legal")
+    assert code == 0
+    assert decision(tmp_path / "out-inference-legal")["status"] == "accept"
+
+
+def test_scope_patch_narrows_the_resource_gate_without_becoming_a_threshold_registration(tmp_path):
+    # The patch is written after the candidate started and it still does not move the
+    # ordering anchor: that stays the threshold registration timestamp.
+    case = build_case(tmp_path / "ordered", candidate_shift=0.006, resources=22000.0,
+                      artifact_kind="training")
+    patch_info = write_scope_patch(tmp_path / "ordered", case["prereg"], case["registration"],
+                                   created_at="2026-10-27T02:00:00+00:00")
+    code = run_gate(case, tmp_path / "out-ordered")
+    gate = json.loads((tmp_path / "out-ordered" / "gate.json").read_text(encoding="utf-8"))
+    assert code == 0
+    assert pd.Timestamp(gate["ordering"]["preregistered_at"]) == pd.Timestamp(REGISTERED_AT)
+    assert gate["ordering"]["scope_patch_used_for_ordering"] is False
+    assert gate["scope_patch"]["takes_part_in_ordering"] is False
+    assert gate["scope_patch"]["created_at"] == "2026-10-27T02:00:00+00:00"
+    # The amendment keeps the pre-amendment registration bytes reproducible by hash.
+    assert gate["scope_patch"]["pre_amendment_registration_sha256"] == patch_info["original_sha256"]
+    assert gate["scope_patch"]["record"] == "registration.scope_patches[0]"
+
+    # Without the patch the registered scope still gates every artifact kind, so the
+    # same training peak is rejected: the narrowing really is carried by the patch.
+    unpatched = build_case(tmp_path / "unpatched", candidate_shift=0.006, resources=22000.0,
+                           artifact_kind="training")
+    code = run_gate(unpatched, tmp_path / "out-unpatched")
+    gate = json.loads((tmp_path / "out-unpatched" / "gate.json").read_text(encoding="utf-8"))
+    assert code == 3
+    assert gate["resources"]["resource_gate_source"] == "registered"
+    assert gate["resources"]["gated"] is True
+
+    # A patch may not move a threshold, and it may not widen the gate back to training.
+    moved = build_case(tmp_path / "moved", candidate_shift=0.006, resources=18000.0)
+    write_scope_patch(tmp_path / "moved", moved["prereg"], moved["registration"],
+                      min_improvement=0.002)
+    code = run_gate(moved, tmp_path / "out-moved")
+    assert code == 2
+    assert "disagrees with the registered" in decision(tmp_path / "out-moved")["refused_reason"]
+
+    widened = build_case(tmp_path / "widened", candidate_shift=0.006, resources=18000.0)
+    write_scope_patch(tmp_path / "widened", widened["prereg"], widened["registration"],
+                      resource_gate={"training": "gated", "inference_submission": "gated"})
+    code = run_gate(widened, tmp_path / "out-widened")
+    assert code == 2
+    assert "may only narrow" in decision(tmp_path / "out-widened")["refused_reason"]
