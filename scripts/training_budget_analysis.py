@@ -82,6 +82,15 @@ def _fail(message: str) -> None:
     raise SystemExit(f"refused: {message}")
 
 
+def _ratio(numerator: float | None, denominator: float | None) -> float | None:
+    """Magnitude ratio against the anchor; undefined rather than infinite when the anchor is 0."""
+    if numerator is None or denominator is None:
+        return None
+    if not np.isfinite(numerator) or not np.isfinite(denominator) or denominator == 0:
+        return None
+    return float(numerator / denominator)
+
+
 def resolve_output(path: Path) -> Path:
     """Every artifact stays outside runs/; a research run archive is never written here."""
     resolved = (path if path.is_absolute() else ROOT / path).resolve()
@@ -348,6 +357,16 @@ def exposure_section(points: list[dict], plan: dict, overrides: dict) -> dict:
                                       "budget cannot be reconciled with what the trajectory covered"}
             continue
         report = json.loads(Path(path).read_text(encoding="utf-8"))
+        missing_fields = [field for field in ("usable_samples", "batch_size", "steps",
+                                              "effective_epochs", "coverage", "samples_seen",
+                                              "expected_samples_seen")
+                          if field not in report]
+        if missing_fields:
+            segments[label] = {"status": "missing",
+                               "source": rel(path),
+                               "why": f"the exposure report lacks {missing_fields}; the declared "
+                                      f"budget cannot be reconciled with what the run covered"}
+            continue
         epochs = declared.get(label)
         if epochs is None:
             segments[label] = {"status": "missing",
@@ -484,12 +503,12 @@ def main(argv: list[str] | None = None) -> int:
             "scenarios": {scenario: {key: num(value) for key, value in block.items()
                                      if isinstance(value, (int, float)) or value is None}
                           for scenario, block in objects[label]["cost_scenarios"].items()},
-            "gross_retention_vs_anchor": (
-                num(objects[label]["cost_scenarios"]["0bp"]["gross_return_bp"]
-                    / objects[names[0]]["cost_scenarios"]["0bp"]["gross_return_bp"])),
-            "turnover_ratio_vs_anchor": (
-                num(objects[label]["cost_scenarios"]["0bp"]["turnover_mean_local"]
-                    / objects[names[0]]["cost_scenarios"]["0bp"]["turnover_mean_local"])),
+            "gross_retention_vs_anchor": _ratio(
+                objects[label]["cost_scenarios"]["0bp"]["gross_return_bp"],
+                objects[names[0]]["cost_scenarios"]["0bp"]["gross_return_bp"]),
+            "turnover_ratio_vs_anchor": _ratio(
+                objects[label]["cost_scenarios"]["0bp"]["turnover_mean_local"],
+                objects[names[0]]["cost_scenarios"]["0bp"]["turnover_mean_local"]),
         } for label, exposure in ((n, exposures["segments"].get(n, {})) for n in names)
     }
 
