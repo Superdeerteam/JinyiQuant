@@ -1,9 +1,9 @@
 {
  "schema_version": 1,
  "prereg_path": "configs/b4_data_scaling_prereg_20261027.json",
- "prereg_sha256": "75b396f56d57d65345a8d9a38d4a5a7719919f535042ff92d7a74d6bdf66fd68",
- "registered_at": "2026-10-27T18:33:10.228221+00:00",
- "git_head": "7049ebf537e6998a16a764289e7a4f4f115fe759",
+ "prereg_sha256": "f49994cca60036766de3f1c6396f3d90f4529a58684619e2a3679e160d348644",
+ "registered_at": "2026-10-27T19:11:34.959635+00:00",
+ "git_head": "955cc4fd876a60c16a96ff08aa65438898c832eb",
  "plan_sha256": {
   "configs/scaling_240d_seed11_2point_plan.json": "32082d49eb6a62407262c4e49a12cbe7ae932d32570b83033930442d77fe266b",
   "configs/scaling_240d_seed29_2point_plan.json": "bcdb3edd07201697be9d903a3fa4bc308534a1436f2225581e4ec68b1c10215a",
@@ -11,9 +11,9 @@
   "configs/scaling_441d_seed11_2point_plan.json": "511350cae45f1af432edb1c5fd7d746bad91cdeb3229de58cea729d398a1d752",
   "configs/scaling_441d_seed29_2point_plan.json": "d11961c12ccc3274b577f7b8ed4fc668c2aa8d1ded185f79f7365107fe417c35",
   "configs/scaling_441d_seed47_2point_plan.json": "a540243c17c7bfd973521450e7a801d1a9658893674ba411ec127dac553a18d8",
-  "configs/scaling_927d_seed11_2point_plan.json": "1037de330b3f65812e0554ec34da774210475056a999065be198f1b228a58c8d",
-  "configs/scaling_927d_seed29_2point_plan.json": "2830aea3f5e06fea095a600a70d09bc51a8d09992140f99ca2330f28a35205c0",
-  "configs/scaling_927d_seed47_2point_plan.json": "2d38f6312bfe8e45009ab184403d14705edf66b54c563031b6260ac1fccd7386"
+  "configs/scaling_927d_seed11_2point_plan.json": "20826d6714b57f848da8ed2ff8fc911d9e2ab06c5cff9016027de2c25e7613e8",
+  "configs/scaling_927d_seed29_2point_plan.json": "aa5a0e812e799992f908c8df12c16a49137c70c501078aa41c775505d3b82a79",
+  "configs/scaling_927d_seed47_2point_plan.json": "e8d1663b3cebdd72b532e4f248dc438006a57be42ffb075f8d8e25391e11afc5"
  },
  "recipe_sha256": {
   "configs/scaling_240d_csz_seed11.json": "6336255d412d236e36ed37f5da960562d8456489544782a4d2aeafea629379dd",
@@ -22,16 +22,16 @@
   "configs/scaling_441d_csz_seed11.json": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
   "configs/scaling_441d_csz_seed29.json": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
   "configs/scaling_441d_csz_seed47.json": "50699d51b426a7d8ea540aeb5afff1c6154cc8a5df4c86dd4a88140931d42280",
-  "configs/scaling_927d_csz_seed11.json": "870d6ffab376288b72aee9204f3a6f09abed9956b63fe633710f2236ac7695a6",
-  "configs/scaling_927d_csz_seed29.json": "e5a469fa9740f17bbdf80b4b269982cd28322820a9c939f1ae38c34a62dfd7a1",
-  "configs/scaling_927d_csz_seed47.json": "4dac150950447621dcece5b1df6691129f34f6c13a90a216c0348d6a76dd4f94"
+  "configs/scaling_927d_csz_seed11.json": "a6199b5cc1981b92d95bad1a4346ef0f71b6a312a4229004a7de818a3c41098e",
+  "configs/scaling_927d_csz_seed29.json": "5abac3ee8c374ccd4b39160437daac8c42d2894a5427b8b7011493007eb02e11",
+  "configs/scaling_927d_csz_seed47.json": "4fcd865cbfd5df85f3e561b17220423f09702e39327f4bc7c092548536afbef4"
  },
  "ordering": {
   "registered_before_any_scaling_process": true
  },
  "supersedes": {
-  "archived_as": "configs/b4_data_scaling_prereg_20261027.registration.superseded_20261027T175923Z.json",
-  "registered_at": "2026-10-27T17:59:23.428687+00:00",
-  "sha256": "59dea1521b79964d1fc0d115e59a2e526fb3938f32479d4d8a26e1f4d7f2e8b7"
+  "archived_as": "configs/b4_data_scaling_prereg_20261027.registration.superseded_20261027T183310Z.json",
+  "registered_at": "2026-10-27T18:33:10.228221+00:00",
+  "sha256": "75b396f56d57d65345a8d9a38d4a5a7719919f535042ff92d7a74d6bdf66fd68"
  }
 }

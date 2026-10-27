@@ -93,7 +93,7 @@
  "budget": {
   "wall_seconds": 9000,
   "max_rss_mb": 48000,
-  "max_train_samples": 500000
+  "max_train_samples": 14807504
  },
  "acceptance": {
   "min_coverage": 0.99,

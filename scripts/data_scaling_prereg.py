@@ -81,6 +81,7 @@ COMPONENTS = [
         "declared_trading_days": 927,
         "seeds": [11, 29, 47],
         "points": ["1.32", "2.64"],
+        "raise_max_train_samples": True,
         "role": ("the full official-label history: 2020-01-02..2023-10-31 is 927 trading days, 7.0x the "
                  "132-day window. The official vwap archive covers all 60 months, so no label is derived here. "
                  "This rung needs the streaming pool (bitwise equal to the materialised pool, verified on "
@@ -112,6 +113,12 @@ def build_recipe(component: dict) -> dict:
         recipe["data"]["instrument_map_path"] = (
             f"{HOST_DATA}/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv")
         recipe["data"]["cache_dir"] = _cache(days)
+        if component.get("raise_max_train_samples"):
+            # the frozen 132-day recipe caps training at 500k samples, which is already
+            # below its own usable count; a 927-day window needs the cap lifted or the
+            # standard runner refuses to start before the trajectory even loads a bar
+            recipe["budget"]["max_train_samples"] = 2 * _estimated_usable(
+                component["declared_trading_days"])
         recipe["splits"]["train"]["start"] = f"{component['train_window'][0]}T00:00:00"
         recipe["splits"]["train"]["end"] = "2023-11-01T00:00:00"
         recipe["hypothesis"] = (

@@ -161,11 +161,7 @@
  ],
  "generated_artifacts": {
   "D": {
-   "recipes": [
-    "configs/scaling_240d_csz_seed11.json",
-    "configs/scaling_240d_csz_seed29.json",
-    "configs/scaling_240d_csz_seed47.json"
-   ],
+   "recipes": [],
    "plans": [
     "configs/scaling_240d_seed11_2point_plan.json",
     "configs/scaling_240d_seed29_2point_plan.json",
@@ -173,11 +169,7 @@
    ]
   },
   "E": {
-   "recipes": [
-    "configs/scaling_441d_csz_seed11.json",
-    "configs/scaling_441d_csz_seed29.json",
-    "configs/scaling_441d_csz_seed47.json"
-   ],
+   "recipes": [],
    "plans": [
     "configs/scaling_441d_seed11_2point_plan.json",
     "configs/scaling_441d_seed29_2point_plan.json",
