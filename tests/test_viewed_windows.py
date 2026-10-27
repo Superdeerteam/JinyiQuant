@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sqlite3
 from collections import Counter
@@ -216,35 +215,76 @@ def test_evaluated_fields_are_queryable(tmp_path):
 def test_real_registry_reports_determined_subset_and_unknown(tmp_path):
     summary = build_index(ROOT / "runs", tmp_path / "index")
     viewed = json.loads((tmp_path / "index" / VIEWED_WINDOWS_FILENAME).read_text(encoding="utf-8"))
-    assert summary["entries"]["evaluated_determination"] == {"exact": 485, "partial": 0,
-                                                            "unknown": 216}
-    assert summary["entries"]["declared_splits_backfilled"] == 589
-    assert viewed["counts"]["intersects_sealed_true"] == 0
-    assert viewed["intersects_sealed"] == []
-    assert viewed["counts"]["intersects_sealed_unknown"] == 216
-    assert "在可确定子集内未发现读取封存区间" in viewed["wording"]
-    assert "未验证" in viewed["wording"]
-    assert viewed["counts"]["declared_sealed_final"] == 118
-    assert viewed["counts"]["declared_sealed_final_without_actual_intersection"] == 118
-    assert viewed["counts"]["declared_sealed_final_observed_false"] == 34
-    assert viewed["counts"]["declared_sealed_final_unknown"] == 84
-    assert viewed["counts"]["after_sealed_end"] == 180
-    assert viewed["coverage"] == {
-        "config_snapshots": 589,
-        "config_snapshot_matched_manifest": 525,
-        "config_snapshot_mismatched_manifest": 0,
-        "config_snapshot_unlinked_manifest": 64,
-        "daily_artifact_runs": 485,
-        "daily_artifact_files": 489,
-    }
-    assert all(row["is_test_fixture"] for row in viewed["after_sealed_end"])
     entries = read_entries(tmp_path / "index")
+    counts, coverage, rows = viewed["counts"], viewed["coverage"], viewed["runs"]
+    determinations = ("exact", "partial", "unknown")
+
+    # Every counter is re-derived from this snapshot's detail rows and index entries, so a new
+    # run archive changes the numbers without changing the assertions.
+    assert counts["total"] == len(rows) == len(entries) == summary["entries"]["total"]
+    assert counts["exact"] + counts["partial"] + counts["unknown"] == counts["total"]
+    row_determinations = Counter(row["determination"] for row in rows)
+    entry_determinations = Counter(entry["evaluated"]["determination"] for entry in entries)
+    for key in determinations:
+        assert row_determinations.get(key, 0) == counts[key], key
+        assert entry_determinations.get(key, 0) == counts[key], key
+    assert set(row_determinations) | set(entry_determinations) <= set(determinations)
+    assert summary["entries"]["evaluated_determination"] == {key: counts[key] for key in determinations}
     determined = [entry for entry in entries
                   if entry["evaluated"]["determination"] in {"exact", "partial"}]
-    assert len(determined) == 485
-    assert Counter(entry["evaluated"]["determination"] for entry in entries) == \
-        Counter({"exact": 485, "unknown": 216})
-    shipped = ROOT / "runs" / "index" / VIEWED_WINDOWS_FILENAME
-    if shipped.is_file():
-        assert hashlib.sha256(shipped.read_bytes()).hexdigest() == \
-            summary["artifacts"]["viewed_windows"]["sha256"]
+    assert len(determined) == counts["exact"] + counts["partial"]
+
+    # Sealed-interval semantics stay as strict as before: determined rows never intersect the
+    # sealed window, and unknown rows are unverified rather than silently counted as clean.
+    assert counts["intersects_sealed_true"] == 0
+    assert viewed["intersects_sealed"] == []
+    assert [row["run_id"] for row in rows if row["intersects_sealed"] is True] == []
+    assert all(not row["intersecting_dates"] for row in rows)
+    assert counts["intersects_sealed_false"] == counts["exact"] + counts["partial"]
+    assert counts["intersects_sealed_unknown"] == counts["unknown"]
+    assert counts["intersects_sealed_false"] + counts["intersects_sealed_unknown"] == counts["total"]
+    assert "在可确定子集内未发现读取封存区间" in viewed["wording"]
+    assert "未验证" in viewed["wording"]
+
+    # Declared final windows are bookkeeping only: no declaration is promoted to read evidence.
+    declared = [row for row in rows if row["declares_sealed_final"] is True]
+    assert counts["declared_sealed_final"] == len(declared)
+    assert counts["declared_sealed_final"] == (counts["declared_sealed_final_observed_false"]
+                                               + counts["declared_sealed_final_unknown"]
+                                               + counts["intersects_sealed_true"])
+    assert counts["declared_sealed_final_observed_false"] == sum(
+        1 for row in declared if row["intersects_sealed"] is False)
+    assert counts["declared_sealed_final_unknown"] == sum(
+        1 for row in declared if row["intersects_sealed"] is None)
+    assert counts["declared_sealed_final_without_actual_intersection"] == sum(
+        1 for row in declared if row["intersects_sealed"] is not True)
+
+    # Dates past the sealed end exist only in pytest fixture archives, and every row stays
+    # traceable to an index entry; the check must not go vacuously green on an empty set.
+    beyond = viewed["after_sealed_end"]
+    assert counts["after_sealed_end"] == len(beyond)
+    assert beyond
+    assert all(row["is_test_fixture"] for row in beyond)
+    assert all(row["dates"] and min(row["dates"]) >= SEALED_INTERVAL[1] for row in beyond)
+    indexed_paths = {(ROOT / entry["manifest_path"]).resolve() for entry in entries}
+    assert {(ROOT / row["manifest_path"]).resolve() for row in beyond} <= indexed_paths
+
+    # Coverage counters agree with the entries and with the registry's own detail rows.
+    assert coverage["config_snapshots"] == summary["entries"]["declared_splits_backfilled"]
+    assert coverage["config_snapshot_matched_manifest"] \
+        + coverage["config_snapshot_mismatched_manifest"] \
+        + coverage["config_snapshot_unlinked_manifest"] == coverage["config_snapshots"]
+    assert coverage["config_snapshot_matched_manifest"] == sum(
+        1 for row in rows
+        if (row["config_snapshot"] or {}).get("matches_manifest_config_sha256") is True)
+    assert coverage["daily_artifact_runs"] == counts["exact"] + counts["partial"]
+    assert coverage["daily_artifact_files"] == sum(len(row["source_files"]) for row in rows)
+
+    # A stored index is only a local cache: new runs legitimately make it stale until the next
+    # rebuild, so it is comparable only while it claims the same population as the fact source.
+    stored_summary = ROOT / "runs" / "index" / SUMMARY_FILENAME
+    if stored_summary.is_file():
+        stored = json.loads(stored_summary.read_text(encoding="utf-8"))
+        if stored["entries"]["total"] == summary["entries"]["total"]:
+            assert stored["artifacts"]["viewed_windows"]["sha256"] == \
+                summary["artifacts"]["viewed_windows"]["sha256"]
