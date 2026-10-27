@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "registration_id": "b4-data-probe-132d-20261027",
- "draft_revision": 2,
+ "draft_revision": 3,
  "status": "DRAFT_NOT_REGISTERED",
  "draft": true,
  "draft_notice": {
@@ -12,7 +12,7 @@
   "registration_instruction": "等待用户批准 + 机器确认后由队长指示注册；本文件在注册前不得被引用为预登记，也不得据此开跑任何训练",
   "no_registration_file_exists": true,
   "draft_written_at_utc": "2026-10-27T14:39:30+00:00",
-  "revised_at_utc": "2026-10-27T14:52:00+00:00",
+  "revised_at_utc": "2026-10-27T15:05:00+00:00",
   "author_role": "research-analyst",
   "open_items_block_registration": true
  },
@@ -61,6 +61,13 @@
     "id": "R7",
     "topic": "step time and cost",
     "ruling": "keep them marked superseded_by: t22 and give no budget commitment until t22 lands"
+   },
+   {
+    "id": "R8",
+    "topic": "which comparison drives escalation",
+    "ruling": "C1 (132d@1.32 versus 60d@1.32) is the sole escalation criterion; C2 and C3 are side-by-side reporting only",
+    "why": "C1 isolates the training-window change",
+    "binding": "C2 showing an optimum shift is a finding, not an escalation reason; C1 failing while C2 is clearly better is a new joint hypothesis that needs its own pre-registration"
    }
   ],
   "kept": "motivation.honest_bound is kept as written: only the 5.28 point is a determined overfit, 1.32 and 2.64 are intermediate, so this probe tests whether the whole in-sample/out-of-sample gap curve shifts, not whether one determined-overfit point can be rescued"
@@ -137,9 +144,16 @@
    "why_the_interval_is_load_bearing": "0.0017 alone sits below the measured noise: the registered placebo scale is 0.003305 and the measured seed-dispersion medians are 0.00241-0.00312, so a point estimate at the floor is not distinguishable from noise without the interval condition",
    "not_the_promotion_caliber": "promotion separately requires min_improvement 0.0034 with the same interval and repeat conditions plus a three-seed aggregate; escalation to level 2 must never be reported as a promotion step",
    "applies_to_comparison": {
-    "proposed": "C1_pure_data_effect (132d@1.32 versus 60d@1.32)",
-    "why": "C1 isolates the training-window size at the anchor budget, which is exactly the factor this probe changes; C2 would mix the window change with the budget sweep",
-    "status": "proposed_needs_pin_at_registration"
+    "ratified": "C1_pure_data_effect (132d@1.32 versus 60d@1.32)",
+    "status": "ratified",
+    "sole_criterion": true,
+    "why_c1": "C1 isolates the training-window size at the anchor budget, which is exactly the factor this probe changes; C2 would mix the window change with the budget sweep",
+    "binding_declarations": [
+     "C1 is the ONLY escalation criterion. C2 (132d@2.64 versus 60d@2.64) and C3 (132d@2.64 versus 132d@1.32) are reported side by side and never take part in the escalation decision.",
+     "If C2 shows that the optimum shifts right (2.64 better than 1.32 on the 132-day window), that is a finding, not an escalation reason: escalation is read from C1 alone.",
+     "If C1 fails while C2 is clearly better, that is a new hypothesis (data and budget acting jointly) and needs its own pre-registration; the escalation comparison may not be switched to C2 in place."
+    ],
+    "no_post_hoc_switch": true
    }
   },
   "budget_points": [
@@ -309,7 +323,6 @@
   "level_2_needs_its_own_registration": true
  },
  "open_items_before_registration": [
-  "pin which comparison drives the escalation rule: C1 (pure data effect at the anchor budget) is proposed because it isolates the window change; C2 would mix the window with the budget sweep. The registered text must name one",
   "re-pin the step time from the t22 training-step profile and recompute the cost estimate; the 37.96 ms/step figure is the t4 observation, not a promise",
   "record the +/-5% usable-sample and step deviation tolerance in the registered document and wire the stop-and-report rule into the run pre-flight",
   "attach the training-memory pre-flight measurement plan (200-500 steps, peak RSS, abort rule) as a required execution step of the registered document",
@@ -325,6 +338,7 @@
   "no reading of the sealed interval, at any level",
   "no claim that more training helps: the budget direction was refused in t5 and this probe tests data, not budget",
   "no reporting of a single-seed arm as a candidate; the gate needs a three-seed aggregate",
-  "no relaxation of the 5bp stress scenario and no treatment of a cost-scenario result as a primary-metric result"
+  "no relaxation of the 5bp stress scenario and no treatment of a cost-scenario result as a primary-metric result",
+  "no escalating on C2 or C3 after C1 fails, and no switching the escalation comparison once C1 has been read; a C2-driven follow-up is a new hypothesis with its own pre-registration"
  ]
 }
