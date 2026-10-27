@@ -1,0 +1,231 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-budget-decision-20261027",
+ "phase": "B4",
+ "owner_role": "research-analyst",
+ "registered_at_source": "configs/b4_budget_decision_prereg_20261027.registration.json",
+ "purpose": "Declare, before any budget-point replay result is inspected, how the training-amount experiment is read: the undertrained-versus-saturated decision table, its thresholds, the mandatory three-state verdict and the probe that follows an inconclusive reading. This is a screening rule for choosing the next experiment. It can never promote anything.",
+ "question": "At the frozen MLPLOB v3 60-day CSZ recipe, does raising the optimizer budget from 1.32 to 2.64 and 5.28 effective epochs keep improving the competition metrics, or is the recipe already saturated?",
+ "single_factor": "optimizer budget only: trunk, data, labels, loss, sampling, learning-rate rule and evaluation stay frozen to configs/mlplob_v3_60d_csz_19800.json",
+ "arms": [
+  {
+   "label": "anchor-1.32",
+   "effective_epochs": 1.32,
+   "role": "anchor",
+   "note": "the existing 19,800-step checkpoint (1.3215 realised); reused, never retrained for this comparison"
+  },
+  {
+   "label": "double-2.64",
+   "effective_epochs": 2.64,
+   "role": "comparison"
+  },
+  {
+   "label": "double-5.28",
+   "effective_epochs": 5.28,
+   "role": "comparison"
+  }
+ ],
+ "primary_pair": {
+  "baseline": "double-2.64",
+  "candidate": "double-5.28",
+  "why": "the floor is applied to the last doubling so that an early gain between 1.32 and 2.64 cannot hide a plateau between 2.64 and 5.28; the anchor-to-each comparisons are reported as context only"
+ },
+ "windows": {
+  "declared": [
+   ["2023-11-01", "2023-11-30"],
+   ["2024-01-01", "2024-01-31"],
+   ["2024-03-01", "2024-03-31"],
+   ["2024-04-01", "2024-04-30"],
+   ["2024-06-01", "2024-06-30"]
+  ],
+  "names": ["nov2023", "jan2024", "mar2024", "apr2024", "jun2024"],
+  "days_expected": 104,
+  "caliber": "the five already-viewed development months used by the registered threshold basis; the same window definition and targets_sha256 as runs/b4-volatility-20261027/20261027T064907Z_a79926d3e455/volatility.json",
+  "sealed_interval": ["2024-10-08", "2025-01-01"],
+  "sealed_read": false
+ },
+ "estimator": {
+  "evaluation_version": "eval-v2",
+  "primary_metric": "rank_ic_mean",
+  "direction": "maximize",
+  "paired_by_trading_day": true,
+  "interval": {
+   "method": "moving consecutive trading-day blocks inside each declared period; blocks never cross a period gap",
+   "block_days": 5,
+   "bootstrap_samples": 4000,
+   "confidence": 0.95,
+   "seed": 20261027,
+   "stock_resampling": false,
+   "seed_slots": "never fabricated: the arms are deterministic aggregates"
+  },
+  "period_repeat": {
+   "periods": 5,
+   "required_positive": 4,
+   "rule": "ceil(0.75 x declared periods)"
+  },
+  "cost_scenarios": "0/2/5/10bp remain reported as economics; 5bp stays the locked stress scenario and is never a substitute for the primary metric"
+ },
+ "thresholds": {
+  "improvement_floor": {
+   "value": 0.0017,
+   "definition": "min_improvement / 2, rounded up on the registered primary grid",
+   "derivation": {
+    "source": "configs/b4_promotion_prereg_20261027.json",
+    "source_sha256": "04ac4b10a063bdb844e39a8687ed47074005d8a7593d5ae0c0cb17d3fdd1a18c",
+    "min_improvement": 0.0034,
+    "grid": 0.0001,
+    "exact_half": 0.0017,
+    "rounded_up": 0.0017,
+    "reproduced_at_registration": true
+   },
+   "why_half": "the rule asks whether a further doubling still moves the primary metric by at least half the promotion floor. Requiring the full 0.0034 for every doubling would make 'keep training' unreachable by construction; requiring less than half would read measured noise as a trend.",
+   "not_a_promotion_threshold": true,
+   "does_not_replace": "min_improvement 0.0034 stays the only promotion threshold"
+  },
+  "saturation_band": {
+   "improvement_at_or_below": 0.0,
+   "interval_must_include_zero": true,
+   "why": "a point estimate at or below zero whose interval covers zero is the only reading that supports 'no further gain' without overclaiming"
+  },
+  "loss_trend": {
+   "metric": "mean training loss per effective epoch at each budget point, as recorded by the trajectory",
+   "relative_epsilon": 0.01,
+   "falling": "L(2.64) < L(1.32) * (1 - eps) and L(5.28) < L(2.64) * (1 - eps)",
+   "plateaued": "|L(2.64) - L(1.32)| / L(1.32) <= eps and |L(5.28) - L(2.64)| / L(2.64) <= eps",
+   "undetermined": "anything else, including a missing or unreconciled loss record",
+   "epistemics": "declared before any rollout loss was inspected. Unlike min_improvement this is not a measured scale: it is the operationalisation of 'falling' versus 'flat' announced in advance so the table cannot be read after the fact."
+  }
+ },
+ "verdicts": {
+  "states": ["still_improving", "saturated", "inconclusive"],
+  "labels": {
+   "still_improving": "仍在改善",
+   "saturated": "饱和",
+   "inconclusive": "证据不足"
+  },
+  "rules": {
+   "still_improving": [
+    "paired_improvement(2.64 -> 5.28) >= 0.0017",
+    "5-day block interval low > 0",
+    "at least 4 of the 5 declared periods show a positive paired effect"
+   ],
+   "saturated": [
+    "paired_improvement(2.64 -> 5.28) <= 0",
+    "5-day block interval includes zero"
+   ],
+   "inconclusive": [
+    "every other reading, including a positive improvement whose interval covers zero, fewer than 4 positive periods, or an arm that could not be evaluated"
+   ]
+  },
+  "three_state_is_mandatory": true,
+  "prohibited_claims": [
+   "claiming 'undertrained' or 'saturated' from training loss alone",
+   "claiming either side while the verdict is inconclusive",
+   "lowering the 0.0017 floor or the 4-of-5 repeat rule after seeing results",
+   "relaxing the 5bp stress scenario or reading a cost scenario as a primary-metric result",
+   "substituting an in-arm percentile for the official turnover item",
+   "using this rule to promote, freeze or submit anything: promotion stays with scripts/promotion_gate.py under min_improvement 0.0034"
+  ]
+ },
+ "decision_table": {
+  "shape": "2 x 2 over (training-loss trend) x (validation verdict)",
+  "applies_only_when": "the loss trend is determined (falling or plateaued) AND the validation verdict is determined (still_improving or saturated); every other combination resolves to the inconclusive state",
+  "cells": [
+   {
+    "id": "falling__improving",
+    "loss_trend": "falling",
+    "validation_verdict": "still_improving",
+    "conclusion": "undertrained",
+    "conclusion_label": "欠训",
+    "next_step": "continue adding training amount",
+    "next_step_detail": "add one further budget point by doubling again, with the same recipe and the same evaluation caliber"
+   },
+   {
+    "id": "falling__saturated",
+    "loss_trend": "falling",
+    "validation_verdict": "saturated",
+    "conclusion": "overfitting the 60-day sample (data-limited)",
+    "conclusion_label": "过拟合 60 日样本（数据受限）",
+    "next_step": "add data or add regularization",
+    "next_step_detail": "do not add epochs: the loss is still falling while out-of-sample ranking has stopped improving"
+   },
+   {
+    "id": "plateaued__saturated",
+    "loss_trend": "plateaued",
+    "validation_verdict": "saturated",
+    "conclusion": "optimization converged (capacity or structure limited)",
+    "conclusion_label": "优化收敛（容量/结构受限）",
+    "next_step": "widen the model or change the structure",
+    "next_step_detail": "the budget is not the binding constraint; capacity or inductive bias is"
+   }
+  ],
+  "unregistered_combination": {
+   "id": "plateaued__improving",
+   "loss_trend": "plateaued",
+   "validation_verdict": "still_improving",
+   "conclusion": "inconclusive",
+   "conclusion_label": "证据不足",
+   "why": "no cell of the declared 2 x 2 covers a flat loss with a still-improving validation metric; inventing one after the fact would be reading the result backwards",
+   "first_action": "audit the loss accounting (per-epoch mean exposure and the reconciled exposure report) before drawing any conclusion, then re-read under this same table"
+  }
+ },
+ "probe_routing": {
+  "rule": "when the verdict is inconclusive the preregistration names the next probe; exactly one probe per round, and each probe must be pre-registered on its own before it runs and is read under this same three-state rule",
+  "probes": {
+   "upper_bound": {
+    "what": "training-set own IC at 5.28 effective epochs",
+    "answers": "can the recipe fit the training distribution at all, or is optimization/capacity the binding constraint",
+    "question": "训练集自身 IC 上限"
+   },
+   "data": {
+    "what": "5.28 effective epochs with the 132-day window instead of 60-day",
+    "answers": "is the 60-day sample the binding constraint",
+    "question": "5.28 步数换 132 日"
+   },
+   "capacity": {
+    "what": "1.32 effective epochs with the trunk widened 1.5-2x",
+    "answers": "is model capacity the binding constraint at the current budget",
+    "question": "1.32 epoch 加宽 1.5-2 倍"
+   }
+  },
+  "routes": [
+   {
+    "when": "verdict inconclusive and loss trend falling",
+    "first": "upper_bound",
+    "then": "data only if the training-set IC shows the model can fit",
+    "why": "a falling loss with an unclear out-of-sample reading is a generalization question first; the training-set IC separates 'cannot fit' from 'fits but does not generalize' before any new data window is spent"
+   },
+   {
+    "when": "verdict inconclusive and loss trend plateaued",
+    "first": "capacity",
+    "then": "structure change if widening 1.5-2x at the anchor budget does not move the primary metric",
+    "why": "a flat loss at a flat out-of-sample reading points at capacity, and the cheap test is widening at the cheapest budget"
+   },
+   {
+    "when": "loss trend undetermined",
+    "first": "none",
+    "detail": "repair the loss/exposure accounting first; no probe is licensed from an unread loss trend"
+   }
+  ]
+ },
+ "relation_to_registered_gate": {
+  "promotion_threshold_unchanged": true,
+  "promotion_gate": "scripts/promotion_gate.py",
+  "note": "this document adds a screening rule and changes no promotion threshold, no secondary line, no net5 limit, no resource budget, no evidence rule and no period declaration of the registered b4 gate",
+  "a_candidate_that_clears_this_rule_still_needs": [
+   "a paired improvement of at least min_improvement 0.0034 against the registered baseline",
+   "a 5-day block interval excluding zero",
+   "at least 4 of 5 positive periods",
+   "no secondary regression beyond its measured limit",
+   "no net5 regression beyond its measured limit",
+   "resource compliance on the inference/submission path",
+   "multi-seed aggregation: a single-seed arm cannot clear the ic_mean secondary line on noise alone"
+  ]
+ },
+ "notes": [
+  "the 1.32 anchor is the existing 19,800-step checkpoint, so only the two new budget points are new evaluations",
+  "every number here was fixed before any budget-point replay metric was read; the registration record carries the timestamp and the hash of this file",
+  "the loss trend epsilon is a pre-declared operationalisation, not a measured threshold; it cannot be tuned after the fact",
+  "if the result later contradicts the table, the table is not relaxed: the honest outcome is the three-state 'evidence insufficient' plus the named probe"
+ ]
+}
