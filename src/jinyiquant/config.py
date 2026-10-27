@@ -127,6 +127,8 @@ class ModelConfig(StrictModel):
     max_steps: int | None = Field(default=None, ge=1)
     batch_size: int = Field(default=32, ge=1)
     learning_rate: float = Field(default=0.0001, gt=0)
+    # Frozen schedule rule: identical at every budget point of a trajectory.
+    lr_schedule: Literal["constant"] = "constant"
     target_scaling: Literal["none", "train_std"] = "none"
     target_centering: Literal[
         "none", "timestamp_mean_train", "timestamp_zscore_train_rms_matched"] = "none"

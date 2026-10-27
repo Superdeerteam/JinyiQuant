@@ -12,6 +12,15 @@ import numpy as np
 import pandas as pd
 import torch
 
+from jinyiquant.io import write_json
+from jinyiquant.trajectory import (
+    CHECKPOINT_FILENAME,
+    CHECKPOINT_METADATA_FILENAME,
+    LR_SCHEDULES,
+    exposure_report,
+    learning_rate_at,
+)
+
 from .device import device_resources, select_device
 from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, parameter_groups
 from .schema import validate_input_schema
@@ -44,6 +53,25 @@ BLEND_SHARED_KEYS = ("target_scaling", "target_centering", "time_loss_weighting"
                      "trade_features")
 BACKBONE_SHARED_KEYS = {"modified_tlob": ("num_heads", "is_sin_emb"), "mlplob": (),
                         "dual_patch": ("num_heads", "patch_counts")}
+TRAINING_STATE_SCHEMA_VERSION = 1
+
+
+def _canonical_sha256(value):
+    """Stable digest of a JSON-serialisable structure, or None for an absent one."""
+    if value is None:
+        return None
+    payload = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _batch_indices_sha256(batches):
+    """Digest of one epoch's batch composition, used to verify a resumed sampler position."""
+    digest = hashlib.sha256()
+    for indices in batches:
+        array = np.ascontiguousarray(np.asarray(indices, dtype="<i8"))
+        digest.update(len(array).to_bytes(8, "little"))
+        digest.update(array.tobytes())
+    return digest.hexdigest()
 
 
 def timestamp_zscore_train_rms_matched(keys, target, mask):
@@ -215,6 +243,7 @@ class TLOBAdapter:
         self.config.setdefault("max_steps", None)
         self.config.setdefault("time_loss_weighting", "none")
         self.config.setdefault("sampling", "shuffle")
+        self.config.setdefault("lr_schedule", "constant")
         self.config.setdefault("ranking_loss", "none")
         self.config.setdefault("ranking_loss_weight", 0.0)
         self.config.setdefault("book_representation", "raw")
@@ -227,6 +256,8 @@ class TLOBAdapter:
             raise ValueError("Unsupported loss weighting")
         if self.config["sampling"] not in ("shuffle", "timestamp_grouped"):
             raise ValueError("Unsupported sampling mode")
+        if self.config["lr_schedule"] not in LR_SCHEDULES:
+            raise ValueError("Unsupported learning-rate schedule")
         if self.config["ranking_loss"] not in ("none", "pairwise_hinge"):
             raise ValueError("Unsupported ranking loss")
         self.ranking_loss_weight = float(self.config["ranking_loss_weight"])
@@ -442,10 +473,138 @@ class TLOBAdapter:
         self._event("training", "target_centering_fitted", **stats)
         return centered[mask].astype(np.float32), stats
 
+    def _learning_rate(self, step: int = 0) -> float:
+        return learning_rate_at(self.config["lr_schedule"], self.config["learning_rate"], step)
+
+    def _training_fingerprint(self, keys, optimization_targets, used_positions):
+        """Everything besides the parameters that a resumed update depends on."""
+        canonical = {
+            "preprocessing": self.preprocessing,
+            "architecture": {key: (list(value) if isinstance(value, tuple) else value)
+                             for key, value in self.architecture.items()},
+            "model_config": {key: self.config[key] for key in (
+                "batch_size", "sampling", "ranking_loss", "ranking_loss_weight", "target_scaling",
+                "target_centering", "time_loss_weighting", "learning_rate", "lr_schedule")},
+            "seed": self.seed,
+            "fitted": {
+                "intercept": None if self.intercept is None else float(self.intercept),
+                "target_scale": float(self.target_scale),
+                "target_centering_stats_sha256": _canonical_sha256(self.target_centering_stats),
+                "time_loss_weighting_stats_sha256": _canonical_sha256(self.time_loss_weighting_stats),
+            },
+        }
+        config_digest = _canonical_sha256(canonical)
+        timestamps = pd.to_datetime(keys["date"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+        data_digest = hashlib.sha256(
+            np.ascontiguousarray(np.asarray(optimization_targets, dtype=np.float32)).tobytes()
+            + np.asarray(used_positions, dtype=np.uint8).tobytes()
+            + "\n".join(timestamps.tolist()).encode("utf-8")).hexdigest()
+        return {"config_sha256": config_digest, "data_sha256": data_digest,
+                "combined_sha256": hashlib.sha256((config_digest + data_digest).encode()).hexdigest()}
+
+    def _save_training_state(self, directory, *, optimizer, generator, fingerprint, position,
+                             generator_before_epoch, steps_per_epoch, exposure_counts):
+        """Write a resumable training state: parameters, optimizer, RNG and sampler position."""
+        target = Path(directory)
+        target.mkdir(parents=True, exist_ok=True)
+        numpy_state = np.random.get_state()
+        payload = {
+            "schema_version": TRAINING_STATE_SCHEMA_VERSION,
+            "kind": self.config["kind"],
+            "architecture": self.architecture,
+            "model_config": self.config,
+            "preprocessing": self.preprocessing,
+            "seed": self.seed,
+            "device": str(self.device),
+            "torch_version": str(torch.__version__),
+            "lr_schedule": self.config["lr_schedule"],
+            "learning_rate": self._learning_rate(int(position["steps"])),
+            "fingerprint": fingerprint,
+            "position": {**{key: (value if key == "epoch_batches_sha256" else int(value))
+                            for key, value in position.items()},
+                         "steps_per_epoch": {str(key): int(value)
+                                             for key, value in steps_per_epoch.items()}},
+            "generator_before_epoch": generator_before_epoch,
+            "rng": {"torch": torch.get_rng_state(), "generator": generator.get_state(),
+                    "numpy": (numpy_state[0], torch.from_numpy(numpy_state[1].copy()),
+                              numpy_state[2], numpy_state[3], numpy_state[4]),
+                    "python": random.getstate(),
+                    "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None},
+            "network_state_dict": {key: value.detach().cpu()
+                                   for key, value in self.network.state_dict().items()},
+            "optimizer_state_dict": optimizer.state_dict(),
+            "exposure_counts": (None if exposure_counts is None
+                                else torch.from_numpy(np.asarray(exposure_counts).copy())),
+        }
+        torch.save(payload, target / CHECKPOINT_FILENAME)
+        metadata = {key: payload[key] for key in (
+            "schema_version", "kind", "seed", "device", "torch_version", "lr_schedule",
+            "learning_rate", "preprocessing", "position", "fingerprint")}
+        write_json(target / CHECKPOINT_METADATA_FILENAME, metadata)
+        self._event("training", "training_state_saved", directory=str(target),
+                    steps=int(position["steps"]), epoch_index=int(position["epoch_index"]),
+                    batch_index=int(position["batch_index"]), exposure=exposure_counts is not None)
+        return metadata
+
+    def _restore_training_state(self, checkpoint, *, optimizer, generator, fingerprint, usable):
+        """Load a training state and fail closed if its recipe, pool or position drifted."""
+        if checkpoint.get("schema_version") != TRAINING_STATE_SCHEMA_VERSION:
+            raise ValueError("Unsupported training-state checkpoint schema")
+        if (checkpoint["kind"] != self.config["kind"]
+                or checkpoint["preprocessing"] != self.preprocessing
+                or _architecture_with_patch_counts(checkpoint["architecture"]) != self.architecture):
+            raise ValueError("Training-state checkpoint architecture/preprocessing mismatch")
+        if checkpoint["fingerprint"]["combined_sha256"] != fingerprint["combined_sha256"]:
+            raise ValueError("Training data or recipe changed since the checkpoint; "
+                             "a continuous trajectory requires the identical pool")
+        if checkpoint["lr_schedule"] != self.config["lr_schedule"]:
+            raise ValueError("Learning-rate schedule changed since the checkpoint")
+        position = dict(checkpoint["position"])
+        if int(position["usable_samples"]) != usable:
+            raise ValueError("Training-state checkpoint was written for a different usable sample count")
+        if int(position["steps"]) < 1 or int(position["batch_index"]) < 0:
+            raise ValueError("Malformed training-state position")
+        self.network.load_state_dict(checkpoint["network_state_dict"], strict=True)
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        rng = checkpoint["rng"]
+        torch.set_rng_state(rng["torch"])
+        numpy_state = rng["numpy"]
+        np.random.set_state((numpy_state[0], numpy_state[1].numpy().astype(np.uint32),
+                             numpy_state[2], numpy_state[3], numpy_state[4]))
+        random.setstate(rng["python"])
+        if str(checkpoint["device"]).startswith("cuda"):
+            if not torch.cuda.is_available():
+                raise ValueError("A CUDA training-state checkpoint cannot be resumed without CUDA")
+            torch.cuda.set_rng_state_all(rng["cuda"])
+        if int(position["batch_index"]) > 0:
+            generator.set_state(checkpoint["generator_before_epoch"])
+        exposure = checkpoint.get("exposure_counts")
+        return position, None if exposure is None else exposure.numpy().astype(np.int64)
+
     def fit(self, batch, target, *, sample_mask=None, validation=None, observer=None,
-            observer_every_steps=None):
-        if observer_every_steps is not None and (type(observer_every_steps) is not int or observer_every_steps < 1):
+            observer_every_steps=None, resume=None, step_budget=None, checkpoint_at_steps=None,
+            checkpoint_dir=None, track_exposure=False):
+        """One continuous optimization trajectory, optionally resumed and checkpointed.
+
+        ``resume`` is a loaded training-state payload; the pool, recipe, fitted transforms and
+        sampler position must reproduce the saved run bit for bit or the fit fails closed.
+        ``step_budget`` stops at an absolute step count, ``checkpoint_at_steps`` writes a
+        resumable state at those absolute steps, and ``track_exposure`` accumulates per-row
+        sample exposure for the budget accounting.
+        """
+        if observer_every_steps is not None and (type(observer_every_steps) is not int
+                                                 or observer_every_steps < 1):
             raise ValueError("observer_every_steps must be a positive integer or None")
+        checkpoint_set = sorted(set(checkpoint_at_steps or ()))
+        if any(type(value) is not int or value < 1 for value in checkpoint_set):
+            raise ValueError("checkpoint_at_steps must be positive absolute step numbers")
+        if checkpoint_set and checkpoint_dir is None:
+            raise ValueError("checkpoint_at_steps requires checkpoint_dir")
+        if step_budget is not None and (type(step_budget) is not int or step_budget < 1):
+            raise ValueError("step_budget must be a positive integer or None")
+        if resume is not None and step_budget is not None \
+                and int(resume["position"]["steps"]) >= step_budget:
+            raise ValueError("step_budget must exceed the resumed step count")
         y = np.asarray(target, dtype=np.float32)
         if y.shape != (len(batch.keys),) or not len(y) or not np.isfinite(y).all():
             raise ValueError("Training requires nonempty aligned finite targets")
@@ -468,23 +627,62 @@ class TLOBAdapter:
         training_std = float(raw_selected.std())
         self.intercept = (float(centering_stats["fallback_mean"]) if centering_stats is not None
                           and "fallback_mean" in centering_stats else float(y.astype(np.float64).mean()))
-        self.target_scale = training_std if self.config["target_scaling"] == "train_std" and training_std > 0 else 1.0
+        self.target_scale = (training_std if self.config["target_scaling"] == "train_std"
+                             and training_std > 0 else 1.0)
         optimization_targets = (y if self.target_scale == 1.0 else
                                 (y.astype(np.float64) / self.target_scale).astype(np.float32))
         if not np.isfinite(optimization_targets).all():
             raise FloatingPointError("Nonfinite scaled training targets")
         self._event("training", "target_scaling_fitted", method=self.config["target_scaling"],
                     target_scale=self.target_scale, training_std=training_std, samples=len(y),
-                    constant_target_fallback=self.config["target_scaling"] == "train_std" and training_std == 0,
+                    constant_target_fallback=(self.config["target_scaling"] == "train_std"
+                                              and training_std == 0),
                     centering=self.config["target_centering"],
                     centered_training_std=(None if centering_stats is None
                                            else centering_stats["selected_centered_std"]),
                     centering_stats=centering_stats,
                     loss_units=("centered_return_squared" if centering_stats is not None
                                 else "original_return_squared"))
-        optimizer = torch.optim.Adam(self.network.parameters(), lr=self.config["learning_rate"])
+        optimizer = torch.optim.Adam(self.network.parameters(), lr=self._learning_rate(0))
         generator = torch.Generator().manual_seed(self.seed)
-        started, steps, samples_seen, epochs_completed = time.monotonic(), 0, 0, 0
+        grouped = self.config["sampling"] == "timestamp_grouped"
+        groups = timestamp_groups(batch.keys, mask) if grouped else None
+        batch_size = self.config["batch_size"]
+        used_positions = np.ones(len(y), dtype=bool)
+        if grouped:
+            used_positions[:] = False
+            for group in groups:
+                used_positions[group[:(len(group) // batch_size) * batch_size]] = True
+            self._event("training", "grouped_sampling_fitted", groups=len(groups),
+                        group_key="full_timestamp", batch_size=batch_size, samples=len(y),
+                        samples_used_per_epoch=int(used_positions.sum()),
+                        dropped_tail_per_epoch=int(len(y) - int(used_positions.sum())),
+                        ranking_loss=self.config["ranking_loss"],
+                        ranking_loss_weight=self.ranking_loss_weight)
+        usable = int(used_positions.sum())
+        self.training_keys = batch.keys.loc[mask]
+        self.used_positions = used_positions
+        fingerprint = self._training_fingerprint(self.training_keys, optimization_targets, used_positions)
+        exposure_counts = np.zeros(len(y), dtype=np.int64) if track_exposure else None
+        steps, samples_seen, epochs_completed = 0, 0, 0
+        start_epoch, start_batch, steps_per_epoch = 0, 0, {}
+        resume_epoch_batches_sha256 = None
+        if resume is not None:
+            position, restored_exposure = self._restore_training_state(
+                resume, optimizer=optimizer, generator=generator, fingerprint=fingerprint, usable=usable)
+            steps, samples_seen = int(position["steps"]), int(position["samples_seen"])
+            epochs_completed = int(position["epochs_completed"])
+            start_epoch, start_batch = int(position["epoch_index"]), int(position["batch_index"])
+            steps_per_epoch = {int(key): int(value) for key, value in position["steps_per_epoch"].items()}
+            resume_epoch_batches_sha256 = position.get("epoch_batches_sha256")
+            if restored_exposure is not None:
+                if exposure_counts is None:
+                    raise ValueError("The checkpoint carries exposure counters; resume with track_exposure=True")
+                exposure_counts = restored_exposure
+            self._event("training", "training_state_resumed", steps=steps, samples_seen=samples_seen,
+                        epoch_index=start_epoch, batch_index=start_batch,
+                        learning_rate=self._learning_rate(steps))
+        started = time.monotonic()
         last_observed_step = None
 
         def observe(epoch):
@@ -505,33 +703,30 @@ class TLOBAdapter:
                 random.setstate(python_state)
             last_observed_step = steps
 
-        observe(0)
-        grouped = self.config["sampling"] == "timestamp_grouped"
-        groups = timestamp_groups(batch.keys, mask) if grouped else None
-        usable = len(y)
-        if grouped:
-            usable = sum((len(group) // self.config["batch_size"]) * self.config["batch_size"]
-                         for group in groups)
-            self._event("training", "grouped_sampling_fitted", groups=len(groups),
-                        group_key="full_timestamp", batch_size=self.config["batch_size"], samples=len(y),
-                        samples_used_per_epoch=int(usable), dropped_tail_per_epoch=int(len(y) - usable),
-                        ranking_loss=self.config["ranking_loss"],
-                        ranking_loss_weight=self.ranking_loss_weight)
-        for epoch in range(self.config["epochs"]):
+        if resume is None:
+            observe(0)
+        stop_reason = "epochs"
+        actual_epochs, final_loss = 0.0, None
+        for epoch in range(start_epoch, self.config["epochs"]):
             self.network.train()
+            generator_before_epoch = generator.get_state()
             if grouped:
-                batches = grouped_epoch_batches(groups, self.config["batch_size"], generator)
+                epoch_batches = grouped_epoch_batches(groups, batch_size, generator)
             else:
                 order = torch.randperm(len(y), generator=generator).numpy()
-                batches = [order[offset:offset + self.config["batch_size"]]
-                           for offset in range(0, len(y), self.config["batch_size"])]
-            total = 0.0
-            weighted_total = 0.0
-            optimization_total = 0.0
-            objective_total = 0.0
-            ranking_total = 0.0
-            epoch_samples = 0
-            for indices in batches:
+                epoch_batches = [order[offset:offset + batch_size]
+                                 for offset in range(0, len(y), batch_size)]
+            epoch_batches_sha256 = _batch_indices_sha256(epoch_batches)
+            offset = start_batch if epoch == start_epoch else 0
+            if offset:
+                if offset >= len(epoch_batches):
+                    raise ValueError("Checkpoint batch position exceeds the rebuilt epoch")
+                if epoch_batches_sha256 != resume_epoch_batches_sha256:
+                    raise ValueError("Checkpoint sampling position does not reproduce the saved batch order")
+            epoch_samples = int(sum(len(indices) for indices in epoch_batches[:offset]))
+            total = weighted_total = optimization_total = objective_total = ranking_total = 0.0
+            for position in range(offset, len(epoch_batches)):
+                indices = epoch_batches[position]
                 xb = torch.from_numpy(x[indices]).to(self.device)
                 yb = torch.from_numpy(optimization_targets[indices]).to(self.device)
                 optimizer.zero_grad(set_to_none=True)
@@ -556,8 +751,11 @@ class TLOBAdapter:
                     raise FloatingPointError("Nonfinite gradients")
                 optimizer.step()
                 steps += 1
+                steps_per_epoch[epoch] = position + 1
                 epoch_samples += len(indices)
                 samples_seen += len(indices)
+                if exposure_counts is not None:
+                    exposure_counts[indices] += 1
                 optimization_loss = mse_term.item()
                 objective_loss = loss.item()
                 raw_loss = unweighted_loss.item() * self.target_scale ** 2
@@ -581,51 +779,79 @@ class TLOBAdapter:
                                 objective_loss=objective_loss, ranking_loss=ranking_value,
                                 ranking_loss_weight=self.ranking_loss_weight,
                                 sampling=self.config["sampling"], gradient_norms=gradient_norms,
-                                learning_rate=optimizer.param_groups[0]["lr"],
+                                learning_rate=self._learning_rate(steps),
                                 elapsed_seconds=time.monotonic() - started,
                                 samples_seen=samples_seen,
                                 throughput_samples_per_second=samples_seen /
-                                max(time.monotonic() - started, 1e-9), resources=device_resources(self.device))
+                                max(time.monotonic() - started, 1e-9),
+                                resources=device_resources(self.device))
                 if observer_every_steps is not None and steps % observer_every_steps == 0:
                     observe(epoch + epoch_samples / len(y))
-                if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
+                if steps in checkpoint_set:
+                    at_epoch_end = position + 1 >= len(epoch_batches)
+                    self._save_training_state(
+                        checkpoint_dir, optimizer=optimizer, generator=generator, fingerprint=fingerprint,
+                        position={"steps": steps, "samples_seen": samples_seen,
+                                  "epochs_completed": epochs_completed,
+                                  "epoch_index": epoch + 1 if at_epoch_end else epoch,
+                                  "batch_index": 0 if at_epoch_end else position + 1,
+                                  "epoch_batches_sha256": None if at_epoch_end else epoch_batches_sha256,
+                                  "usable_samples": usable},
+                        generator_before_epoch=(generator.get_state() if at_epoch_end
+                                                else generator_before_epoch),
+                        steps_per_epoch=steps_per_epoch, exposure_counts=exposure_counts)
+                if step_budget is not None and steps >= step_budget:
+                    stop_reason = "step_budget"
                     break
-            complete_epoch = epoch_samples == usable
-            epochs_completed += int(complete_epoch)
-            actual_epochs = epoch + epoch_samples / len(y)
-            self._event("training", "epoch_completed" if complete_epoch else "epoch_stopped",
-                        epoch=epoch + 1, epochs=actual_epochs, step=steps, loss=total / epoch_samples,
-                        weighted_loss=weighted_total / epoch_samples,
-                        optimization_loss=optimization_total / epoch_samples,
-                        objective_loss=objective_total / epoch_samples,
-                        ranking_loss=(ranking_total / epoch_samples if self.ranking_loss_weight else None),
-                        epoch_samples=epoch_samples, samples_seen=samples_seen, complete_epoch=complete_epoch,
-                        learning_rate=optimizer.param_groups[0]["lr"], resources=device_resources(self.device))
-            observe(epoch + 1 if complete_epoch else actual_epochs)
+                if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
+                    stop_reason = "max_steps"
+                    break
+            if epoch_samples:
+                complete_epoch = epoch_samples == usable
+                epochs_completed += int(complete_epoch)
+                actual_epochs = epoch + epoch_samples / len(y)
+                final_loss = total / epoch_samples
+                self._event("training", "epoch_completed" if complete_epoch else "epoch_stopped",
+                            epoch=epoch + 1, epochs=actual_epochs, step=steps, loss=final_loss,
+                            weighted_loss=weighted_total / epoch_samples,
+                            optimization_loss=optimization_total / epoch_samples,
+                            objective_loss=objective_total / epoch_samples,
+                            ranking_loss=(ranking_total / epoch_samples if self.ranking_loss_weight else None),
+                            epoch_samples=epoch_samples, samples_seen=samples_seen,
+                            complete_epoch=complete_epoch, learning_rate=self._learning_rate(steps),
+                            resources=device_resources(self.device))
+                observe(epoch + 1 if complete_epoch else actual_epochs)
             if validation_inputs is not None:
                 vx, vy = validation_inputs
                 self.network.eval()
                 squared_error = 0.0
                 with torch.inference_mode():
-                    for offset in range(0, len(vy), self.config["batch_size"]):
-                        xb = torch.from_numpy(vx[offset:offset + self.config["batch_size"]]).to(self.device)
-                        yb = torch.from_numpy(vy[offset:offset + self.config["batch_size"]]).to(self.device)
+                    for offset_validation in range(0, len(vy), self.config["batch_size"]):
+                        xb = torch.from_numpy(
+                            vx[offset_validation:offset_validation + self.config["batch_size"]]).to(self.device)
+                        yb = torch.from_numpy(
+                            vy[offset_validation:offset_validation + self.config["batch_size"]]).to(self.device)
                         squared_error += torch.nn.functional.mse_loss(
                             self.network(xb) * self.target_scale, yb, reduction="sum").item()
-                self._event("validation", "epoch_completed", epoch=epoch + 1, loss=squared_error / len(vy),
-                            samples=len(vy), checkpoint_selection=False, resources=device_resources(self.device))
-            if self.config["max_steps"] is not None and steps >= self.config["max_steps"]:
+                self._event("validation", "epoch_completed", epoch=epoch + 1,
+                            loss=squared_error / len(vy), samples=len(vy), checkpoint_selection=False,
+                            resources=device_resources(self.device))
+            if stop_reason != "epochs":
                 break
         self.trained = True
+        self.exposure_counts = exposure_counts
+        self.steps_per_epoch = dict(steps_per_epoch)
         optimizer_name = {"none": "Adam_MSE", "train_variance": "Adam_time_weighted_MSE",
                           "date_decay_10d": "Adam_date_weighted_MSE"}[self.config["time_loss_weighting"]]
         if self.ranking_loss_weight:
             optimizer_name = f"{optimizer_name}+{self.ranking_loss_weight:g}x_pairwise_hinge"
-        return {"loss": total / epoch_samples, "learning_rate": self.config["learning_rate"],
-                "weighted_loss": weighted_total / epoch_samples,
-                "optimization_loss": optimization_total / epoch_samples,
-                "objective_loss": objective_total / epoch_samples,
-                "ranking_loss": (ranking_total / epoch_samples if self.ranking_loss_weight else None),
+        return {"loss": final_loss, "learning_rate": self._learning_rate(steps),
+                "lr_schedule": self.config["lr_schedule"],
+                "weighted_loss": (weighted_total / epoch_samples if epoch_samples else None),
+                "optimization_loss": (optimization_total / epoch_samples if epoch_samples else None),
+                "objective_loss": (objective_total / epoch_samples if epoch_samples else None),
+                "ranking_loss": (ranking_total / epoch_samples if self.ranking_loss_weight
+                                 and epoch_samples else None),
                 "ranking_loss_weight": self.ranking_loss_weight,
                 "ranking_loss_kind": self.config["ranking_loss"],
                 "sampling": self.config["sampling"],
@@ -643,7 +869,19 @@ class TLOBAdapter:
                 "optimizer": optimizer_name,
                 "steps": steps, "samples": len(y), "samples_seen": samples_seen,
                 "epochs": actual_epochs, "epochs_completed": epochs_completed,
-                "stop_reason": "max_steps" if steps == self.config["max_steps"] else "epochs"}
+                "resumed": resume is not None, "track_exposure": exposure_counts is not None,
+                "usable_samples": usable, "stop_reason": stop_reason}
+
+    def exposure_report(self, *, declared: dict | None = None) -> dict:
+        """Per-day and per-epoch sample exposure for the trajectory that just ran."""
+        if self.exposure_counts is None:
+            raise ValueError("Exposure tracking was not enabled for this fit")
+        return exposure_report(self.training_keys, self.used_positions,
+                               self.exposure_counts[self.used_positions],
+                               batch_size=self.config["batch_size"],
+                               steps=sum(self.steps_per_epoch.values()),
+                               per_epoch_steps=self.steps_per_epoch, declared=declared)
+
 
     def predict(self, batch):
         if not self.trained:
