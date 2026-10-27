@@ -785,6 +785,192 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
     return selected
 
 
+@dataclass
+class BarArrays:
+    """Canonical bar matrix and per-instrument geometry shared by both pool paths.
+
+    One float32 copy holds every configured feature, with every non-finite source value set
+    to NaN (the missing marker the windower expects). Instruments are name-sorted and the
+    rows of one instrument are time-sorted, so a sample's trailing window is the contiguous
+    slice ``[offsets[code] + begin, offsets[code] + stop)``. The materialised pool and the
+    streaming pool therefore gather the same bytes from these arrays through
+    :func:`window_arrays`, which is the only place a window is assembled.
+    """
+
+    values: np.ndarray
+    dates: np.ndarray
+    offsets: np.ndarray
+    names: np.ndarray
+
+    @property
+    def rows(self) -> int:
+        return int(self.dates.shape[0])
+
+    @property
+    def width(self) -> int:
+        return int(self.values.shape[1])
+
+    def nbytes(self) -> dict[str, int]:
+        """In-memory footprint of the canonical arrays, which bounds a streaming pool."""
+        return {"bars": int(self.values.nbytes), "bar_dates": int(self.dates.nbytes),
+                "instrument_offsets": int(self.offsets.nbytes)}
+
+
+def bar_arrays(bars: pd.DataFrame, features: Sequence[str]) -> BarArrays:
+    """Sort once and keep one float32 bar copy; every non-finite value becomes NaN."""
+    frame = bars.sort_values(["instrument", "date"], kind="stable")
+    codes, names = pd.factorize(frame["instrument"])
+    values = frame[list(features)].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32, copy=True)
+    values[~np.isfinite(values)] = np.nan
+    counts = np.bincount(codes, minlength=len(names)).astype(np.int64)
+    return BarArrays(values=values, dates=frame["date"].to_numpy(dtype="datetime64[ns]"),
+                     offsets=np.concatenate((np.zeros(1, np.int64), np.cumsum(counts))),
+                     names=np.asarray(names, dtype=object))
+
+
+def instrument_codes(arrays: BarArrays, instruments: pd.Series) -> np.ndarray:
+    """Bar-group code per key; -1 keeps a key whose instrument has no bars addressable."""
+    if not arrays.rows:
+        return np.full(len(instruments), -1, dtype=np.int64)
+    return pd.Index(arrays.names).get_indexer(pd.Index(instruments)).astype(np.int64)
+
+
+def window_parameters(config: Any) -> dict:
+    """Window geometry and missing-value policy, validated once for both pool paths."""
+    lookback, minimum = int(config_option(config, "lookback")), int(config_option(config, "min_history", 1))
+    if not 1 <= minimum <= lookback:
+        raise ValueError("min_history must be within [1, lookback]")
+    policy, limit = config_option(config, "missing_policy", "zero"), int(config_option(config, "max_ffill_steps", 0))
+    if policy not in {"zero", "ffill"} or limit < 0:
+        raise ValueError("Invalid missing-value policy")
+    return {"lookback": lookback, "minimum": minimum, "policy": policy, "limit": limit}
+
+
+MINUTE_NS = 60_000_000_000
+
+
+def approved_sample_minutes(times) -> np.ndarray | None:
+    """Minute-of-day values whose ``strftime("%H:%M")`` spelling is approved by the config."""
+    if not times:
+        return None
+    spelled = {str(value) for value in times}
+    return np.array([minute for minute in range(1440)
+                     if f"{minute // 60:02d}:{minute % 60:02d}" in spelled], dtype=np.int32)
+
+
+def validate_sample_times(keys: pd.DataFrame, times, approved: np.ndarray | None = None) -> np.ndarray:
+    """Approved whole-minute keys only; a streamed batch repeats this on every draw.
+
+    The clock test is the numeric form of ``date.dt.strftime("%H:%M").isin(times)`` - identical
+    for every timestamp, because that is exactly how the string is spelled - so a per-batch
+    draw can re-run it without pandas' formatting cost.
+    """
+    dates = keys["date"].to_numpy(dtype="datetime64[ns]")
+    minutes = dates.astype(np.int64) // MINUTE_NS
+    if approved is None:
+        approved = approved_sample_minutes(times)
+    if approved is not None and not np.isin(minutes % 1440, approved).all():
+        raise ValueError("Sample keys contain an unapproved sampling time")
+    if np.any(dates.astype(np.int64) % MINUTE_NS):
+        raise ValueError("Sample timestamps must be precise whole minutes")
+    return dates
+
+
+def window_geometry(arrays: BarArrays, codes: np.ndarray, key_dates: np.ndarray,
+                    lookback: int) -> tuple[np.ndarray, np.ndarray]:
+    """Per-key ``(begin, stop)``: the trailing ``lookback`` bars ending at the key timestamp."""
+    stop = np.zeros(len(codes), dtype=np.int64)
+    present = codes >= 0
+    if arrays.rows and present.any():
+        positions = np.flatnonzero(present)
+        order = np.argsort(codes[positions], kind="stable")
+        positions, ordered = positions[order], codes[positions][order]
+        bounds = np.searchsorted(ordered, np.arange(len(arrays.names) + 1))
+        for code in np.unique(ordered):
+            rows = positions[bounds[code]:bounds[code + 1]]
+            local = arrays.dates[arrays.offsets[code]:arrays.offsets[code + 1]]
+            stop[rows] = np.searchsorted(local, key_dates[rows], side="right")
+    return np.maximum(stop - lookback, 0), stop
+
+
+def forward_fill(values: np.ndarray, limit: int) -> np.ndarray:
+    """Fill NaN runs of at most ``limit`` steps along time, matching ``DataFrame.ffill``.
+
+    The gap is measured from the previous finite value in the same (row, feature) series, so
+    the result is identical to the per-window pandas call this replaces.
+    """
+    finite = np.isfinite(values)
+    if finite.all():                     # nothing to fill: no temporaries at all
+        return values
+    index = np.arange(values.shape[1], dtype=np.int32)
+    last = np.maximum.accumulate(np.where(finite, index[None, :, None], np.int32(-1)), axis=1)
+    gap = index[None, :, None] - last
+    fill = (~finite) & (last >= 0) & (gap <= limit)
+    if fill.any():
+        rows, columns, features = np.nonzero(fill)
+        values[rows, columns, features] = values[rows, last[rows, columns, features], features]
+    return values
+
+
+def window_arrays(arrays: BarArrays, codes: np.ndarray, begin: np.ndarray, stop: np.ndarray,
+                  x: np.ndarray, observed: np.ndarray, history_dates: np.ndarray, *,
+                  lookback: int, minimum: int, policy: str, limit: int,
+                  history_feature_count: int, chunk: int | None = None):
+    """Assemble every key's trailing window into the preallocated outputs.
+
+    The single window builder: the materialised pool fills one pool-sized array set and the
+    streaming pool fills one batch's worth, so both paths produce the same values by
+    construction. Windows are right-aligned (short history pads the front with NaN, which
+    ``observed`` reports as unobserved and ``x`` reports as zero), ``enough`` counts rows with
+    any finite primary feature, and ``observed`` is measured before any filling. Returns
+    ``(enough, history_count)``.
+    """
+    count = len(codes)
+    if not arrays.rows:
+        return np.zeros(count, dtype=bool), np.zeros(count, dtype=np.int64)
+    # Bounded temporaries: the gather alone is (chunk, lookback, features) float32, and a
+    # forward fill adds a few integer intermediates of the same shape.
+    chunk = chunk or (2048 if policy == "ffill" and limit else 8192)
+    columns = np.arange(lookback)
+    enough = np.zeros(count, dtype=bool)
+    for start_row in range(0, count, chunk):
+        rows = slice(start_row, min(start_row + chunk, count))
+        relative = columns[None, :] - (lookback - (stop[rows] - begin[rows]))[:, None]
+        valid = relative >= 0
+        base = np.where(codes[rows] >= 0, arrays.offsets[np.maximum(codes[rows], 0)], 0)
+        absolute = np.clip(base[:, None] + begin[rows][:, None] + np.where(valid, relative, 0),
+                           0, max(arrays.rows - 1, 0))
+        window = arrays.values[absolute]
+        window[~valid] = np.nan
+        observed[rows] = np.isfinite(window)
+        dates = arrays.dates[absolute]
+        dates[~valid] = np.datetime64("NaT", "ns")
+        history_dates[rows] = dates
+        enough[rows] = (np.isfinite(window[:, :, :history_feature_count]).any(axis=2).sum(axis=1) >= minimum)
+        if policy == "ffill" and limit:
+            # Interval trades are flows; filling them repeats a past interval's activity.
+            window[:, :, :history_feature_count] = forward_fill(window[:, :, :history_feature_count], limit)
+        np.nan_to_num(window, copy=False, nan=0.0)
+        x[rows] = window
+    return enough, stop - begin
+
+
+def window_coverage(keys: pd.DataFrame, enough: np.ndarray, *, observed_count: int,
+                    observed_size: int, history_count: np.ndarray) -> dict:
+    """Coverage from counts, so a streamed pool can report the identical numbers."""
+    coverage_by_time = keys.assign(usable=enough).groupby("date", observed=True)["usable"].agg(["size", "sum"])
+    sections = [{"date": str(date), "expected": int(row["size"]), "usable": int(row["sum"]),
+                 "coverage": float(row["sum"] / row["size"])} for date, row in coverage_by_time.iterrows()]
+    return {"expected_samples": len(keys), "samples": len(keys), "usable_samples": int(enough.sum()),
+            "insufficient_history": int((~enough).sum()),
+            "coverage": float(enough.mean()) if len(keys) else 0.0,
+            "min_section_coverage": min((row["coverage"] for row in sections), default=0.0),
+            "observed_fraction": (observed_count / observed_size) if observed_size else 0.0,
+            "history_min": int(history_count.min()) if len(keys) else 0,
+            "history_max": int(history_count.max()) if len(keys) else 0,
+            "by_section": sections}
+
+
 def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     """Build fixed-size trailing windows without accepting or accessing labels."""
     features = list(config_option(config, "feature_columns"))
@@ -795,67 +981,31 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     keys = validate_keys(keys[KEYS], "sample keys")
     if any(column not in bars for column in features):
         raise ValueError("Missing configured feature columns")
-    times = config_option(config, "sample_times", [])
-    if times and not keys["date"].dt.strftime("%H:%M").isin(times).all():
-        raise ValueError("Sample keys contain an unapproved sampling time")
-    if not keys["date"].eq(keys["date"].dt.floor("min")).all():
-        raise ValueError("Sample timestamps must be precise whole minutes")
-    lookback, minimum = int(config_option(config, "lookback")), int(config_option(config, "min_history", 1))
-    if not 1 <= minimum <= lookback:
-        raise ValueError("min_history must be within [1, lookback]")
-    policy, limit = config_option(config, "missing_policy", "zero"), int(config_option(config, "max_ffill_steps", 0))
-    if policy not in {"zero", "ffill"} or limit < 0:
-        raise ValueError("Invalid missing-value policy")
-    x = np.zeros((len(keys), lookback, len(features)), dtype=np.float32)
+    key_dates = validate_sample_times(keys, config_option(config, "sample_times", []))
+    settings = window_parameters(config)
+    arrays = bar_arrays(bars, features)
+    codes = instrument_codes(arrays, keys["instrument"])
+    begin, stop = window_geometry(arrays, codes, key_dates, settings["lookback"])
+    x = np.zeros((len(keys), settings["lookback"], len(features)), dtype=np.float32)
     observed = np.zeros_like(x, dtype=bool)
-    history_dates = np.full((len(keys), lookback), np.datetime64("NaT", "ns"), dtype="datetime64[ns]")
-    groups = {}
-    for instrument, frame in bars.groupby("instrument", sort=False, observed=True):
-        frame = frame.sort_values("date")
-        # Explicit copy: some pandas versions hand back a read-only view of the block, and the
-        # non-finite masking below is an in-place write on this window buffer.
-        values = frame[features].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32, copy=True)
-        values[~np.isfinite(values)] = np.nan
-        groups[instrument] = (frame["date"].to_numpy(dtype="datetime64[ns]"), values)
-    enough = np.zeros(len(keys), dtype=bool)
-    history_count = np.zeros(len(keys), dtype=np.int64)
-    for index, (date, instrument) in enumerate(keys.itertuples(index=False, name=None)):
-        if instrument not in groups:
-            continue
-        dates, values = groups[instrument]
-        stop = int(np.searchsorted(dates, date.to_datetime64(), side="right"))
-        begin = max(0, stop - lookback)
-        length = stop - begin
-        if not length:
-            continue
-        history_count[index] = length
-        window = values[begin:stop].copy()
-        observed[index, -length:] = np.isfinite(window)
-        enough[index] = int(np.isfinite(window[:, :history_feature_count]).any(axis=1).sum()) >= minimum
-        if policy == "ffill" and limit:
-            # Interval trades are flows; filling them repeats a past interval's activity.
-            window[:, :history_feature_count] = pd.DataFrame(window[:, :history_feature_count]).ffill(
-                limit=limit).to_numpy(dtype=np.float32)
-        x[index, -length:] = np.nan_to_num(window, nan=0.0)
-        history_dates[index, -length:] = dates[begin:stop]
+    history_dates = np.full((len(keys), settings["lookback"]), np.datetime64("NaT", "ns"),
+                            dtype="datetime64[ns]")
+    enough, history_count = window_arrays(arrays, codes, begin, stop, x, observed, history_dates,
+                                          history_feature_count=history_feature_count, **settings)
     # Insufficient windows remain in the batch to preserve universe alignment.
     # The runner rejects their coverage when acceptance.min_coverage is not met.
-    coverage_by_time = keys.assign(usable=enough).groupby("date", observed=True)["usable"].agg(["size", "sum"])
-    sections = [{"date": str(date), "expected": int(row["size"]), "usable": int(row["sum"]),
-                 "coverage": float(row["sum"] / row["size"])} for date, row in coverage_by_time.iterrows()]
-    coverage = {"expected_samples": len(keys), "samples": len(keys), "usable_samples": int(enough.sum()),
-                "insufficient_history": int((~enough).sum()),
-                "coverage": float(enough.mean()) if len(keys) else 0.0,
-                "min_section_coverage": min((row["coverage"] for row in sections), default=0.0),
-                "observed_fraction": float(observed.mean()) if observed.size else 0.0,
-                "history_min": int(history_count.min()) if len(keys) else 0,
-                "history_max": int(history_count.max()) if len(keys) else 0,
-                "by_section": sections}
+    coverage = window_coverage(keys, enough, observed_count=int(observed.sum()),
+                               observed_size=int(observed.size), history_count=history_count)
     batch = Batch(keys, x, observed, history_dates, coverage, history_feature_count)
-    quality = history_diagnostics(batch)
-    coverage["history_quality"] = {
+    coverage["history_quality"] = history_quality(history_diagnostics(batch), features, history_feature_count)
+    return batch
+
+
+def history_quality(quality: pd.DataFrame, features: Sequence[str], history_feature_count: int) -> dict:
+    """Summary of one key table's history quality, shared by both pool paths."""
+    return {
         "definition": "Observed means finite before filling; effective rows use primary history features; complete rows have all",
-        "history_features": features[:history_feature_count],
+        "history_features": list(features)[:history_feature_count],
         "age_unit": "elapsed calendar minutes (includes lunch, overnight and holidays); null means no history",
         "full_observed_window_samples": int(quality.full_observed_window.sum()),
         "statistics": {column: {"min": _finite_stat(quality[column], "min"),
@@ -863,7 +1013,6 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
                                 "max": _finite_stat(quality[column], "max")}
                        for column in ("effective_history_length", "complete_history_length", "missing_fraction",
                                       "latest_effective_age_minutes", "history_span_minutes")}}
-    return batch
 
 
 def _finite_stat(values, operation):
