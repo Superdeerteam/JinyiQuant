@@ -16,7 +16,7 @@ import torch
 from jinyiquant.io import write_json
 
 from .device import device_resources, select_device
-from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, configure_finite_check, parameter_groups
+from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, parameter_groups
 from .schema import validate_input_schema
 
 BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB, "dual_patch": DualPatchTLOB}
@@ -258,8 +258,6 @@ class TLOBAdapter:
         self.config.setdefault("ranking_loss_weight", 0.0)
         self.config.setdefault("book_representation", "raw")
         self.config.setdefault("trade_features", "zero")
-        self.config.setdefault("finite_check_every", 50)
-        self.config.setdefault("compile_mode", "eager")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
         if self.config["target_centering"] not in TARGET_CENTERING_MODES:
@@ -301,8 +299,6 @@ class TLOBAdapter:
             self.architecture.update({k: self.config[k] for k in ("num_heads", "patch_counts")})
         self.architecture.update(seq_size=data["lookback"], num_features=len(fields))
         self.network = BACKBONES[self.config["kind"]](**self.architecture).to(self.device)
-        self.finite_check_every = self.config["finite_check_every"]
-        configure_finite_check(self.network, self.finite_check_every)
         self.parameter_groups = parameter_groups(self.network)
         self.intercept = None
         self.target_scale = 1.0
