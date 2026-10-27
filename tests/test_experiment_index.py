@@ -257,18 +257,25 @@ def test_cli_query_reads_the_built_index(tmp_path, monkeypatch, capsys):
 
 @pytest.mark.skipif(not (ROOT / "runs").is_dir(), reason="runs/ fact source not present")
 def test_real_runs_index_matches_the_manifest_fact_source(tmp_path):
-    manifests = discover_manifests(ROOT / "runs")
-    assert len(manifests) == 701
+    runs_root = ROOT / "runs"
+    manifests = discover_manifests(runs_root)
+    assert manifests, "runs/ must keep at least one manifest as the fact source"
     samples = manifests[:3]
     before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in samples}
-    summary = build_index(ROOT / "runs", tmp_path / "index")
+    summary = build_index(runs_root, tmp_path / "index")
     after = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in samples}
     assert before == after
     entries = read_entries(tmp_path / "index")
-    assert len(entries) == len(manifests) == 701
+    # One entry per manifest, and the population is whatever the fact source holds right now.
+    assert len(entries) == len(manifests) == summary["entries"]["total"]
+    assert [(ROOT / entry["manifest_path"]).resolve() for entry in entries] == \
+        [path.resolve() for path in manifests]
+    # Status counters are recomputed from the manifests instead of frozen at one population.
     raw_status = Counter(json.loads(path.read_text(encoding="utf-8")).get("status")
                          for path in manifests)
     assert Counter(entry["status"] for entry in entries) == raw_status
+    assert Counter(summary["status_counts"]) == Counter(
+        {"null" if key is None else str(key): count for key, count in raw_status.items()})
     assert all(not entry["manifest_path"].startswith("runs/frozen/") for entry in entries)
     assert summary["snapshots"]["frozen_manifest_count"] == 17
     assert summary["snapshots"]["frozen_manifest_statuses"].get("running") == 1
@@ -288,7 +295,11 @@ def test_real_runs_index_matches_the_manifest_fact_source(tmp_path):
     assert known["metrics"]["sha256"] and known["artifact_count"] > 0
     failed = next(entry for entry in entries if entry["status"] == "failed")
     assert failed["failure"]["reason"]
-    current = ROOT / "runs" / "index" / INDEX_FILENAME
-    if current.is_file():
-        shipped = hashlib.sha256(current.read_bytes()).hexdigest()
-        assert shipped == summary["artifacts"]["jsonl"]["sha256"]
+    # A stored index is only a local cache: new runs legitimately make it stale until the next
+    # rebuild, so it is comparable only while it claims the same population as the fact source.
+    stored_summary = runs_root / "index" / SUMMARY_FILENAME
+    if stored_summary.is_file():
+        stored = json.loads(stored_summary.read_text(encoding="utf-8"))
+        if stored["entries"]["total"] == len(manifests):
+            assert stored["artifacts"]["jsonl"]["sha256"] == \
+                summary["artifacts"]["jsonl"]["sha256"]
