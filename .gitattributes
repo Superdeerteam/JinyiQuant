@@ -1,3 +1,14 @@
 # Keep fixed upstream reference bytes and original whitespace for hash verification.
 modified_tlob/upstream/*.txt -text -whitespace
 modified_tlob/LICENSE text eol=lf
+
+# Byte-exact artifacts: the registered sha256 pins are computed over these exact
+# bytes (CRLF included), so git must not normalise them on add or checkout.
+configs/mlplob_v3_60d_csz_19800.json -text
+configs/mlplob_v3_132d_csz_19800.json -text
+configs/mlplob_v3_132d_csz_19800_seed29.json -text
+configs/mlplob_v3_132d_csz_19800_seed47.json -text
+configs/data_probe_132d_20261027_seed11_plan.json -text
+configs/data_probe_132d_20261027_seed29_plan.json -text
+configs/data_probe_132d_20261027_seed47_plan.json -text
+scripts/training_memory_preflight.py -text
