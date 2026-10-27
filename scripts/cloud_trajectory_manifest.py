@@ -48,21 +48,29 @@ def git_snapshot(repo: Path) -> dict:
             "note": "run only a clean snapshot: an unpinned working tree cannot be reproduced"}
 
 
-def data_inventory(config) -> list[dict]:
-    """Every source file the fixed recipe reads, with size and digest when it is present locally."""
+def data_inventory(data, *, digest: bool = True) -> list[dict]:
+    """Every file the fixed recipe reads, one row per upload shard, with size and digest.
+
+    A directory in the recipe is a shard set (the monthly bar/label files); a single file is
+    one shard. ``digest=False`` records sizes only, which keeps the launch checklist cheap.
+    """
     rows = []
     for field in DATA_FIELDS:
-        value = getattr(config.data, field)
+        value = getattr(data, field)
         if value is None:
             continue
         path = Path(value)
-        rows.append({"field": field, "path": path.as_posix(), "exists": path.is_file(),
-                     "bytes": path.stat().st_size if path.is_file() else None,
-                     "sha256": sha256_file(path) if path.is_file() else None})
+        files = sorted(shard for shard in path.iterdir() if shard.is_file()) if path.is_dir() else [path]
+        for shard in files:
+            present = shard.is_file()
+            rows.append({"field": field, "path": shard.as_posix(), "shard": shard.name,
+                         "exists": present,
+                         "bytes": shard.stat().st_size if present else None,
+                         "sha256": sha256_file(shard) if present and digest else None})
     return rows
 
 
-def build_manifest(plan_path: Path, repo: Path) -> dict:
+def build_manifest(plan_path: Path, repo: Path, *, digest: bool = True) -> dict:
     plan_path, repo = Path(plan_path).resolve(), Path(repo).resolve()
     plan = load_plan(plan_path)
     recipe_path = (repo / plan["recipe_config"]).resolve()
@@ -82,7 +90,8 @@ def build_manifest(plan_path: Path, repo: Path) -> dict:
                    "sha256": sha256_file(recipe_path),
                    "budget_only_overrides": plan.get("budget_only_overrides", {})},
         "code": git_snapshot(repo),
-        "data": {"files": data_inventory(config), "bundle": "the fixed recipe's own data paths",
+        "data": {"files": data_inventory(config.data, digest=digest),
+                 "bundle": "the fixed recipe's own data paths",
                  "note": "upload the listed files only; the shard reader interface is pinned by t2"},
         "budget": {"derived_from": "plan effective epochs x recipe training samples / batch size"
                    if samples else "plan points (no reference pool size declared)",
@@ -114,8 +123,10 @@ def main() -> int:
     output.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"cloud job manifest -> {output}")
     print(f"code commit={manifest['code']['commit']} dirty={manifest['code']['dirty']}")
-    print(f"budget points={len(manifest['budget']['points'])} "
-          f"data files={len(manifest['data']['files'])}")
+    files = manifest["data"]["files"]
+    total = sum(row["bytes"] or 0 for row in files)
+    print(f"budget points={len(manifest['budget']['points'])} data shards={len(files)} "
+          f"({total / 2**30:.2f} GiB)")
     return 0
 
 

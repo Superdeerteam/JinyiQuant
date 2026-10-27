@@ -537,9 +537,24 @@ class TLOBAdapter:
                                 else torch.from_numpy(np.asarray(exposure_counts).copy())),
         }
         torch.save(payload, target / CHECKPOINT_FILENAME)
+        optimizer_state = payload["optimizer_state_dict"]
+        exposure = payload["exposure_counts"]
         metadata = {key: payload[key] for key in (
             "schema_version", "kind", "seed", "device", "torch_version", "lr_schedule",
             "learning_rate", "preprocessing", "position", "fingerprint")}
+        metadata.update({
+            "optimizer": {"state_entries": len(optimizer_state["state"]),
+                          "step": max((int(state["step"]) for state in optimizer_state["state"].values()),
+                                      default=0)},
+            "rng_streams": sorted(payload["rng"]),
+            "sampler": {"epoch_index": int(position["epoch_index"]),
+                        "batch_index": int(position["batch_index"]),
+                        "epoch_batches_sha256": position.get("epoch_batches_sha256"),
+                        "generator_state_saved": True},
+            "exposure_counters": None if exposure is None else {
+                "rows": int(exposure.numel()), "samples_seen": int(exposure.sum()),
+                "sha256": hashlib.sha256(exposure.numpy().astype("<i8").tobytes()).hexdigest()},
+        })
         write_json(target / CHECKPOINT_METADATA_FILENAME, metadata)
         self._event("training", "training_state_saved", directory=str(target),
                     steps=int(position["steps"]), epoch_index=int(position["epoch_index"]),

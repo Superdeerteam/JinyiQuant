@@ -284,7 +284,7 @@ def test_pre_registered_plan_declares_the_budget_points_and_a_fixed_schedule():
 def test_cloud_job_manifest_lists_code_data_commands_and_retrieval():
     from scripts.cloud_trajectory_manifest import build_manifest
 
-    manifest = build_manifest(PLAN, ROOT)
+    manifest = build_manifest(PLAN, ROOT, digest=False)
     assert manifest["schema_version"] == 1
     assert manifest["experiment_id"] == "training-trajectory-20261027"
     assert len(manifest["code"]["commit"]) == 40
@@ -292,6 +292,11 @@ def test_cloud_job_manifest_lists_code_data_commands_and_retrieval():
     assert all({"path", "exists", "sha256"} <= set(row) for row in manifest["data"]["files"])
     assert manifest["budget"]["batch_size"] == 32
     assert [row["steps"] for row in manifest["budget"]["points"]] == [19_777, 39_553, 79_106]
+    # The recipe points at the cloud paths; absent locally, they are flagged, not invented.
+    assert all({"field", "shard", "exists", "bytes", "sha256"} <= set(row)
+               for row in manifest["data"]["files"])
+    assert all(row["exists"] is False and row["sha256"] is None
+               for row in manifest["data"]["files"])
     for name in ("upload", "run", "fetch"):
         assert name in manifest["commands"]
     assert manifest["retrieve"]["checkpoints"] and manifest["retrieve"]["budget_points"]
@@ -364,6 +369,38 @@ def test_driver_runs_all_budget_points_and_resumes_between_them(tmp_path):
             run_dir / row["model"], device="cpu").predict(batch))
         assert 0 < row["coverage"] <= 1
     assert result["trajectory"][-1]["coverage"] > result["trajectory"][0]["coverage"]
+    for index, row in enumerate(result["trajectory"], start=1):
+        point_state = run_dir / "trajectory" / "points" / f"{index:02d}-{row['name']}"
+        assert (point_state / "training_state.pt").is_file()
+        metadata = json.loads((point_state / "training_state.json").read_text(encoding="utf-8"))
+        assert metadata["budget_point"]["name"] == row["name"]
+        assert metadata["position"]["steps"] == row["steps"]
+        assert metadata["optimizer"]["state_entries"] > 0 and metadata["optimizer"]["step"] > 0
+        assert metadata["rng_streams"] == ["cuda", "generator", "numpy", "python", "torch"]
+        assert metadata["sampler"]["epoch_batches_sha256"] or metadata["sampler"]["batch_index"] == 0
+        assert metadata["exposure_counters"]["rows"] == len(target)
+        assert row["checkpoint"].startswith("trajectory/points/")
+    assert (run_dir / "trajectory" / "training_state.pt").is_file()
     document = json.loads((run_dir / "trajectory.json").read_text(encoding="utf-8"))
     assert [point["steps"] for point in document["budget"]] == steps
     assert json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["status"] == "completed"
+
+
+def test_data_inventory_lists_each_shard_with_its_digest(tmp_path):
+    from scripts.cloud_trajectory_manifest import data_inventory
+
+    shards = tmp_path / "bars"
+    shards.mkdir()
+    (shards / "202301.0.feather").write_bytes(b"january")
+    (shards / "202302.0.feather").write_bytes(b"february")
+    single = tmp_path / "instruments.parquet"
+    single.write_bytes(b"instrument table")
+    data = DataConfig(bars_path=shards, labels_path=single, source="synthetic", version="1",
+                      feature_columns=lob_columns(3), lookback=8)
+    rows = data_inventory(data)
+    assert [row["shard"] for row in rows] == ["202301.0.feather", "202302.0.feather",
+                                              "instruments.parquet"]
+    assert rows[0]["bytes"] == len(b"january") and rows[0]["exists"] is True
+    assert rows[0]["sha256"] != rows[1]["sha256"]
+    assert all(len(row["sha256"]) == 64 for row in rows)
+    assert [row["sha256"] for row in data_inventory(data, digest=False)] == [None, None, None]

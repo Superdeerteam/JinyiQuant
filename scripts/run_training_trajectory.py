@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import shutil
 import time
 from pathlib import Path
 
@@ -18,12 +19,13 @@ import torch
 
 from jinyiquant.config import RunConfig, load_config
 from jinyiquant.data import build_batch, load_data, select_targets
-from jinyiquant.io import write_json
+from jinyiquant.io import read_json, write_json
 from jinyiquant.models import create_model, model_filename
 from jinyiquant.runner import inference_keys
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir
 from jinyiquant.trajectory import (
     CHECKPOINT_FILENAME,
+    CHECKPOINT_METADATA_FILENAME,
     derive_budget_steps,
     file_sha256,
     load_plan,
@@ -126,18 +128,20 @@ def run_trajectory(plan: dict, config: RunConfig, prepared: dict, validation, ru
     point_dir = run_dir / "budget_points"
     point_dir.mkdir(exist_ok=True)
     checkpoint_dir = run_dir / "trajectory"
+    points_dir = checkpoint_dir / "points"
     trajectory, status, exit_code, error = [], "completed", 0, None
     started = time.monotonic()
     try:
         payload = None
-        for row in budget:
+        for index, row in enumerate(budget, start=1):
+            point_checkpoint = points_dir / f"{index:02d}-{row['name']}"
             declared = {"steps": row["steps"], "effective_epochs": row["effective_epochs"],
                         "effective_epochs_atol": float(plan["exposure"]["effective_epochs_atol"]),
                         "min_coverage": float(plan["exposure"]["min_coverage"])}
             model = create_model(config, recorder=rec)
             progress = model.fit(train, targets, sample_mask=fit_mask, step_budget=row["steps"],
                                  resume=payload, checkpoint_at_steps=[row["steps"]],
-                                 checkpoint_dir=checkpoint_dir, track_exposure=True)
+                                 checkpoint_dir=point_checkpoint, track_exposure=True)
             report = model.exposure_report(declared=declared)
             verdict = reconcile_exposure(report, declared)
             if not verdict["passed"]:
@@ -160,14 +164,24 @@ def run_trajectory(plan: dict, config: RunConfig, prepared: dict, validation, ru
             predictions = validation.keys.copy()
             predictions["score"] = model.predict(validation)
             predictions.to_parquet(point_dir / f"{row['name']}_predictions.parquet", index=False)
-            payload = torch.load(checkpoint_dir / CHECKPOINT_FILENAME, map_location="cpu",
+            # One self-contained training state per budget point; the rolling copy is a
+            # convenience, never the only source.
+            metadata = read_json(point_checkpoint / CHECKPOINT_METADATA_FILENAME)
+            metadata["budget_point"] = {**row, "coverage": report["coverage"],
+                                        "reconciliation_passed": verdict["passed"]}
+            write_json(point_checkpoint / CHECKPOINT_METADATA_FILENAME, metadata)
+            shutil.copyfile(point_checkpoint / CHECKPOINT_FILENAME,
+                            checkpoint_dir / CHECKPOINT_FILENAME)
+            write_json(checkpoint_dir / CHECKPOINT_METADATA_FILENAME, metadata)
+            payload = torch.load(point_checkpoint / CHECKPOINT_FILENAME, map_location="cpu",
                                  weights_only=True)
             trajectory.append({"name": row["name"], "steps": progress["steps"],
                                "samples_seen": progress["samples_seen"],
                                "resumed": progress["resumed"],
                                "effective_epochs": report["effective_epochs"],
                                "coverage": report["coverage"],
-                               "checkpoint": f"trajectory/{CHECKPOINT_FILENAME}",
+                               "checkpoint": f"trajectory/points/{index:02d}-{row['name']}/"
+                                             f"{CHECKPOINT_FILENAME}",
                                "model": f"model-{row['name']}{suffix}",
                                "weights": weights.name})
             write_json(run_dir / "trajectory.json",
