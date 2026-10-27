@@ -1,33 +1,97 @@
 {
  "schema_version": 1,
  "registration_id": "b4-data-probe-132d-20261027",
+ "draft_revision": 2,
  "status": "DRAFT_NOT_REGISTERED",
  "draft": true,
  "draft_notice": {
-  "what": "pre-registration DRAFT for the independent-information (data-window) probe; it is not registered, carries no timestamp of registration and licenses nothing",
+  "what": "pre-registration DRAFT for the independent-information (data-window) probe; it is not registered, carries no registration timestamp and licenses nothing",
   "registered": false,
   "trained": false,
   "may_be_registered_only_by": "the captain, after user approval and machine confirmation",
   "registration_instruction": "等待用户批准 + 机器确认后由队长指示注册；本文件在注册前不得被引用为预登记，也不得据此开跑任何训练",
   "no_registration_file_exists": true,
   "draft_written_at_utc": "2026-10-27T14:39:30+00:00",
+  "revised_at_utc": "2026-10-27T14:52:00+00:00",
   "author_role": "research-analyst",
   "open_items_block_registration": true
+ },
+ "ratified_design": {
+  "ratified_by": "captain",
+  "ratified_at_utc": "2026-10-27T14:52:00+00:00",
+  "rulings": [
+   {
+    "id": "R1",
+    "topic": "training window",
+    "ruling": "132 trading days, 2023-04-14..2023-10-31",
+    "why": "it is the user's original 132-day caliber and it is 2.2x the 60-day window rather than 2.0x, so it separates the data effect from the noise scale more sharply",
+    "note": "the 120-day alternative stays in alternatives_measured for the record only and is not to be discussed again"
+   },
+   {
+    "id": "R2",
+    "topic": "escalation threshold",
+    "ruling": "screening caliber, not promotion caliber: level 1 escalates to level 2 only on the v2 still_improving state - point estimate >= 0.0017 AND 5-day block interval lower bound > 0 AND at least 4 of 5 declared periods positive",
+    "why": "0.0017 on its own is below the measured seed noise, so the interval condition is load-bearing, not decoration",
+    "separation": "promotion still requires min_improvement 0.0034 plus a three-seed aggregate; the two decisions are written separately and may not be conflated"
+   },
+   {
+    "id": "R3",
+    "topic": "steps and budgets",
+    "ruling": "the driver re-derives usable samples and steps at run time; the registered text carries an estimate only and must label it estimate_not_budget; registration must record a +/-5% deviation tolerance, and a run whose realised usable samples or steps fall outside that tolerance must stop and report instead of continuing silently"
+   },
+   {
+    "id": "R4",
+    "topic": "training memory for the enlarged pool",
+    "ruling": "measure it on the cloud before the formal trajectory: run 200-500 steps with the same configuration, sample peak RSS and persist the measurement; if it exceeds the host capacity, abort and report - no 'just try it'",
+    "wording": "the 24 GiB line constrains the inference/submission path only; training-host capacity is a separate question and must be stated as such"
+   },
+   {
+    "id": "R5",
+    "topic": "level 2 authorization",
+    "ruling": "level 2 needs its own pre-registration; level 1 does not authorize level 2",
+    "hard_constraint": true
+   },
+   {
+    "id": "R6",
+    "topic": "control group",
+    "ruling": "level 1 uses the existing 60-day replays as controls and does not re-run the control",
+    "fixed": true
+   },
+   {
+    "id": "R7",
+    "topic": "step time and cost",
+    "ruling": "keep them marked superseded_by: t22 and give no budget commitment until t22 lands"
+   }
+  ],
+  "kept": "motivation.honest_bound is kept as written: only the 5.28 point is a determined overfit, 1.32 and 2.64 are intermediate, so this probe tests whether the whole in-sample/out-of-sample gap curve shifts, not whether one determined-overfit point can be rescued"
  },
  "motivation": {
   "source": "t21 upper-bound probe (runs/training-in-sample-probe-20261027/, plan sha d03e00f8…) relayed by the captain",
   "measured": {
-   "anchor-1.32": {"in_sample_rank_ic": 0.088726, "oos_rank_ic": 0.064425, "ratio": 1.377,
-                   "t21_verdict": "inconclusive (intermediate regime)"},
-   "double-2.64": {"in_sample_rank_ic": 0.108065, "oos_rank_ic": 0.062338, "ratio": 1.734,
-                   "t21_verdict": "inconclusive (intermediate, near the overfit line)"},
-   "double-5.28": {"in_sample_rank_ic": 0.171900, "oos_rank_ic": 0.036561, "ratio": 4.702,
-                   "gap": 0.1353, "intervals_overlap": false,
-                   "t21_verdict": "overfit determined"}
+   "anchor-1.32": {
+    "in_sample_rank_ic": 0.088726,
+    "oos_rank_ic": 0.064425,
+    "ratio": 1.377,
+    "t21_verdict": "inconclusive (intermediate regime)"
+   },
+   "double-2.64": {
+    "in_sample_rank_ic": 0.108065,
+    "oos_rank_ic": 0.062338,
+    "ratio": 1.734,
+    "t21_verdict": "inconclusive (intermediate, near the overfit line)"
+   },
+   "double-5.28": {
+    "in_sample_rank_ic": 0.1719,
+    "oos_rank_ic": 0.036561,
+    "ratio": 4.702,
+    "gap": 0.1353,
+    "intervals_overlap": false,
+    "t21_verdict": "overfit determined"
+   }
   },
   "reading": "in-sample RankIC rises monotonically with the budget and the in-sample budget-point differences exclude zero (5.28-2.64 +0.06384 [0.04622, 0.08543]), so the recipe can fit the training window; out-of-sample falls monotonically, so the binding constraint is independent information rather than capacity or optimization",
-  "honest_bound": "only the 5.28 point is a determined overfit; 1.32 and 2.64 are intermediate/inconclusive. The probe therefore runs where the regime is intermediate, and the expected effect is a shift of the whole in-sample/out-of-sample gap curve, not the rescue of one determined-overfit point",
-  "why_a_data_window_and_not_more_training": "t5 measured all three budget points on the 60-day window: every additional doubling lowered the out-of-sample primary metric with an interval entirely below zero, and the budget rule v2 refuses further training amount"
+  "honest_bound": "only the 5.28 point is a determined overfit; 1.32 and 2.64 are intermediate/inconclusive. This probe runs where the regime is intermediate and tests whether the whole in-sample/out-of-sample gap curve shifts, not whether one determined-overfit point can be rescued",
+  "why_a_data_window_and_not_more_training": "t5 measured all three budget points on the 60-day window: every additional doubling lowered the out-of-sample primary metric with an interval entirely below zero, and decision rule v2 refuses further training amount"
  },
  "single_factor": "the size of the training window only (how many trading days of history feed the same recipe); the trunk, features, labels, loss, sampling, learning-rate rule, budget points and evaluation window stay frozen",
  "design": {
@@ -35,67 +99,129 @@
    {
     "level": 1,
     "train_trading_days": 132,
-    "train_window_provisional": ["2023-04-14", "2023-10-31"],
+    "train_window": [
+     "2023-04-14",
+     "2023-10-31"
+    ],
+    "train_window_rule": "132 trading days ending 2023-10-31 inclusive; the training window never reaches the validation split",
     "reference_config": "configs/model_v2_120d_csz.json",
-    "window_note": "the cited reference config uses 2023-05-05..2023-11-01, which is exactly 120 trading days, not 132; 132 trading days ending 2023-10-31 starts at 2023-04-14. The registered value must be one of the two and must be written down before registration (see open_items)",
+    "reference_config_note": "the 120-day config window (2023-05-05..2023-10-31) is exactly 120 trading days; it is kept only as a recorded alternative, the ratified window is 132",
     "alternatives_measured": {
-     "120_trading_days": ["2023-05-05", "2023-10-31"],
-     "132_trading_days": ["2023-04-14", "2023-10-31"]
+     "132_trading_days": [
+      "2023-04-14",
+      "2023-10-31"
+     ],
+     "120_trading_days": [
+      "2023-05-05",
+      "2023-10-31"
+     ]
     },
     "needs_own_registration": true
    },
    {
     "level": 2,
     "train_trading_days": 240,
-    "train_window_provisional": ["2022-11-04", "2023-10-31"],
-    "trigger": "level 1 clears the escalation rule below",
+    "train_window_provisional": [
+     "2022-11-04",
+     "2023-10-31"
+    ],
+    "trigger": "level 1 reaches the ratified escalation state",
     "needs_own_registration": true,
-    "note": "level 2 is a separate registration and is not licensed by level 1's registration"
+    "authorization": "level 1 does not authorize level 2; level 2 requires its own pre-registration and its own approval"
    }
   ],
   "escalation_rule": {
-   "proposed": "escalate to level 2 only if level 1 reaches the v2 state still_improving against its 60-day control: paired improvement >= 0.0017, 5-day block interval lower bound > 0, and at least 4 of the 5 declared periods positive",
-   "status": "proposed_not_fixed",
-   "why_not_fixed": "the value is the registered screening floor and is used here on purpose, but the captain has not ratified escalating on the screening floor rather than on the promotion floor 0.0034; the draft does not decide it",
-   "requires_captain_confirmation": true
+   "status": "ratified",
+   "rule": "level 1 -> level 2 only if all three hold: paired improvement >= 0.0017; 5-day block interval lower bound > 0; at least 4 of the 5 declared periods positive",
+   "is": "the v2 state still_improving, i.e. the screening caliber",
+   "why_the_interval_is_load_bearing": "0.0017 alone sits below the measured noise: the registered placebo scale is 0.003305 and the measured seed-dispersion medians are 0.00241-0.00312, so a point estimate at the floor is not distinguishable from noise without the interval condition",
+   "not_the_promotion_caliber": "promotion separately requires min_improvement 0.0034 with the same interval and repeat conditions plus a three-seed aggregate; escalation to level 2 must never be reported as a promotion step",
+   "applies_to_comparison": {
+    "proposed": "C1_pure_data_effect (132d@1.32 versus 60d@1.32)",
+    "why": "C1 isolates the training-window size at the anchor budget, which is exactly the factor this probe changes; C2 would mix the window change with the budget sweep",
+    "status": "proposed_needs_pin_at_registration"
+   }
   },
   "budget_points": [
-   {"name": "data-1.32", "effective_epochs": 1.32, "role": "level 1 anchor",
-    "control": "60-day anchor-1.32 (existing replay)"},
-   {"name": "data-2.64", "effective_epochs": 2.64, "role": "level 1 second point",
-    "control": "60-day double-2.64 (existing replay)"}
+   {
+    "name": "data-1.32",
+    "effective_epochs": 1.32,
+    "role": "level 1 anchor",
+    "control": "60-day anchor-1.32 (existing replay, not re-run)"
+   },
+   {
+    "name": "data-2.64",
+    "effective_epochs": 2.64,
+    "role": "level 1 second point",
+    "control": "60-day double-2.64 (existing replay, not re-run)"
+   }
   ],
   "one_continuous_trajectory": true,
   "budget_only_overrides": {
    "model.max_steps": "cleared; the pre-registered trajectory steps govern the budget",
    "model.epochs": "kept as an upper bound above the last budget point",
-   "data.splits.train.start": "moved earlier by the declared window; this is the single changed factor",
+   "data.splits.train.start": "moved earlier to 2023-04-14; this is the single changed factor",
    "note": "any other deviation from configs/mlplob_v3_60d_csz_19800.json must fail the run guard"
   },
   "steps_and_cost": {
    "provisional": true,
+   "estimate_not_budget": true,
    "do_not_hardcode": "the step time and the window stay provisional until the t22 profiling conclusion lands; nothing here may be pasted into a registered document unchanged",
+   "deviation_tolerance": {
+    "relative": 0.05,
+    "applies_to": [
+     "usable_samples",
+     "steps at each budget point"
+    ],
+    "rule": "the registration must record this tolerance; a run whose realised usable samples or steps deviate beyond +/-5% from the estimate stops and reports, it does not continue silently"
+   },
    "usable_sample_estimate": {
     "method": "usable_samples scale with the number of trading days at a fixed 8 sample times and universe",
-    "validated_at_60_days": {"trading_days": 60, "usable_samples": 479432,
-                             "reproduces_measured_steps": {"1.32": 19777, "2.64": 39553},
-                             "note": "the scaling reproduces the measured 19,777 steps exactly, so it is a calibrated estimate and still only an estimate"},
-    "level_1_132d": {"usable_samples": 1054750, "steps": {"1.32": 43508, "2.64": 87017}},
-    "level_1_120d": {"usable_samples": 958864, "steps": {"1.32": 39553, "2.64": 79106}},
-    "level_2_240d": {"usable_samples": 1917728, "steps": {"1.32": 79106, "2.64": 158213}}
+    "validated_at_60_days": {
+     "trading_days": 60,
+     "usable_samples": 479432,
+     "reproduces_measured_steps": {
+      "1.32": 19777,
+      "2.64": 39553
+     },
+     "note": "the scaling reproduces the measured 19,777 steps exactly, so it is a calibrated estimate and still only an estimate"
+    },
+    "level_1_132d": {
+     "usable_samples": 1054750,
+     "steps": {
+      "1.32": 43508,
+      "2.64": 87017
+     }
+    },
+    "level_2_240d": {
+     "usable_samples": 1917728,
+     "steps": {
+      "1.32": 79106,
+      "2.64": 158213
+     }
+    }
    },
    "step_time": {
     "provisional_value_ms": 37.96,
-    "source": "t4 cloud run: 3002.56 s wall over 79,106 steps (runs/training-trajectory-20261027/20261027T124332.686678Z_d2da968fc909 manifest wall_seconds)",
+    "source": "t4 cloud run: 3002.56 s wall over 79,106 steps (runs/training-trajectory-20261027/20261027T124332.686678Z_d2da968fc909 manifest resources.wall_seconds)",
     "superseded_by": "t22 training-step profile (in progress); the registered cost estimate must be recomputed from t22",
     "estimate_minutes_level_1_132d": 55.1,
     "estimate_minutes_level_2_240d": 100.1,
-    "note": "these minute figures are the captain's ~55 min estimate reproduced; they are not a budget commitment"
+    "note": "reproduces the captain's ~55 min figure; it is not a budget commitment and no wall-clock promise may be registered before t22"
    }
+  },
+  "pre_flight_required": {
+   "id": "training_memory_probe",
+   "when": "before the formal trajectory, on the cloud host, with the same 132-day configuration",
+   "what": "run 200-500 optimizer steps, sample peak RSS at a fixed interval, persist the measurement with the run artifacts",
+   "gate": "if peak RSS approaches or exceeds the host capacity, abort and report; starting the formal run to see what happens is prohibited",
+   "existing_accounting": "the 60-day window tensors accounted for 2.95 GB of a 19,584 MB archived peak; the 132-day pool is about 2.2x, and the validation-phase tensorization dominated that peak rather than the training pool",
+   "caliber_note": "the 24 GiB pre-registered line constrains the inference/submission path only; this is a training-host capacity measurement and is reported, not gated by that line"
   }
  },
  "controls": {
   "rule": "the control for every level-1 arm is the 60-day arm at the same budget point, evaluated on the identical declared months with the identical estimator",
+  "re_run_control": false,
   "paths": {
    "60d_anchor_1.32": "runs/training-trajectory-replay-20261027/20261027T134230.458586Z_457f754f746d/windows/<month>/anchor-1.32",
    "60d_double_2.64": "runs/training-trajectory-replay-20261027/20261027T134230.458586Z_457f754f746d/windows/<month>/double-2.64"
@@ -103,33 +229,63 @@
   "already_evaluated": true
  },
  "comparisons": [
-  {"id": "C1_pure_data_effect", "left": "132d@1.32", "right": "60d@1.32",
+  {
+   "id": "C1_pure_data_effect",
+   "left": "132d@1.32",
+   "right": "60d@1.32",
    "question": "does a longer training window help at the same budget, with no extra training",
-   "isolates": "training-window size only"},
-  {"id": "C2_optimum_shift", "left": "132d@2.64", "right": "60d@2.64",
+   "isolates": "training-window size only"
+  },
+  {
+   "id": "C2_optimum_shift",
+   "left": "132d@2.64",
+   "right": "60d@2.64",
    "question": "does the point where extra training stops paying move right when the sample grows",
-   "isolates": "training-window size only, at the second budget point"},
-  {"id": "C3_training_under_more_data", "left": "132d@2.64", "right": "132d@1.32",
+   "isolates": "training-window size only, at the second budget point"
+  },
+  {
+   "id": "C3_training_under_more_data",
+   "left": "132d@2.64",
+   "right": "132d@1.32",
    "question": "with more independent information, does a further doubling still pay",
-   "isolates": "budget only, inside the enlarged window"}
+   "isolates": "budget only, inside the enlarged window"
+  }
  ],
  "decision": {
   "rule_document": "configs/b4_budget_decision_prereg_v2_20261027.json",
   "rule_registration": "configs/b4_budget_decision_prereg_v2_20261027.registration.json",
   "rule_sha256": "70adbc11d63f3cf4d01c0ebd44c23df0d950ad33c037921221e49071f92ab392",
   "rule_registered_at": "2026-10-27T14:08:42.513281+00:00",
-  "states": ["still_improving", "saturated", "significantly_degraded", "inconclusive"],
+  "states": [
+   "still_improving",
+   "saturated",
+   "significantly_degraded",
+   "inconclusive"
+  ],
   "primary_metric": "rank_ic_mean",
-  "interval": {"block_days": 5, "bootstrap_samples": 4000, "confidence": 0.95, "seed": 20261027,
-               "method": "consecutive trading-day blocks inside each declared period, never crossing a gap"},
-  "repeat": {"periods": 5, "required_positive": 4},
+  "interval": {
+   "block_days": 5,
+   "bootstrap_samples": 4000,
+   "confidence": 0.95,
+   "seed": 20261027,
+   "method": "consecutive trading-day blocks inside each declared period, never crossing a gap"
+  },
+  "repeat": {
+   "periods": 5,
+   "required_positive": 4
+  },
   "secondary_and_net5": "reported alongside and compared against the registered secondary lines and the net5 limit; 5bp stays a locked stress gate and is never a positive promotion condition",
   "promotion": "this probe screens; promotion still needs scripts/promotion_gate.py under min_improvement 0.0034 against the incumbent baseline, and a three-seed aggregate",
   "thresholds_may_not_be_changed": true
  },
  "evaluation": {
-  "windows": ["2023-11-01..2023-11-30", "2024-01-01..2024-01-31", "2024-03-01..2024-03-31",
-              "2024-04-01..2024-04-30", "2024-06-01..2024-06-30"],
+  "windows": [
+   "2023-11-01..2023-11-30",
+   "2024-01-01..2024-01-31",
+   "2024-03-01..2024-03-31",
+   "2024-04-01..2024-04-30",
+   "2024-06-01..2024-06-30"
+  ],
   "days": 104,
   "why_these": "the five declared research months of the registered b4 pre-registration; the enlarged training window ends 2023-10-31 so every evaluated day stays out of sample",
   "evaluation_version": "eval-v2",
@@ -137,26 +293,34 @@
  },
  "boundaries": {
   "train_window_upper_bound_exclusive": "2023-11-01",
-  "validation_split_unchanged": ["2023-11-01", "2023-11-15"],
-  "sealed_interval": ["2024-10-08", "2025-01-01"],
+  "validation_split_unchanged": [
+   "2023-11-01",
+   "2023-11-15"
+  ],
+  "sealed_interval": [
+   "2024-10-08",
+   "2025-01-01"
+  ],
   "sealed_read": false,
   "single_seed": "screening only; any candidate that must pass the gate has to be completed to the three seeds of the baseline family",
   "seed_count_for_gate": 3,
   "no_new_features_no_parameter_change": true,
-  "no_epoch_change_beyond_the_two_budget_points": true
+  "no_epoch_change_beyond_the_two_budget_points": true,
+  "level_2_needs_its_own_registration": true
  },
  "open_items_before_registration": [
-  "choose the window: 120 trading days (exactly the existing configs/model_v2_120d_csz.json window) or 132 trading days (2023-04-14..2023-10-31); the captain's draft says 132 and the cited reference window is 120",
+  "pin which comparison drives the escalation rule: C1 (pure data effect at the anchor budget) is proposed because it isolates the window change; C2 would mix the window with the budget sweep. The registered text must name one",
   "re-pin the step time from the t22 training-step profile and recompute the cost estimate; the 37.96 ms/step figure is the t4 observation, not a promise",
-  "ratify or replace the escalation rule (screening floor 0.0017 versus promotion floor 0.0034)",
-  "re-derive usable samples for the chosen window at run time; the driver already re-derives steps from the pool actually built, and the registered document must say that the estimate is not the budget",
-  "re-measure training memory for the enlarged pool on the cloud host: the 60-day window tensors were 2.95 GB of a 19,584 MB peak, and the enlarged pool is about 2.2x (132d) or 4x (240d); the 24 GiB line still applies only to the inference/submission path, so this is a capacity question for the training host and must be stated as such",
-  "decide whether level 2 needs its own escalation rule or simply repeats level 1's",
-  "confirm that the level-1 arms are compared against the existing 60-day replays rather than re-running the 60-day control"
+  "record the +/-5% usable-sample and step deviation tolerance in the registered document and wire the stop-and-report rule into the run pre-flight",
+  "attach the training-memory pre-flight measurement plan (200-500 steps, peak RSS, abort rule) as a required execution step of the registered document",
+  "the registration action itself: user approval plus machine confirmation, then the captain instructs the registration"
  ],
  "prohibitions": [
   "no registration, no training and no probe run from this draft",
   "no hardcoding of the step time, the wall-clock budget or the exact window before t22 and the captain's approval",
+  "no silent continuation when realised usable samples or steps deviate beyond the recorded tolerance",
+  "no run-it-and-see on the enlarged pool: the memory pre-flight runs first and can abort the plan",
+  "no starting level 2 under level 1's registration",
   "no change to any promotion threshold, secondary line, net5 limit, evidence rule or period declaration",
   "no reading of the sealed interval, at any level",
   "no claim that more training helps: the budget direction was refused in t5 and this probe tests data, not budget",
