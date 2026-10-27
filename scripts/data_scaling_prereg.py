@@ -66,13 +66,13 @@ COMPONENTS = [
         "train_window": ["2022-01-04", "2023-10-31"],
         "declared_trading_days": 441,
         "seeds": [11, 29, 47],
-        "points": ["1.32"],
+        "points": ["1.32", "2.64"],
         "role": ("the largest window this dataset supports: 2022-01-04 is the earliest trading day in the "
                  "archive, so 441 trading days ending 2023-10-31 is the hard ceiling for the materialised pool; "
-                 "the decisive rung for 'the model was always trained on too little data'. Only the 1.32 point "
-                 "is scored here: the measured pool peak is 24.9 GB at 132 days and scales with days, so a "
-                 "441-day pool allows one process at a time. The primary declared reading is the 1.32 "
-                 "comparison, so the 2.64 point is dropped before any 441-day value is read."),
+                 "the decisive rung for 'the model was always trained on too little data'. Two points are scored "
+                 "because the trajectory driver refuses a single-point plan and because every other rung is "
+                 "read at the same 1.32/2.64 pair, so the rung stays comparable; the pool peak at 441 days "
+                 "allows one process at a time, so the three seeds run in sequence."),
     },
     {
         "id": "F",
@@ -80,7 +80,7 @@ COMPONENTS = [
         "train_window": ["2020-01-02", "2023-10-31"],
         "declared_trading_days": 927,
         "seeds": [11, 29, 47],
-        "points": ["1.32"],
+        "points": ["1.32", "2.64"],
         "role": ("the full official-label history: 2020-01-02..2023-10-31 is 927 trading days, 7.0x the "
                  "132-day window. The official vwap archive covers all 60 months, so no label is derived here. "
                  "This rung needs the streaming pool (bitwise equal to the materialised pool, verified on "
