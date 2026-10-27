@@ -181,3 +181,80 @@ def test_streaming_pool_reports_a_bounded_footprint():
     pool_bytes = sum(pool.nbytes().values())
     assert pool_bytes < window_bytes / 10, (pool_bytes, window_bytes)
     assert "bars" in pool.nbytes() and "window_geometry" in pool.nbytes()
+
+
+def training_case(instruments: int = 6, days: int = 4, seed: int = 5):
+    """Bars over consecutive days plus 10:00 sample keys: the recipe's shape, 16-bar windows."""
+    rng = np.random.default_rng(seed)
+    frames, sample_keys = [], []
+    for day in range(days):
+        date = pd.Timestamp("2020-01-02") + pd.Timedelta(days=day)
+        stamps = pd.date_range(date + pd.Timedelta(hours=9, minutes=30), periods=60, freq="min")
+        for number in range(instruments):
+            values = rng.normal(size=(len(stamps), len(FEATURES))).cumsum(axis=0) + 1000.0
+            values[rng.random(values.shape) < .01] = np.nan
+            frames.append(pd.DataFrame({"date": stamps, "instrument": f"S{number:02d}",
+                                        **dict(zip(FEATURES, values.T))}))
+            sample_keys.append({"date": date + pd.Timedelta(hours=10), "instrument": f"S{number:02d}"})
+    return pd.concat(frames, ignore_index=True), pd.DataFrame(sample_keys)
+
+
+def test_streamed_training_reproduces_the_materialised_trajectory():
+    """``fit`` on a ``StreamingPool`` must reproduce the materialised run bit for bit.
+
+    The switch is the pool type: a materialised ``Batch`` indexes its prefetched window tensor,
+    a ``StreamingPool`` builds the windows of each sampler draw. Steps, loss trace, fitted
+    transforms and every parameter have to match, and shifting the pool's window geometry must
+    break that, or the comparison proves nothing.
+    """
+    torch = pytest.importorskip("torch")
+    from jinyiquant.config import DataConfig, ModelConfig
+    from modified_tlob.adapter import TLOBAdapter
+
+    settings = DataConfig(bars_path="unused", labels_path="unused", source="streaming-training-test",
+                          version="v1", feature_columns=lob_trade_columns(), lookback=16, min_history=1,
+                          history_days=1, sample_times=("10:00",))
+    bars, source = training_case()
+    materialised, pool = build_batch(bars, source, settings), StreamingPool.build(bars, source, settings)
+    assert pool.keys.equals(materialised.keys)
+    target = np.random.default_rng(7).normal(scale=.01, size=len(source)).astype(np.float32)
+    mask = np.zeros(len(source), dtype=bool)
+    mask[::3] = True            # a strict subset, so the sampler's masked space != the pool space
+    model_config = ModelConfig(kind="modified_tlob", hidden_dim=8, num_layers=2, batch_size=2,
+                               epochs=3, device="cpu", log_every_steps=1, target_scaling="train_std")
+
+    def run(batch):
+        model = TLOBAdapter(model_config, settings, seed=42)
+        events = []
+        model.recorder = SimpleNamespace(event=lambda stage, event, **values: events.append((event, values)))
+        progress = model.fit(batch, target, sample_mask=mask, step_budget=10)
+        state = {name: value.detach().cpu().contiguous().numpy().tobytes()
+                 for name, value in model.network.state_dict().items()}
+        return model, progress, [values["loss"] for event, values in events if event == "progress"], state
+
+    left, left_progress, left_losses, left_state = run(materialised)
+    draws, draw_window = [], pool.batch
+
+    def counting(indices):
+        draws.append(np.asarray(indices).copy())
+        return draw_window(indices)
+
+    pool.batch = counting
+    right, right_progress, right_losses, right_state = run(pool)
+    assert left_progress == right_progress and left_progress["steps"] == 10
+    assert len(right_losses) == 10 and left_losses == right_losses
+    assert left_state.keys() == right_state.keys()
+    differing = [name for name in left_state if left_state[name] != right_state[name]]
+    assert not differing, differing
+    np.testing.assert_array_equal(left.predict(materialised), right.predict(materialised))
+    # One draw for the compile probe plus one per step, each mapped through the sample mask.
+    selected = np.flatnonzero(mask)
+    assert len(draws) == 11 and np.array_equal(draws[0], selected[:2])
+    assert all(set(draw) <= set(selected) and len(draw) <= 2 for draw in draws)
+
+    # The same code on a pool whose windows are one bar later must train a different model.
+    pool.begin = pool.begin + 1
+    _, shifted_progress, shifted_losses, shifted_state = run(pool)
+    assert shifted_losses != left_losses and shifted_progress["steps"] == 10
+    assert [name for name in left_state if left_state[name] != shifted_state[name]]
+

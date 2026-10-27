@@ -21,6 +21,7 @@ from .schema import validate_input_schema
 
 BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB, "dual_patch": DualPatchTLOB}
 TRAINING_ONLY_MODULE = "jinyiquant.trajectory"
+STREAMING_POOL_MODULE = "jinyiquant.pool"
 # Requested compile mode -> torch.compile keyword arguments; {} keeps the eager path.
 # "aot-eager" is the only backend that runs without Triton, so it is the diagnostic
 # option on platforms where inductor is unavailable (Windows).
@@ -39,6 +40,17 @@ def _trajectory_helpers():
     the package unbuildable. Training paths (fit/save/resume/exposure) still resolve it.
     """
     return importlib.import_module(TRAINING_ONLY_MODULE)
+
+
+def _streaming_pool(batch):
+    """``batch`` itself when it is a streaming pool, else ``None`` for a materialised batch.
+
+    Only ``jinyiquant.pool.StreamingPool`` takes the streamed-window path; the type is resolved
+    lazily for the same reason as the trajectory helpers (the flat inference package carries
+    neither module), so a materialised ``Batch`` keeps its exact training path.
+    """
+    pool_type = importlib.import_module(STREAMING_POOL_MODULE).StreamingPool
+    return batch if isinstance(batch, pool_type) else None
 
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
@@ -694,6 +706,12 @@ class TLOBAdapter:
         ``step_budget`` stops at an absolute step count, ``checkpoint_at_steps`` writes a
         resumable state at those absolute steps, and ``track_exposure`` accumulates per-row
         sample exposure for the budget accounting.
+
+        ``batch`` is either a materialised :class:`jinyiquant.data.Batch`, whose window tensor
+        is prefetched once and indexed per step, or a :class:`jinyiquant.pool.StreamingPool`,
+        whose windows are built per draw (``pool.batch``) and never materialised. The switch is
+        the pool type alone, so the default path is unchanged; the sampler draws in masked
+        space and the pool positions of a draw are ``np.flatnonzero(sample_mask)[indices]``.
         """
         if observer_every_steps is not None and (type(observer_every_steps) is not int
                                                  or observer_every_steps < 1):
@@ -714,7 +732,23 @@ class TLOBAdapter:
         mask = np.ones(len(y), dtype=bool) if sample_mask is None else np.asarray(sample_mask)
         if mask.dtype != bool or mask.shape != y.shape or not mask.any():
             raise ValueError("Training sample mask must select aligned samples")
-        x = self._input(batch, sample_mask=mask)
+        # The sampler draws in masked space; a streaming pool needs the pool position of every
+        # selected row, and builds only the windows of the draw instead of the whole pool.
+        pool = _streaming_pool(batch)
+        selected = None if pool is None else np.flatnonzero(mask)
+        x = None if pool is not None else self._input(batch, sample_mask=mask)
+
+        def training_input(rows):
+            """Preprocessed windows of the masked rows ``rows``, in sampler coordinates.
+
+            The materialised path indexes the prefetched window tensor. The streaming path
+            rebuilds exactly those windows from the pool's bars, so the optimizer sees the
+            same bytes either way; nothing else in this loop depends on which one ran.
+            """
+            if pool is None:
+                return x[rows]
+            return self._input(pool.batch(selected[rows]))
+
         y, centering_stats = self._training_targets(batch.keys, y, mask)
         time_weights = self._fit_time_loss_weights(batch.keys.loc[mask], y)
         if validation is not None and self.config["target_centering"] != "none":
@@ -768,7 +802,8 @@ class TLOBAdapter:
         fingerprint = self._training_fingerprint(self.training_keys, optimization_targets, used_positions)
         # Compile after the pool is fixed so the probe batch has the real training shape.
         self.network.train()
-        probe = torch.from_numpy(x[:min(batch_size, len(x))]).to(self.device)
+        probe_rows = slice(0, min(batch_size, len(y)))
+        probe = torch.from_numpy(training_input(probe_rows)).to(self.device)
         predict_forward, compile_report = self._training_forward(probe)
         terms_dim = 4 if self.ranking_loss_weight else 3
         exposure_counts = np.zeros(len(y), dtype=np.int64) if track_exposure else None
@@ -838,7 +873,7 @@ class TLOBAdapter:
             epoch_totals = torch.zeros(terms_dim, dtype=torch.float64, device=self.device)
             for position in range(offset, len(epoch_batches)):
                 indices = epoch_batches[position]
-                xb = torch.from_numpy(x[indices]).to(self.device)
+                xb = torch.from_numpy(training_input(indices)).to(self.device)
                 yb = torch.from_numpy(optimization_targets[indices]).to(self.device)
                 optimizer.zero_grad(set_to_none=True)
                 predictions = predict_forward(xb)
