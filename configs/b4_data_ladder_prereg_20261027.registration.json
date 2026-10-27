@@ -1,0 +1,33 @@
+{
+ "schema_version": 1,
+ "prereg_path": "configs/b4_data_ladder_prereg_20261027.json",
+ "prereg_sha256": "dd5b139746a8dc7a5ee333ccfe56686fefd52c67e86a369f7ef67470cd20431f",
+ "registered_at": "2026-10-27T16:00:44.927599+00:00",
+ "git_head": "30947af7b7b52731cee52e2ba03fb5b217a92c4b",
+ "plan_sha256": {
+  "configs/ladder_132d_seed53_5point_plan.json": "28ed59c344bd4dac3b25fbb3325ef4025aae8931a464bdda51c7aeaa0d1f634a",
+  "configs/ladder_132d_seed59_5point_plan.json": "204a13752240bb0d8a1587c03a043a1bc1332ca51709d9989b8d8b88b2c75766",
+  "configs/ladder_132d_seed61_5point_plan.json": "b0dda73ae7fbdd956bb092f451149d989f8f4b624214cc1fa427e469804b83e8",
+  "configs/ladder_60d_seed11_3point_plan.json": "75da1a219d15c5dc89817985e81d9f8b12c643d61bcc6861e415c46eec31adf6",
+  "configs/ladder_60d_seed29_3point_plan.json": "a87cb9c6a3a3c039f45692e27db12f1014ee8a4efd88e60b383fa02eabaf0600",
+  "configs/ladder_60d_seed47_3point_plan.json": "3396474d34f197d3bfe404f2d0027c0d4e9021cc063e420f6445a7b3d9dc41b8",
+  "configs/ladder_132d_seed67_2point_plan.json": "26cfbfba0a65adcd0e76b897988b10ae59fa3e9bd8f5ea66592b4c8f2b94bba2",
+  "configs/ladder_132d_seed71_2point_plan.json": "9e6d56ce5c15ffbd3d53d44fce4a09ef7751f216b3864ddde5d3ae84ad5eaca9",
+  "configs/ladder_132d_seed73_2point_plan.json": "e3bb9f588a70038e390930a7c889be065cdf7a6cf9873ab9e643682de602cc50"
+ },
+ "recipe_sha256": {
+  "configs/ladder_132d_seed53_5point_plan.json": "3804fb01ee02b9560858b818412ad949ea814397a798b4f0ce91b1c8500cae16",
+  "configs/ladder_132d_seed59_5point_plan.json": "23d4367ab4f7f9b5dcf7f0356b3776ee637588cf78e28e1fda3fe4140930a75a",
+  "configs/ladder_132d_seed61_5point_plan.json": "d2e9df97718677736cafc2bd467cb3cb6c4f52fe75a2bd303c214b094f06d8d7",
+  "configs/ladder_60d_seed11_3point_plan.json": "58ac83ef882313f35f8083b6eaa8df281ac66d760ca6427861e6d1dc12281a1a",
+  "configs/ladder_60d_seed29_3point_plan.json": "235163d96c5e3ee4d9013ccb05d4059a12ddb775eb1de8a48bde5cc3a637cf61",
+  "configs/ladder_60d_seed47_3point_plan.json": "928b1c41256681e006d672b74b7e86ad58903c3c971448550e6d03eabbaf23a4",
+  "configs/ladder_132d_seed67_2point_plan.json": "58e8c2c11d7beff95e54442cd998dba0869643c0a9c1c160059b8a26467c5913",
+  "configs/ladder_132d_seed71_2point_plan.json": "008ae233ae45507b68279f7a5679e6d106df4bfad9de47e97fe1d7e419b14113",
+  "configs/ladder_132d_seed73_2point_plan.json": "ce8a16364a7a7d82482090fc9e2be4647e47bdc6bc074d77167b382164354cdd"
+ },
+ "ordering": {
+  "prereg_written_before_any_ladder_process": true,
+  "registered_against": "no ladder run had started at registration time"
+ }
+}

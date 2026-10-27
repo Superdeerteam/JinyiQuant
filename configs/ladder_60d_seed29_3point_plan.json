@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "experiment_id": "ladder-60d-seed29",
- "created_at_utc": "2026-10-27T16:00:10.634261+00:00",
+ "created_at_utc": "2026-10-27T16:00:44.711545+00:00",
  "status": "execution_plan_of_registered_ladder",
  "registration": {
   "path": "configs/b4_data_ladder_prereg_20261027.json",
@@ -28,7 +28,7 @@
   "output_root": "host run root"
  },
  "recipe_config": "configs/ladder_60d_csz_seed29.json",
- "recipe_sha256": "4a08e8662d5c8f32574ad339724a2b3bfea3edced047d531f48e840426f7f479",
+ "recipe_sha256": "235163d96c5e3ee4d9013ccb05d4059a12ddb775eb1de8a48bde5cc3a637cf61",
  "recipe_frozen_baseline": {
   "path": "configs/mlplob_v3_60d_csz_19800.json",
   "sha256": "7524a3444247bb500889e55c81f44ee83235dc5bf25cd36cdffe23a4f9af2383"

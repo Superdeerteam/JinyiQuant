@@ -96,7 +96,10 @@ def _read(name: str) -> dict:
 
 def _write(name: str, payload: dict) -> Path:
     path = CONFIGS / name
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # LF on purpose: git normalises on add, so a byte-exact copy and a `git archive`
+    # checkout must hash identically or the driver refuses the pinned recipe sha256.
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n",
+                    encoding="utf-8", newline="\n")
     return path
 
 
