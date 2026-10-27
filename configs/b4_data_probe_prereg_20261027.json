@@ -1,0 +1,436 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-data-probe-132d-20261027",
+ "owner_role": "research-analyst",
+ "phase": "B4",
+ "status": "REGISTERED",
+ "one_shot": true,
+ "registration_record": "configs/b4_data_probe_prereg_20261027.registration.json",
+ "registered_at_source": "configs/b4_data_probe_prereg_20261027.registration.json",
+ "purpose": "Pre-register the independent-information (training-window) probe before any 132-day training or evaluation result exists, so that 'the data window is the binding constraint', 'more training within the larger window still pays' and 'the window does not help' cannot be chosen after seeing the numbers. The probe changes exactly one factor: how many trading days of history feed the frozen recipe.",
+ "question": "Does a 132-trading-day training window move the in-sample/out-of-sample gap at the same optimizer budget, and is the move large enough and stable enough to license a 240-day level 2?",
+ "derived_from": {
+  "draft_path": "configs/b4_data_probe_prereg_DRAFT_20261027.json",
+  "draft_revision": 3,
+  "draft_commit": "a3df84f",
+  "draft_sha256": "390c3b9ba1a056cd0c4bbf68ac3fca3afe75758cd545848224acc6b1dac11ef9",
+  "unchanged_from_draft": [
+   "the pinned 132-trading-day window 2023-04-14..2023-10-31 and the recorded 120-day alternative",
+   "C1 (132d@1.32 versus 60d@1.32) as the sole escalation criterion, C2/C3 side-by-side only",
+   "the screening caliber: point estimate >= 0.0017, 5-day block interval lower bound > 0, at least 4 of 5 declared periods positive",
+   "the +/-5% usable-sample and step tolerance with its stop-and-report rule",
+   "the training-memory pre-flight (200-500 steps, peak RSS, abort rule)",
+   "level 2 needing its own pre-registration, never authorized by level 1",
+   "every prohibition of the draft"
+  ],
+  "registration_time_changes": [
+   "three seeds run in parallel (11 primary, 29 and 47 support) with one process per GPU; seed 11 alone drives C1",
+   "a primary-seed failure voids the round; a support-seed failure only records the gap",
+   "parallelism is declared wall-clock-only and may not lower any evidence requirement",
+   "the execution steps are enumerated as mandatory steps instead of prose (memory pre-flight, seed and arm guard, sample and step guard, config deviation guard, primary-seed readout, evaluation caliber)",
+   "the draft's wall-clock minute estimates are dropped instead of registered: the step time stays superseded_by t22 and no wall-clock figure is registered"
+  ]
+ },
+ "registration_prerequisites": {
+  "user_approved_data_probe": true,
+  "machine_confirmation": {
+   "relayed_by": "captain, t2 assignment (2026-10-27)",
+   "cpu_cores": 36,
+   "memory_gb": 192,
+   "training_pool_gb_estimate": 39,
+   "sufficient": true,
+   "note": "this is the training-host capacity question; the 24 GiB line of the submission path is a different question and is not used here"
+  },
+  "t22_step_time_open": true,
+  "open_items_resolved_at_registration": [
+   "the +/-5% tolerance is recorded and wired into a mandatory stop-and-report step",
+   "the training-memory pre-flight is a mandatory execution step with an abort rule",
+   "the registration action itself: user approval plus machine confirmation received"
+  ]
+ },
+ "state_at_registration": {
+  "trained": false,
+  "probe_results_read": false,
+  "c1_reading_exists": false,
+  "t22_conclusion_pending": true,
+  "what_was_read": "the registered b4 basis, the registered v1/v2 decision documents and their records, the ratified draft, the 60-day measured artifacts already archived, and the historical trading-day count of the pinned window from the bar archive; no arm of this probe has been trained and no C1 reading exists. An older archived monthly-sampling 132-day model run (runs/monthly-132d-csz-19800) exists but is not an arm of this probe - it samples six days per month - and its metrics were not read for this registration"
+ },
+ "inherits": {
+  "threshold_basis": {
+   "path": "configs/b4_promotion_prereg_20261027.json",
+   "sha256": "04ac4b10a063bdb844e39a8687ed47074005d8a7593d5ae0c0cb17d3fdd1a18c",
+   "registration_path": "configs/b4_promotion_prereg_20261027.registration.json",
+   "registration_sha256": "0e3a065c94e0dd2813ce05fa2c4a0788056c167c3f93c0a5abfbf84e715502c1"
+  },
+  "decision_rule": {
+   "path": "configs/b4_budget_decision_prereg_v2_20261027.json",
+   "sha256": "70adbc11d63f3cf4d01c0ebd44c23df0d950ad33c037921221e49071f92ab392",
+   "registration_path": "configs/b4_budget_decision_prereg_v2_20261027.registration.json",
+   "registration_sha256": "fe1e988cb13e84c1e5ed78353e914dd78f5cf70a8c16042c6802608b0c90c556",
+   "registered_at": "2026-10-27T14:08:42.513281+00:00",
+   "note": "the still_improving state of this rule is the escalation caliber; this probe does not restate it, it applies it"
+  },
+  "frozen_recipe": {
+   "path": "configs/mlplob_v3_60d_csz_19800.json",
+   "sha256": "7524a3444247bb500889e55c81f44ee83235dc5bf25cd36cdffe23a4f9af2383",
+   "seed": 11,
+   "note": "the frozen 60-day recipe the 132-day arms re-use; the primary seed is the recipe's own seed"
+  }
+ },
+ "relation_to_registered_gate": {
+  "promotion_threshold_unchanged": true,
+  "thresholds_modified": false,
+  "reads_or_changes_the_v1_v2_bytes": false,
+  "why": "this document references the registered v1 and v2 decision bytes by hash and applies them; it does not edit, re-register or reinterpret them, and no promotion threshold, secondary line, net5 limit or period declaration moves",
+  "a_candidate_that_clears_this_rule_still_needs": "scripts/promotion_gate.py under min_improvement 0.0034, a three-seed aggregate and its own pre-registration; clearing the screening floor is not a promotion"
+ },
+ "motivation": {
+  "source": "t21 upper-bound probe (runs/training-in-sample-probe-20261027/, plan sha d03e00f8...) relayed by the captain",
+  "measured": {
+   "anchor-1.32": {"in_sample_rank_ic": 0.088726, "oos_rank_ic": 0.064425, "ratio": 1.377,
+                   "t21_verdict": "inconclusive (intermediate regime)"},
+   "double-2.64": {"in_sample_rank_ic": 0.108065, "oos_rank_ic": 0.062338, "ratio": 1.734,
+                   "t21_verdict": "inconclusive (intermediate, near the overfit line)"},
+   "double-5.28": {"in_sample_rank_ic": 0.1719, "oos_rank_ic": 0.036561, "ratio": 4.702,
+                   "gap": 0.1353, "intervals_overlap": false, "t21_verdict": "overfit determined"}
+  },
+  "reading": "in-sample RankIC rises monotonically with the budget and the in-sample budget-point differences exclude zero (5.28-2.64 +0.06384 [0.04622, 0.08543]), so the recipe can fit the training window; out-of-sample falls monotonically, so the binding constraint is independent information rather than capacity or optimization",
+  "honest_bound": "only the 5.28 point is a determined overfit; 1.32 and 2.64 are intermediate/inconclusive. This probe runs where the regime is intermediate and tests whether the whole in-sample/out-of-sample gap curve shifts, not whether one determined-overfit point can be rescued",
+  "why_a_data_window_and_not_more_training": "t5 measured all three budget points on the 60-day window: every additional doubling lowered the out-of-sample primary metric with an interval entirely below zero, and decision rule v2 refuses further training amount"
+ },
+ "single_factor": "the size of the training window only (how many trading days of history feed the same recipe); trunk, features, labels, loss, sampling, learning-rate rule, budget points and evaluation window stay frozen",
+ "design": {
+  "window": {
+   "train_trading_days": 132,
+   "train_window": ["2023-04-14", "2023-10-31"],
+   "window_rule": "132 trading days ending 2023-10-31 inclusive; the training window never reaches the validation split or any evaluated month",
+   "trading_days_verified": {
+    "count": 132,
+    "extension_over_120d": 12,
+    "basis": "unique trading dates in the bar archive 数据/cpt_jyc_2026_e2e_bar1m (monthly feathers 202304..202310) between 2023-04-14 and 2023-10-31; the 12 extension days are 2023-04-14..2023-04-28 and 2023-05-04",
+    "checked_at_registration": true
+   },
+   "alternatives_measured": {
+    "132_trading_days": ["2023-04-14", "2023-10-31"],
+    "120_trading_days": ["2023-05-05", "2023-10-31"],
+    "120_trading_days_count": 120,
+    "note": "the 120-day window is recorded as the alternative the ratification rejected; it is not run and it is not a control"
+   },
+   "no_overlap_with_evaluation": true
+  },
+  "ladder": [
+   {
+    "level": 1,
+    "train_trading_days": 132,
+    "train_window": ["2023-04-14", "2023-10-31"],
+    "role": "the registered probe: two budget points on one continuous trajectory, three seeds in parallel",
+    "needs_own_registration": true,
+    "registered_here": true
+   },
+   {
+    "level": 2,
+    "train_trading_days": 240,
+    "train_window_provisional": ["2022-11-04", "2023-10-31"],
+    "role": "a separate probe that may only be considered after level 1 reaches the escalation state",
+    "needs_own_registration": true,
+    "registered_here": false,
+    "authorized_by_level_1": false,
+    "trigger": "level 1 reaches the registered escalation state; that is a trigger to write a document, not an authorization to run"
+   }
+  ],
+  "seeds": {
+   "primary": 11,
+   "primary_is_the_only_escalation_seed": true,
+   "support": [29, 47],
+   "support_role": "descriptive stability reference only: three seeds show whether the C1 effect is seed-sensitive; the support seeds may not escalate, may not replace the primary seed after a failure and may not be reported as a candidate",
+   "support_may_not_escalate": true,
+   "no_post_hoc_seed_selection": true,
+   "between_seed_reporting": "per-seed paired C1 effects are reported descriptively side by side; no interval-based inference is drawn across seeds, no cross-seed selection of the better arm is allowed, and a seed that happens to look better is not promoted",
+   "support_control_availability": "a support seed's C1 difference is reported only where a matching 60-day control seed exists; where it does not, the support seed contributes level-only evidence and the gap is recorded. The control is never re-run to fill the gap and no substitute control is improvised",
+   "three_seed_aggregate": {
+    "requires_own_preregistration": true,
+    "never_from_this_registration": true,
+    "what_it_would_need": "min_improvement 0.0034, the same 5-day block interval, 4 of 5 declared periods positive, and its own registered_at before any reading"
+   }
+  },
+  "parallel_execution": {
+   "processes": 3,
+   "one_process_per_gpu": true,
+   "trajectory_per_process": "one continuous trajectory per seed, cut at the two budget points (1.32 then 2.64)",
+   "why_wall_clock_only": "the three seeds run at the same time instead of one after another; that is the only reason for the parallelism",
+   "changes_the_caliber": false,
+   "may_not": "parallelism may not lower any evidence requirement: the same window, estimator, thresholds, seeds, pre-flight and stop rules apply, and a parallel run is read exactly as a serial run would be",
+   "no_wall_clock_commitment": true
+  },
+  "budget_points": [
+   {"name": "data-1.32", "effective_epochs": 1.32, "role": "level-1 anchor and the C1 left side",
+    "control": "60-day anchor-1.32 replay, not re-run"},
+   {"name": "data-2.64", "effective_epochs": 2.64, "role": "level-1 second point, C2 left side and C3 right side",
+    "control": "60-day double-2.64 replay, not re-run"}
+  ],
+  "one_continuous_trajectory": true,
+  "arm_labels": {
+   "132d@1.32": "132-day window, 1.32 effective epochs, one arm per seed (primary 11, support 29/47)",
+   "132d@2.64": "132-day window, 2.64 effective epochs, one arm per seed",
+   "60d@1.32": "60-day window, 1.32 effective epochs, existing seed-11 replay control, never re-run",
+   "60d@2.64": "60-day window, 2.64 effective epochs, existing seed-11 replay control, never re-run"
+  },
+  "budget_only_overrides": {
+   "data.splits.train.start": "moved earlier to 2023-04-14; this is the single changed factor",
+   "data.splits.train.end": "2023-11-01T00:00:00 exclusive, unchanged",
+   "model.max_steps": "cleared; the registered trajectory steps govern the budget",
+   "model.epochs": "kept as an upper bound above the last budget point",
+   "seed": "11 for the primary arm; 29 and 47 are the recorded seed-only variants of the same recipe",
+   "note": "any other deviation from configs/mlplob_v3_60d_csz_19800.json must fail the run guard"
+  },
+  "escalation_rule": {
+   "status": "registered",
+   "is": "the registered v2 still_improving state applied to C1 on the primary seed",
+   "rule_document": "configs/b4_budget_decision_prereg_v2_20261027.json",
+   "rule_sha256": "70adbc11d63f3cf4d01c0ebd44c23df0d950ad33c037921221e49071f92ab392",
+   "rule_registration": "configs/b4_budget_decision_prereg_v2_20261027.registration.json",
+   "rule_registered_at": "2026-10-27T14:08:42.513281+00:00",
+   "escalation_state_name": "still_improving",
+   "threshold_derivation": {
+    "threshold_basis": "configs/b4_promotion_prereg_20261027.json",
+    "threshold_basis_sha256": "04ac4b10a063bdb844e39a8687ed47074005d8a7593d5ae0c0cb17d3fdd1a18c",
+    "min_improvement": 0.0034,
+    "grid": 0.0001,
+    "rule": "round_up(min_improvement / 2) on the primary grid",
+    "value": 0.0017,
+    "is_not_a_promotion_threshold": true,
+    "why_the_interval_is_load_bearing": "0.0017 alone sits below the measured noise: the registered placebo scale is 0.003305 and the measured seed-dispersion medians are 0.00241-0.00312, so a point estimate at the floor is not distinguishable from noise without the interval condition"
+   },
+   "conditions": {
+    "point_estimate_at_least": 0.0017,
+    "interval_lower_bound_strictly_greater_than_zero": true,
+    "declared_periods": 5,
+    "required_positive_periods": 4
+   },
+   "interval": {
+    "method": "moving consecutive trading-day blocks inside each declared period; blocks never cross a period gap",
+    "block_days": 5,
+    "bootstrap_samples": 4000,
+    "confidence": 0.95,
+    "seed": 20261027
+   },
+   "applies_to_comparison": {
+    "id": "C1_pure_data_effect",
+    "left": "132d@1.32",
+    "right": "60d@1.32",
+    "seed": 11,
+    "sole_criterion": true,
+    "why_c1": "C1 isolates the training-window size at the anchor budget, which is exactly the factor this probe changes; C2 would mix the window change with the budget sweep",
+    "binding_declarations": [
+     "C1 is the ONLY escalation criterion and it is read on the primary seed 11 only. C2 (132d@2.64 versus 60d@2.64) and C3 (132d@2.64 versus 132d@1.32) are reported side by side and never take part in the escalation decision.",
+     "If C2 shows that the optimum shifts right (2.64 better than 1.32 on the 132-day window), that is a finding, not an escalation reason: escalation is read from C1 alone.",
+     "If C1 fails while C2 is clearly better, that is a new joint hypothesis (data and budget acting together) and needs its own pre-registration; the escalation comparison may not be switched to C2 in place.",
+     "If the primary seed fails, nothing may be escalated and the support seeds may not be promoted into its place."
+    ]
+   },
+   "no_post_hoc_switch": true,
+   "not_the_promotion_caliber": {
+    "promotion_min_improvement": 0.0034,
+    "promotion_needs": "the same interval and repeat conditions plus a three-seed aggregate under its own pre-registration",
+    "why": "escalation to level 2 is a screening decision; it must never be reported as a promotion step"
+   }
+  },
+  "comparisons": [
+   {"id": "C1_pure_data_effect", "left": "132d@1.32", "right": "60d@1.32", "seed": 11,
+    "role": "escalation", "in_escalation_decision": true,
+    "question": "does a longer training window help at the same budget, with no extra training",
+    "isolates": "training-window size only"},
+   {"id": "C2_optimum_shift", "left": "132d@2.64", "right": "60d@2.64", "seed": 11,
+    "role": "side_by_side_only", "in_escalation_decision": false,
+    "question": "does the point where extra training stops paying move right when the sample grows",
+    "isolates": "training-window size only, at the second budget point"},
+   {"id": "C3_training_under_more_data", "left": "132d@2.64", "right": "132d@1.32", "seed": 11,
+    "role": "side_by_side_only", "in_escalation_decision": false,
+    "question": "with more independent information, does a further doubling still pay",
+    "isolates": "budget only, inside the enlarged window"}
+  ],
+  "controls": {
+   "rule": "the control for every level-1 arm is the 60-day arm at the same budget point, evaluated on the identical declared months with the identical estimator",
+   "re_run_control": false,
+   "paths": {
+    "60d_anchor_1.32": "runs/training-trajectory-replay-20261027/20261027T134230.458586Z_457f754f746d/windows/<month>/anchor-1.32",
+    "60d_double_2.64": "runs/training-trajectory-replay-20261027/20261027T134230.458586Z_457f754f746d/windows/<month>/double-2.64"
+   },
+   "already_evaluated": true,
+   "seed_note": "the replay controls are the seed-11 family, which is the primary decision seed; support seeds never spread onto re-run controls"
+  },
+  "evaluation": {
+   "windows": [
+    ["2023-11-01", "2023-11-30"],
+    ["2024-01-01", "2024-01-31"],
+    ["2024-03-01", "2024-03-31"],
+    ["2024-04-01", "2024-04-30"],
+    ["2024-06-01", "2024-06-30"]
+   ],
+   "names": ["nov2023", "jan2024", "mar2024", "apr2024", "jun2024"],
+   "days": 104,
+   "evaluation_version": "eval-v2",
+   "primary_metric": "rank_ic_mean",
+   "paired_by_trading_day": true,
+   "why_these": "the five declared research months of the registered b4 pre-registration; the enlarged training window ends 2023-10-31 so every evaluated day stays out of sample",
+   "no_overlap_with_train_window": true
+  },
+  "boundaries": {
+   "allowed_start": "2020-01-01",
+   "allowed_end": "2025-01-01",
+   "train_window_upper_bound_exclusive": "2023-11-01",
+   "validation_split": ["2023-11-01", "2023-11-15"],
+   "sealed_interval": ["2024-10-08", "2025-01-01"],
+   "sealed_read": false,
+   "no_new_features_no_parameter_change": true,
+   "no_epoch_change_beyond_the_two_budget_points": true
+  },
+  "steps_and_cost": {
+   "estimate_not_budget": true,
+   "do_not_hardcode": "the window, the usable samples and the steps are re-derived at run time by the driver; the numbers below are a calibrated estimate recorded so a deviation can be detected, not a budget and not a promise",
+   "validated_at_60_days": {
+    "trading_days": 60,
+    "usable_samples": 479432,
+    "steps": {"1.32": 19777, "2.64": 39553},
+    "note": "the 60-day measurement the scaling is calibrated against; it reproduces the measured 19,777 steps"
+   },
+   "level_1_132d": {
+    "trading_days": 132,
+    "usable_samples": 1054750,
+    "steps": {"1.32": 43508, "2.64": 87017},
+    "estimate_not_budget": true
+   },
+   "level_2_240d": {
+    "trading_days": 240,
+    "usable_samples": 1917728,
+    "steps": {"1.32": 79106, "2.64": 158213},
+    "estimate_not_budget": true,
+    "provisional": true,
+    "not_authorized_here": true
+   },
+   "deviation_tolerance": {
+    "relative": 0.05,
+    "applies_to": ["usable_samples", "steps"],
+    "rule": "a run whose realised usable samples or steps deviate beyond +/-5% from the estimate stops and reports; it does not continue silently and the estimate is not edited afterwards"
+   },
+   "step_time": {
+    "provisional_value_ms": 37.96,
+    "source": "t4 cloud run: 3002.56 s wall over 79,106 steps",
+    "superseded_by": "t22",
+    "not_a_commitment": true,
+    "note": "kept only as the superseded observation; no cost may be registered from it"
+   },
+   "wall_clock": {
+    "registered": null,
+    "why": "no wall-clock figure is registered: the step time is superseded_by t22 and the three-seed parallel speed-up is unmeasured"
+   }
+  },
+  "required_execution_steps": [
+   {
+    "id": "training_memory_preflight",
+    "mandatory": true,
+    "when": "on the training host, before any formal trajectory of this probe",
+    "steps_range": [200, 500],
+    "concurrent_processes": 3,
+    "what": "run 200-500 optimizer steps of the registered 132-day configuration, sample peak RSS at a fixed interval, persist the measurement with the run artifacts, then compare 3 x the measured per-process peak (three parallel processes) against the host capacity with margin",
+    "gate": "starting the formal run to see what happens is prohibited; the pre-flight either clears the host or aborts the round",
+    "aborts_the_round": true,
+    "on_fail": "abort the round and report the measured peak and the headroom; do not shrink, split or silently re-plan the probe"
+   },
+   {
+    "id": "seed_and_arm_guard",
+    "mandatory": true,
+    "when": "before the three trajectories start",
+    "what": "assert the three processes are exactly seeds 11, 29 and 47 of the frozen recipe, one process per GPU, one continuous 1.32 -> 2.64 trajectory each, and that seed 11 is the declared primary",
+    "gate": "an unregistered seed, a fourth arm, a changed recipe or a swapped primary seed fails the launch",
+    "on_fail": "refuse to launch and report which declaration did not match"
+   },
+   {
+    "id": "sample_and_step_guard",
+    "mandatory": true,
+    "when": "at run start and again at each budget point",
+    "tolerance": 0.05,
+    "what": "re-derive usable samples and steps from the loaded pool and compare them with the recorded level-1 estimate; the tolerance is +/-5% on both",
+    "gate": "a deviation beyond the tolerance stops the run before the budget point is trained",
+    "stops_the_run": true,
+    "on_fail": "stop and report the realised and estimated values; do not continue, do not rescale, do not edit the registered estimate"
+   },
+   {
+    "id": "config_deviation_guard",
+    "mandatory": true,
+    "when": "before training",
+    "what": "diff the run configuration against configs/mlplob_v3_60d_csz_19800.json (sha256 pinned in inherits.frozen_recipe) and allow only the recorded budget-only overrides",
+    "gate": "any other difference, including features, labels, loss, sampling, learning rate or evaluation windows, fails the run",
+    "on_fail": "refuse to run and report the offending keys"
+   },
+   {
+    "id": "primary_seed_readout",
+    "mandatory": true,
+    "when": "after evaluation, before any decision is written",
+    "what": "read C1 from seed 11 only and apply the registered v2 still_improving state; report C2/C3 and the support seeds descriptively beside it",
+    "gate": "no escalation, no retraction and no re-reading may come from a support seed or from C2/C3",
+    "on_fail": "if the primary arm is missing the round is void; report and stop"
+   },
+   {
+    "id": "evaluation_caliber",
+    "mandatory": true,
+    "when": "at evaluation",
+    "what": "evaluate on the five declared months with eval-v2, 5-day blocks, 4000 bootstrap draws, paired by trading day, identical for the 132-day arms and their 60-day controls",
+    "gate": "a different estimator, a different period set or a sealed-interval read invalidates the reading",
+    "on_fail": "discard the reading and report the deviation"
+   }
+  ],
+  "failure_handling": {
+   "primary_seed_failure": {
+    "seed": 11,
+    "voids_the_round": true,
+    "consequence": "no C1 reading, no escalation and no promotion: the round is void and the failure is reported with its cause",
+    "may_reselect": false,
+    "may_promote_a_support_seed": false
+   },
+   "support_seed_failure": {
+    "seeds": [29, 47],
+    "blocks_c1": false,
+    "consequence": "record the gap in the report; seed 11's C1 still stands and the missing seed is neither fabricated nor replaced",
+    "two_missing_support_seeds": "the descriptive multi-seed reference is then empty; that is reported, not repaired"
+   },
+   "aborted_budget_point": "if a trajectory stops before 2.64, C2 and C3 are reported as unavailable and only C1 may be read"
+  },
+  "level_2_authorization": {
+   "authorized": false,
+   "authorized_by_level_1": false,
+   "requires": "level 2 needs its own pre-registration (240 days, its own window verification, its own memory pre-flight and its own approval); reaching the escalation state starts that document, it does not license the run",
+   "hard_constraint": true
+  }
+ },
+ "promotion": {
+  "decided_here": false,
+  "requires_own_pre_registration": true,
+  "min_improvement": 0.0034,
+  "three_seed_aggregate": true,
+  "interval_and_repeat": "the registered 5-day block interval, 4000 bootstrap draws and 4 of 5 declared periods positive",
+  "gate_script": "scripts/promotion_gate.py",
+  "why": "this probe screens whether the data window moves the gap; a three-seed promotion is a different document with its own registered_at before its reading"
+ },
+ "prohibitions": [
+  "no registration, no training and no probe run from the draft: the draft licenses nothing",
+  "no hardcoding of the step time, the wall-clock budget or the exact window before t22 and this registration; the step time stays superseded_by t22",
+  "no wall-clock figure is registered and none may be inferred from this document",
+  "no silent continuation when realised usable samples or steps deviate beyond the recorded tolerance",
+  "no run-it-and-see on the enlarged pool: the memory pre-flight runs first and can abort the plan",
+  "no starting level 2 under level 1's registration; level 2 needs its own pre-registration and approval",
+  "no change to any promotion threshold, secondary line, net5 limit, evidence rule or period declaration",
+  "no reading of the sealed interval, at any level",
+  "no claim that more training helps: the budget direction was refused in t5 and this probe tests data, not budget",
+  "no reporting of a single-seed arm as a candidate; the gate needs a three-seed aggregate under its own pre-registration",
+  "no relaxation of the 5bp stress scenario and no treatment of a cost-scenario result as a primary-metric result",
+  "no escalating on C2 or C3 after C1 fails, and no switching the escalation comparison once C1 has been read",
+  "no escalation from seeds 29 or 47, no promotion of a support seed into the primary slot, and no reselection of the primary seed after a failure",
+  "no lowering of any evidence requirement because the three seeds run in parallel"
+ ],
+ "open_items_after_registration": [
+  "t22 lands: the step-time profile is recomputed there. This registration is not edited afterwards; a cost statement is a new document with its own registered_at",
+  "level 2: only after level 1 reaches the escalation state, and only as its own pre-registration",
+  "the probe run itself follows required_execution_steps; the memory pre-flight may still abort the round"
+ ]
+}
