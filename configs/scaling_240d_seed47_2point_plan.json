@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "experiment_id": "scaling-240d-seed47",
- "created_at_utc": "2026-10-27T16:06:14.243094+00:00",
+ "created_at_utc": "2026-10-27T18:33:06.174967+00:00",
  "status": "execution_plan_of_registered_data_scaling",
  "registration": {
   "path": "configs/b4_data_scaling_prereg_20261027.json",
