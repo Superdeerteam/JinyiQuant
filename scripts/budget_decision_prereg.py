@@ -106,20 +106,34 @@ def verify_prereg(document: dict, main: dict) -> dict:
     if abs(float(interval["confidence"]) - float(main["object_policy_template"]["confidence"])) > 1e-12:
         raise Refused("confidence differs from the registered object policy")
 
-    # 3) Three states, no default side, and the undeclared cell must not be invented.
-    states = document["verdicts"]["states"]
-    if states != ["still_improving", "saturated", "inconclusive"]:
+    # 3) Three states at minimum, no default side, and the undeclared cell must not be invented.
+    #    A later revision may add exactly one further determined state (a significant
+    #    regression), which the registered v1 could not express.
+    states = list(document["verdicts"]["states"])
+    required_states = ["still_improving", "saturated", "inconclusive"]
+    if not set(required_states) <= set(states) or states[-1] != "inconclusive":
         raise Refused(f"unexpected verdict states {states}")
-    if not document["verdicts"].get("three_state_is_mandatory"):
-        raise Refused("the three-state requirement must be declared mandatory")
+    extra = [state for state in states if state not in required_states]
+    if extra and extra != ["significantly_degraded"]:
+        raise Refused(f"only one further state is admissible, got {extra}")
+    mandatory = next((value for key, value in document["verdicts"].items()
+                      if key.endswith("_state_is_mandatory") and value), None)
+    if not mandatory:
+        raise Refused(f"the {len(states)}-state requirement must be declared mandatory")
     if not document["verdicts"].get("prohibited_claims"):
         raise Refused("the prohibited claims must be listed")
     cells = {(cell["loss_trend"], cell["validation_verdict"]): cell
              for cell in document["decision_table"]["cells"]}
-    expected_cells = {("falling", "still_improving"), ("falling", "saturated"),
-                      ("plateaued", "saturated")}
-    if set(cells) != expected_cells:
-        raise Refused(f"the declared 2x2 cells are {sorted(cells)}; expected {sorted(expected_cells)}")
+    if len(cells) != len(document["decision_table"]["cells"]):
+        raise Refused("the decision table declares the same cell twice")
+    axis = document["verdicts"].get("axis") or {}
+    admissible = set(states) | set(axis.values())
+    stray = [key for key in cells if key[1] not in admissible]
+    if stray:
+        raise Refused(f"decision cells reference undeclared validation values {stray}")
+    if ("falling", "still_improving") not in cells and not (
+            axis.get("still_improving") and ("falling", axis["still_improving"]) in cells):
+        raise Refused("no cell covers 'loss falling and validation improving'")
     reserved = document["decision_table"].get("unregistered_combination") or {}
     if (reserved.get("loss_trend"), reserved.get("validation_verdict")) in cells:
         raise Refused("the undeclared combination must not also be a declared cell")
@@ -151,17 +165,19 @@ def verify_prereg(document: dict, main: dict) -> dict:
     }
 
 
-def register(document: dict, checks: dict) -> dict:
+def register(document: dict, checks: dict, prereg_path: Path | None = None) -> dict:
     """One-shot registration: stamp the bytes, never overwrite an existing record."""
-    if REGISTRATION.exists():
-        raise Refused(f"{rel(REGISTRATION)} already exists; the pre-registration is one-shot")
+    prereg_path = Path(prereg_path or PREREG)
+    registration_path = registration_for(prereg_path)
+    if registration_path.exists():
+        raise Refused(f"{rel(registration_path)} already exists; the pre-registration is one-shot")
     record = {
         "schema_version": 1,
         "registration_id": document["registration_id"],
         "registered_at": utc_now(),
         "author_role": document["owner_role"],
-        "prereg_path": rel(PREREG),
-        "prereg_sha256": sha256_file(PREREG),
+        "prereg_path": rel(prereg_path),
+        "prereg_sha256": sha256_file(prereg_path),
         "inherits": {
             "path": rel(MAIN_PREREG),
             "sha256": sha256_file(MAIN_PREREG),
@@ -180,15 +196,23 @@ def register(document: dict, checks: dict) -> dict:
         "one_shot": True,
     }
     record["canonical_digest"] = canonical_digest(record)
-    write_json(record, REGISTRATION)
+    write_json(record, registration_path)
     return record
 
 
-def verify_registration(document: dict, main: dict) -> dict:
-    if not REGISTRATION.is_file():
-        raise Refused(f"{rel(REGISTRATION)} is missing; run --register before applying the rule")
-    record = read_json(REGISTRATION)
-    if record["prereg_sha256"] != sha256_file(PREREG):
+def registration_for(prereg_path: Path) -> Path:
+    """Every pre-registration carries its record beside it: <name>.registration.json."""
+    prereg_path = Path(prereg_path)
+    return prereg_path.with_suffix(".registration.json")
+
+
+def verify_registration(document: dict, main: dict, prereg_path: Path | None = None) -> dict:
+    prereg_path = Path(prereg_path or PREREG)
+    registration_path = registration_for(prereg_path)
+    if not registration_path.is_file():
+        raise Refused(f"{rel(registration_path)} is missing; run --register before applying the rule")
+    record = read_json(registration_path)
+    if record["prereg_sha256"] != sha256_file(prereg_path):
         raise Refused("the registered bytes of the pre-registration have changed")
     if record["registered_at"].startswith("0000"):
         raise Refused("registration timestamp is not set")
@@ -239,6 +263,13 @@ def verdict(document: dict, reading: dict) -> dict:
     if improvement is None or low is None or high is None:
         return {"state": "inconclusive", "why": "the paired reading is incomplete",
                 "positive_periods": positive, "required_positive": need}
+    if ("significantly_degraded" in (document["verdicts"]["states"] or [])
+            and improvement <= float(band["improvement_at_or_below"]) and high < 0):
+        return {"state": "significantly_degraded",
+                "why": f"improvement {improvement:.6f} <= 0 and the interval [{low:.6f}, "
+                       f"{high:.6f}] lies entirely below zero, which is a determined downgrade "
+                       f"rather than an absence of evidence",
+                "positive_periods": positive, "required_positive": need}
     if improvement >= floor and low > 0 and positive >= need:
         return {"state": "still_improving",
                 "why": f"improvement {improvement:.6f} >= {floor}, interval low {low:.6f} > 0, "
@@ -267,19 +298,25 @@ def decision(document: dict, state: dict, trend: dict) -> dict:
     cells = {(cell["loss_trend"], cell["validation_verdict"]): cell
              for cell in document["decision_table"]["cells"]}
     reserved = document["decision_table"]["unregistered_combination"]
-    label = {"still_improving": "仍在改善", "saturated": "饱和", "inconclusive": "证据不足"}
-    if trend["trend"] == "undetermined" or state["state"] == "inconclusive":
+    label = dict(document["verdicts"]["labels"])
+    axis = document["verdicts"].get("axis") or {}
+    axis_value = axis.get(state["state"], state["state"])
+    determined = {value for _, value in cells}
+    if trend["trend"] == "undetermined" or axis_value not in determined:
         return {"state": "inconclusive", "state_label": label["inconclusive"],
-                "table_cell": None, "route": _route(document, state, trend),
-                "why": f"loss trend {trend['trend']}, validation {state['state']}: the table cannot "
-                       f"be applied and neither side may be claimed"}
-    cell = cells.get((trend["trend"], state["state"]))
+                "table_cell": None, "validation_axis": axis_value,
+                "route": _route(document, state, trend),
+                "why": f"loss trend {trend['trend']}, validation {state['state']} "
+                       f"(axis {axis_value}): the table cannot be applied and neither side may "
+                       f"be claimed"}
+    cell = cells.get((trend["trend"], axis_value))
     if cell is None:
         return {"state": "inconclusive", "state_label": label["inconclusive"],
                 "table_cell": reserved["id"], "route": None,
                 "why": reserved["why"], "first_action": reserved["first_action"]}
     return {"state": "determined", "state_label": cell["conclusion_label"],
             "conclusion": cell["conclusion"], "table_cell": cell["id"],
+            "validation_axis": axis_value,
             "next_step": cell["next_step"], "next_step_detail": cell["next_step_detail"],
             "route": None, "why": None}
 
@@ -295,7 +332,7 @@ def _route(document: dict, state: dict, trend: dict) -> dict | None:
 
 
 def apply(document: dict, record: dict, analysis_path: Path, losses_path: Path | None,
-          baseline: str | None, candidate: str | None) -> dict:
+          baseline: str | None, candidate: str | None, prereg_path: Path | None = None) -> dict:
     analysis = read_json(analysis_path)
     created = str(analysis.get("created_at") or "")
     if not created:
@@ -325,7 +362,7 @@ def apply(document: dict, record: dict, analysis_path: Path, losses_path: Path |
     return {
         "schema_version": 1,
         "evaluated_at": utc_now(),
-        "prereg": {"path": rel(PREREG), "sha256": record["prereg_sha256"],
+        "prereg": {"path": rel(Path(prereg_path or PREREG)), "sha256": record["prereg_sha256"],
                    "registered_at": record["registered_at"]},
         "analysis": {"path": rel(analysis_path), "created_at": created},
         "pair": {"baseline": left, "candidate": right,
@@ -344,6 +381,8 @@ def apply(document: dict, record: dict, analysis_path: Path, losses_path: Path |
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--prereg", type=Path, default=PREREG,
+                        help="pre-registration document; its record is <name>.registration.json")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--register", action="store_true")
     parser.add_argument("--apply", type=Path)
@@ -353,25 +392,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
 
-    document = read_json(PREREG)
+    prereg_path = args.prereg if args.prereg.is_absolute() else ROOT / args.prereg
+    registration_path = registration_for(prereg_path)
+    document = read_json(prereg_path)
     main = read_json(MAIN_PREREG)
     try:
         if args.register:
-            record = register(document, verify_prereg(document, main))
+            record = register(document, verify_prereg(document, main), prereg_path)
             print(f"registered {record['registration_id']} at {record['registered_at']}")
-            print(f"  prereg {rel(PREREG)} sha256={record['prereg_sha256'][:16]}...")
+            print(f"  prereg {rel(prereg_path)} sha256={record['prereg_sha256'][:16]}...")
             print(f"  floor={record['checks']['improvement_floor']} "
                   f"(min_improvement {record['checks']['min_improvement']}/2 on grid {GRID}), "
                   f"repeat {record['checks']['required_positive']}/{record['checks']['periods']}, "
                   f"blocks {record['checks']['block_days']}x{record['checks']['bootstrap_samples']}")
-            print(f"  record {rel(REGISTRATION)}")
+            print(f"  record {rel(registration_path)}")
             return 0
         checks = verify_prereg(document, main)
-        record = verify_registration(document, main) if REGISTRATION.is_file() else None
+        record = verify_registration(document, main, prereg_path) if registration_path.is_file() else None
         if args.apply:
             if record is None:
                 raise Refused("the rule is not registered yet; run --register before applying it")
-            outcome = apply(document, record, args.apply, args.losses, args.baseline, args.candidate)
+            outcome = apply(document, record, args.apply, args.losses, args.baseline,
+                            args.candidate, prereg_path)
             if args.output:
                 write_json(outcome, args.output)
             print(f"registered_at={record['registered_at']} analysis_created_at="

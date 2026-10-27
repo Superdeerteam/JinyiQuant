@@ -212,3 +212,78 @@ def test_applying_the_rule_produces_one_of_three_states(document, main, tmp_path
     blind = apply(document, record, path, None, None, None)
     assert blind["loss_trend"]["trend"] == "undetermined"
     assert blind["outcome"]["state_label"] == "证据不足"
+
+
+# --- v2: the fourth state and the axis collapse -----------------------------------------
+
+V2_PREREG = ROOT / "configs/b4_budget_decision_prereg_v2_20261027.json"
+
+
+@pytest.fixture(scope="module")
+def v2() -> dict:
+    return read_json(V2_PREREG)
+
+
+def test_v2_is_a_superset_that_keeps_v1_classifications(v2, document):
+    assert document["verdicts"]["states"] == ["still_improving", "saturated", "inconclusive"]
+    assert v2["verdicts"]["states"] == ["still_improving", "saturated", "significantly_degraded",
+                                        "inconclusive"]
+    # Every reading v1 could classify gets the same label under v2.
+    floor = v2["thresholds"]["improvement_floor"]["value"]
+    improving = _reading(floor + 0.0005, 0.0002, 0.004, [0.001, 0.002, 0.001, 0.002, 0.001])
+    assert verdict(document, improving)["state"] == verdict(v2, improving)["state"]
+    saturated = _reading(-0.0004, -0.002, 0.001, [-0.001, 0.002, -0.001, 0.001, -0.001])
+    assert verdict(document, saturated)["state"] == verdict(v2, saturated)["state"] == "saturated"
+
+
+def test_v2_determines_a_downgrade_that_v1_had_to_call_inconclusive(v2, document):
+    downgrade = _reading(-0.0256, -0.0295, -0.0231, [-0.02, -0.03, -0.02, -0.03, -0.025])
+    assert verdict(document, downgrade)["state"] == "inconclusive"
+    decided = verdict(v2, downgrade)
+    assert decided["state"] == "significantly_degraded"
+    assert "entirely below zero" in decided["why"]
+
+
+def test_v2_projects_the_state_onto_the_two_valued_table_column(v2):
+    labels = [arm["label"] for arm in v2["arms"]]
+    falling = loss_trend(v2, dict(zip(labels, [1.00, 0.95, 0.90])))
+    outcome = decision(v2, {"state": "significantly_degraded", "why": "test"}, falling)
+    assert outcome["state"] == "determined"
+    assert outcome["validation_axis"] == "not_improving"
+    assert outcome["table_cell"] == "falling__not_improving"
+    assert outcome["state_label"] == "过拟合 60 日样本（数据受限）"
+    # A flat loss with a downgrade lands on the convergence cell instead.
+    plateaued = loss_trend(v2, dict(zip(labels, [1.00, 1.001, 1.000])))
+    assert decision(v2, {"state": "saturated", "why": "test"}, plateaued)["table_cell"] == \
+        "plateaued__not_improving"
+
+
+def test_v2_declares_the_action_separately_from_the_classification(v2):
+    rule = v2["action_rule"]
+    assert "still_improving" in rule["add_training_amount"]
+    assert "saturated" in rule["refuse_training_amount"]
+    assert "significantly_degraded" in rule["refuse_training_amount"]
+    assert "upper bound is at or below zero" in rule["refuse_training_amount"]
+    assert rule["undetermined_action"].startswith("only when the interval covers zero")
+
+
+def test_v2_cannot_be_applied_to_an_earlier_analysis(v2, main, tmp_path):
+    record = verify_registration(v2, main, V2_PREREG)
+    earlier = tmp_path / "earlier.json"
+    earlier.write_text(json.dumps({
+        "created_at": "2026-10-27T14:03:55.947553+00:00",
+        "coverage": {"periods": v2["windows"]["names"], "days": v2["windows"]["days_expected"]},
+        "pairs": []}, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(Refused, match="before the registration"):
+        apply(v2, record, earlier, None, None, None, V2_PREREG)
+    assert v2["not_retroactive"] is True
+    assert any("t5" in item for item in v2["may_not_be_used_to"])
+
+
+def test_v2_registers_its_own_record_beside_it(v2, main):
+    record = verify_registration(v2, main, V2_PREREG)
+    assert record["prereg_path"] == "configs/b4_budget_decision_prereg_v2_20261027.json"
+    assert record["thresholds_modified"] is False
+    assert record["prereg_sha256"] != json.loads(
+        (ROOT / "configs/b4_budget_decision_prereg_20261027.registration.json")
+        .read_text(encoding="utf-8"))["prereg_sha256"]

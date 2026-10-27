@@ -141,6 +141,67 @@ def main(argv: list[str] | None = None) -> int:
         "no_threshold_relaxation": True,
     }
 
+    # The registered rule classifies; the action question is decided separately and
+    # cannot be left vague: "keep training" requires an interval lower bound above zero.
+    answer = {
+        "question": "是否还有其他预算点值得追加 / 是否继续增加训练量",
+        "decision": "refuse_further_training_amount",
+        "decision_label": "拒绝继续增加训练量",
+        "why": (
+            "the 'still improving' branch requires the 5-day block interval lower bound to clear "
+            f"zero. The primary pair's interval is [{primary['block_interval']['low']:.6f}, "
+            f"{primary['block_interval']['high']:.6f}], entirely below zero, which decisively "
+            "excludes 'more training would be better'. Both other pairs are negative with "
+            "intervals below zero as well"),
+        "what_the_inconclusive_state_actually_covers": (
+            "only the classification of the downgrade (saturated versus significant regression). "
+            "It does not leave the action undetermined"),
+        "what_would_have_to_hold_to_add_another_point": (
+            "a paired improvement of at least the 0.0017 floor whose 5-day block interval lower "
+            "bound is above zero, with at least 4 of 5 declared periods positive"),
+        "registered_verdict_unchanged": True,
+        "rule_bytes_edited": False,
+    }
+
+    metrics_0bp = {label: objects[label]["metrics_0bp"] for label in objects}
+    trade_off = {
+        "finding": (
+            "the 2.64 point is not uniformly worse: IC_IR rises "
+            f"{metrics_0bp['anchor-1.32']['ic_ir']:.3f} -> {metrics_0bp['double-2.64']['ic_ir']:.3f} "
+            f"({metrics_0bp['double-2.64']['ic_ir'] / metrics_0bp['anchor-1.32']['ic_ir'] - 1:+.1%}) "
+            f"while RankIC falls only {abs(first['paired_improvement_rank_ic']):.5f}"),
+        "ic_ir_by_point": {label: metrics_0bp[label]["ic_ir"] for label in objects},
+        "rank_ic_mean_0bp_by_point": {label: metrics_0bp[label]["rank_ic_mean"] for label in objects},
+        "platform_weight": "the published composite weights IC_IR at 20%, so a stability gain is "
+                           "not nothing even when the level drops",
+        "reading": "between 1.32 and 2.64 the extra budget buys stability at the cost of level; "
+                   "at 5.28 both collapse, so the trade is not monotone in the budget",
+        "does_not_change_the_judgment": True,
+        "why_not": "promotion is keyed to the primary metric rank_ic_mean against min_improvement "
+                   "0.0034; every point here is negative on that metric and below the registered "
+                   "baseline level, so a secondary stability gain cannot carry a promotion",
+    }
+
+    evidence_strength = {
+        "strong": [
+            "three budget points from one continuous trajectory, one recipe, only the optimizer "
+            "budget differing",
+            "identical 104-trading-day paired index across all three arms, five declared periods",
+            "every exposure report reconciles against the measured pool (coverage 1.000000, steps "
+            "19777/39553/79106 recomputed from the declared effective epochs)",
+            "all three merged objects load unchanged in the pre-registered gate",
+        ],
+        "weak_or_caveated": [
+            "the five declared months are already-viewed development data: they measure a budget "
+            "effect and cannot confirm a candidate",
+            "one trajectory, one seed: a single-seed arm cannot clear the registered ic_mean "
+            "secondary line on noise alone, so nothing here is a promotion candidate",
+            "the registered rule has no state for a significant regression, so its verdict is "
+            "capped at 'inconclusive' even for a consistent downgrade",
+            "local metrics only: no official cross-submission rank and no stress-stability item",
+        ],
+    }
+
     descriptive = {
         "what": "the paired numbers as measured, outside the registered state space: the rule has "
                 "no state for a statistically clear regression, so it can only return "
@@ -205,6 +266,9 @@ def main(argv: list[str] | None = None) -> int:
         "single_factor": analysis["single_factor"],
         "coverage": analysis["coverage"],
         "registered_verdict": registered_verdict,
+        "answer": answer,
+        "metric_trade_off": trade_off,
+        "evidence_strength": evidence_strength,
         "descriptive_reading": descriptive,
         "missing_evidence": missing_evidence,
         "probe": probe,
@@ -330,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
           f"[{primary['block_interval']['low']:.6f}, {primary['block_interval']['high']:.6f}]")
     print(f"  loss trend {decision['loss_trend']['trend']} {decision['loss_trend']['relative_changes']}")
     print(f"  probe (not started) {probe['route']['first'] if probe['route'] else None}")
+    print(f"  answer: {answer['decision_label']}")
     return 0
 
 
