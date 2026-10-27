@@ -253,7 +253,7 @@ def economics(block: dict) -> dict:
 
 
 def write_object(output: Path, point: dict, evaluated: dict) -> dict:
-    """Write one gate-compatible merged object (metrics_0bp/5bp + daily_{rate}bp.csv)."""
+    """Build one gate-compatible merged object document (metrics_0bp/5bp + daily_{rate}bp.csv)."""
     directory = output / "objects" / point["label"]
     directory.mkdir(parents=True, exist_ok=True)
     daily_hashes, scenarios = {}, {}
@@ -266,7 +266,6 @@ def write_object(output: Path, point: dict, evaluated: dict) -> dict:
     metrics_document = {
         "schema_version": 1,
         "object_id": point["label"],
-        "role": "budget_point",
         "evaluation_version": EVALUATION_VERSION,
         "windows": point["windows"],
         "caliber": "the five declared research months pooled into one scored sequence and "
@@ -278,7 +277,7 @@ def write_object(output: Path, point: dict, evaluated: dict) -> dict:
         "sources": {"window_predictions_sha256": point["window_predictions_sha256"],
                     "targets_sha256": point["targets_sha256"]},
     }
-    return {"directory": rel(directory), "metrics": metrics_document}
+    return metrics_document
 
 
 def verify_gate_format(directory: Path, label: str) -> dict:
@@ -436,7 +435,7 @@ def main(argv: list[str] | None = None) -> int:
         results = evaluate_point(loaded_point)
         loaded.append(loaded_point)
         evaluated[point["label"]] = results
-        document = write_object(output, loaded_point, results)["metrics"]
+        document = write_object(output, loaded_point, results)
         # A replay that is not a pre-registered budget point can only exercise the code path.
         document["role"] = "budget_point" if point["label"] in declared_names else "code_path_control"
         write_json(output / "objects" / point["label"] / "metrics.json", document)
@@ -466,6 +465,12 @@ def main(argv: list[str] | None = None) -> int:
                  "daily_0bp": daily_frames[candidate]["0bp"]},
                 policy, periods)
             reading["consecutive"] = later == index + 1
+            reading["reading_semantics"] = (
+                "improvement and the block interval are paired-day statistics; the min_improvement "
+                "line they are compared with is the promotion gate's, so for a budget-point pair it "
+                "measures whether more optimizer budget moves the primary metric further than "
+                "measured noise, and for a code_path_control it must stay inside that noise scale. "
+                "Neither is a promotion verdict.")
             pairs.append(reading)
 
     exposures = exposure_section(points, plan, {item.split("=", 1)[0]: item.split("=", 1)[1]
@@ -488,6 +493,40 @@ def main(argv: list[str] | None = None) -> int:
         } for label, exposure in ((n, exposures["segments"].get(n, {})) for n in names)
     }
 
+    segments = {
+        "paired_comparison": {
+            "status": "verified" if pairs and all(p["paired_day_count"] for p in pairs) else "missing",
+            "what": "paired-by-trading-day difference, 5-day consecutive-block interval inside each "
+                    "declared period, and per-period signs under the registered object policy",
+            "evidence": {"pairs": len(pairs),
+                         "paired_days": [p["paired_day_count"] for p in pairs],
+                         "periods": len(prereg["periods"]["names"])},
+        },
+        "merged_object": {
+            "status": "verified" if all(check["loadable"] for check in format_checks.values())
+                      else "failed",
+            "what": "gate-compatible merged object: metrics_0bp/metrics_5bp plus daily_{0,2,5,10}bp.csv "
+                    "over the five declared months",
+            "evidence": {label: {"loadable": check["loadable"], "days": check.get("days_0bp")}
+                         for label, check in format_checks.items()},
+        },
+        "economics": {
+            "status": "verified" if all(len(objects[label]["cost_scenarios"]) == len(RATES)
+                                        for label in names) else "failed",
+            "what": "gross/cost/net in basis points at 0/2/5/10bp plus the local turnover proxy; "
+                    "5bp is the locked stress scenario and the official turnover term is not faked",
+            "evidence": {"scenarios_per_object": {label: sorted(objects[label]["cost_scenarios"])
+                                                  for label in names}},
+        },
+        "exposure_reconciliation": {
+            "status": ("verified" if all(segment["status"] != "missing"
+                                         for segment in exposures["segments"].values()) else "missing"),
+            "what": "declared effective-epoch budget recomputed into steps against the measured pool, "
+                    "then reconciled with the trajectory exposure report",
+            "evidence": {label: segment["status"]
+                         for label, segment in exposures["segments"].items()},
+        },
+    }
     analysis = {
         "schema_version": 1,
         "created_at": utc_now(),
@@ -502,6 +541,7 @@ def main(argv: list[str] | None = None) -> int:
                      "sealed_intersection": 0},
         "objects": objects,
         "gate_format": format_checks,
+        "segments": segments,
         "summary": summary,
         "pairs": pairs,
         "exposure": exposures,
@@ -532,6 +572,8 @@ def main(argv: list[str] | None = None) -> int:
               f"gross={scenarios['0bp']['gross_return_bp']:.3f}bp "
               f"net5={scenarios['5bp']['net_return_bp']:.3f}bp "
               f"turnover={scenarios['0bp']['turnover_mean_local']:.4f}")
+    print("  segments: " + ", ".join(f"{name}={block['status']}"
+                                     for name, block in segments.items()))
     print("  gate_format: " + ", ".join(
         f"{label}={'loadable' if format_checks[label]['loadable'] else 'NOT loadable'}"
         f"({format_checks[label].get('days_0bp', '?')}d)" for label in names))
