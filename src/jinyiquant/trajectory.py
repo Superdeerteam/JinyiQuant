@@ -168,13 +168,26 @@ def exposure_report(keys: pd.DataFrame, sample_mask, exposure_counts, *,
     total = int(len(counts))
     seen = int(counts.sum())
     unique = int((counts > 0).sum())
+    epoch_steps = {int(index): int(value) for index, value in (per_epoch_steps or {}).items()}
+    if epoch_steps:
+        if sum(epoch_steps.values()) != int(steps):
+            raise ValueError("Per-epoch step counts disagree with the total step count")
+        # A short last batch means one epoch feeds ``total`` samples, not batches * batch_size.
+        expected_seen = sum(min(count * int(batch_size), total) for count in epoch_steps.values())
+        expected_rule = ("sum over epochs of min(steps_in_epoch * batch_size, usable_samples); "
+                         "the last batch of an epoch may be short")
+    else:
+        expected_seen = int(steps) * int(batch_size)
+        expected_rule = ("steps * batch_size, exact only when per-epoch steps are supplied or "
+                         "usable_samples is a multiple of batch_size")
     report = {
         "schema_version": 1,
         "steps": int(steps),
         "batch_size": int(batch_size),
         "usable_samples": total,
         "samples_seen": seen,
-        "expected_samples_seen": int(steps) * int(batch_size),
+        "expected_samples_seen": expected_seen,
+        "expected_samples_seen_rule": expected_rule,
         "unique_samples": unique,
         "coverage": unique / total,
         "effective_epochs": seen / total,
@@ -190,7 +203,8 @@ def exposure_report(keys: pd.DataFrame, sample_mask, exposure_counts, *,
                 "per usable training row; effective_epochs = samples_seen / usable_samples",
     }
     if report["samples_seen"] != report["expected_samples_seen"]:
-        raise ValueError("Exposure counters disagree with steps * batch_size")
+        raise ValueError("Exposure counters disagree with the step schedule "
+                         "(steps * batch_size with short last batches)")
     return report
 
 

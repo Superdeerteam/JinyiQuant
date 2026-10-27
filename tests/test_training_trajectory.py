@@ -239,6 +239,25 @@ def test_exposure_accounting_reconciles_with_the_declared_budget():
         assert reconcile_exposure(report, under_covered)["passed"] is False
 
 
+def test_exposure_accounting_counts_the_short_last_batch_of_each_epoch():
+    keys = pd.DataFrame({"date": pd.to_datetime(["2023-08-01 10:00"] * 10),
+                         "instrument": [f"S{index}" for index in range(10)]})
+    # batch 4 over 10 samples: epoch 1 feeds 4+4+2, epoch 2 feeds one batch of 4.
+    counts = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1], dtype=np.int64)
+    report = exposure_report(keys, np.ones(10, dtype=bool), counts, batch_size=4, steps=4,
+                             per_epoch_steps={0: 3, 1: 1})
+    assert report["samples_seen"] == report["expected_samples_seen"] == 14
+    assert report["effective_epochs"] == pytest.approx(1.4)
+
+    # The same counter claiming 16 samples (2 full epochs of 4) must still fail.
+    with pytest.raises(ValueError, match="step schedule"):
+        exposure_report(keys, np.ones(10, dtype=bool), counts * 0 + 2, batch_size=4, steps=4,
+                        per_epoch_steps={0: 4})
+    with pytest.raises(ValueError, match="Per-epoch step counts"):
+        exposure_report(keys, np.ones(10, dtype=bool), counts, batch_size=4, steps=5,
+                        per_epoch_steps={0: 3, 1: 1})
+
+
 def test_exposure_counter_survives_a_resume(tmp_path):
     data, config, batch, target = training_case()
     straight = adapter(config, data)
