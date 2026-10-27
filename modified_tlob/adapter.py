@@ -1,6 +1,7 @@
 """Batch training/inference and portable checkpoints with frozen preprocessing."""
 
 import hashlib
+import importlib
 import json
 import os
 import random
@@ -13,19 +14,28 @@ import pandas as pd
 import torch
 
 from jinyiquant.io import write_json
-from jinyiquant.trajectory import (
-    CHECKPOINT_FILENAME,
-    CHECKPOINT_METADATA_FILENAME,
-    LR_SCHEDULES,
-    exposure_report,
-    learning_rate_at,
-)
 
 from .device import device_resources, select_device
-from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, parameter_groups
+from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, configure_finite_check, parameter_groups
 from .schema import validate_input_schema
 
 BACKBONES = {"modified_tlob": ModifiedTLOB, "mlplob": MLPLOB, "dual_patch": DualPatchTLOB}
+TRAINING_ONLY_MODULE = "jinyiquant.trajectory"
+# Requested compile mode -> torch.compile keyword argument; None keeps the eager path.
+COMPILE_MODES = {"eager": None, "default": "default", "reduce-overhead": "reduce-overhead"}
+# A compiled trunk must reproduce the eager forward bit-for-bit within this bound.
+COMPILE_EQUIVALENCE_ATOL = 1e-6
+
+
+def _trajectory_helpers():
+    """Training-only helpers from ``jinyiquant.trajectory``, imported lazily.
+
+    Inference and the flat submission package never need the trajectory module: the flat
+    builder whitelists only inference dependencies, so a module-level import here would make
+    the package unbuildable. Training paths (fit/save/resume/exposure) still resolve it.
+    """
+    return importlib.import_module(TRAINING_ONLY_MODULE)
+
 
 PREPROCESS_KEYS = ("feature_columns", "lookback", "min_history", "missing_policy", "max_ffill_steps",
                    "missing_sentinel", "price_scale", "history_days", "sample_times", "label_horizon_minutes")
@@ -248,6 +258,8 @@ class TLOBAdapter:
         self.config.setdefault("ranking_loss_weight", 0.0)
         self.config.setdefault("book_representation", "raw")
         self.config.setdefault("trade_features", "zero")
+        self.config.setdefault("finite_check_every", 50)
+        self.config.setdefault("compile_mode", "eager")
         if self.config["target_scaling"] not in ("none", "train_std"):
             raise ValueError("Unsupported target scaling")
         if self.config["target_centering"] not in TARGET_CENTERING_MODES:
@@ -256,8 +268,11 @@ class TLOBAdapter:
             raise ValueError("Unsupported loss weighting")
         if self.config["sampling"] not in ("shuffle", "timestamp_grouped"):
             raise ValueError("Unsupported sampling mode")
-        if self.config["lr_schedule"] not in LR_SCHEDULES:
-            raise ValueError("Unsupported learning-rate schedule")
+        if self.config["lr_schedule"] != "constant":
+            # The frozen rule only supports a constant rate; the helper module stays lazy so
+            # inference packaging never resolves the training-only trajectory module.
+            if self.config["lr_schedule"] not in _trajectory_helpers().LR_SCHEDULES:
+                raise ValueError("Unsupported learning-rate schedule")
         if self.config["ranking_loss"] not in ("none", "pairwise_hinge"):
             raise ValueError("Unsupported ranking loss")
         self.ranking_loss_weight = float(self.config["ranking_loss_weight"])
@@ -286,6 +301,8 @@ class TLOBAdapter:
             self.architecture.update({k: self.config[k] for k in ("num_heads", "patch_counts")})
         self.architecture.update(seq_size=data["lookback"], num_features=len(fields))
         self.network = BACKBONES[self.config["kind"]](**self.architecture).to(self.device)
+        self.finite_check_every = self.config["finite_check_every"]
+        configure_finite_check(self.network, self.finite_check_every)
         self.parameter_groups = parameter_groups(self.network)
         self.intercept = None
         self.target_scale = 1.0
@@ -474,7 +491,8 @@ class TLOBAdapter:
         return centered[mask].astype(np.float32), stats
 
     def _learning_rate(self, step: int = 0) -> float:
-        return learning_rate_at(self.config["lr_schedule"], self.config["learning_rate"], step)
+        return _trajectory_helpers().learning_rate_at(self.config["lr_schedule"],
+                                                      self.config["learning_rate"], step)
 
     def _training_fingerprint(self, keys, optimization_targets, used_positions):
         """Everything besides the parameters that a resumed update depends on."""
@@ -505,6 +523,7 @@ class TLOBAdapter:
     def _save_training_state(self, directory, *, optimizer, generator, fingerprint, position,
                              generator_before_epoch, steps_per_epoch, exposure_counts):
         """Write a resumable training state: parameters, optimizer, RNG and sampler position."""
+        trajectory = _trajectory_helpers()
         target = Path(directory)
         target.mkdir(parents=True, exist_ok=True)
         numpy_state = np.random.get_state()
@@ -526,7 +545,9 @@ class TLOBAdapter:
                                              for key, value in steps_per_epoch.items()}},
             "generator_before_epoch": generator_before_epoch,
             "rng": {"torch": torch.get_rng_state(), "generator": generator.get_state(),
-                    "numpy": (numpy_state[0], torch.from_numpy(numpy_state[1].copy()),
+                    # Store the uint32 RNG state as raw bytes: a torch.uint32 tensor cannot be
+                    # loaded by the torch 2.5 runtime pinned for submission.
+                    "numpy": (numpy_state[0], numpy_state[1].tobytes(),
                               numpy_state[2], numpy_state[3], numpy_state[4]),
                     "python": random.getstate(),
                     "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None},
@@ -536,7 +557,7 @@ class TLOBAdapter:
             "exposure_counts": (None if exposure_counts is None
                                 else torch.from_numpy(np.asarray(exposure_counts).copy())),
         }
-        torch.save(payload, target / CHECKPOINT_FILENAME)
+        torch.save(payload, target / trajectory.CHECKPOINT_FILENAME)
         optimizer_state = payload["optimizer_state_dict"]
         exposure = payload["exposure_counts"]
         metadata = {key: payload[key] for key in (
@@ -555,7 +576,7 @@ class TLOBAdapter:
                 "rows": int(exposure.numel()), "samples_seen": int(exposure.sum()),
                 "sha256": hashlib.sha256(exposure.numpy().astype("<i8").tobytes()).hexdigest()},
         })
-        write_json(target / CHECKPOINT_METADATA_FILENAME, metadata)
+        write_json(target / trajectory.CHECKPOINT_METADATA_FILENAME, metadata)
         self._event("training", "training_state_saved", directory=str(target),
                     steps=int(position["steps"]), epoch_index=int(position["epoch_index"]),
                     batch_index=int(position["batch_index"]), exposure=exposure_counts is not None)
@@ -584,7 +605,12 @@ class TLOBAdapter:
         rng = checkpoint["rng"]
         torch.set_rng_state(rng["torch"])
         numpy_state = rng["numpy"]
-        np.random.set_state((numpy_state[0], numpy_state[1].numpy().astype(np.uint32),
+        encoded = numpy_state[1]
+        if isinstance(encoded, torch.Tensor):  # legacy checkpoints stored a uint32 tensor
+            state_array = encoded.numpy().astype(np.uint32)
+        else:
+            state_array = np.frombuffer(bytes(encoded), dtype=np.uint32).copy()
+        np.random.set_state((numpy_state[0], state_array,
                              numpy_state[2], numpy_state[3], numpy_state[4]))
         random.setstate(rng["python"])
         if str(checkpoint["device"]).startswith("cuda"):
@@ -891,11 +917,12 @@ class TLOBAdapter:
         """Per-day and per-epoch sample exposure for the trajectory that just ran."""
         if self.exposure_counts is None:
             raise ValueError("Exposure tracking was not enabled for this fit")
-        return exposure_report(self.training_keys, self.used_positions,
-                               self.exposure_counts[self.used_positions],
-                               batch_size=self.config["batch_size"],
-                               steps=sum(self.steps_per_epoch.values()),
-                               per_epoch_steps=self.steps_per_epoch, declared=declared)
+        return _trajectory_helpers().exposure_report(
+            self.training_keys, self.used_positions,
+            self.exposure_counts[self.used_positions],
+            batch_size=self.config["batch_size"],
+            steps=sum(self.steps_per_epoch.values()),
+            per_epoch_steps=self.steps_per_epoch, declared=declared)
 
 
     def predict(self, batch):

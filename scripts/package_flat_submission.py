@@ -53,8 +53,16 @@ class FlatImports(ast.NodeTransformer):
         if node.module == "__future__":
             return None
         if self.package == "jinyiquant":
-            if node.level and node.module == "io":
-                return None
+            if node.level:
+                # Relative self-imports inside the merged jinyiquant modules: io is merged first
+                # and referenced by name, the others resolve against the flat module itself.
+                if node.module == "io":
+                    return None
+                if node.module in JINYI_MODULES:
+                    node.level = 0
+                    node.module = "jinyiquant_flat"
+                    return node
+                raise ValueError(f"Unexpected internal inference dependency: {node.module}")
             if node.module == "modified_tlob.schema":
                 if [alias.name for alias in node.names] != ["lob_trade_columns"]:
                     raise ValueError("Unexpected cross-package schema dependency")

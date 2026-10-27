@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
 import random
+import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -151,9 +154,12 @@ def test_checkpoint_roundtrip_reproduces_the_uninterrupted_trajectory(tmp_path):
         assert torch.equal(value, second.network.state_dict()[key]), key
     np.testing.assert_array_equal(straight.exposure_counts, second.exposure_counts)
     np.testing.assert_array_equal(straight.predict(batch), second.predict(batch))
-    # The restored global RNG streams are still the checkpointed ones.
+    # The restored global RNG streams are still the checkpointed ones. The uint32 state is
+    # serialised as raw bytes so the torch 2.5 submission runtime can load the checkpoint.
     numpy_state = payload["rng"]["numpy"]
-    np.testing.assert_array_equal(np.random.get_state()[1], numpy_state[1].numpy())
+    assert isinstance(numpy_state[1], (bytes, bytearray))
+    decoded = np.frombuffer(numpy_state[1], dtype=np.uint32)
+    np.testing.assert_array_equal(np.random.get_state()[1], decoded)
     assert random.getstate() == payload["rng"]["python"]
     assert torch.equal(torch.get_rng_state(), payload["rng"]["torch"])
 
@@ -286,6 +292,20 @@ def test_exposure_report_rejects_a_mismatched_counter_or_mask():
     with pytest.raises(ValueError, match="steps \\* batch_size"):
         exposure_report(keys, np.ones(4, dtype=bool), np.zeros(4, dtype=np.int64),
                         batch_size=2, steps=3)
+
+
+def test_adapter_inference_import_does_not_pull_the_training_only_module():
+    """The flat submission package whitelists inference dependencies only; adapter must not
+    import jinyiquant.trajectory at import time, or the package cannot be built."""
+    code = chr(10).join([
+        "import sys, modified_tlob.adapter",
+        "assert 'jinyiquant.trajectory' not in sys.modules, "
+        "'importing the adapter pulled the training-only trajectory module'",
+    ])
+    environment = {**os.environ, "PYTHONPATH": os.pathsep.join([str(ROOT / "src"), str(ROOT)])}
+    completed = subprocess.run([sys.executable, "-c", code], cwd=ROOT, env=environment,
+                               capture_output=True, text=True)
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_pre_registered_plan_declares_the_budget_points_and_a_fixed_schedule():
