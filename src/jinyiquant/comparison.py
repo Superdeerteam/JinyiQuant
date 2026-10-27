@@ -174,6 +174,9 @@ def declared_cost_scenarios(predictions: pd.DataFrame, targets: pd.DataFrame, ev
         }
     gate_reasons = sorted({reason for block in blocks.values()
                            for reason in block["comparison_gate"]["reasons"]})
+    if not blocks:
+        # An empty scenario tuple would otherwise report usable economic evidence for nothing.
+        gate_reasons = sorted([*gate_reasons, "no cost scenarios declared: economic comparison is undefined"])
     first_gate = next(iter(blocks.values()))["comparison_gate"] if blocks else evaluation_comparison_gate({})
     return {
         "evaluation_version": EVALUATION_VERSION,
@@ -181,7 +184,7 @@ def declared_cost_scenarios(predictions: pd.DataFrame, targets: pd.DataFrame, ev
         "turnover_conversion_factor": 0.5,
         "definition": "cost = single_side_rate * U; U = sum(|target weight - pre-trade drifted weight|); "
                       "turnover = U / 2",
-        "comparison_usable": not gate_reasons,
+        "comparison_usable": bool(blocks) and not gate_reasons,
         "predictive_usable": first_gate["predictive_usable"],
         "economic_usable": first_gate["economic_usable"],
         "competition_status": first_gate["competition_status"],
@@ -716,4 +719,226 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
                 "failed_gates": sorted(set(failures)), "missing_evidence": sorted(set(missing)),
                 "primary_stable_across_pairs": stability, "policy_sha256": policy_hash,
                 "automatic_promotion": False}
+    return comparison, decision
+
+
+OBJECT_POLICY_KEYS = frozenset({
+    "primary_metric", "direction", "min_improvement", "max_metric_regressions",
+    "bootstrap_samples", "block_days", "confidence", "seed",
+    "threshold_rationale", "change", "threshold_basis",
+})
+
+
+def validate_object_policy(policy: dict) -> dict:
+    """Validate a decision policy for deterministic evaluation objects.
+
+    ``compare_runs`` policies require a seed-by-period grid. A deterministic
+    aggregate has no independent seed replicas, so accepting seed keys here would
+    invite fabricated replication; they are rejected instead.
+    """
+    if set(policy) != OBJECT_POLICY_KEYS:
+        raise ValueError(f"object comparison policy keys must be exactly {sorted(OBJECT_POLICY_KEYS)}")
+    validate_change(policy["change"])
+    validate_threshold_basis(policy)
+    if policy["primary_metric"] not in METRIC_SPEC:
+        raise ValueError("primary_metric must be a supported daily-derived metric")
+    if policy["direction"] not in {"maximize", "minimize"}:
+        raise ValueError("direction must be maximize or minimize")
+    for key in ("min_improvement", "confidence"):
+        value = policy[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value):
+            raise ValueError(f"{key} must be finite numeric")
+    if policy["min_improvement"] < 0:
+        raise ValueError("improvement must be nonnegative")
+    if not 0 < policy["confidence"] < 1:
+        raise ValueError("confidence must lie in (0, 1)")
+    for key, minimum in (("bootstrap_samples", 100), ("block_days", 1), ("seed", 0)):
+        if type(policy[key]) is not int or policy[key] < minimum:
+            raise ValueError(f"{key} must be an integer >= {minimum}")
+    limits = policy["max_metric_regressions"]
+    if not isinstance(limits, dict) or not limits:
+        raise ValueError("max_metric_regressions must declare at least one secondary metric")
+    for metric, specification in limits.items():
+        if metric not in METRIC_SPEC:
+            raise ValueError(f"unsupported secondary metric: {metric}")
+        _secondary_limit(metric, specification)
+    return dict(policy)
+
+
+def _normalize_object(obj: Any, role: str) -> dict:
+    """Validate one evaluation object; never infer evidence that was not supplied."""
+    if not isinstance(obj, dict):
+        raise TypeError(f"{role} object must be a mapping")
+    absent = {"object_id", "metrics", "daily"} - set(obj)
+    if absent:
+        raise ValueError(f"{role} object missing {sorted(absent)}")
+    metrics = obj["metrics"]
+    if not isinstance(metrics, dict):
+        raise TypeError(f"{role} metrics must be a mapping")
+    daily = obj["daily"]
+    if not isinstance(daily, pd.DataFrame) or "date" not in daily.columns:
+        raise ValueError(f"{role} daily must be a DataFrame with a date column")
+    frame = daily.copy()
+    frame["date"] = pd.to_datetime(frame["date"]).dt.normalize()
+    if frame["date"].duplicated().any():
+        raise ValueError(f"{role} daily contains duplicate dates")
+    periods_per_year = obj.get("periods_per_year", 252)
+    if isinstance(periods_per_year, bool) or not isinstance(periods_per_year, (int, float)) \
+            or not np.isfinite(periods_per_year) or periods_per_year <= 0:
+        raise ValueError(f"{role} periods_per_year must be positive")
+    return {"object_id": str(obj["object_id"]), "role": role, "metrics": metrics,
+            "daily": frame.sort_values("date", ignore_index=True),
+            "periods_per_year": float(periods_per_year)}
+
+
+def compare_evaluation_objects(baseline: dict, candidate: dict, policy: dict, *,
+                               periods: list[tuple[Any, Any]] | None = None) -> tuple[dict, dict]:
+    """Paired comparison of two deterministic evaluation objects.
+
+    Each object is ``{"object_id", "metrics", "daily", ["periods_per_year"]}``
+    where ``metrics`` came from the single evaluator. There are no seed replicas,
+    so this reports one paired daily difference series per pre-declared period
+    plus a moving consecutive-trading-day block interval; it never fabricates
+    seed slots and never resamples stocks. Budget/regression/resource gates that
+    require a training-run grid stay in ``compare_runs``.
+    """
+    policy = validate_object_policy(policy)
+    left = _normalize_object(baseline, "baseline")
+    right = _normalize_object(candidate, "candidate")
+    versions = {obj["metrics"].get("evaluation_version") for obj in (left, right)}
+    if None in versions:
+        raise ValueError("both objects must declare evaluation_version")
+    if len(versions) != 1:
+        raise ValueError(f"comparison mixes evaluation versions: {sorted(str(v) for v in versions)}")
+    if versions != {EVALUATION_VERSION}:
+        raise ValueError(f"objects must be evaluated by {EVALUATION_VERSION}; found "
+                         f"{sorted(str(v) for v in versions)}")
+    if not left["daily"]["date"].equals(right["daily"]["date"]):
+        raise ValueError("objects must be evaluated on the identical trading-day index")
+    missing: list[str] = []
+    failures: list[str] = []
+    gates: dict[str, dict] = {}
+    for obj in (left, right):
+        gate = evaluation_comparison_gate(obj["metrics"])
+        gates[obj["object_id"]] = gate
+        if not gate["passed"]:
+            missing.extend(f"{obj['object_id']}: {reason}" for reason in gate["reasons"])
+    primary = policy["primary_metric"]
+    column, method, _ = METRIC_SPEC[primary]
+    sign = 1 if policy["direction"] == "maximize" else -1
+    frame = pd.DataFrame({"date": left["daily"]["date"]})
+    primary_values: dict[str, dict] = {}
+    for obj in (left, right):
+        if column not in obj["daily"]:
+            raise ValueError(f"{obj['object_id']}: daily artifact lacks {column!r} for {primary}")
+        values = obj["daily"][column].to_numpy(dtype=float)
+        frame[obj["role"]] = values
+        recomputed = aggregate_metric(values, method, obj["periods_per_year"])
+        recorded = obj["metrics"].get(primary)
+        primary_values[obj["object_id"]] = {"recorded": recorded, "recomputed": recomputed}
+        if not _finite(recorded) or recomputed is None:
+            missing.append(f"{obj['object_id']}: undefined/missing {primary}")
+        elif not np.isclose(recomputed, recorded, rtol=1e-9, atol=1e-12):
+            raise ValueError(f"{obj['object_id']}: recorded {primary} does not match daily artifact")
+    frame["difference"] = sign * (frame["candidate"].to_numpy(dtype=float)
+                                  - frame["baseline"].to_numpy(dtype=float))
+    secondary: dict[str, dict] = {}
+    for metric, specification in policy["max_metric_regressions"].items():
+        limit, direction = _secondary_limit(metric, specification)
+        pair = [left["metrics"].get(metric), right["metrics"].get(metric)]
+        if not all(_finite(value) for value in pair):
+            missing.append(f"undefined/missing secondary metric {metric}")
+            continue
+        regression = (pair[0] - pair[1]) * (1 if direction == "maximize" else -1)
+        secondary[metric] = {"baseline": pair[0], "candidate": pair[1], "regression": regression,
+                             "limit": limit, "passed": regression <= limit}
+        if regression > limit:
+            failures.append(f"{metric} regression {regression:.6g} exceeds limit {limit:.6g}")
+    if periods is None:
+        spans = [(frame["date"].iloc[0], frame["date"].iloc[-1])]
+    else:
+        spans = sorted((pd.Timestamp(start), pd.Timestamp(end)) for start, end in periods)
+        for prior, following in zip(spans, spans[1:]):
+            if prior[1] >= following[0]:
+                raise ValueError("evaluation periods must be disjoint and ordered")
+    assignments: list[np.ndarray] = []
+    covered = np.zeros(len(frame), dtype=bool)
+    for start, end in spans:
+        positions = np.flatnonzero(((frame["date"] >= start) & (frame["date"] <= end)).to_numpy())
+        if len(positions) < 2 * policy["block_days"]:
+            missing.append(f"period [{pd.Timestamp(start).date()}, {pd.Timestamp(end).date()}]: "
+                           "need at least two complete temporal blocks")
+        covered[positions] = True
+        assignments.append(positions)
+    if not covered.all():
+        missing.append(f"{int((~covered).sum())} evaluated days fall outside the declared periods")
+    differences = frame["difference"].to_numpy(dtype=float)
+    period_effects: list[float | None] = []
+    for positions in assignments:
+        values = differences[positions]
+        if len(values) and np.isfinite(values).all():
+            period_effects.append(float(np.mean(values)))
+        else:
+            period_effects.append(None)
+            missing.append(f"primary daily metric undefined in a declared period ({len(values)} days)")
+    improvement = (float(np.mean(period_effects)) if period_effects and None not in period_effects else None)
+    interval = None
+    if improvement is not None and not missing:
+        rng = np.random.default_rng(policy["seed"])
+        draws: list[float] = []
+        for _ in range(policy["bootstrap_samples"]):
+            sampled = np.concatenate([positions[_block_indices(len(positions), policy["block_days"], rng)]
+                                      for positions in assignments])
+            values = differences[sampled]
+            if not np.isfinite(values).all():
+                draws = []
+                break
+            draws.append(float(np.mean(values)))
+        if len(draws) != policy["bootstrap_samples"]:
+            missing.append("bootstrap contains undefined statistics; interval cannot justify acceptance")
+        else:
+            alpha = (1 - policy["confidence"]) / 2
+            low, high = np.quantile(draws, [alpha, 1 - alpha])
+            interval = {"low": float(low), "high": float(high), "confidence": policy["confidence"]}
+    if improvement is not None and improvement < policy["min_improvement"]:
+        failures.append("observed improvement below preregistered practical threshold")
+    if policy["change"]["factor"] == "control.identity":
+        failures.append("identity control cannot justify candidate promotion")
+    status = "reject" if failures else "inconclusive"
+    if not failures and not missing and interval is not None \
+            and interval["low"] > 0 and interval["low"] >= policy["min_improvement"]:
+        status = "accept"
+    elif not failures and not missing:
+        missing.append("confidence interval does not establish the preregistered improvement")
+    comparison = {
+        "schema_version": 1, "metric_scope": "local_approximation",
+        "object_mode": "deterministic_aggregate",
+        "seed_semantics": "N/A: deterministic aggregates have no independent seed replicas; "
+                          "seed slots are never fabricated",
+        "evaluation_version": next(iter(versions)),
+        "policy": policy, "policy_sha256": digest(policy),
+        "primary_metric": primary, "direction": policy["direction"],
+        "objects": {obj["object_id"]: {"role": obj["role"], "gate": gates[obj["object_id"]],
+                                        "primary": primary_values[obj["object_id"]]}
+                    for obj in (left, right)},
+        "periods": [[str(pd.Timestamp(start).date()), str(pd.Timestamp(end).date())]
+                    for start, end in spans],
+        "paired_day_count": int(len(frame)),
+        "period_effects": period_effects, "improvement": improvement, "secondary": secondary,
+        "confidence_interval": interval,
+        "bootstrap": {"method": "moving consecutive trading-day blocks within disjoint periods",
+                      "samples": policy["bootstrap_samples"], "block_days": policy["block_days"],
+                      "seed": policy["seed"], "weighting": "equal weight per evaluation period",
+                      "stock_resampling": False},
+        "limitations": ["local approximate metrics; no official combined score",
+                        "one deterministic pair: uncertainty comes from day blocks only, not seed replication",
+                        "repeated candidate selection needs fresh validation"],
+    }
+    decision = {"schema_version": 1, "status": status, "accepted": status == "accept",
+                "evaluation_version": comparison["evaluation_version"],
+                "object_mode": "deterministic_aggregate",
+                "result": {"accept": "保留", "reject": "回退", "inconclusive": "证据不足"}[status],
+                "action": "retain_candidate" if status == "accept" else "retain_baseline",
+                "failed_gates": sorted(set(failures)), "missing_evidence": sorted(set(missing)),
+                "policy_sha256": digest(policy), "automatic_promotion": False}
     return comparison, decision

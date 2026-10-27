@@ -276,6 +276,10 @@ def test_real_runs_index_matches_the_manifest_fact_source(tmp_path):
     assert summary["gaps"]["missing_archives_count"] == 2
     missing = {row["path"] for row in summary["gaps"]["missing_archives"]}
     assert missing == {"runs/training-duration-20261015", "runs/training-progression"}
+    assert summary["gaps"]["manifestless_artifacts_count"] == 1
+    derived = summary["gaps"]["manifestless_artifacts"][0]
+    assert derived["path"].endswith("windows/jan2024/tlob_s29") and derived["exists"] is True
+    assert summary["gaps"]["unindexed_total"] == 3
     assert summary["gaps"]["per_field"]["plan_sha256"] >= 1
     known = next(entry for entry in entries
                  if entry["experiment_id"] == "mlplob-v3-60d-csz-19800")

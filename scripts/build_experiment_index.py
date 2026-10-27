@@ -82,6 +82,7 @@ REQUIRED_FIELDS = (
 MISSING_ARCHIVES = (
     {
         "path": "runs/training-duration-20261015",
+        "kind": "missing_archive",
         "reason": "档案缺失：运行目录及其 decision.json 在工作区不存在",
         "evidence": ["modified_tlob/training_duration_20261015.json",
                      "runs/legacy_caliber.json#unfrozen"],
@@ -89,9 +90,19 @@ MISSING_ARCHIVES = (
     },
     {
         "path": "runs/training-progression",
+        "kind": "missing_archive",
         "reason": "档案缺失：运行目录及其 decision.json 在工作区不存在",
         "evidence": ["modified_tlob/training_progression_20261015.json",
                      "runs/legacy_caliber.json#unfrozen"],
+        "counts_as_index_entry": False,
+    },
+    {
+        "path": "runs/multiscale-replay-20261026/20261026T133118.869042Z_bcdc779dc66b/windows/jan2024/tlob_s29",
+        "kind": "derived_artifact",
+        "reason": "子窗口重放产物没有独立 manifest（父 run 有 manifest 并已作为一条运行登记）；"
+                  "不生成索引条目，避免把派生窗口当成一次独立实验",
+        "evidence": ["runs/multiscale-replay-20261026/20261026T133118.869042Z_bcdc779dc66b/manifest.json",
+                     "runs/frozen/a-20261026/sha256_index.json"],
         "counts_as_index_entry": False,
     },
 )
@@ -721,10 +732,16 @@ def gaps_summary(entries: list[dict], root: Path) -> dict:
             affected += 1
         for name in entry["missing_fields"]:
             per_field[name] = per_field.get(name, 0) + 1
-    missing_archives = []
+    missing_archives: list[dict] = []
+    manifestless_artifacts: list[dict] = []
     if is_repository_runs(root):
         for row in MISSING_ARCHIVES:
-            if not (ROOT / row["path"]).exists():
+            target = ROOT / row["path"]
+            present = target.exists()
+            if row.get("kind") == "derived_artifact":
+                if not present or not any(target.rglob("manifest.json")):
+                    manifestless_artifacts.append({**row, "exists": present})
+            elif not present:
                 missing_archives.append(dict(row))
     return {
         "entries_with_gaps": affected,
@@ -735,8 +752,12 @@ def gaps_summary(entries: list[dict], root: Path) -> dict:
             name for name, count in per_field.items() if count == len(entries)),
         "missing_archives": missing_archives,
         "missing_archives_count": len(missing_archives),
+        "manifestless_artifacts": manifestless_artifacts,
+        "manifestless_artifacts_count": len(manifestless_artifacts),
+        "unindexed_total": len(missing_archives) + len(manifestless_artifacts),
         "note": "gaps record what the manifest does not state; nothing is backfilled or "
-                "inferred, and missing archives yield no synthetic index entries",
+                "inferred, and missing archives or manifest-less derived artifacts yield no "
+                "synthetic index entries",
     }
 
 

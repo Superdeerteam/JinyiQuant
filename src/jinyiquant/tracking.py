@@ -14,6 +14,7 @@ from pathlib import Path
 
 import psutil
 
+from .data import FinalAccessClaim
 from .io import canonical_json, digest, file_sha256, read_json, redact, utc_now, write_json
 
 _MODULE = Path(__file__).resolve()
@@ -111,17 +112,25 @@ def audit_db(output_root: Path):
     return connection
 
 
-def claim_final_access(config, run_id: str):
-    # Key excludes model/seed/experiment to prevent repeated views by renaming experiments.
+def claim_final_access(config, run_id: str) -> FinalAccessClaim:
+    """Record one use of the sealed final-check interval and return its proof token.
+
+    The scope key excludes model/seed/experiment so renaming an experiment cannot
+    buy extra views. Reading the sealed interval requires this token.
+    """
     scope = digest({"source": config.data.source, "version": config.data.version,
                     "final": config.splits.final.model_dump(mode="json")})
+    final = config.splits.final
     with audit_db(config.output_root) as db:
         db.execute("BEGIN IMMEDIATE")
         count = db.execute("SELECT COUNT(*) FROM final_access WHERE scope=?", (scope,)).fetchone()[0]
         if count >= config.final_access.max_views:
             raise ValueError(f"Final split view limit reached ({count}); access denied")
+        granted_at = utc_now()
         db.execute("INSERT INTO final_access VALUES (?,?,?,?)",
-                   (scope, run_id, config.final_access.purpose, utc_now()))
+                   (scope, run_id, config.final_access.purpose, granted_at))
+    return FinalAccessClaim(scope=scope, run_id=run_id, granted_at=granted_at,
+                            window=(final.start.isoformat(), final.end.isoformat()))
 
 
 def finish(run_dir: Path, status: str, exit_code: int, *, resources=None, error=None):

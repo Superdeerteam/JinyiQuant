@@ -196,6 +196,11 @@ def paired_estimates(rows, plan):
                       "No promotion or practical improvement threshold is inferred from these baseline observations."}
 
 
+def load_contract_metrics(run_dir) -> dict:
+    """Read one run's metrics artifact and fail closed on a foreign evaluation version."""
+    return require_contract_metrics(read_json(Path(run_dir) / "metrics.json"))
+
+
 def summarize(destination, plan):
     attempts = read_json(destination / "attempts.json")
     daily_rows, timestamp_rows, coverage, summary, checks = [], [], [], [], []
@@ -203,7 +208,7 @@ def summarize(destination, plan):
     for item in attempts:
         path = Path(item["run"])
         config = RunConfig.model_validate(read_json(path / "config.json"))
-        metrics = require_contract_metrics(read_json(path / "metrics.json"))
+        metrics = load_contract_metrics(path)
         manifest = read_json(path / "manifest.json")
         metadata = {field: item[field] for field in ("period", "seed", "model")}
         daily_rows.append(pd.read_csv(path / "daily.csv").assign(**metadata))

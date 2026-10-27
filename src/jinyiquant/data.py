@@ -146,13 +146,56 @@ def assert_label_windows_before(frame: pd.DataFrame, boundary, *, name: str = "s
                          f"boundary samples: {detail}")
 
 
-def assert_development_read(start, end, *, sealed_access: bool = False) -> None:
+@dataclass(frozen=True)
+class FinalAccessClaim:
+    """Proof that one sealed final-check view was recorded in the audit index.
+
+    ``tracking.claim_final_access`` is the only sanctioned minting path: it inserts the
+    audit row and enforces ``final_access.max_views``. The type exists so the read path
+    cannot be opened by flipping a boolean; building one by hand is an explicit,
+    greppable act that leaves no audit row behind.
+    """
+    scope: str
+    run_id: str
+    granted_at: str
+    window: tuple[str, str]
+
+
+def validate_sealed_claim(config: Any, claim: Any) -> FinalAccessClaim:
+    """Reject a bare flag or a claim minted for a different final window."""
+    if not isinstance(claim, FinalAccessClaim):
+        raise TypeError("sealed_access must be a FinalAccessClaim recorded by tracking.claim_final_access; "
+                        "a bare flag cannot open the sealed interval")
+    expected = _sealed_claim_window(config)
+    if expected is not None and tuple(claim.window) != expected:
+        raise ValueError(f"sealed claim window {tuple(claim.window)} does not match the configured "
+                         f"final split {expected}")
+    return claim
+
+
+def _sealed_claim_window(config: Any) -> tuple[str, str] | None:
+    """The configured final-split window, or None when the config declares none."""
+    splits = config_option(config, "splits")
+    final = config_option(splits, "final") if splits is not None else None
+    start = config_option(final, "start") if final is not None else None
+    end = config_option(final, "end") if final is not None else None
+    if start is None or end is None:
+        return None
+    return (pd.Timestamp(start).isoformat(), pd.Timestamp(end).isoformat())
+
+
+def assert_development_read(start, end, *, sealed_access: FinalAccessClaim | None = None) -> None:
     """Refuse any read whose window could open the sealed final-check interval.
 
-    ``start``/``end`` are the effective file-read window; ``None`` means unbounded. Only a
-    caller that has already recorded the one-time final access may pass ``sealed_access``.
+    ``start``/``end`` are the effective file-read window; ``None`` means unbounded. The
+    sealed interval opens only for a ``FinalAccessClaim`` minted by
+    ``tracking.claim_final_access``, which records the one-time view in the audit index.
+    A bare boolean cannot be accepted: it would leave no audit record behind.
     """
-    if sealed_access:
+    if sealed_access is not None:
+        if not isinstance(sealed_access, FinalAccessClaim):
+            raise TypeError("sealed_access must be a FinalAccessClaim recorded by "
+                            "tracking.claim_final_access; a bare flag cannot open the sealed interval")
         return
     lower = None if start is None else pd.Timestamp(start)
     upper = None if end is None else pd.Timestamp(end)
@@ -385,7 +428,7 @@ def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_
 
 def _read(path_value: Any, requested: list[str], start: Any, end: Any,
           cache_dir: Path | None = None, cache_events: list[dict] | None = None,
-          selection: DaySelection | None = None, *, sealed_access: bool = False
+          selection: DaySelection | None = None, *, sealed_access: FinalAccessClaim | None = None
           ) -> tuple[pd.DataFrame, list[dict]]:
     if start is not None or end is not None:
         # One choke point for every windowed market-data read (including verified caches).
@@ -511,7 +554,8 @@ def _sampling_fields(value: Any) -> dict[str, Any] | None:
     return fields
 
 
-def load_data(config: Any, start: Any = None, end: Any = None, *, sealed_access: bool = False) -> DataBundle:
+def load_data(config: Any, start: Any = None, end: Any = None, *,
+              sealed_access: FinalAccessClaim | None = None) -> DataBundle:
     """Read only selected dates/columns; bars include configured historical warm-up.
 
     Label values are retained separately. No label-derived columns enter bars or
@@ -548,6 +592,8 @@ def load_data(config: Any, start: Any = None, end: Any = None, *, sealed_access:
     if end is None and config_option(config, "labels_path"):
         raise ValueError(f"Development reads with labels require an explicit end before the sealed interval "
                          f"[{SEALED_START}, {SEALED_END})")
+    if sealed_access is not None:
+        sealed_access = validate_sealed_claim(config, sealed_access)
     if start is not None or end is not None:
         assert_development_read(warm_start if warm_start is not None else start, end, sealed_access=sealed_access)
     records = {}

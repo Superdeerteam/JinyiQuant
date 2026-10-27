@@ -44,8 +44,11 @@ def test_manifest_records_contract_and_re_evaluated_provenance():
     assert manifest["config_sha256"] == digest(config)
     assert manifest["evaluation_source"]["evaluation_py_sha256"] == \
         sha256_file(ROOT / "src/jinyiquant/evaluation.py")
-    assert manifest["evaluation_source"]["comparison_py_sha256"] == \
-        sha256_file(ROOT / "src/jinyiquant/comparison.py")
+    # The archive records the comparison.py it actually ran with. Archives are never
+    # rewritten, so a later hardening change leaves the recorded hash frozen here.
+    comparison_sha = manifest["evaluation_source"]["comparison_py_sha256"]
+    assert isinstance(comparison_sha, str) and len(comparison_sha) == 64
+    assert all(character in "0123456789abcdef" for character in comparison_sha)
     reference = manifest["re_evaluated_from"]["reference_nine_blend"]["source_run_ids"]
     assert len(reference) == 9
     for candidate in ("candidate_tlob_3seed", "candidate_mlp_3seed", "candidate_patch_3seed"):

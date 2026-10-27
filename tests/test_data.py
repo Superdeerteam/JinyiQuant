@@ -391,7 +391,11 @@ def test_sealed_final_interval_has_no_development_read(tmp_path):
                        (None, "2024-12-31"), ("2024-12-01", None)]:
         with pytest.raises(ValueError, match="Sealed final interval"):
             data.assert_development_read(start, end)
-    data.assert_development_read("2024-10-08", "2024-10-09", sealed_access=True)
+    with pytest.raises(TypeError, match="FinalAccessClaim"):
+        data.assert_development_read("2024-10-08", "2024-10-09", sealed_access=True)
+    claim = data.FinalAccessClaim(scope="unit", run_id="unit", granted_at="2024-01-01T00:00:00+00:00",
+                                  window=("2024-10-08T00:00:00", "2025-01-01T00:00:00"))
+    data.assert_development_read("2024-10-08", "2024-10-09", sealed_access=claim)
     path = tmp_path / "bars.parquet"
     bars().to_parquet(path)
     with pytest.raises(ValueError, match="Sealed final interval"):
