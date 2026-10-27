@@ -1,0 +1,195 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-data-ladder-20261027",
+ "owner_role": "captain",
+ "phase": "B4 data-window research, level-1 supplemental measurements",
+ "status": "registered",
+ "one_shot": false,
+ "registered_at_source": "written before any ladder process started",
+ "purpose": "Fill an idle cloud window with level-1 measurements that sharpen the registered data-amount question, without escalating to level 2, without promoting anything and without reading the sealed interval.",
+ "question": "Within the registered 132-day window, where does the out-of-sample RankIC peak sit on the training-amount axis, and does the peak move when the window holds 132 instead of 60 days?",
+ "relation_to_registered_probe": {
+  "escalation_authority": "configs/b4_data_probe_prereg_20261027.json",
+  "note": "the C1/C2/C3 verdict and the escalation decision belong to that document; this supplement neither re-reads it nor may overturn it",
+  "no_level_2": true,
+  "level_2_status": "still requires its own pre-registration and is still not authorized by anything here"
+ },
+ "components": [
+  {
+   "id": "A",
+   "train_trading_days": 132,
+   "train_window": [
+    "2023-04-14",
+    "2023-10-31"
+   ],
+   "seeds": [
+    53,
+    59,
+    61
+   ],
+   "effective_epoch_points": [
+    0.66,
+    1.32,
+    2.64,
+    3.96,
+    5.28
+   ],
+   "role": "training-amount curve at the registered 132-day window, on seeds that the registered probe does not use",
+   "plans": [
+    "configs/ladder_132d_seed53_5point_plan.json",
+    "configs/ladder_132d_seed59_5point_plan.json",
+    "configs/ladder_132d_seed61_5point_plan.json"
+   ]
+  },
+  {
+   "id": "B",
+   "train_trading_days": 60,
+   "train_window": [
+    "2023-08-01",
+    "2023-10-31"
+   ],
+   "seeds": [
+    11,
+    29,
+    47
+   ],
+   "effective_epoch_points": [
+    0.66,
+    1.32,
+    2.64
+   ],
+   "role": "same-environment 60-day control curve; the registered control is not re-run and is not replaced",
+   "plans": [
+    "configs/ladder_60d_seed11_3point_plan.json",
+    "configs/ladder_60d_seed29_3point_plan.json",
+    "configs/ladder_60d_seed47_3point_plan.json"
+   ]
+  },
+  {
+   "id": "C",
+   "train_trading_days": 132,
+   "train_window": [
+    "2023-04-14",
+    "2023-10-31"
+   ],
+   "seeds": [
+    67,
+    71,
+    73
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "extra support seeds for the C1 interval; descriptive, never a replacement for the registered three seeds",
+   "plans": [
+    "configs/ladder_132d_seed67_2point_plan.json",
+    "configs/ladder_132d_seed71_2point_plan.json",
+    "configs/ladder_132d_seed73_2point_plan.json"
+   ]
+  }
+ ],
+ "measured_budget_reference": {
+  "132": {
+   "usable_samples": 1054256,
+   "batches_per_epoch": 32946,
+   "steps": {
+    "0.66": 21744,
+    "1.32": 43488,
+    "2.64": 86976,
+    "3.96": 130464,
+    "5.28": 173952
+   }
+  },
+  "60": {
+   "usable_samples": 479432,
+   "batches_per_epoch": 14983,
+   "steps": {
+    "0.66": 9888,
+    "1.32": 19777,
+    "2.64": 39553
+   }
+  }
+ },
+ "declared_reading": {
+  "primary_curve_component": "A",
+  "peak_rule": "for each seed, the peak point is the argmax of out-of-sample RankIC over the declared points; the component-level peak is the mode of the three seed peaks and is reported together with all three values, never as a single number",
+  "right_shift_rule": "declare 'the optimum moved right with more data' only when the 132-day component peak sits at a point larger than the 60-day component peak for at least two of three seeds, and the seed-mean RankIC at that larger point exceeds the seed-mean RankIC at 1.32 by at least 0.0017 - the same magnitude as the registered minimum meaningful improvement, borrowed and not re-derived",
+  "cross_environment_rule": "component B is a machine and torch-build robustness check against the recorded 60-day values; if any point of seed 11 shifts by more than 0.0020 the cross-environment comparability of the registered control is reported as impaired and the C1 reading is flagged, not silently kept",
+  "support_seed_rule": "component C widens the C1 interval for reporting only; the registered three seeds remain the registered evidence and a six-seed interval may not be presented as the registered result"
+ },
+ "prohibitions": [
+  "no escalation, no level 2, no promotion, no replacement of the incumbent",
+  "no reading of the sealed interval",
+  "no change to any promotion threshold, secondary line, net5 limit, cost scenario or period count",
+  "no reporting of a single seed as a candidate",
+  "no re-selection of a component, seed or point after its value has been read",
+  "no C1 verdict from this document, in either direction",
+  "no relaxation of the exposure reconciliation, the coverage floor or the resume fail-closed rule"
+ ],
+ "execution_queue": [
+  {
+   "priority": 1,
+   "component": "A",
+   "processes": 3
+  },
+  {
+   "priority": 2,
+   "component": "B",
+   "processes": 3
+  },
+  {
+   "priority": 3,
+   "component": "C",
+   "processes": 3
+  }
+ ],
+ "queue_rules": [
+  "a component may start only when a free process slot exists and the memory pre-flight allows it",
+  "each plan is one process and one uninterrupted trajectory; a plan is never split",
+  "a failed process is retried at most once, then skipped and reported; the queue continues",
+  "the whole queue is drained in priority order and stops when the window closes",
+  "partial completion is reported as partial: a component with fewer than three finished seeds is described as incomplete"
+ ],
+ "open_items_after_registration": [
+  "the real peak location is read from the replay of exported weights, not from the cloud validation score"
+ ],
+ "generated_artifacts": {
+  "A": {
+   "recipes": [
+    "configs/ladder_132d_csz_seed53.json",
+    "configs/ladder_132d_csz_seed59.json",
+    "configs/ladder_132d_csz_seed61.json"
+   ],
+   "plans": [
+    "configs/ladder_132d_seed53_5point_plan.json",
+    "configs/ladder_132d_seed59_5point_plan.json",
+    "configs/ladder_132d_seed61_5point_plan.json"
+   ]
+  },
+  "B": {
+   "recipes": [
+    "configs/ladder_60d_csz_seed11.json",
+    "configs/ladder_60d_csz_seed29.json",
+    "configs/ladder_60d_csz_seed47.json"
+   ],
+   "plans": [
+    "configs/ladder_60d_seed11_3point_plan.json",
+    "configs/ladder_60d_seed29_3point_plan.json",
+    "configs/ladder_60d_seed47_3point_plan.json"
+   ]
+  },
+  "C": {
+   "recipes": [
+    "configs/ladder_132d_csz_seed67.json",
+    "configs/ladder_132d_csz_seed71.json",
+    "configs/ladder_132d_csz_seed73.json"
+   ],
+   "plans": [
+    "configs/ladder_132d_seed67_2point_plan.json",
+    "configs/ladder_132d_seed71_2point_plan.json",
+    "configs/ladder_132d_seed73_2point_plan.json"
+   ]
+  }
+ }
+}

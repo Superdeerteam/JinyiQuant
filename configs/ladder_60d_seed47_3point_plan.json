@@ -1,0 +1,153 @@
+{
+ "schema_version": 1,
+ "experiment_id": "ladder-60d-seed47",
+ "created_at_utc": "2026-10-27T16:00:10.636798+00:00",
+ "status": "execution_plan_of_registered_ladder",
+ "registration": {
+  "path": "configs/b4_data_ladder_prereg_20261027.json",
+  "role": "component B",
+  "note": "this supplement adds measurements inside the registered level-1 window; the escalation verdict stays with b4_data_probe_prereg_20261027 and is not re-read here"
+ },
+ "question_zh": "在 60 个交易日窗口（2023-08-01..2023-10-31）上，同配方单条连续轨迹在 0.66/1.32/2.64 个有效 epoch 点的样本外 RankIC 各是多少，峰值落在哪个训练量上。",
+ "hypothesis": "if the out-of-sample RankIC peak moves to a larger training amount when the window holds more days, the training-amount optimum is data-limited; if the peak stays at the smallest amount, more data does not support more training.",
+ "factor": {
+  "changed": "none beyond the training amount of one continuous trajectory",
+  "train_window": [
+   "2023-08-01",
+   "2023-10-31"
+  ],
+  "train_trading_days": 60,
+  "note": "no data, label, split or model setting differs from the frozen recipe of this rung"
+ },
+ "environment_only_changes": {
+  "data.bars_path": "host data root",
+  "data.labels_path": "host data root",
+  "data.instruments_path": "host data root",
+  "data.instrument_map_path": "host data root",
+  "data.cache_dir": "host cache root (shared across the seeds of this rung)",
+  "output_root": "host run root"
+ },
+ "recipe_config": "configs/ladder_60d_csz_seed47.json",
+ "recipe_sha256": "dcf6aff539e2b422cf51aac3bb79143bba5dad891f7943c0c36173fc5e499579",
+ "recipe_frozen_baseline": {
+  "path": "configs/mlplob_v3_60d_csz_19800.json",
+  "sha256": "7524a3444247bb500889e55c81f44ee83235dc5bf25cd36cdffe23a4f9af2383"
+ },
+ "recipe_frozen": [
+  "model.kind",
+  "model.hidden_dim",
+  "model.num_layers",
+  "data.feature_columns",
+  "data.lookback",
+  "data.sample_times",
+  "data.label_horizon_minutes",
+  "data.outside_universe_labels",
+  "model.target_centering",
+  "model.target_scaling",
+  "model.time_loss_weighting",
+  "model.batch_size",
+  "model.learning_rate",
+  "evaluation_split",
+  "evaluation",
+  "acceptance"
+ ],
+ "budget_only_overrides": {
+  "model.max_steps": "cleared; the registered trajectory steps govern the budget",
+  "model.epochs": "kept as the upper bound (must exceed the last budget point)",
+  "data.splits.train.start": "moved earlier to 2023-04-14; the single changed factor",
+  "note": "any other deviation from the frozen recipe must fail the run guard"
+ },
+ "budget_points": [
+  {
+   "name": "ladder-0.66",
+   "effective_epochs": 0.66,
+   "role": "low-amount curve point below the registered anchor"
+  },
+  {
+   "name": "ladder-1.32",
+   "effective_epochs": 1.32,
+   "role": "registered anchor magnitude (C1 left side)"
+  },
+  {
+   "name": "ladder-2.64",
+   "effective_epochs": 2.64,
+   "role": "registered second point magnitude (C2 left / C3 right)"
+  }
+ ],
+ "one_continuous_trajectory": true,
+ "lr_schedule": "constant",
+ "exposure": {
+  "min_coverage": 1.0,
+  "effective_epochs_atol": 0.001,
+  "track_exposure": true,
+  "reconcile": "samples_seen == steps * batch_size; unique/usable coverage >= min_coverage; realised effective epochs within atol of the declared point"
+ },
+ "resume": {
+  "state": [
+   "network",
+   "optimizer",
+   "torch_rng",
+   "numpy_rng",
+   "python_rng",
+   "sampler_generator",
+   "sampler_position",
+   "exposure_counters"
+  ],
+  "repro_tolerance": {
+   "atol": 1e-06,
+   "rtol": 1e-05
+  },
+  "fail_closed": "pool, recipe, fitted transforms and sampler batch order must reproduce the checkpoint exactly",
+  "note": "the two budget points are checkpoints of one uninterrupted trajectory, not two runs"
+ },
+ "derived_reference": {
+  "estimate_not_budget": true,
+  "trading_days": 60,
+  "usable_samples_measured": 479432,
+  "batch_size": 32,
+  "steps_expected": {
+   "0.66": 9888,
+   "1.32": 19777,
+   "2.64": 39553
+  },
+  "calibration": "measured on the clean HEAD tree for the seed-11 registered precheck; the driver re-derives usable samples and steps from the pool actually built",
+  "deviation_tolerance": {
+   "relative": 0.05,
+   "applies_to": [
+    "usable_samples",
+    "steps"
+   ]
+  }
+ },
+ "cloud": {
+  "host": "hz-4.matpool.com:26197 (24 cores / 172 GB / 2x RTX 3090 24GB)",
+  "concurrency": {
+   "processes": 3,
+   "gpus": 2,
+   "one_process_per_gpu": false,
+   "sharing": "seeds are packed 3 per GPU when the memory pre-flight allows it",
+   "threads_per_process": 4,
+   "seed_gpu_map": {
+    "11": 0,
+    "29": 1,
+    "47": 0
+   }
+  },
+  "checkpoint_dir": "trajectory/",
+  "artifacts_to_retrieve": [
+   "manifest.json",
+   "trajectory.json",
+   "exposure.json",
+   "events.jsonl",
+   "trajectory/training_state.pt",
+   "trajectory/training_state.json",
+   "budget_points/*.json",
+   "budget_points/*.parquet"
+  ]
+ },
+ "evaluation_scope": {
+  "cloud": "validation split 2023-11-01..2023-11-15 = 10 trading days, process diagnostic only",
+  "formal": "the five declared research windows produced locally by replaying exported per-budget-point weights; a cloud validation score is never the delivery evidence",
+  "sealed_final": "never read"
+ }
+}
