@@ -1,0 +1,48 @@
+{
+  "alpha": 0.5,
+  "candidate_5bp": {
+    "breakeven_bp": 3.094028755501952,
+    "cost_bp": 7.46233935457009,
+    "gross_bp": 4.617738509270747,
+    "net_bp": -2.8446008452993428,
+    "turnover_local": 0.7461282913016909
+  },
+  "checks": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b/checks.json",
+  "checks_passed": true,
+  "comparison": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b/comparison.json",
+  "cost_reduction_bp_5bp": -3.5579868143472124,
+  "created_at": "2026-10-27T07:07:21.239559+00:00",
+  "evaluation_version": "eval-v2",
+  "evidence_limits": [
+    "single alpha only; no grid search was run and no stronger persistence is claimed",
+    "local approximate caliber on already-viewed development months; not a platform score",
+    "the official turnover item is a rank percentile that cannot be computed locally",
+    "cost is linear in traded notional with no market-impact term; 5bp is a declared stress assumption",
+    "no promotion or rejection: promotion needs the separately pre-registered statistics round"
+  ],
+  "experiment_id": "turnover-stability-20261027",
+  "gross_retention_ratio_5bp": 0.8727281294783344,
+  "kind": "evaluation",
+  "plan": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b/plan.json",
+  "reference_5bp": {
+    "cost_bp": 11.020326168917302,
+    "gross_bp": 5.291153514246138,
+    "net_bp": -5.7291726546711645,
+    "turnover_local": 1.1019545306708005
+  },
+  "residual_gap": {
+    "candidate_breakeven_single_side_rate_bp": 3.094028755501952,
+    "reduction_still_required_share": 0.3811066323172563,
+    "turnover_local_now": 0.7461282913016909,
+    "turnover_required_for_5bp_breakeven": 0.4617738509270747
+  },
+  "run_dir": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b",
+  "schema_version": 1,
+  "single_change": "causal_ewma_alpha050",
+  "status": "completed",
+  "turnover_ratio_5bp": 0.6770953524257439,
+  "upstream": {
+    "cost_curve": "runs/cost-curve-20261027",
+    "record": "modified_tlob/cost_curve_20261027.json"
+  }
+}

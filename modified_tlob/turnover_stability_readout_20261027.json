@@ -1,0 +1,103 @@
+{
+  "change": "causal_ewma_alpha050 (alpha=0.5, single operator, no grid)",
+  "checks_passed": true,
+  "coverage": {
+    "covers_all_declared_periods": true,
+    "days": 104,
+    "days_inside_declared_periods": 104,
+    "days_outside_declared_periods": 0,
+    "declared_periods": 5,
+    "from": "2023-11-01",
+    "minimum_days": 40,
+    "minimum_periods": 2,
+    "sealed_intersection": 0,
+    "to": "2024-06-28"
+  },
+  "created_at": "2026-10-27T07:37:08.874966+00:00",
+  "decision_relevance": [
+    "this change lowers the local turnover proxy 1.1020 -> 0.7461 (0.677x) and cuts 5bp cost by 3.56bp, but keeps only 0.873x of gross and 0.886x of rank IC, so it fails the frozen primary and secondary lines",
+    "the frozen gate cannot express an output-level operator, so no gate verdict exists for it",
+    "if the team wants a gate-able turnover change it must be a model.* / data.* field, which requires a retrain round and a new pre-registration"
+  ],
+  "experiment_id": "turnover-readout-20261027",
+  "export": {
+    "objects": "runs/turnover-readout-20261027/20261027T073543Z_ca2d96722f39/objects",
+    "peak_host_rss_mib": 810.91015625,
+    "reproduced": true
+  },
+  "gate_vocabulary_gap": {
+    "accepted_families": [
+      "data.<field>",
+      "model.<field>",
+      "control.identity"
+    ],
+    "accepted_model_field": {
+      "accepted": true,
+      "factor": "model.time_loss_weighting"
+    },
+    "consequence": "the frozen gate cannot adjudicate an output-level persistence operator; this readout therefore states the gate lines but issues no verdict, and any gate-able turnover change must be expressed as a model/data field (which needs a retrain round) or the protocol needs a new post-processing family plus a new pre-registration",
+    "output_level_operator": {
+      "accepted": false,
+      "factor": "postprocess.causal_ewma",
+      "reason": "change.factor must name one supported model/data field or control.identity"
+    }
+  },
+  "kind": "evaluation",
+  "net5": {
+    "baseline": -0.0005727547194213101,
+    "candidate": -0.0002843177444844168,
+    "frozen_limit": 5.62e-05,
+    "passed": true,
+    "regression": -0.00028843697493689336
+  },
+  "prereg_sha256": "04ac4b10a063bdb844e39a8687ed47074005d8a7593d5ae0c0cb17d3fdd1a18c",
+  "primary": {
+    "frozen_min_improvement": 0.0034,
+    "improvement": -0.00803251808868468,
+    "interval": [
+      -0.01047945712331053,
+      -0.006447178344498131
+    ],
+    "metric": "rank_ic_mean",
+    "positive_periods": 1,
+    "required_positive_periods": 4
+  },
+  "promotable_under_frozen_lines": false,
+  "readout": "runs/turnover-readout-20261027/20261027T073543Z_ca2d96722f39/readout.json",
+  "run_dir": "runs/turnover-readout-20261027/20261027T073543Z_ca2d96722f39",
+  "schema_version": 1,
+  "secondary": {
+    "ic_ir": {
+      "frozen_limit": 0.101,
+      "passed": false,
+      "regression": 0.14033297671887612
+    },
+    "ic_mean": {
+      "frozen_limit": 0.0023,
+      "passed": false,
+      "regression": 0.009947191388624127
+    },
+    "long_short_return_mean": {
+      "frozen_limit": 2.28e-05,
+      "passed": false,
+      "regression": 6.726056119405642e-05
+    },
+    "long_short_sharpe": {
+      "frozen_limit": 1.63,
+      "passed": true,
+      "regression": 0.8677495659999792
+    },
+    "min_daily_long_short_return": {
+      "frozen_limit": 0.0002637,
+      "passed": true,
+      "regression": -5.969330402256557e-05
+    },
+    "turnover_mean": {
+      "frozen_limit": 0.0318,
+      "passed": true,
+      "regression": -0.3558262393691096
+    }
+  },
+  "source_run": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b",
+  "status": "completed"
+}

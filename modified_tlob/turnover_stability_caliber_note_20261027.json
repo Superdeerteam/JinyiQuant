@@ -1,0 +1,89 @@
+{
+  "caliber_correction": {
+    "already_compliant_in": [
+      "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b/comparison.json:conclusion.statements (最后一条声明净收益/成本与官方换手项都不是官方得分)"
+    ],
+    "local_fact": "本地 −11.4% RankIC / −12.7% 毛收益 对 −32.3% 换手代理；5bp 净收益 +2.89bp、成本 −3.56bp",
+    "not_permitted": "不能由本地换手下降反推官方五项分数的净效果：官方换手项是全体有效提交中的 rank 百分位，本地不可算",
+    "required_wording": "本地经济性与预测能力权衡为负（不得写成官方分数下降）"
+  },
+  "conditional_retest": {
+    "evaluation": {
+      "entry": "jinyiquant.evaluation.evaluate",
+      "evaluation_version": "eval-v2",
+      "periods_per_year": 252,
+      "primary_stress_scenario": "5bp",
+      "quantile": 0.2,
+      "rates": {
+        "0bp": 0.0,
+        "10bp": 0.001,
+        "2bp": 0.0002,
+        "5bp": 0.0005
+      }
+    },
+    "expected_cost": "无训练；每对象 4 次 eval-v2 评估（约 25 s/次，CPU），外加一次因果截断自检",
+    "failure_mode_to_watch": "若新模型毛收益提升来自更高频信号，alpha=0.5 的 IC 代价可能同步放大；先按同一塌缩护栏看，再报四情景",
+    "guards": {
+      "collapse_guards": "min cross-section std > 0, defined rank IC share >= 0.99, rank IC retention >= 0.5, gross retention >= 0.5",
+      "frozen_gate_lines": "原样使用 configs/b4_promotion_prereg_20261027.json；不得改门槛",
+      "no_bp_threshold": "标准化分数不得当 bp 收益设交易门槛"
+    },
+    "id": "b4_initial_screen_zero_retrain_apply_alpha050",
+    "inputs": "新模型在 5 个声明月（2023-11/2024-01/2024-03/2024-04/2024-06，104 日）的逐 (date, instrument) 因子分数",
+    "operator": {
+      "alpha": 0.5,
+      "grid": [
+        0.5
+      ],
+      "implementation": "scripts/turnover_stability_change.py: smooth_scores(keys, scores, 0.5)",
+      "leak_check": "scripts/turnover_stability_change.py: causality_check(keys, scores, 0.5)",
+      "single_operator": true,
+      "steps": [
+        "per-timestamp cross-sectional population z-score",
+        "causal per-day EWMA along the 8 intraday cross sections with alpha=0.5",
+        "state resets at each trading day"
+      ]
+    },
+    "precondition": "仅当 B2 更长训练把毛收益抬上去后再考虑；当前不执行",
+    "reporting": [
+      "毛收益保留量",
+      "成本减少量",
+      "官方换手项只能以本地 U/2 代理的单调方向表达"
+    ],
+    "zero_retraining": true
+  },
+  "created_at": "2026-10-27T07:41:15.434365+00:00",
+  "decision": {
+    "objective_level_followup": "不排期；要等 B2 训练量证据出来再决定是否花一轮云预算（需重训 + 重新预登记）",
+    "protocol_extension": "不补 postprocess.* 家族：为一个已判负的算子开门不划算",
+    "source": "captain message to turnover-analyst, 2026-10-27T07:47Z (turnover-analyst t7 attempt 2)",
+    "t7_disposition": "换手实验证据、非晋升候选；负结果按归档证据入库"
+  },
+  "decision_owner": "captain",
+  "experiment_id": "turnover-stability-20261027",
+  "provenance": {
+    "files_sha256": {
+      "modified_tlob/turnover_stability_20261027.json": "b1ced7830944fae9349652acf558602f19105d6fabc8697fd9605cfd73deb814",
+      "modified_tlob/turnover_stability_readout_20261027.json": "ac5b59567712b16f1bee9690d324f0f9af16318b3684f5f028cf3264af55b1f6",
+      "scripts/cost_curve_eval.py": "02c8e69e922ec8d23f88f5ec9a68802cdc77edf40462502536858338248d6e7b",
+      "scripts/turnover_gate_readout.py": "4b8ecf515c3db7707708805cadeb4048947101bd7017216bdc1924d57c2f1799",
+      "scripts/turnover_stability_change.py": "91e6ae2a74cf7b0c7ea6f758924f23a8e9b4e5d9a89e8488d1d9c0bb67c6e03e"
+    },
+    "head_commit": "846d5b3a501a338e6e912e0898fb83bd54836e16",
+    "readout_run": "runs/turnover-readout-20261027/20261027T073543Z_ca2d96722f39",
+    "records": [
+      "modified_tlob/turnover_stability_20261027.json",
+      "modified_tlob/turnover_stability_readout_20261027.json"
+    ],
+    "run": "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b"
+  },
+  "record_id": "turnover_stability_caliber_note_20261027",
+  "schema_version": 1,
+  "status": "accepted_negative_result",
+  "superseded_claim": {
+    "claim": "tests/test_experiment_index.py::test_real_runs_index_matches_the_manifest_fact_source 的 len(manifests)==701 冻结常量会因新增 run 变红",
+    "status": "withdrawn",
+    "verified_by": "PYTHONPATH=\"src;.\" .venv-tlob/Scripts/python.exe -m pytest tests/test_experiment_index.py -q",
+    "why": "该断言已在 7fa3af2 移除，测试改为与 manifest 实况自洽；复核 HEAD 上 tests/test_experiment_index.py = 10 passed"
+  }
+}
