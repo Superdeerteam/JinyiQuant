@@ -99,5 +99,9 @@ def test_load_data_signature_keeps_the_claim_keyword():
     import inspect
 
     parameters = inspect.signature(data.load_data).parameters
-    assert list(parameters) == ["config", "start", "end", "sealed_access"]
+    # Bounded bar loading is additive and opt-in: no read changes unless ``stream_bars`` is
+    # passed, and every keyword stays keyword-only.
+    assert list(parameters) == ["config", "start", "end", "sealed_access", "stream_bars", "chunk_rows"]
     assert parameters["sealed_access"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters["stream_bars"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters["stream_bars"].default is False

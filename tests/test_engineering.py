@@ -457,8 +457,10 @@ def test_entry_points_keep_their_calling_conventions():
 
     from jinyiquant import data
 
-    assert list(inspect.signature(data.load_data).parameters) == ["config", "start", "end", "sealed_access"]
+    assert list(inspect.signature(data.load_data).parameters) == [
+        "config", "start", "end", "sealed_access", "stream_bars", "chunk_rows"]
     assert inspect.signature(data.load_data).parameters["sealed_access"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert inspect.signature(data.load_data).parameters["stream_bars"].default is False
     assert list(inspect.signature(data.build_batch).parameters) == ["bars", "keys", "config"]
     assert data.build_batch.__module__ == "jinyiquant.data"
     assert list(inspect.signature(data.select_targets).parameters) == [
