@@ -68,12 +68,23 @@ COMPONENTS = [
         "seeds": [11, 29, 47],
         "points": ["1.32"],
         "role": ("the largest window this dataset supports: 2022-01-04 is the earliest trading day in the "
-                 "archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for "
-                 "'the model was always trained on too little data'. Only the 1.32 point is scored here: the "
-                 "measured pool peak is 24.9 GB at 132 days and scales with days, so a 441-day pool allows one "
-                 "process at a time and the second point would not fit the window without dropping a seed. The "
-                 "primary declared reading is the 1.32 comparison, so the 2.64 point is dropped before any "
-                 "441-day value is read."),
+                 "archive, so 441 trading days ending 2023-10-31 is the hard ceiling for the materialised pool; "
+                 "the decisive rung for 'the model was always trained on too little data'. Only the 1.32 point "
+                 "is scored here: the measured pool peak is 24.9 GB at 132 days and scales with days, so a "
+                 "441-day pool allows one process at a time. The primary declared reading is the 1.32 "
+                 "comparison, so the 2.64 point is dropped before any 441-day value is read."),
+    },
+    {
+        "id": "F",
+        "label": "927d",
+        "train_window": ["2020-01-02", "2023-10-31"],
+        "declared_trading_days": 927,
+        "seeds": [11, 29, 47],
+        "points": ["1.32"],
+        "role": ("the full official-label history: 2020-01-02..2023-10-31 is 927 trading days, 7.0x the "
+                 "132-day window. The official vwap archive covers all 60 months, so no label is derived here. "
+                 "This rung needs the streaming pool (bitwise equal to the materialised pool, verified on "
+                 "111,888 keys) because a materialised 927-day pool is 175 GB and cannot fit the host."),
     },
 ]
 
@@ -215,8 +226,15 @@ def build_prereg(artifacts: dict) -> dict:
         "data_availability": {
             "bars_months": "2022-01 .. 2023-11 (archive plus extracted months)",
             "labels_months": "2022-01 .. 2023-10",
-            "why_441_is_the_ceiling": "the earliest trading day in the bar and label archives is 2022-01-04; 441 trading days ending 2023-10-31 is the largest window the data supports",
-            "train_window_largest": ["2022-01-04", "2023-10-31"],
+            "why_441_is_the_materialised_ceiling": "the materialised pool at 927 days is 175 GB and exceeds the 172 GB host, so 441 days is the ceiling for the materialised path",
+            "official_labels_available": "2020-01..2023-11 (47 months) after the official vwap archive was restored to the host; no derived label is used anywhere",
+            "train_window_largest": ["2020-01-02", "2023-10-31"],
+        },
+        "implementation_note": {
+            "rung_F": ("runs on the streaming pool (src/jinyiquant/pool.py). The streaming and materialised "
+                       "pools were proven bitwise equal on 111,888 real keys over 50 batches, with three "
+                       "mutations caught, so rung F stays numerically comparable to D and E"),
+            "why": "a materialised 927-day pool is 175 GB; the streaming pool projects to 12.8 GB",
         },
         "known_deviation": {
             "from": "configs/b4_data_probe_prereg_20261027.json level_2 trigger",
@@ -244,7 +262,7 @@ def build_prereg(artifacts: dict) -> dict:
             for component in COMPONENTS
         ],
         "dose_response_design": {
-            "rungs_trading_days": [60, 132, 240, 441],
+            "rungs_trading_days": [60, 132, 240, 441, 927],
             "fixed_axis": "effective epochs (1.32 and 2.64) of one continuous trajectory per seed",
             "paired_by_seed": [11, 29, 47],
             "why_paired": ("the same three seeds are run on every rung, so the rung-to-rung difference is a "
