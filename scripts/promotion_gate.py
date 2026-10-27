@@ -48,6 +48,15 @@ SECONDARY_METRICS = ("ic_mean", "ic_ir", "long_short_sharpe", "long_short_return
 NET5 = "net_return_mean_5bp"
 MIB_PER_MB = 1e6 / 2 ** 20
 DECISION_EXIT = {"accept": 0, "reject": 3, "inconclusive": 4, "invalid": 2}
+RESULT_LABELS = {"accept": "保留", "reject": "回退", "inconclusive": "证据不足"}
+# Sealed final-check extension: one half-open interval, evaluated exactly once.
+SEALED_INTERVAL = ("2024-10-08", "2025-01-01")
+SEALED_PERIOD = ("2024-10-08", "2024-12-31")
+INDEX_REGISTRY = ROOT / "runs/index/viewed_windows.json"
+INHERITABLE_BLOCKS = ("economic_risk_boundary", "metric_caliber_layers",
+                      "pre_registration_completeness", "resource_budget", "supersedes")
+POLICY_IDENTITY_KEYS = ("primary_metric", "direction", "min_improvement", "max_metric_regressions",
+                        "bootstrap_samples", "block_days", "confidence", "seed", "threshold_basis")
 
 
 class Refused(Exception):
@@ -95,21 +104,152 @@ def parse_timestamp(value, label: str) -> pd.Timestamp:
     return stamp.tz_convert("UTC")
 
 
+def resolve_extension(prereg: dict) -> tuple[dict, list[str]]:
+    """Fill a sealed extension's inherited blocks from the registration it extends.
+
+    The extension may only change the periods and the repeat condition, so the
+    economic boundary, caliber layers, completeness block, resource budget and
+    retirement record are inherited by hash - a differing local copy is refused
+    instead of silently overriding the extended registration.
+    """
+    extends = prereg.get("extends")
+    if not extends:
+        return prereg, []
+    path = ROOT / extends["path"]
+    if not path.is_file():
+        raise Refused(f"extended pre-registration not found: {extends['path']}")
+    if sha256_file(path) != extends.get("sha256"):
+        raise Refused("extended pre-registration changed after the extension was registered")
+    base = read_json(path)
+    merged = dict(prereg)
+    inherited: list[str] = []
+    for block in INHERITABLE_BLOCKS:
+        if block in prereg:
+            if prereg[block] != base.get(block):
+                raise Refused(f"extension overrides {block!r} differently from the extended "
+                              "registration; only periods and the repeat condition may change")
+            continue
+        if block in base:
+            merged[block] = base[block]
+            inherited.append(block)
+    return merged, inherited
+
+
+def sealed_index_guard(path: Path = INDEX_REGISTRY) -> dict:
+    """Read only the run index's sealed determinations; never any evaluated value."""
+    if not path.is_file():
+        raise Refused(f"run index registry not found: {rel(path)}")
+    document = read_json(path)
+    counts = document.get("counts") or {}
+    runs = document.get("runs") or []
+    observed = sum(1 for run in runs if run.get("intersects_sealed") is True)
+    return {
+        "path": rel(path),
+        "fields_read": ["determination", "intersects_sealed", "counts.intersects_sealed_*"],
+        "sealed_interval": document.get("sealed_interval"),
+        "intersects_sealed_true": max(int(counts.get("intersects_sealed_true") or 0), observed),
+        "intersects_sealed_false": int(counts.get("intersects_sealed_false") or 0),
+        "intersects_sealed_unknown": int(counts.get("intersects_sealed_unknown") or 0),
+        "indexed_runs": int(counts.get("total") or len(runs)),
+    }
+
+
+def validate_sealed_scope(prereg: dict, *, require_registered: bool = True,
+                          candidate_started_at: str | None = None) -> dict:
+    """Refuse a sealed extension that would allow repeated or widened peeking."""
+    periods = prereg.get("periods") or {}
+    if periods.get("sealed") is not True:
+        raise Refused("sealed extension must declare periods.sealed = true")
+    declared = periods.get("declared") or []
+    if len(declared) != 1:
+        raise Refused(f"the sealed interval must be declared as exactly one period, found "
+                      f"{len(declared)}; splitting it is a repeated peek")
+    start, end = str(declared[0][0]), str(declared[0][1])
+    sealed_interval = [str(value) for value in (periods.get("sealed_interval") or [])]
+    if sealed_interval != list(SEALED_INTERVAL):
+        raise Refused(f"sealed_interval must be {list(SEALED_INTERVAL)}, found {sealed_interval}")
+    if periods.get("no_more_months_requirement") is not True:
+        raise Refused("sealed extension must state that no further months are required")
+    rules = prereg.get("evidence_rules") or {}
+    if int(rules.get("minimum_periods", 0)) != 1:
+        raise Refused("sealed extension must set evidence_rules.minimum_periods = 1")
+    verdict = prereg.get("verdict") or {}
+    if verdict.get("no_threshold_relaxation") is not True:
+        raise Refused("sealed extension must state no_threshold_relaxation = true")
+    if not verdict.get("labels") or not verdict.get("conclusion_templates"):
+        raise Refused("sealed extension must declare verdict labels and conclusion templates")
+    if not prereg.get("prohibitions"):
+        raise Refused("sealed extension must declare its prohibitions")
+
+    extended = prereg.get("extends") or {}
+    if not extended.get("path"):
+        raise Refused("sealed extension must declare the registration it extends")
+    base_path = ROOT / extended["path"]
+    if not base_path.is_file() or sha256_file(base_path) != extended.get("sha256"):
+        raise Refused("extended pre-registration is missing or changed")
+    base = read_json(base_path)
+    research = [(str(item[0]), str(item[1])) for item in base["periods"]["declared"]]
+    for research_start, research_end in research:
+        if start <= research_end and research_start <= end:
+            raise Refused(f"sealed period [{start}, {end}] overlaps the declared research period "
+                          f"[{research_start}, {research_end}]")
+    if not (str(base["periods"]["declared"][-1][1]) < start):
+        raise Refused("sealed period must start after every declared research period")
+    if (start, end) != SEALED_PERIOD:
+        raise Refused(f"sealed period must be exactly [{SEALED_PERIOD[0]}, {SEALED_PERIOD[1]}], "
+                      f"found [{start}, {end}]")
+    policy = prereg.get("object_policy_template") or {}
+    base_policy = base["object_policy_template"]
+    for key in POLICY_IDENTITY_KEYS:
+        if policy.get(key) != base_policy.get(key):
+            raise Refused(f"sealed extension changes {key!r}; only periods and the repeat "
+                          "condition may change")
+    if prereg.get("net5_limit") != base.get("net5_limit"):
+        raise Refused("sealed extension changes the 5bp net regression line")
+    base_rules = dict(base["evidence_rules"])
+    local_rules = dict(rules)
+    base_rules.pop("minimum_periods", None)
+    local_rules.pop("minimum_periods", None)
+    local_rules.pop("note", None)
+    if local_rules != base_rules:
+        raise Refused("sealed extension changes evidence rules other than the repeat condition")
+
+    guard = sealed_index_guard()
+    if guard["intersects_sealed_true"]:
+        raise Refused("an indexed run already intersects the sealed interval; the one-shot check is "
+                      "compromised")
+    registered_at = prereg.get("registered_at")
+    if require_registered:
+        if not registered_at:
+            raise Refused("sealed extension is still a template; register it before evaluation")
+        stamp = parse_timestamp(registered_at, "sealed registered_at")
+        if stamp < parse_timestamp(base["registered_at"], "extended registered_at"):
+            raise Refused("sealed extension must be registered after the extended registration")
+        if candidate_started_at is not None:
+            if parse_timestamp(candidate_started_at, "candidate started_at") < stamp:
+                raise Refused("candidate artifact predates the sealed registration; the sealed "
+                              "evaluation would not be pre-registered")
+    return {"periods": [[start, end]], "sealed_interval": sealed_interval,
+            "single_period": True, "minimum_periods": 1,
+            "registered_at": registered_at, "index_guard": guard}
+
+
 def verify_registration(prereg_path: Path, registration_path: Path) -> dict:
     """The pre-registration bytes on disk must be the ones that were registered."""
     if not prereg_path.is_file():
         raise Refused(f"pre-registration not found: {prereg_path}")
     if not registration_path.is_file():
         raise Refused(f"registration record not found: {registration_path}")
-    prereg = read_json(prereg_path)
+    raw = read_json(prereg_path)
     registration = read_json(registration_path)
     current = sha256_file(prereg_path)
     if registration.get("prereg_sha256") != current:
         raise Refused("pre-registration bytes changed after registration: "
                       f"recorded {registration.get('prereg_sha256')} != current {current}")
-    registered_at = parse_timestamp(prereg.get("registered_at"), "preregistered_at")
+    registered_at = parse_timestamp(raw.get("registered_at"), "preregistered_at")
     if parse_timestamp(registration.get("registered_at"), "registration.registered_at") != registered_at:
         raise Refused("pre-registration and registration record disagree on registered_at")
+    prereg, inherited = resolve_extension(raw)
     for key in ("object_policy_template", "derived_thresholds",
                 "resource_budget", "evidence_rules", "periods", "supersedes",
                 "economic_risk_boundary", "metric_caliber_layers",
@@ -129,8 +269,8 @@ def verify_registration(prereg_path: Path, registration_path: Path) -> dict:
         absent = [field for field in fields if field not in prereg[block]]
         if absent:
             raise Refused(f"pre-registration block {block!r} is missing {absent}")
-    return {"prereg": prereg, "registration": registration, "registered_at": registered_at,
-            "prereg_sha256": current}
+    return {"prereg": prereg, "raw": raw, "inherited": inherited, "registration": registration,
+            "registered_at": registered_at, "prereg_sha256": current}
 
 
 def verify_basis(prereg: dict, registered_at: pd.Timestamp) -> dict:
@@ -384,6 +524,10 @@ def evaluate_gate(args) -> tuple[dict, dict]:
     if candidate_started < registration["registered_at"]:
         raise Refused(f"candidate started at {candidate_started} before the pre-registration "
                       f"({registration['registered_at']}); the thresholds were not registered in advance")
+    sealed_evidence = None
+    if (prereg.get("periods") or {}).get("sealed"):
+        sealed_evidence = validate_sealed_scope(prereg, require_registered=True,
+                                                candidate_started_at=str(candidate_started))
 
     change = resolve_change(candidate, args.change)
     policy = dict(prereg["object_policy_template"])
@@ -515,14 +659,17 @@ def evaluate_gate(args) -> tuple[dict, dict]:
         "caliber_layers": {"official_turnover": prereg["metric_caliber_layers"]["official_turnover"],
                            "local_proxy_value": prereg["metric_caliber_layers"]["local_proxy"]["value"],
                            "local_proxy_use": prereg["metric_caliber_layers"]["local_proxy"]["use"]},
+        "sealed_extension": sealed_evidence,
+        "inherited_blocks": registration.get("inherited") or [],
         "failed_gates": sorted(set(failures)),
         "missing_evidence": sorted(set(missing)),
     }
+    labels = ((prereg.get("verdict") or {}).get("labels") or {})
     final = {
         "schema_version": 1,
         "gate_id": prereg["registration_id"],
         "status": status,
-        "result": {"accept": "保留", "reject": "回退", "inconclusive": "证据不足"}[status],
+        "result": result_label(prereg, status),
         "action": "retain_candidate" if status == "accept" else "retain_baseline",
         "automatic_promotion": False,
         "primary_metric": prereg["object_policy_template"]["primary_metric"],
@@ -534,10 +681,18 @@ def evaluate_gate(args) -> tuple[dict, dict]:
         "engine_status": decision.get("status"),
         "prereg_sha256": registration["prereg_sha256"],
         "policy_sha256": comparison.get("policy_sha256"),
+        "sealed": bool(sealed_evidence),
+        "result_labels": labels or dict(RESULT_LABELS),
         "sealed_interval_untouched": True,
         "git_commit": git_commit(),
     }
     return gate, final
+
+
+def result_label(prereg: dict, status: str) -> str:
+    """Verdict wording: a sealed extension may relabel the three states, never add a fourth."""
+    labels = ((prereg.get("verdict") or {}).get("labels") or {})
+    return labels.get(status, RESULT_LABELS[status])
 
 
 def git_commit() -> str | None:
