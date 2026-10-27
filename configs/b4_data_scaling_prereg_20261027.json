@@ -11,9 +11,9 @@
  "data_availability": {
   "bars_months": "2022-01 .. 2023-11 (archive plus extracted months)",
   "labels_months": "2022-01 .. 2023-10",
-  "why_450_is_the_ceiling": "the label archive starts 2022-01; 450 trading days ending 2023-10-31 is the largest window at matched label coverage",
+  "why_441_is_the_ceiling": "the earliest trading day in the bar and label archives is 2022-01-04; 441 trading days ending 2023-10-31 is the largest window the data supports",
   "train_window_largest": [
-   "2022-01-18",
+   "2022-01-04",
    "2023-10-31"
   ]
  },
@@ -55,12 +55,12 @@
   },
   {
    "id": "E",
-   "label": "450d",
+   "label": "441d",
    "train_window": [
-    "2022-01-18",
+    "2022-01-04",
     "2023-10-31"
    ],
-   "declared_trading_days": 450,
+   "declared_trading_days": 441,
    "seeds": [
     11,
     29,
@@ -70,11 +70,11 @@
     1.32,
     2.64
    ],
-   "role": "the largest window the available label archive supports (labels start 2022-01); the decisive rung for 'the model was always trained on too little data'",
+   "role": "the largest window this dataset supports: 2022-01-04 is the earliest trading day in the archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for 'the model was always trained on too little data'",
    "plans": [
-    "configs/scaling_450d_seed11_2point_plan.json",
-    "configs/scaling_450d_seed29_2point_plan.json",
-    "configs/scaling_450d_seed47_2point_plan.json"
+    "configs/scaling_441d_seed11_2point_plan.json",
+    "configs/scaling_441d_seed29_2point_plan.json",
+    "configs/scaling_441d_seed47_2point_plan.json"
    ]
   }
  ],
@@ -83,7 +83,7 @@
    60,
    132,
    240,
-   450
+   441
   ],
   "fixed_axis": "effective epochs (1.32 and 2.64) of one continuous trajectory per seed",
   "paired_by_seed": [
@@ -130,11 +130,7 @@
  ],
  "generated_artifacts": {
   "D": {
-   "recipes": [
-    "configs/scaling_240d_csz_seed11.json",
-    "configs/scaling_240d_csz_seed29.json",
-    "configs/scaling_240d_csz_seed47.json"
-   ],
+   "recipes": [],
    "plans": [
     "configs/scaling_240d_seed11_2point_plan.json",
     "configs/scaling_240d_seed29_2point_plan.json",
@@ -143,14 +139,14 @@
   },
   "E": {
    "recipes": [
-    "configs/scaling_450d_csz_seed11.json",
-    "configs/scaling_450d_csz_seed29.json",
-    "configs/scaling_450d_csz_seed47.json"
+    "configs/scaling_441d_csz_seed11.json",
+    "configs/scaling_441d_csz_seed29.json",
+    "configs/scaling_441d_csz_seed47.json"
    ],
    "plans": [
-    "configs/scaling_450d_seed11_2point_plan.json",
-    "configs/scaling_450d_seed29_2point_plan.json",
-    "configs/scaling_450d_seed47_2point_plan.json"
+    "configs/scaling_441d_seed11_2point_plan.json",
+    "configs/scaling_441d_seed29_2point_plan.json",
+    "configs/scaling_441d_seed47_2point_plan.json"
    ]
   }
  }

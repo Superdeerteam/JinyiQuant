@@ -62,13 +62,14 @@ COMPONENTS = [
     },
     {
         "id": "E",
-        "label": "450d",
-        "train_window": ["2022-01-18", "2023-10-31"],
-        "declared_trading_days": 450,
+        "label": "441d",
+        "train_window": ["2022-01-04", "2023-10-31"],
+        "declared_trading_days": 441,
         "seeds": [11, 29, 47],
         "points": ["1.32", "2.64"],
-        "role": ("the largest window the available label archive supports (labels start 2022-01); the "
-                 "decisive rung for 'the model was always trained on too little data'"),
+        "role": ("the largest window this dataset supports: 2022-01-04 is the earliest trading day in the "
+                 "archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for "
+                 "'the model was always trained on too little data'"),
     },
 ]
 
@@ -210,8 +211,8 @@ def build_prereg(artifacts: dict) -> dict:
         "data_availability": {
             "bars_months": "2022-01 .. 2023-11 (archive plus extracted months)",
             "labels_months": "2022-01 .. 2023-10",
-            "why_450_is_the_ceiling": "the label archive starts 2022-01; 450 trading days ending 2023-10-31 is the largest window at matched label coverage",
-            "train_window_largest": ["2022-01-18", "2023-10-31"],
+            "why_441_is_the_ceiling": "the earliest trading day in the bar and label archives is 2022-01-04; 441 trading days ending 2023-10-31 is the largest window the data supports",
+            "train_window_largest": ["2022-01-04", "2023-10-31"],
         },
         "known_deviation": {
             "from": "configs/b4_data_probe_prereg_20261027.json level_2 trigger",
@@ -239,7 +240,7 @@ def build_prereg(artifacts: dict) -> dict:
             for component in COMPONENTS
         ],
         "dose_response_design": {
-            "rungs_trading_days": [60, 132, 240, 450],
+            "rungs_trading_days": [60, 132, 240, 441],
             "fixed_axis": "effective epochs (1.32 and 2.64) of one continuous trajectory per seed",
             "paired_by_seed": [11, 29, 47],
             "why_paired": ("the same three seeds are run on every rung, so the rung-to-rung difference is a "
@@ -282,9 +283,24 @@ def build_prereg(artifacts: dict) -> dict:
     }
 
 
-def generate() -> dict:
+def generate(only: list[str] | None = None) -> dict:
+    """Regenerate selected components only; untouched rungs keep their exact bytes."""
     artifacts: dict[str, dict] = {}
+    if only:
+        for name in only:
+            if name not in {c["id"] for c in COMPONENTS}:
+                raise SystemExit(f"unknown component {name}")
     for component in COMPONENTS:
+        if only and component["id"] not in only:
+            prereg_old = CONFIGS / PREREG_NAME
+            prev = json.loads(prereg_old.read_text(encoding="utf-8")) if prereg_old.exists() else None
+            kept = next((c for c in (prev or {}).get("components", [])
+                         if c["id"] == component["id"]), None)
+            if kept is None:
+                raise SystemExit(f"component {component['id']} is not in the previous prereg")
+            artifacts[component["id"]] = {"recipes": kept.get("recipes", []),
+                                          "plans": kept["plans"]}
+            continue
         recipes = build_recipe(component)
         plans = {seed: build_plan(component, seed, recipes[seed]) for seed in component["seeds"]}
         artifacts[component["id"]] = {
@@ -311,6 +327,14 @@ def register() -> dict:
             recipe_hashes[recipe_rel] = plan["recipe_sha256"]
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True,
                           text=True, check=True).stdout.strip()
+    supersedes = None
+    if REGISTRATION_NAME and (CONFIGS / REGISTRATION_NAME).exists():
+        previous = json.loads((CONFIGS / REGISTRATION_NAME).read_text(encoding="utf-8"))
+        archive = CONFIGS / f"{REGISTRATION_NAME[:-5]}.superseded_{previous['registered_at'].replace(':', '').replace('-', '')[:15]}Z.json"
+        archive.write_bytes((CONFIGS / REGISTRATION_NAME).read_bytes())
+        supersedes = {"archived_as": f"configs/{archive.name}",
+                      "registered_at": previous["registered_at"],
+                      "sha256": previous.get("prereg_sha256")}
     record = {
         "schema_version": 1,
         "prereg_path": f"configs/{PREREG_NAME}",
@@ -320,6 +344,7 @@ def register() -> dict:
         "plan_sha256": plan_hashes,
         "recipe_sha256": recipe_hashes,
         "ordering": {"registered_before_any_scaling_process": True},
+        "supersedes": supersedes,
     }
     out = _write(REGISTRATION_NAME, record)
     return {"registration": str(out.relative_to(REPO)), "sha256": _sha(out), "record": record}
@@ -350,9 +375,11 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--generate", action="store_true")
     group.add_argument("--register", action="store_true")
     group.add_argument("--check", action="store_true")
+    parser.add_argument("--only", nargs="+", default=None,
+                        help="regenerate only these component ids; other rungs keep their bytes")
     args = parser.parse_args(argv)
     if args.generate:
-        report = generate()
+        report = generate(args.only)
     elif args.register:
         report = register()
     else:
