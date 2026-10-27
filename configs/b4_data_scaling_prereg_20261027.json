@@ -1,0 +1,157 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-data-scaling-20261027",
+ "owner_role": "captain",
+ "phase": "B4 data-quantity research, coarse data axis",
+ "status": "registered",
+ "one_shot": false,
+ "registered_at_source": "written before any scaling process started",
+ "purpose": "Measure whether a materially larger training window improves out-of-sample RankIC at matched training amount, and whether it keeps paying between 240 and 450 trading days. Every earlier model in this project trained on 60 trading days; the data axis was never measured.",
+ "question": "At matched effective epochs, how does out-of-sample RankIC move when the training window grows from 60 to 132 to 240 to 450 trading days?",
+ "data_availability": {
+  "bars_months": "2022-01 .. 2023-11 (archive plus extracted months)",
+  "labels_months": "2022-01 .. 2023-10",
+  "why_450_is_the_ceiling": "the label archive starts 2022-01; 450 trading days ending 2023-10-31 is the largest window at matched label coverage",
+  "train_window_largest": [
+   "2022-01-18",
+   "2023-10-31"
+  ]
+ },
+ "known_deviation": {
+  "from": "configs/b4_data_probe_prereg_20261027.json level_2 trigger",
+  "clause": "level 2 may only be considered after level 1 reaches the escalation state",
+  "deviation": "the 240-day rung is run before the level-1 verdict is read",
+  "reason": "the principal directed a broad data-quantity measurement for this compute window; the rung is run as curve estimation, not as escalation, and it cannot produce a candidate",
+  "mitigation": [
+   "its windows, seeds, effective-epoch points and reading rules are fixed here, before any run",
+   "it may not be used to relax, overturn or pre-empt the level-1 C1 verdict",
+   "no promotion, no incumbent replacement and no sealed read follow from it"
+  ]
+ },
+ "components": [
+  {
+   "id": "D",
+   "label": "240d",
+   "train_window": [
+    "2022-11-04",
+    "2023-10-31"
+   ],
+   "declared_trading_days": 240,
+   "seeds": [
+    11,
+    29,
+    47
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "the provisional level-2 window that the level-1 document already named, run as a dose-response rung at matched effective epochs, paired by seed with the 60-day and 132-day rungs",
+   "plans": [
+    "configs/scaling_240d_seed11_2point_plan.json",
+    "configs/scaling_240d_seed29_2point_plan.json",
+    "configs/scaling_240d_seed47_2point_plan.json"
+   ]
+  },
+  {
+   "id": "E",
+   "label": "450d",
+   "train_window": [
+    "2022-01-18",
+    "2023-10-31"
+   ],
+   "declared_trading_days": 450,
+   "seeds": [
+    11,
+    29,
+    47
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "the largest window the available label archive supports (labels start 2022-01); the decisive rung for 'the model was always trained on too little data'",
+   "plans": [
+    "configs/scaling_450d_seed11_2point_plan.json",
+    "configs/scaling_450d_seed29_2point_plan.json",
+    "configs/scaling_450d_seed47_2point_plan.json"
+   ]
+  }
+ ],
+ "dose_response_design": {
+  "rungs_trading_days": [
+   60,
+   132,
+   240,
+   450
+  ],
+  "fixed_axis": "effective epochs (1.32 and 2.64) of one continuous trajectory per seed",
+  "paired_by_seed": [
+   11,
+   29,
+   47
+  ],
+  "why_paired": "the same three seeds are run on every rung, so the rung-to-rung difference is a paired difference and not a seed-lottery difference"
+ },
+ "declared_reading": {
+  "primary": "paired per-seed RankIC difference between adjacent rungs at 1.32 effective epochs",
+  "monotone_rule": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
+  "flattening_rule": "declare 'more data stops paying' when the 450-vs-240 paired difference is negative or its interval straddles zero, while 240-vs-132 is positive",
+  "falsification_rule": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+  "interval": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+  "trading_day_count_gate": "before a rung starts, the measured trading-day count of its window must be within 2% of its declared count, otherwise the rung stops and reports"
+ },
+ "prohibitions": [
+  "no promotion, no incumbent replacement, no candidate claim from any rung",
+  "no reading of the sealed interval",
+  "no change to any promotion threshold, secondary line, net5 limit or cost scenario",
+  "no re-selection of a window, seed or point after its value has been read",
+  "no reporting of a single seed as evidence for a rung",
+  "no use of this document to relax or overturn the level-1 C1 verdict",
+  "no run from this document before its own registration record exists"
+ ],
+ "execution_queue": [
+  {
+   "priority": 1,
+   "component": "D",
+   "processes": 3
+  },
+  {
+   "priority": 2,
+   "component": "E",
+   "processes": 3
+  }
+ ],
+ "queue_rules": [
+  "the rungs run only in free process slots and only when the measured pool peak allows it",
+  "each plan is one process and one uninterrupted trajectory",
+  "a failed process is retried at most once, then skipped and reported",
+  "partial completion is reported as partial"
+ ],
+ "generated_artifacts": {
+  "D": {
+   "recipes": [
+    "configs/scaling_240d_csz_seed11.json",
+    "configs/scaling_240d_csz_seed29.json",
+    "configs/scaling_240d_csz_seed47.json"
+   ],
+   "plans": [
+    "configs/scaling_240d_seed11_2point_plan.json",
+    "configs/scaling_240d_seed29_2point_plan.json",
+    "configs/scaling_240d_seed47_2point_plan.json"
+   ]
+  },
+  "E": {
+   "recipes": [
+    "configs/scaling_450d_csz_seed11.json",
+    "configs/scaling_450d_csz_seed29.json",
+    "configs/scaling_450d_csz_seed47.json"
+   ],
+   "plans": [
+    "configs/scaling_450d_seed11_2point_plan.json",
+    "configs/scaling_450d_seed29_2point_plan.json",
+    "configs/scaling_450d_seed47_2point_plan.json"
+   ]
+  }
+ }
+}
