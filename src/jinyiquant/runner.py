@@ -14,7 +14,7 @@ import psutil
 from .checks import batch_checks, check, numerical_equal, prediction_checks, verify_artifacts
 from .config import RunConfig, load_config
 from .data import build_batch, history_diagnostics, load_data, select_targets
-from .evaluation import METRIC_SPEC, aggregate_metric, evaluate
+from .evaluation import EVALUATION_VERSION, METRIC_SPEC, aggregate_metric, evaluate
 from .io import read_json, redact, utc_now, write_json
 from .models import create_model, load_model, model_filename
 from .tracking import (
@@ -52,16 +52,26 @@ def _curve_diagnostics(scores, targets, training_mean):
             "prediction_mean": float(scores.mean())}
 
 
+def require_contract_metrics(metrics: dict) -> dict:
+    """Refuse metric products from a foreign evaluation contract version."""
+    version = metrics.get("evaluation_version")
+    if version != EVALUATION_VERSION:
+        raise ValueError(f"Evaluation contract version mismatch: {version!r}")
+    return metrics
+
+
 def _curve_evaluation(predictions, targets, evaluation_config):
     """Use the final evaluator after full-universe inference, retaining opening diagnostics."""
     scored = predictions.merge(targets[["date", "instrument"]], on=["date", "instrument"],
                                how="inner", validate="one_to_one")
     metrics, _, sections = evaluate(scored, targets, evaluation_config, return_sections=True,
         undefined_constant_portfolios=evaluation_config.constant_portfolios == "undefined")
+    require_contract_metrics(metrics)
     names = ("rank_ic_mean", "ic_mean", "long_short_return_mean", "turnover_mean",
              "min_daily_long_short_return")
     result = {"validation_" + name: metrics[name] for name in names}
     result.update(validation_metric_scope=metrics["metric_scope"],
+                  validation_evaluation_version=metrics["evaluation_version"],
                   validation_evaluation_mse=metrics["mse"],
                   validation_scored_samples=metrics["sample_count"])
     opening = sections.loc[pd.to_datetime(sections.timestamp).dt.strftime("%H:%M").eq("09:30")]
@@ -300,6 +310,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     scored_predictions.to_parquet(run_dir / "scored_predictions.parquet", index=False)
     metrics, daily, sections = evaluate(scored_predictions, eval_targets, config.evaluation, return_sections=True,
         undefined_constant_portfolios=config.evaluation.constant_portfolios == "undefined")
+    require_contract_metrics(metrics)
     metrics["coverage"] = {"expected_prediction_samples": len(validation.keys), "prediction_samples": len(predictions),
                            "scored_samples": len(scored_predictions),
                            "missing_answer_samples": len(predictions) - len(scored_predictions),
@@ -322,7 +333,7 @@ def execute_pipeline(config: RunConfig, run_dir: Path):
     write_json(run_dir / "manifest.json", manifest)
     (run_dir / "report.txt").write_text(
         f"Run: {run_dir.name}\nHypothesis: {config.hypothesis}\n"
-        f"Evaluation: {config.evaluation_split}; local approximation, not official score.\n"
+        f"Evaluation: {config.evaluation_split}; contract {EVALUATION_VERSION}; local approximation, not official score.\n"
         f"Checks: {len(checks)} passed.\nEvidence: engineering run only; no model promotion.\n"
         "See metrics.json, daily.csv, coverage.json and immutable source.zip.\n", encoding="utf-8")
 
@@ -408,7 +419,8 @@ def run(config: RunConfig, *, reference: Path | None = None, policy_registration
     manifest = {"schema_version": 1, "run_id": run_dir.name, "experiment_id": config.experiment_id,
                 "hypothesis": config.hypothesis, "status": "running", "started_at": utc_now(),
                 "config_sha256": config.checksum, "seed": config.seed, "budget": config.budget.model_dump(),
-                "evaluation_split": config.evaluation_split, **(policy_registration or {})}
+                "evaluation_split": config.evaluation_split, "evaluation_version": EVALUATION_VERSION,
+                **(policy_registration or {})}
     write_json(run_dir / "manifest.json", manifest)
     rec.event("run", "started", config_sha256=config.checksum, budget=config.budget.model_dump())
     process = None

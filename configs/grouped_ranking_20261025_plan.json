@@ -79,5 +79,14 @@
       "v3_shuffle19800_s11"
     ]
   ],
-  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. The alpha=0.1 seed29/47 runs started at 2026-10-26T01:09:33Z but the cloud container became unreachable at 02:25 UTC, so their artifacts were not retrieved and the arm stays a single-seed exploration. No arm is promoted."
+  "decision": "Keep V3 (60d/19800 CSZ three-seed shuffle ensemble). Grouped sampling alone loses 0.0018 ensemble RankIC with a 5-day interval below zero and adds 0.066 turnover versus shuffle. The pre-registered alpha=1.0 pairwise-hinge arm collapses (validation scores constant, ensemble RankIC 0.0416). The alpha=0.1 follow-up avoids collapse but at seed 11 does not beat the same-sampler MSE control (delta -0.0011, interval contains zero) and is 0.0058 below the V3 seed-11 model. The alpha=0.1 seed29/47 runs started at 2026-10-26T01:09:33Z but the cloud container became unreachable at 02:25 UTC, so their artifacts were not retrieved and the arm stays a single-seed exploration. No arm is promoted.",
+  "legacy_caliber": {
+    "status": "disabled",
+    "legacy_mark": "旧口径结论——不得用于晋升",
+    "annotated_at_utc": "2026-10-27T02:45:45.839129+00:00",
+    "guardrail_usable_for_promotion": false,
+    "decision_usable_for_promotion": false,
+    "replaced_by": "eval-v2",
+    "reason": "A1 停止旧评价晋升模型：门槛式（0.0023/1.3211 + 5 日块区间）晋升条件降级为旧口径；原数值仅作历史保留，不得作为晋升或淘汰输入"
+  }
 }

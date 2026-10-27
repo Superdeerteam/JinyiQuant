@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from jinyiquant.evaluation import align_predictions, evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, align_predictions, evaluate
 from jinyiquant.io import digest
 
 CONFIG = {"quantile": 0.25, "periods_per_year": 252, "min_cross_section": 3}
@@ -144,9 +144,18 @@ def test_daily_statistics_weight_timestamps_equally_and_measure_turnover():
     metrics, daily = evaluate(pd.concat([p, second_p]), pd.concat([t, second_t]), CONFIG)
     assert daily["rank_ic"].iloc[0] == pytest.approx(0)
     assert daily["long_short_return"].iloc[0] == pytest.approx(0)
-    assert daily["turnover"].iloc[0] == pytest.approx(2)
+    # U is drift-aware: adjacent labels drift the pre-trade weights by the previous label.
+    expected_u = 2.04 / 1.03 + 2.07 / 1.03
+    assert daily["total_abs_weight_change"].iloc[0] == pytest.approx(expected_u)
+    assert daily["turnover"].iloc[0] == pytest.approx(expected_u / 2)
+    assert metrics["turnover_mean"] == pytest.approx(expected_u / 2)
     assert metrics["day_count"] == 1
     assert metrics["cross_section_count"] == 2
+    assert metrics["undefined_turnover_count"] == 1
+    assert metrics["rebalance_count"] == 1
+    assert metrics["evaluation_version"] == EVALUATION_VERSION
+    assert daily["evaluation_version"].eq(EVALUATION_VERSION).all()
+    json.dumps(metrics, allow_nan=False)
 
 
 def test_first_turnover_and_one_day_ratios_remain_undefined():

@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from jinyiquant.checks import verify_artifacts
+from jinyiquant.evaluation import EVALUATION_VERSION
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from scripts.compare_training_round import compare
 
@@ -429,6 +430,9 @@ def analyze(registration_path, stage_paths, output, *, recover_failed_stages=Fal
     plot_curves(records, output / "training_duration.png")
     lines = _summary_lines(decision, terminal, screen_seed=experiment["screen_seed"])
     (output / "summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    decision["evaluation_version"] = EVALUATION_VERSION
+    decision["evaluation_note"] = ("Retained/degraded comparisons use eval-v2 contract metrics only; "
+                                    "drift-aware turnover = U/2 is not comparable with the retired caliber.")
     decision["artifacts"] = {p.name: file_sha256(p) for p in output.iterdir() if p.is_file()}
     write_json(output / "decision.json", decision)
     return decision

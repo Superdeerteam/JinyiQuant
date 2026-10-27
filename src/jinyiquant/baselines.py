@@ -21,8 +21,9 @@ from pydantic import Field, model_validator
 from .checks import check, verify_artifacts
 from .comparison import _block_indices
 from .config import Period, RunConfig, StrictModel, load_config
+from .evaluation import EVALUATION_VERSION
 from .io import digest, file_sha256, read_json, utc_now, write_json
-from .runner import _kill_tree, run, save_checks
+from .runner import _kill_tree, require_contract_metrics, run, save_checks
 from .tracking import Recorder, capture_source, environment, finish
 
 MODELS = ("mean", "ridge", "modified_tlob")
@@ -187,7 +188,8 @@ def paired_estimates(rows, plan):
                                 interval=np.quantile(draws, [alpha, 1-alpha]).tolist(), days=len(day),
                                 seed_mean_std=float(seed.std(ddof=1)))
                 results.append(item)
-    return {"comparisons": results, "confidence": plan.confidence, "block_days": plan.block_days,
+    return {"comparisons": results, "evaluation_version": EVALUATION_VERSION,
+            "confidence": plan.confidence, "block_days": plan.block_days,
             "bootstrap_samples": plan.bootstrap_samples, "bootstrap_seed": plan.bootstrap_seed,
             "method": "TLOB-reference paired by date/seed; average seeds within day, resample consecutive day blocks",
             "limits": "Few dates, same-market stocks and overlapping return horizons; seed repetitions are not independent days. "
@@ -201,13 +203,15 @@ def summarize(destination, plan):
     for item in attempts:
         path = Path(item["run"])
         config = RunConfig.model_validate(read_json(path / "config.json"))
-        metrics = read_json(path / "metrics.json")
+        metrics = require_contract_metrics(read_json(path / "metrics.json"))
         manifest = read_json(path / "manifest.json")
         metadata = {field: item[field] for field in ("period", "seed", "model")}
         daily_rows.append(pd.read_csv(path / "daily.csv").assign(**metadata))
         timestamp_rows.append(pd.read_csv(path / "by_timestamp.csv").assign(**metadata))
         coverage.extend([{**row, **metadata} for row in coverage_rows(path, config)])
         summary.append({**metadata, **{field: metrics[field] for field in SUMMARY_METRICS},
+                        "evaluation_version": metrics["evaluation_version"],
+                        "economic_metrics": metrics.get("economic_metrics"),
                         "resources": manifest["resources"], "run": str(path),
                         "training_samples": read_json(path / "coverage.json")["training_samples_used"]})
         checks.append(check("run_integrity", manifest["status"] == "completed" and verify_artifacts(path)["passed"], **metadata))
@@ -233,7 +237,8 @@ def summarize(destination, plan):
     uncertainty = paired_estimates(rows, plan)
     write_json(destination / "paired_comparison.json", uncertainty)
     write_json(destination / "summary.json", summary)
-    pd.DataFrame([{**{key: value for key, value in row.items() if key != "resources"},
+    pd.DataFrame([{**{key: value for key, value in row.items()
+                      if key not in ("resources", "economic_metrics")},
                    **row["resources"]} for row in summary]).to_csv(destination / "summary.csv", index=False)
     expected = {(p.name, s, m) for p in plan.periods for s in plan.seeds for m in MODELS}
     checks.append(check("complete_grid", {(r["period"], r["seed"], r["model"]) for r in attempts} == expected
@@ -251,6 +256,8 @@ def summarize(destination, plan):
                                      "seed_std": float(np.std(v, ddof=1)) if len(v) > 1 else None}
                             for field in SUMMARY_METRICS for v in [[row[field] for row in cells if row[field] is not None]]}})
     result = {"schema_version": 1, "execution_completed": True, "final_views": 0, "model_promoted": False,
+              "evaluation_version": EVALUATION_VERSION,
+              "economic_metrics": {row["run"]: row.pop("economic_metrics") for row in summary},
               "grid_runs": len(attempts), "variation": variation,
               "scope": "Forward dates within development data; local approximate metrics; no official score",
               "selection": "Current TLOB remains the comparison reference; no hyperparameter or checkpoint selection",

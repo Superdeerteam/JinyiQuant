@@ -6,8 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 from jinyiquant.checks import check, verify_artifacts
+from jinyiquant.comparison import declared_cost_scenarios
 from jinyiquant.config import RunConfig
-from jinyiquant.evaluation import evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir
 from modified_tlob.ensemble import SEEDS, average_predictions, paired_block_intervals, research_decision
@@ -64,6 +65,7 @@ def audit(source, destination):
             "note": "Original environment.determinism.device is a generic CPU default. Actual fit events above "
                     "record CUDA, deterministic algorithms, seed and workspace; archived originals are preserved."})
         costs = {}
+        contract_periods = {}
         for window in plan["windows"]:
             period = window["name"]
             inference = execution / "inference" / period
@@ -78,8 +80,21 @@ def audit(source, destination):
                                            validate="one_to_one")
                 metrics[arm], daily[arm] = evaluate(scored, targets, config.evaluation,
                                                    undefined_constant_portfolios=True)
-                checks.append(check(f"{period}_{arm}_metrics_recomputed",
-                    metrics[arm] == read_json(source / f"{period}_{arm}.json")))
+                archived = read_json(source / f"{period}_{arm}.json")
+                if archived.get("evaluation_version") == metrics[arm]["evaluation_version"]:
+                    checks.append(check(f"{period}_{arm}_metrics_recomputed",
+                                        metrics[arm] == archived))
+                else:
+                    stable = ("rank_ic_mean", "rank_ic_ir", "ic_mean", "ic_ir",
+                              "long_short_return_mean", "long_short_sharpe", "day_count",
+                              "sample_count", "sample_keys_sha256", "targets_sha256")
+                    checks.append(check(
+                        f"{period}_{arm}_eval_v2_recompute",
+                        all(metrics[arm][key] == archived.get(key) for key in stable),
+                        note="archived metrics predate eval-v2; turnover/cost follow the contract"))
+                if arm == "candidate":
+                    contract_periods[period] = declared_cost_scenarios(
+                        scored, targets, config.evaluation, undefined_constant_portfolios=True)
                 write_json(output / f"{period}_{arm}_metrics.json", metrics[arm])
             joined = daily["baseline"][["date"]].assign(period=period)
             for metric in ("rank_ic", "long_short_return", "turnover"):
@@ -100,6 +115,11 @@ def audit(source, destination):
         write_json(output / "paired_intervals.json", intervals)
         write_json(output / "decision.json", decision)
         write_json(output / "checks.json", {"passed": all(c["passed"] for c in checks), "checks": checks})
+        write_json(output / "evaluation_contract.json",
+                   {"evaluation_version": EVALUATION_VERSION,
+                    "source": "src/jinyiquant/evaluation.py:evaluate",
+                    "turnover_conversion_factor": 0.5,
+                    "periods": contract_periods})
         if not all(c["passed"] for c in checks):
             raise ValueError("Offline reproduction differs; see checks.json")
         rec.event("run", "completed", passed=True, training=False, raw_data_access=False)

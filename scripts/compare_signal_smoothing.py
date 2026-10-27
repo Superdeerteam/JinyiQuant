@@ -15,7 +15,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from jinyiquant.evaluation import _validated, evaluate
+from jinyiquant.comparison import archived_cost_scenarios
+from jinyiquant.evaluation import EVALUATION_VERSION, _validated, evaluate
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.protocol import recipe
 from scripts.compare_training_round import (
@@ -140,6 +141,7 @@ def compare(plan_path, destination):
             "nonnegative_95ci_lower_each_period": all(row["interval"] is not None and row["interval"][0] >= 0
                                                        for row in rows)}
     result = {"schema_version": 1, "experiment_id": plan["experiment_id"], "created_at": utc_now(),
+              "evaluation_version": EVALUATION_VERSION,
               "plan": plan, "plan_sha256": file_sha256(plan_path), "inputs": inputs,
               "alpha": ALPHA, "script_sha256": file_sha256(Path(__file__)),
               "dependency_sha256": {name: file_sha256(Path(inspect.getfile(function)))
@@ -159,6 +161,8 @@ def compare(plan_path, destination):
                         "Lower turnover alone is insufficient: RankIC and long-short returns must both be preserved "
                         "with uncertainty reviewed. No calibrated noninferiority margin or automatic promotion; "
                         "few research dates and model-selection bias remain."}
+    result["evaluation_contract"] = archived_cost_scenarios(
+        (Path(plan_path).resolve().parent / plan["runs"][0]["run"]).resolve())
     destination.mkdir(parents=True, exist_ok=False)
     write_json(destination / "comparison.json", result)
     write_json(destination / "metrics.json", metrics_rows)

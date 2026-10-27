@@ -75,7 +75,9 @@ def diagnose(audit_path, output_root):
             raise ValueError("Learning audit checks did not pass")
         result = learning_findings(audit)
         result.update(schema_version=1, evidence={"path": str(audit_path),
-            "metrics_sha256": file_sha256(audit_path / "metrics.json"), "raw_data_reopened": False})
+            "metrics_sha256": file_sha256(audit_path / "metrics.json"), "raw_data_reopened": False},
+            evaluation_version=audit.get("evaluation_version"),
+            metric_source="archived learning-audit metrics; no metric is recomputed here")
         write_json(destination / "diagnosis.json", result)
         write_json(destination / "checks.json", {"passed": True, "checks": [
             {"name": "intact_completed_learning_audit", "passed": True}]})

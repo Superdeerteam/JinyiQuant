@@ -8,8 +8,22 @@ import pandas as pd
 import pytest
 
 from jinyiquant.comparison import _block_indices, compare_runs, validate_policy
-from jinyiquant.evaluation import METRIC_SPEC, aggregate_metric, evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, METRIC_SPEC, aggregate_metric, evaluate
 from jinyiquant.io import digest, file_sha256
+
+CONTRACT_METRIC_BLOCKS = {
+    "evaluation_version": EVALUATION_VERSION,
+    "label_overlap": {"overlapping_pair_count": 0, "independent_label_periods": True,
+                      "overlapping_labels_treated_as_independent_trades": False},
+    "economic_metrics": {
+        "status": "computed", "single_side_rate": 0.0,
+        "gross_return_mean": 0.003, "cost_mean": 0.0, "net_return_mean": 0.003,
+        "turnover_mean": 0.3, "total_abs_weight_change_mean": 0.6,
+        "breakeven_single_side_rate": None,
+        "overlapping_labels_treated_as_independent_trades": False,
+        "returns_compounded": False, "daily_returns_summed_across_days": False,
+    },
+}
 
 
 @pytest.fixture
@@ -94,7 +108,8 @@ def run_fixture(root, arm, seed, month, policy, *, improvement=0.04):
                "long_short_return_mean": 0.003, "turnover_mean": 0.3,
                "cross_section_count": len(dates),
                "sample_keys_sha256": "a" * 64, "targets_sha256": "b" * 64,
-               "correlation_coverage": {"schema_version": 1, "rank_ic": coverage, "ic": coverage}}
+               "correlation_coverage": {"schema_version": 1, "rank_ic": coverage, "ic": coverage},
+               **CONTRACT_METRIC_BLOCKS}
     save(path, "manifest", manifest)
     save(path, "config", config)
     save(path, "metrics", metrics)
@@ -149,7 +164,8 @@ def evaluated_suite(tmp_path, policy, *, baseline_scores, candidate_scores,
             frame = pd.DataFrame(rows)
             predictions = frame[["date", "instrument", "score"]]
             metrics, daily = evaluate(predictions, frame[["date", "instrument", "target"]],
-                                      {"quantile": 0.25, "periods_per_year": 252, "min_cross_section": 3})
+                                      {"quantile": 0.25, "periods_per_year": 252,
+                                       "min_cross_section": 3, "single_side_rate": 0.0})
             for run in (path, path.with_name(path.name + "-original")):
                 save(run, "metrics", metrics)
                 daily.to_csv(run / "daily.csv", index=False)
@@ -562,3 +578,64 @@ def test_matching_pairs_still_require_one_evaluation_population_across_seeds(tmp
         edit_verified_metrics(path, lambda m: m.update(sample_keys_sha256="different-seed-population"))
     with pytest.raises(ValueError, match="across seeds"):
         compare_runs(baseline, candidate, policy)
+
+@pytest.mark.parametrize("case", ["both_missing", "both_old", "mixed"])
+def test_comparison_rejects_runs_without_the_current_evaluation_version(tmp_path, policy, case):
+    """Every compared run must be eval-v2; removing the check makes these tests fail."""
+    baseline, candidate = suite(tmp_path, policy)
+    def drop(value):
+        value.pop("evaluation_version", None)
+    if case == "both_missing":
+        for path in (baseline[0], candidate[0]):
+            edit_verified_metrics(path, drop)
+    elif case == "both_old":
+        for path in (baseline[0], candidate[0]):
+            edit_verified_metrics(path, lambda value: value.update(evaluation_version="eval-v1"))
+    else:
+        for path in (baseline[0], candidate[0]):
+            edit_verified_metrics(path, drop)
+        edit_verified_metrics(candidate[0], lambda value: value.update(evaluation_version=EVALUATION_VERSION))
+    with pytest.raises(ValueError, match="evaluation_version"):
+        compare_runs(baseline, candidate, policy)
+
+
+@pytest.mark.parametrize("mutation,expected_status,reason_fragment", [
+    ("overlap", "overlapping_labels", "overlapping label periods"),
+    ("overlap_flag", "overlapping_labels", "overlap block treats"),
+    ("economic_undefined", "undefined_single_side_rate_not_configured", "undefined/descriptive by contract"),
+    ("economic_descriptive", "descriptive_returns_undefined_overlapping_labels",
+     "undefined/descriptive by contract"),
+    ("economic_missing", "economic_block_absent", "economic_metrics block absent"),
+    ("label_overlap_missing", "label_overlap_evidence_absent", "label_overlap evidence absent"),
+])
+def test_gate_blocks_comparison_acceptance(tmp_path, policy, mutation, expected_status, reason_fragment):
+    """Comparison-level gate: removing ``if not gate['passed']`` makes this test accept."""
+    baseline, candidate = suite(tmp_path, policy)
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "accept"
+    assert comparison["evidence_gates"]["evaluation"][candidate[0].name]["passed"] is True
+
+    def mutate(value):
+        if mutation == "overlap":
+            value["label_overlap"] = {"overlapping_pair_count": 1,
+                                      "independent_label_periods": False,
+                                      "overlapping_labels_treated_as_independent_trades": False}
+        elif mutation == "overlap_flag":
+            value["label_overlap"]["overlapping_labels_treated_as_independent_trades"] = True
+        elif mutation == "economic_undefined":
+            value["economic_metrics"]["status"] = "undefined_single_side_rate_not_configured"
+        elif mutation == "economic_descriptive":
+            value["economic_metrics"]["status"] = "descriptive_returns_undefined_overlapping_labels"
+        elif mutation == "economic_missing":
+            value.pop("economic_metrics")
+        else:
+            value.pop("label_overlap")
+
+    edit_verified_metrics(candidate[0], mutate)
+    comparison, decision = compare_runs(baseline, candidate, policy)
+    assert decision["status"] == "inconclusive"
+    assert any(reason_fragment in issue for issue in decision["missing_evidence"])
+    gate = comparison["evidence_gates"]["evaluation"][candidate[0].name]
+    assert gate["passed"] is False
+    assert gate["competition_status"] == expected_status or gate["economic_status"] == expected_status
+    assert any(reason_fragment in reason for reason in gate["reasons"])

@@ -17,6 +17,7 @@ import psutil
 from jinyiquant.checks import verify_artifacts
 from jinyiquant.config import Period, RunConfig
 from jinyiquant.data import build_batch
+from jinyiquant.evaluation import EVALUATION_VERSION
 from jinyiquant.io import digest, file_sha256, read_json, utc_now, write_json
 from jinyiquant.runner import _kill_tree, inference_keys
 from jinyiquant.tracking import Recorder, artifacts, capture_source, environment, resource_usage
@@ -149,7 +150,8 @@ def prepare(output, data_root, *, cache_dir=None, chunk_days=5, max_rss_mb=6144,
         configs[month] = validate_recipe(raw).snapshot()
         windows.append(window)
     registry = output / "roles.json"
-    write_json(registry, {"schema_version": 1, "evaluation_year": 2022, "reserved": RESERVED,
+    write_json(registry, {"schema_version": 1, "evaluation_version": EVALUATION_VERSION,
+                         "evaluation_year": 2022, "reserved": RESERVED,
                          "windows": windows, "allowed_label_roles": ["research_train", "research_evaluation"],
                          "rule": "Only 2021-12 training and 2022 train/evaluation; no backward weight evaluation"})
     checksums = {str(path): file_sha256(path) for path in sources}
@@ -418,7 +420,8 @@ def run(root, data_root=None, **options):
     spent = previous.get("resources", {}).get("wall_seconds", 0.)
     started = time.monotonic()
     rec = Recorder(root, EXP)
-    manifest = {"schema_version": 1, "run_id": rec.run_id, "experiment_id": EXP,
+    manifest = {"schema_version": 1, "evaluation_version": EVALUATION_VERSION,
+                "run_id": rec.run_id, "experiment_id": EXP,
                 "status": "running", "started_at": previous.get("started_at", utc_now()),
                 "plan_sha256": file_sha256(root / "plan.json"), "code": plan["code"],
                 "environment": environment(), "reserved_period_views": 0,

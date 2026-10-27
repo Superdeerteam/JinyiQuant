@@ -21,7 +21,8 @@ for _path in (ROOT / "src", ROOT):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from jinyiquant.evaluation import evaluate  # noqa: E402
+from jinyiquant.comparison import declared_cost_scenarios  # noqa: E402
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate  # noqa: E402
 from jinyiquant.io import read_json, utc_now, write_json  # noqa: E402
 
 MEMBERS = ("tlob_s11", "tlob_s29", "tlob_s47", "mlp_s11", "mlp_s29", "mlp_s47")
@@ -67,11 +68,19 @@ def arm_scores(frames: dict, weights: dict) -> pd.DataFrame:
     return out
 
 
-def monthly_metrics(predictions: pd.DataFrame, targets: pd.DataFrame):
-    scored = predictions.merge(targets[KEYS], on=KEYS, how="inner", validate="one_to_one")
-    if scored.empty:
+def aligned_scored(predictions: pd.DataFrame, targets: pd.DataFrame):
+    """Align one prediction set to the exact target key set for the single evaluator."""
+    common = predictions[KEYS].merge(targets[KEYS], on=KEYS, how="inner", validate="one_to_one")
+    if common.empty:
         raise ValueError("no scored predictions after exact key alignment")
-    return evaluate(scored, targets, EVALUATION, return_sections=True,
+    scored = predictions.merge(common, on=KEYS, how="inner", validate="one_to_one")[KEYS + ["score"]]
+    answer = targets.merge(common, on=KEYS, how="inner", validate="one_to_one")[KEYS + ["target"]]
+    return scored, answer
+
+
+def monthly_metrics(predictions: pd.DataFrame, targets: pd.DataFrame):
+    scored, answer = aligned_scored(predictions, targets)
+    return evaluate(scored, answer, EVALUATION, return_sections=True,
                     undefined_constant_portfolios=True)
 
 
@@ -149,6 +158,10 @@ def main(argv=None) -> int:
         "schema_version": 1,
         "experiment_id": "tlob-mlplob-replay-20261026",
         "created_at_utc": utc_now(),
+        "evaluation_version": EVALUATION_VERSION,
+        "evaluation_contract": {"source": "src/jinyiquant/evaluation.py:evaluate",
+                                "turnover_conversion_factor": 0.5,
+                                "note": "all metric values come from the single eval-v2 contract"},
         "scope": ("Six frozen V3-recipe checkpoints replayed on 2023-11, 2024-01 and 2024-03; "
                   "TLOB and MLPLOB ensembles blended post hoc at 75:25, 50:50 and 25:75."),
         "run_dir": str(run_dir.relative_to(ROOT)),
@@ -169,6 +182,7 @@ def main(argv=None) -> int:
     }
     windows = plan["windows"]
     summary_rows, correlation_rows, member_rows, time_rows = [], [], [], []
+    pooled_scores, pooled_targets = [], []
     daily_all = pd.DataFrame()
     per_window_daily = {}
     sections_cache = {}
@@ -186,12 +200,14 @@ def main(argv=None) -> int:
         for arm in ARM_ORDER:
             predictions = arm_scores(frames, ARMS[arm])
             metrics, daily, sections = monthly_metrics(predictions, targets)
-            ic = daily.ic
-            metrics["ic_ir"] = float(ic.mean() / ic.std(ddof=1)) if ic.std(ddof=1) > 0 else None
+            if arm == "blend_50_50":
+                scored, answer = aligned_scored(predictions, targets)
+                pooled_scores.append(scored)
+                pooled_targets.append(answer)
             window_metrics[arm] = {key: metrics[key] for key in (
                 "ic_mean", "rank_ic_mean", "rank_ic_ir", "ic_ir", "long_short_return_mean",
                 "long_short_sharpe", "turnover_mean", "min_daily_long_short_return", "day_count",
-                "cross_section_count", "sample_count")}
+                "cross_section_count", "sample_count", "evaluation_version", "economic_metrics")}
             daily = daily.copy()
             daily.insert(0, "arm", arm)
             daily.insert(0, "window", name)
@@ -336,6 +352,9 @@ def main(argv=None) -> int:
             "prior_record": reference[arm],
         }
     record["validation_window_recheck"] = recheck
+    record["validation_window_recheck"]["caliber_note"] = (
+        "prior_record turnover is the retired local caliber; eval-v2 turnover = U/2 is drift-aware "
+        "and must not be read as a regression against the old value.")
     # Pooled descriptive read: mean over the three windows (no cross-window interval is claimed).
     pooled = summary.groupby("arm")[["rank_ic_mean", "long_short_return_mean", "turnover_mean"]].mean()
     record["pooled_three_month_means"] = pooled.round(8).to_dict(orient="index")
@@ -347,6 +366,11 @@ def main(argv=None) -> int:
                                   for name, value in record["correlations"].items()},
         "pooled_rank_ic": {arm: round(float(pooled.loc[arm, "rank_ic_mean"]), 6) for arm in ARM_ORDER},
     }
+    if pooled_targets:
+        record["evaluation_contract"]["blend_50_50"] = declared_cost_scenarios(
+            pd.concat(pooled_scores, ignore_index=True),
+            pd.concat(pooled_targets, ignore_index=True),
+            EVALUATION, undefined_constant_portfolios=True)
     write_json(args.record, record)
 
     order = {arm: index for index, arm in enumerate(ARM_ORDER)}

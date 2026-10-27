@@ -36,5 +36,14 @@
   "decision": {
     "rule": "promote dual_patch_v3 only if the paired RankIC gain >= 0.0023, its 5-day block interval excludes zero, and ensemble turnover <= 1.3211; otherwise retain v3_shuffle19800 as the submission baseline",
     "action": "decided_by_script_guardrail"
+  },
+  "legacy_caliber": {
+    "status": "disabled",
+    "legacy_mark": "旧口径结论——不得用于晋升",
+    "annotated_at_utc": "2026-10-27T02:48:28.910987+00:00",
+    "guardrail_usable_for_promotion": false,
+    "decision_usable_for_promotion": false,
+    "replaced_by": "eval-v2",
+    "reason": "A1 停止旧评价晋升模型：沿用的 0.0023/1.3211 门槛晋升条件降级为旧口径；原数值仅作历史保留，不得作为晋升或淘汰输入"
   }
 }

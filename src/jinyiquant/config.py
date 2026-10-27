@@ -177,6 +177,10 @@ class EvaluationConfig(StrictModel):
     periods_per_year: int = Field(default=252, ge=1)
     min_cross_section: int = Field(default=3, ge=2)
     constant_portfolios: Literal["neutral", "undefined"] = "neutral"
+    # Explicit decimal one-side rate for the eval-v2 cost=cU convention.
+    # None means "not declared": cost/net stay undefined (null) and are counted,
+    # never silently treated as zero.
+    single_side_rate: float | None = Field(default=None, ge=0, lt=1)
 
 
 class AcceptanceConfig(StrictModel):

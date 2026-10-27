@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from jinyiquant.config import load_config
+from jinyiquant.data import assert_development_read
 from jinyiquant.io import file_sha256, write_json
 from jinyiquant.runner import run
 from jinyiquant.tracking import Recorder, new_run_dir
@@ -30,6 +31,8 @@ def train_and_save(datasources, config_path=None, *, output_root=None, query=Non
     start = max(pd.Timestamp(cfg.data.allowed_start), pd.Timestamp(cfg.splits.train.start) -
                 pd.Timedelta(days=cfg.data.history_days))
     end = cfg.splits.validation.end
+    # The platform fetch is a read path too: refuse any window that reaches the sealed interval.
+    assert_development_read(start, end)
     try:
         requests = [("bars", datasources["bar1m"], ["date", "instrument", *cfg.data.feature_columns], start),
                     ("instruments", datasources.get("instruments", "cpt_jyc_2026_instruments"),

@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .evaluation import METRIC_SPEC, aggregate_metric
+from .evaluation import EVALUATION_VERSION, METRIC_SPEC, aggregate_metric, evaluate
 from .io import digest, file_sha256, read_json
 from .protocol import (
     calibration_evidence,
@@ -31,6 +31,164 @@ from .protocol import (
 _CORRELATION_COVERAGE_FIELDS = {
     "eligible_section_count", "valid_section_count", "eligible_sections_sha256", "valid_sections_sha256",
 }
+
+DECLARED_COST_SCENARIOS = (0.0, 0.0005)
+# Fail-closed economic usability: only an explicitly computed block may be compared.
+COMPARABLE_ECONOMIC_STATUSES = frozenset({"computed"})
+NON_COMPARABLE_ECONOMIC_STATUSES = frozenset({
+    "undefined_single_side_rate_not_configured",
+    "undefined_no_defined_rebalance",
+    "descriptive_returns_undefined_overlapping_labels",
+    "incomplete",
+})
+
+
+def _constant_portfolio_undefined(evaluation: Any) -> bool:
+    """Read the archived evaluation mode; default is neutral (runner's declared default)."""
+    if isinstance(evaluation, dict):
+        return evaluation.get("constant_portfolios") == "undefined"
+    return getattr(evaluation, "constant_portfolios", "neutral") == "undefined"
+
+
+def _config_with_rate(evaluation: Any, rate: float) -> Any:
+    """Return a copy of an evaluation config with one explicit one-side rate."""
+    if isinstance(evaluation, dict):
+        return {**evaluation, "single_side_rate": float(rate)}
+    model_copy = getattr(evaluation, "model_copy", None)
+    if model_copy is None:
+        raise TypeError("evaluation config must be a mapping or pydantic model")
+    return model_copy(update={"single_side_rate": float(rate)})
+
+
+def evaluation_comparison_gate(metrics: dict) -> dict:
+    """Fail-closed comparison usability, split into predictive and economic parts.
+
+    Predictive usability requires independent, non-overlapping label periods.
+    Economic usability requires an explicit ``status == "computed"`` block; a
+    missing block or any undefined/descriptive/incomplete status fails closed.
+    The two statuses are exposed separately so "IC usable but fee undeclared"
+    is visible instead of collapsing into one opaque boolean.
+    """
+    predictive_reasons: list[str] = []
+    overlap = metrics.get("label_overlap")
+    if not isinstance(overlap, dict):
+        competition_status = "label_overlap_evidence_absent"
+        predictive_reasons.append("label_overlap evidence absent: overlapping label periods are unknown")
+    else:
+        overlap_count = int(overlap.get("overlapping_pair_count") or 0)
+        if overlap_count:
+            competition_status = "overlapping_labels"
+            predictive_reasons.append(
+                f"overlapping label periods ({overlap_count} pairs): label-period returns are "
+                "descriptive, not independent trades")
+        elif overlap.get("overlapping_labels_treated_as_independent_trades") not in (False, None):
+            competition_status = "overlapping_labels"
+            predictive_reasons.append("overlap block treats overlapping labels as independent trades")
+        else:
+            competition_status = "usable"
+    economic_reasons: list[str] = []
+    economic = metrics.get("economic_metrics")
+    if not isinstance(economic, dict):
+        economic_status = "economic_block_absent"
+        economic_reasons.append("economic_metrics block absent: cost/net/breakeven usability is unknown")
+    else:
+        raw_status = economic.get("status")
+        economic_status = raw_status if isinstance(raw_status, str) else "economic_status_absent"
+        if raw_status in NON_COMPARABLE_ECONOMIC_STATUSES:
+            economic_reasons.append(
+                f"economic status {raw_status!r} is undefined/descriptive by contract; "
+                "cost/net/breakeven cannot support a comparison")
+        elif raw_status not in COMPARABLE_ECONOMIC_STATUSES:
+            economic_reasons.append(
+                f"economic status {raw_status!r} is not in the comparable set "
+                f"{sorted(COMPARABLE_ECONOMIC_STATUSES)}")
+        if economic.get("overlapping_labels_treated_as_independent_trades") not in (False, None):
+            economic_reasons.append("economic block treats overlapping labels as independent trades")
+        if economic.get("returns_compounded") not in (False, None):
+            economic_reasons.append("economic block compounds overlapping label-period returns")
+        if economic.get("daily_returns_summed_across_days") not in (False, None):
+            economic_reasons.append("economic block sums daily descriptive returns across days")
+    reasons = predictive_reasons + economic_reasons
+    return {
+        "passed": not reasons,
+        "predictive_usable": not predictive_reasons,
+        "economic_usable": not economic_reasons,
+        "competition_status": competition_status,
+        "economic_status": economic_status,
+        "reasons": reasons,
+        "predictive_reasons": predictive_reasons,
+        "economic_reasons": economic_reasons,
+    }
+
+
+def archived_cost_scenarios(run_dir: str | Path, *,
+                            scenarios: tuple[float, ...] = DECLARED_COST_SCENARIOS,
+                            evaluation: Any | None = None) -> dict:
+    """Contract cost/competition scenarios for one archived run directory.
+
+    Reads the archived scored predictions, targets and evaluation config; the
+    metrics are recomputed by the single evaluator, never by a local formula.
+    The archived ``constant_portfolios`` mode is honoured. Inference-only archives
+    do not declare an evaluation caliber: pass ``evaluation=`` explicitly instead
+    of receiving a KeyError.
+    """
+    keys = ["date", "instrument"]
+    run = Path(run_dir)
+    scored_file = run / "scored_predictions.parquet"
+    if scored_file.is_file():
+        frame = pd.read_parquet(scored_file)
+    else:
+        frame = pd.read_parquet(run / "predictions.parquet").rename(columns={"factor": "score"})
+    targets = pd.read_parquet(run / "targets.parquet")
+    common = frame[keys].merge(targets[keys], on=keys, how="inner", validate="one_to_one")
+    scored = frame.merge(common, on=keys, how="inner", validate="one_to_one")[keys + ["score"]]
+    answer = targets.merge(common, on=keys, how="inner", validate="one_to_one")[keys + ["target"]]
+    if evaluation is None:
+        archived_evaluation = read_json(run / "config.json").get("evaluation")
+        if not isinstance(archived_evaluation, dict) or not archived_evaluation:
+            raise ValueError(
+                f"{run}: archived config has no evaluation block; pass evaluation= explicitly. "
+                "Inference-only archives do not declare a training evaluation caliber.")
+        evaluation = archived_evaluation
+    return declared_cost_scenarios(scored, answer, evaluation, scenarios=scenarios,
+                                   undefined_constant_portfolios=_constant_portfolio_undefined(evaluation))
+
+
+def declared_cost_scenarios(predictions: pd.DataFrame, targets: pd.DataFrame, evaluation: Any, *,
+                            scenarios: tuple[float, ...] = DECLARED_COST_SCENARIOS,
+                            undefined_constant_portfolios: bool = False) -> dict:
+    """Report the contract's competition/economic blocks under declared cost rates.
+
+    Every scenario calls the single ``evaluate`` contract afresh; no cost or metric
+    formula is reimplemented here.
+    """
+    blocks = {}
+    for rate in scenarios:
+        metrics, _, _ = evaluate(predictions, targets, _config_with_rate(evaluation, rate),
+                                 return_sections=True,
+                                 undefined_constant_portfolios=undefined_constant_portfolios)
+        blocks[f"{int(round(float(rate) * 10000))}bp"] = {
+            "single_side_rate": float(rate),
+            "comparison_gate": evaluation_comparison_gate(metrics),
+            **{key: metrics[key] for key in ("evaluation_version", "competition_metrics", "economic_metrics")},
+        }
+    gate_reasons = sorted({reason for block in blocks.values()
+                           for reason in block["comparison_gate"]["reasons"]})
+    first_gate = next(iter(blocks.values()))["comparison_gate"] if blocks else evaluation_comparison_gate({})
+    return {
+        "evaluation_version": EVALUATION_VERSION,
+        "source": "src/jinyiquant/evaluation.py:evaluate",
+        "turnover_conversion_factor": 0.5,
+        "definition": "cost = single_side_rate * U; U = sum(|target weight - pre-trade drifted weight|); "
+                      "turnover = U / 2",
+        "comparison_usable": not gate_reasons,
+        "predictive_usable": first_gate["predictive_usable"],
+        "economic_usable": first_gate["economic_usable"],
+        "competition_status": first_gate["competition_status"],
+        "economic_status": first_gate["economic_status"],
+        "comparison_gate_reasons": gate_reasons,
+        "scenarios": blocks,
+    }
 
 
 def validate_policy(policy: dict) -> dict:
@@ -126,7 +284,17 @@ def _read_run(path: str | Path) -> _Run:
     return run
 
 
+def _require_contract_version(run: _Run) -> None:
+    version = run.metrics.get("evaluation_version")
+    if version != EVALUATION_VERSION:
+        raise ValueError(
+            f"{run.path}: evaluation_version {version!r} != {EVALUATION_VERSION}; "
+            "re-evaluate this run under the frozen contract before comparing")
+
+
 def _fair_pair(baseline: _Run, candidate: _Run, change: dict) -> None:
+    _require_contract_version(baseline)
+    _require_contract_version(candidate)
     fair_config_pair(baseline.config, candidate.config, change)
     fair_data_pair(baseline.data, candidate.data, change)
     if not baseline.daily.index.equals(candidate.daily.index):
@@ -388,10 +556,16 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
             missing.append("calibration registration timestamps absent")
     except (OSError, KeyError, ValueError, TypeError) as exc:
         missing.append(f"verified baseline calibration unavailable: {exc}")
+    evaluation_gates = {}
     for run in baselines + candidates:
         run_missing, run_failures = _run_evidence(run, policy_hash)
         missing.extend(run_missing)
         failures.extend(run_failures)
+        run_id = str(run.manifest.get("run_id", run.path.name))
+        gate = evaluation_comparison_gate(run.metrics)
+        evaluation_gates[run_id] = gate
+        if not gate["passed"]:
+            missing.extend(f"{run_id}: {reason}" for reason in gate["reasons"])
     correlation_columns = {METRIC_SPEC[metric][0] for metric in {policy["primary_metric"], *policy["max_metric_regressions"]}
                            if METRIC_SPEC[metric][0] in {"rank_ic", "ic"}}
     if correlation_columns:
@@ -508,8 +682,14 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
     elif not failures and not missing:
         missing.append("confidence interval does not establish the preregistered improvement")
     baseline_values = [item["baseline"] for item in pair_results if item["baseline"] is not None]
+    versions = sorted({run.metrics.get("evaluation_version") for run in baselines + candidates
+                       if run.metrics.get("evaluation_version")})
+    if len(versions) > 1:
+        raise ValueError(f"comparison mixes evaluation versions: {versions}")
     comparison = {
         "schema_version": 1, "metric_scope": "local_approximation", "policy": policy,
+        "evaluation_version": versions[0] if versions else None,
+        "evaluation_versions": versions,
         "calibration": calibration, "change": policy["change"],
         "policy_sha256": policy_hash, "primary_metric": primary, "direction": policy["direction"],
         "pairs": pair_results, "seed_count": len(seeds), "period_count": len(periods),
@@ -521,6 +701,7 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
                                "by_period": [{"period": list(period), "values": [item["baseline"] for item in pair_results
                                               if item["period"] == list(period)]} for period in periods]},
         "improvement": effect, "confidence_interval": interval,
+        "evidence_gates": {"evaluation": evaluation_gates},
         "bootstrap": {"method": "moving consecutive trading-day blocks within disjoint periods",
                       "seed_draws": "synchronized across all seeds; never stock-level iid",
                       "weighting": "equal run-pair metric differences", "samples": policy["bootstrap_samples"],
@@ -529,6 +710,7 @@ def compare_runs(baseline_dirs: list[str | Path], candidate_dirs: list[str | Pat
                         "interval conditions on evaluated seeds and periods; repeated candidate selection needs fresh validation"],
     }
     decision = {"schema_version": 1, "status": status, "accepted": status == "accept",
+                "evaluation_version": comparison.get("evaluation_version"),
                 "result": {"accept": "保留", "reject": "回退", "inconclusive": "证据不足"}[status],
                 "action": "retain_candidate" if status == "accept" else "retain_baseline",
                 "failed_gates": sorted(set(failures)), "missing_evidence": sorted(set(missing)),

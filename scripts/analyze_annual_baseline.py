@@ -12,7 +12,7 @@ import pandas as pd
 
 from jinyiquant.config import Period, RunConfig
 from jinyiquant.data import select_targets
-from jinyiquant.evaluation import KEYS, evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, KEYS, evaluate
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.runner import inference_keys
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir, resource_usage
@@ -30,9 +30,10 @@ PAIRED_METRICS = [
     "mse", "mae", "score_change_mae", "rank_persistence", "score_std", "score_target_std_ratio",
 ]
 CONVENTIONS = {
+    "evaluation_version": EVALUATION_VERSION,
     "scope": "Local approximate gross forward-label returns; no fees, execution, compounding or official score.",
     "granularity": "Every declared trading date and all eight sample times, separately for each policy.",
-    "turnover": "Half L1 change in net long-short weights, consecutive sample times including overnight and month boundaries; first timestamp undefined.",
+    "turnover": "eval-v2 turnover = U/2 (conversion factor 0.5); U = sum(|target - pre-trade drifted weight|); first timestamp undefined.",
     "constant_scores": "RankIC, IC and portfolios undefined; missing values are not replaced by zero.",
     "short_return": "Return of the bottom-score basket before negation; short_position_return = -short_return; long_short_return = long_return + short_position_return.",
     "failure_flags": "rank_ic < 0 and long_short_return < 0 are descriptive failure flags, not significance or promotion tests. Undefined values are separate.",
@@ -292,6 +293,7 @@ def analyze(root):
     output = new_run_dir(root / "analysis")
     rec = Recorder(output, plan["experiment_id"])
     write_json(output / "manifest.json", {"status": "running", "run_id": output.name,
+               "evaluation_version": EVALUATION_VERSION,
                "experiment_id": plan["experiment_id"], "started_at": utc_now(),
                "plan_sha256": file_sha256(root / "plan.json"), "code": capture_source(output),
                "environment": environment(), "kind": "annual_diagnostics"})

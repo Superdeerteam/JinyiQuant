@@ -139,5 +139,14 @@
  "budget": {
   "candidate_plan_required": true,
   "note": "wall time, RSS and training steps are fixed in the candidate plan before the run; this protocol itself opens no new data and trains nothing"
+ },
+ "legacy_caliber": {
+  "status": "disabled",
+  "legacy_mark": "旧口径结论——不得用于晋升",
+  "annotated_at_utc": "2026-10-27T02:45:45.839129+00:00",
+  "promotion_rule_usable_for_promotion": false,
+  "decision_usable_for_promotion": false,
+  "replaced_by": "eval-v2",
+  "reason": "A1 停止旧评价晋升模型：五项等权百分位代理（16 臂固定面板、0.85 门槛）降级为旧口径，仅作描述性参考，不得作为晋升或淘汰输入"
  }
 }

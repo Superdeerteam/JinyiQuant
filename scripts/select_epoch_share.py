@@ -1,5 +1,12 @@
 """Pick the training-schedule arm from a per-seed run matrix under pre-registered rules.
 
+LEGACY CALIBER (stage A): the pre-registered guardrail below used to promote a
+training schedule (it produced the V3 baseline). That promotion model is retired.
+The script now reports descriptive per-seed and paired differences only: guardrail
+rows carry ``usable_for_promotion=false``, the record sets
+``promotion_allowed=false`` and ``promotion_decision`` raises
+``PromotionDisabledError``.
+
 Plan schema: {schema_version, experiment_id, hypothesis, baseline: {label, runs},
 candidates: [{label, runs}], bootstrap_samples, bootstrap_seed, block_days,
 guardrail: {turnover_max, min_rank_ic_gain}} where every `runs` maps a seed
@@ -8,8 +15,8 @@ targets.parquet.
 
 Per candidate: metrics per seed, mean/std across seeds, same-seed paired daily
 differences against the baseline, a 5-day moving-block bootstrap interval on the
-seed-averaged daily difference, and explicit pass/fail against the pre-registered
-guardrail. Read-only: no training, no artifact mutation.
+seed-averaged daily difference, and a descriptive pass/fail table against the
+retired guardrail. Read-only: no training, no artifact mutation.
 """
 
 from __future__ import annotations
@@ -27,6 +34,48 @@ from jinyiquant.evaluation import evaluate
 
 DAILY = ("rank_ic", "long_short_return", "turnover")
 SUMMARY = ("rank_ic_mean", "long_short_return_mean", "turnover_mean", "min_daily_long_short_return")
+LEGACY_CALIBER = {
+    "caliber_id": "legacy-pre-eval-v2",
+    "status": "disabled",
+    "promotion_allowed": False,
+    "legacy_mark": "旧口径结论——不得用于晋升",
+}
+
+
+class PromotionDisabledError(RuntimeError):
+    """Raised when a caller tries to promote a schedule from the legacy guardrail."""
+
+
+def legacy_guardrail(summary: dict, diffs: dict, guardrail: dict) -> dict:
+    """Compute the retired schedule guardrail, explicitly marked as not-for-promotion."""
+    turnover_ok = None
+    if summary["mean"]["turnover_mean"] is not None and guardrail.get("turnover_max"):
+        turnover_ok = summary["mean"]["turnover_mean"] <= float(guardrail["turnover_max"])
+    rank_ic = diffs.get("rank_ic")
+    gain_ok = None
+    ci_ok = None
+    if rank_ic:
+        gain_ok = rank_ic["mean"] >= float(guardrail["min_rank_ic_gain"])
+        ci_ok = rank_ic["interval"] is not None and rank_ic["interval"][0] > 0
+    return {
+        "turnover_max": guardrail.get("turnover_max"),
+        "turnover_ok": turnover_ok,
+        "min_rank_ic_gain": guardrail.get("min_rank_ic_gain"),
+        "rank_ic_gain_ok": gain_ok,
+        "rank_ic_ci_above_zero": ci_ok,
+        "pass": bool(turnover_ok) and bool(gain_ok) and bool(ci_ok),
+        "legacy": True,
+        "usable_for_promotion": False,
+        "usable_for_elimination": False,
+        "legacy_status": LEGACY_CALIBER["legacy_mark"],
+    }
+
+
+def promotion_decision(*_args, **_kwargs):
+    """The retired schedule-promotion path: refuse to promote."""
+    raise PromotionDisabledError(
+        "epoch-share guardrail promotion is retired (旧口径结论——不得用于晋升); "
+        "use eval-v2 once the contract lands")
 
 
 def load_arm(directory: Path) -> dict:
@@ -99,32 +148,21 @@ def main() -> int:
     guardrail = plan["guardrail"]
     results = {"schema_version": 1, "experiment_id": plan["experiment_id"], "hypothesis": plan["hypothesis"],
                "baseline": base_summary, "candidates": [],
-               "guardrail": guardrail, "decision_rule": plan.get("decision_rule", {})}
+               "guardrail": guardrail, "decision_rule": plan.get("decision_rule", {}),
+               "legacy_caliber": LEGACY_CALIBER, "promotion_allowed": False}
     for entry in plan["candidates"]:
         group = run_group(base, entry)
         summary = summarise(group)
         diffs = compare(group, baseline, plan)
-        turnover_ok = None
-        if summary["mean"]["turnover_mean"] is not None and guardrail.get("turnover_max"):
-            turnover_ok = summary["mean"]["turnover_mean"] <= float(guardrail["turnover_max"])
-        rank_ic = diffs.get("rank_ic")
-        gain_ok = None
-        ci_ok = None
-        if rank_ic:
-            gain_ok = rank_ic["mean"] >= float(guardrail["min_rank_ic_gain"])
-            ci_ok = rank_ic["interval"] is not None and rank_ic["interval"][0] > 0
         results["candidates"].append({"label": summary["label"], "seeds": summary["seeds"],
                                       "mean": summary["mean"], "std": summary["std"],
                                       "per_seed": summary["per_seed"], "paired_vs_baseline": diffs,
-                                      "guardrail": {"turnover_max": guardrail.get("turnover_max"),
-                                                    "turnover_ok": turnover_ok,
-                                                    "min_rank_ic_gain": guardrail.get("min_rank_ic_gain"),
-                                                    "rank_ic_gain_ok": gain_ok,
-                                                    "rank_ic_ci_above_zero": ci_ok,
-                                                    "pass": bool(turnover_ok) and bool(gain_ok) and bool(ci_ok)}})
+                                      "guardrail": legacy_guardrail(summary, diffs, guardrail)})
     ranked = sorted(results["candidates"], key=lambda item: item["mean"]["rank_ic_mean"], reverse=True)
     results["ranking_by_mean_rank_ic"] = [item["label"] for item in ranked]
     results["passing"] = [item["label"] for item in results["candidates"] if item["guardrail"]["pass"]]
+    results["passing_usable_for_promotion"] = False
+    results["promotion_status"] = "disabled_legacy_caliber"
     output = args.plan.with_name(args.plan.stem.replace("_plan", "") + "_result.json")
     output.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({"ranking": results["ranking_by_mean_rank_ic"], "passing": results["passing"],

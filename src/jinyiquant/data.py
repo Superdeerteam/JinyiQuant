@@ -1,7 +1,11 @@
-"""Versioned local data readers and causal, label-free history windows.
+"""Versioned local data readers and label-window selection.
 
 All input timestamps are exchange-local, timezone-naive bar *end* timestamps.
 Instrument IDs are never inferred from security codes: an explicit map is required.
+This module owns the shared data contract (input schema, label clock, split boundaries)
+and the chronological guards that use it; ``modified_tlob.schema`` re-exports the schema
+part. Reading, window construction and label selection live here; the training entry
+stays in ``modified_tlob/train.py``.
 """
 
 from __future__ import annotations
@@ -25,11 +29,145 @@ import pyarrow.dataset as ds
 import pyarrow.ipc as ipc
 import pyarrow.parquet as pq
 
-from modified_tlob.schema import lob_trade_columns
+# --------------------------------------------------------------------------- data contract
+# One definition site for the input schema and the chronological boundaries. The model
+# layer (``modified_tlob.schema``) re-exports this contract instead of owning it, so the
+# data layer never imports the model layer.
+
+CONTRACT_VERSION = 2
 
 KEYS = ["date", "instrument"]
-FORBIDDEN_FEATURES = {"target", "vwap_return", "label_end", "end_price", "vwap"}
+FORBIDDEN_FEATURES = frozenset({"target", "vwap_return", "label_end", "end_price", "vwap"})
+
+TRADE_COLUMNS = ("volume", "amount", "deal_number")
+LABEL_HORIZON_MINUTES = 30
+
+# Final-check interval [SEALED_START, SEALED_END): the only sanctioned way to open it is a
+# recorded one-time final_access claim, taken right before evaluation. Phase A never uses it.
+SEALED_START = pd.Timestamp("2024-10-08")
+SEALED_END = pd.Timestamp("2025-01-01")
+MAX_REPORTED_BOUNDARY_SAMPLES = 5
+
+
+def config_option(config, name: str, default=None):
+    """Read one option from a mapping or an attribute object (resolved configs)."""
+    return config.get(name, default) if isinstance(config, dict) else getattr(config, name, default)
+
+
+def lob_columns(levels: int = 3) -> tuple[str, ...]:
+    """Explicit input order matching upstream ask-price/size, bid-price/size per level."""
+    if levels not in {3, 5}:
+        raise ValueError("Only three or five LOB levels are configured")
+    return tuple(f"{side}_{kind}{level}" for level in range(1, levels + 1)
+                 for side, kind in (("ask", "price"), ("ask", "volume"), ("bid", "price"), ("bid", "volume")))
+
+
+def lob_trade_columns() -> tuple[str, ...]:
+    return lob_columns(3) + TRADE_COLUMNS
+
+
+def validate_input_schema(fields, book_representation="raw", trade_features="zero") -> int:
+    fields = tuple(fields)
+    if fields not in (lob_columns(3), lob_columns(5), lob_trade_columns()):
+        raise ValueError("Unexpected LOB field order")
+    if book_representation not in ("raw", "relative_mid_bps") or trade_features not in ("zero", "log1p"):
+        raise ValueError("Unsupported LOB input transformation")
+    if trade_features != "zero" and fields != lob_trade_columns():
+        raise ValueError("Trade features require three LOB levels followed by volume, amount, deal_number")
+    return 12 if fields == lob_trade_columns() else len(fields)
+
+
+def timestamps(values, name: str) -> pd.Series:
+    """Exchange-local timezone-naive bar end timestamps with explicit failure messages."""
+    try:
+        result = pd.to_datetime(values, errors="raise")
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"{name}: invalid timestamp") from exc
+    if result.isna().any():
+        raise ValueError(f"{name}: missing timestamp")
+    if isinstance(result.dtype, pd.DatetimeTZDtype):
+        raise ValueError(f"{name}: use timezone-naive Asia/Shanghai timestamps")
+    return result.astype("datetime64[ns]")
+
+
+def validate_keys(frame: pd.DataFrame, name: str = "data") -> pd.DataFrame:
+    """Reject ambiguous joins instead of silently dropping duplicate source rows."""
+    if any(key not in frame for key in KEYS):
+        raise ValueError(f"{name}: required columns are {KEYS}")
+    result = frame.copy()
+    result["date"] = timestamps(result["date"], f"{name}.date")
+    if result.empty:
+        return result.reset_index(drop=True)
+    instruments = result["instrument"]
+    if instruments.isna().any() or not instruments.map(lambda x: isinstance(x, str)).all():
+        raise ValueError(f"{name}: instrument must contain nonempty strings")
+    if instruments.str.strip().eq("").any() or instruments.ne(instruments.str.strip()).any():
+        raise ValueError(f"{name}: empty or whitespace-padded instrument")
+    if result.duplicated(KEYS).any():
+        raise ValueError(f"{name}: duplicate (date, instrument) keys")
+    return result.sort_values(KEYS, kind="stable").reset_index(drop=True)
+
+
+def _minutes(dates: pd.Series) -> pd.Series:
+    stamps = pd.to_datetime(dates)
+    return stamps.dt.hour * 60 + stamps.dt.minute
+
+
+def required_label_end(dates: pd.Series, horizon_minutes: int = LABEL_HORIZON_MINUTES) -> pd.Series:
+    """Forward end of a label horizon; the 11:30 sample resumes after the lunch break."""
+    stamps = pd.to_datetime(dates)
+    required = stamps + pd.Timedelta(minutes=horizon_minutes)
+    lunch = _minutes(stamps).eq(690) & (horizon_minutes == LABEL_HORIZON_MINUTES)
+    required.loc[lunch] = stamps.loc[lunch] + pd.Timedelta(hours=2)
+    return required
+
+
+def known_session_horizon(dates: pd.Series, horizon_minutes: int = LABEL_HORIZON_MINUTES) -> pd.Series:
+    """Whether the horizon stays inside one continuous session; overnight windows are unknown."""
+    minute = _minutes(dates)
+    end_minute = minute + horizon_minutes
+    lunch = minute.eq(690) & (horizon_minutes == LABEL_HORIZON_MINUTES)
+    return ((minute >= 570) & (end_minute <= 690)) | ((minute >= 780) & (end_minute <= 900)) | lunch
+
+
+def boundary_samples(frame: pd.DataFrame, boundary) -> pd.DataFrame:
+    """Samples whose forward label window reaches the exclusive boundary."""
+    return frame.loc[frame["label_end"] >= pd.Timestamp(boundary)]
+
+
+def assert_label_windows_before(frame: pd.DataFrame, boundary, *, name: str = "samples") -> None:
+    """Fail with the offending samples when a label window reaches the exclusive boundary."""
+    boundary = pd.Timestamp(boundary)
+    crossing = boundary_samples(frame, boundary)
+    if len(crossing):
+        columns = [column for column in ("date", "instrument", "label_end") if column in crossing]
+        detail = crossing.head(MAX_REPORTED_BOUNDARY_SAMPLES)[columns].to_dict("records")
+        raise ValueError(f"{name}: {len(crossing)} label windows reach the exclusive boundary {boundary}; "
+                         f"boundary samples: {detail}")
+
+
+def assert_development_read(start, end, *, sealed_access: bool = False) -> None:
+    """Refuse any read whose window could open the sealed final-check interval.
+
+    ``start``/``end`` are the effective file-read window; ``None`` means unbounded. Only a
+    caller that has already recorded the one-time final access may pass ``sealed_access``.
+    """
+    if sealed_access:
+        return
+    lower = None if start is None else pd.Timestamp(start)
+    upper = None if end is None else pd.Timestamp(end)
+    if (lower is None or lower < SEALED_END) and (upper is None or upper > SEALED_START):
+        raise ValueError(f"Sealed final interval [{SEALED_START}, {SEALED_END}) cannot be read: requested window "
+                         f"[{start}, {end}) overlaps it; development reads end before {SEALED_START}. "
+                         "Opening it requires the recorded one-time final_access claim (see runner.run), "
+                         "which phase A does not use")
+
+
 READER_FORMAT_VERSION = 1
+
+__all__ = ["Batch", "DataBundle", "DaySelection", "build_batch", "complete_trading_calendar",
+           "history_diagnostics", "load_data", "monthly_sampled_days", "preprocess_bars",
+           "previous_trading_days", "select_targets", "validate_keys"]
 
 
 @dataclass
@@ -65,41 +203,11 @@ def _get(config: Any, name: str, default: Any = None) -> Any:
     return config.get(name, default) if isinstance(config, dict) else getattr(config, name, default)
 
 
-def _dates(values: pd.Series, name: str) -> pd.Series:
-    try:
-        result = pd.to_datetime(values, errors="raise")
-    except (ValueError, TypeError) as exc:
-        raise ValueError(f"{name}: invalid timestamp") from exc
-    if result.isna().any():
-        raise ValueError(f"{name}: missing timestamp")
-    if isinstance(result.dtype, pd.DatetimeTZDtype):
-        raise ValueError(f"{name}: use timezone-naive Asia/Shanghai timestamps")
-    return result.astype("datetime64[ns]")
-
-
-def validate_keys(frame: pd.DataFrame, name: str = "data") -> pd.DataFrame:
-    """Reject ambiguous joins instead of silently dropping duplicate source rows."""
-    if any(key not in frame for key in KEYS):
-        raise ValueError(f"{name}: required columns are {KEYS}")
-    result = frame.copy()
-    result["date"] = _dates(result["date"], f"{name}.date")
-    if result.empty:
-        return result.reset_index(drop=True)
-    instruments = result["instrument"]
-    if instruments.isna().any() or not instruments.map(lambda x: isinstance(x, str)).all():
-        raise ValueError(f"{name}: instrument must contain nonempty strings")
-    if instruments.str.strip().eq("").any() or instruments.ne(instruments.str.strip()).any():
-        raise ValueError(f"{name}: empty or whitespace-padded instrument")
-    if result.duplicated(KEYS).any():
-        raise ValueError(f"{name}: duplicate (date, instrument) keys")
-    return result.sort_values(KEYS, kind="stable").reset_index(drop=True)
-
-
 def _time_filter(frame: pd.DataFrame, start: Any, end: Any) -> pd.DataFrame:
     if "date" not in frame:
         return frame
     frame = frame.copy()
-    frame["date"] = _dates(frame["date"], "date")
+    frame["date"] = timestamps(frame["date"], "date")
     mask = pd.Series(True, index=frame.index)
     if start is not None:
         mask &= frame["date"] >= pd.Timestamp(start)
@@ -277,7 +385,11 @@ def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_
 
 def _read(path_value: Any, requested: list[str], start: Any, end: Any,
           cache_dir: Path | None = None, cache_events: list[dict] | None = None,
-          selection: DaySelection | None = None) -> tuple[pd.DataFrame, list[dict]]:
+          selection: DaySelection | None = None, *, sealed_access: bool = False
+          ) -> tuple[pd.DataFrame, list[dict]]:
+    if start is not None or end is not None:
+        # One choke point for every windowed market-data read (including verified caches).
+        assert_development_read(start, end, sealed_access=sealed_access)
     path = Path(path_value)
     if not path.exists():
         raise FileNotFoundError(f"Data source does not exist: {path}")
@@ -345,7 +457,7 @@ class DaySelection:
 def complete_trading_calendar(universe: pd.DataFrame, sample_times: Sequence[str]) -> pd.DatetimeIndex:
     """Days whose independent universe grid contains every configured sampling time."""
     grid = list(dict.fromkeys(sample_times))
-    stamps = _dates(universe["date"], "universe.date")
+    stamps = timestamps(universe["date"], "universe.date")
     kept = stamps.loc[stamps.dt.strftime("%H:%M").isin(grid)]
     counts = kept.groupby(kept.dt.normalize()).nunique()
     return pd.DatetimeIndex(counts.index[counts == len(grid)].sort_values())
@@ -399,7 +511,7 @@ def _sampling_fields(value: Any) -> dict[str, Any] | None:
     return fields
 
 
-def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
+def load_data(config: Any, start: Any = None, end: Any = None, *, sealed_access: bool = False) -> DataBundle:
     """Read only selected dates/columns; bars include configured historical warm-up.
 
     Label values are retained separately. No label-derived columns enter bars or
@@ -409,38 +521,48 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
     complete trading days (and one previous trading day of bar history, the
     original 128-bar recipe's warm-up), one monthly source file at a time, cached
     per projection.
+
+    The sealed final-check interval cannot be read: the effective window
+    ``[warm_start, end)`` must stay before ``SEALED_START`` unless the caller
+    has already recorded the one-time final access (never in phase A).
     """
-    features = list(_get(config, "feature_columns"))
+    features = list(config_option(config, "feature_columns"))
     if FORBIDDEN_FEATURES.intersection(features):
         raise ValueError("Future label columns cannot be input features")
-    allowed_start, allowed_end = _get(config, "allowed_start"), _get(config, "allowed_end")
+    allowed_start, allowed_end = config_option(config, "allowed_start"), config_option(config, "allowed_end")
     start = start if start is not None else allowed_start
     end = end if end is not None else allowed_end
     if start is not None and allowed_start is not None and pd.Timestamp(start) < pd.Timestamp(allowed_start):
         raise ValueError("Requested data starts before the allowed development interval")
     if end is not None and allowed_end is not None and pd.Timestamp(end) > pd.Timestamp(allowed_end):
         raise ValueError("Requested data ends after the allowed development interval")
-    sampling = _sampling_fields(_get(config, "monthly_sampling"))
+    sampling = _sampling_fields(config_option(config, "monthly_sampling"))
     if sampling is not None and (start is None or pd.Timestamp(start) != sampling["start"]):
         raise ValueError("Monthly sampling reads must start exactly at the sampling range")
-    history_days = _get(config, "history_days", 10)
+    history_days = config_option(config, "history_days", 10)
     warm_start = None if start is None else (
         sampling["start"] if sampling is not None
         else pd.Timestamp(start) - pd.Timedelta(days=history_days))
     if warm_start is not None and allowed_start is not None:
         warm_start = max(warm_start, pd.Timestamp(allowed_start))
+    if end is None and config_option(config, "labels_path"):
+        raise ValueError(f"Development reads with labels require an explicit end before the sealed interval "
+                         f"[{SEALED_START}, {SEALED_END})")
+    if start is not None or end is not None:
+        assert_development_read(warm_start if warm_start is not None else start, end, sealed_access=sealed_access)
     records = {}
     cache_events = []
-    cache_root = _get(config, "cache_dir")
+    cache_root = config_option(config, "cache_dir")
 
     def read_role(role, path, columns, first, last, selection=None):
         directory = None if cache_root is None else Path(cache_root) / role
         if directory is not None and Path(path).is_dir() and Path(path).resolve().is_relative_to(Path(cache_root).resolve()):
             raise ValueError("cache_dir must not be the same directory as, or an ancestor of, an input directory")
-        return _read(path, columns, first, last, directory, cache_events, selection)
+        return _read(path, columns, first, last, directory, cache_events, selection,
+                     sealed_access=sealed_access)
 
     mapping = None
-    map_path = _get(config, "instrument_map_path")
+    map_path = config_option(config, "instrument_map_path")
     if map_path:
         mapping, records["instrument_map"] = read_role("instrument_map", map_path,
                                                       ["instrument_id", "instrument"], None, None)
@@ -451,12 +573,12 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
             raise ValueError("Instrument map must be one-to-one")
     instruments, rows_selection, bars_selection, sampling_audit = None, None, None, None
     if sampling is not None:
-        if not _get(config, "instruments_path"):
+        if not config_option(config, "instruments_path"):
             raise ValueError("Monthly sampling requires the independent instruments calendar")
-        raw_universe, records["instruments"] = read_role("instruments", _get(config, "instruments_path"),
+        raw_universe, records["instruments"] = read_role("instruments", config_option(config, "instruments_path"),
                                                          KEYS, start, end)
         universe = validate_keys(raw_universe, "instruments")
-        calendar = complete_trading_calendar(universe, _get(config, "sample_times", []))
+        calendar = complete_trading_calendar(universe, config_option(config, "sample_times", []))
         days, months = monthly_sampled_days(calendar, sampling["start"], sampling["end"],
                                             sampling["days_per_month"])
         context = previous_trading_days(calendar, days)
@@ -475,11 +597,11 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
             "calendar_source": "independent instruments table",
             "rule": "centered stratified index floor((2i+1)n/(2k)) inside each calendar month",
             "reader": "one monthly source projection per cache entry"}
-    bars, records["bars"] = read_role("bars", _get(config, "bars_path"),
+    bars, records["bars"] = read_role("bars", config_option(config, "bars_path"),
                                       ["date", "instrument", "instrument_id", *features], warm_start, end,
                                       bars_selection)
     bars = preprocess_bars(_map_instruments(bars, mapping, "bars"), config)
-    label_path = _get(config, "labels_path")
+    label_path = config_option(config, "labels_path")
     if label_path:
         labels, records["labels"] = read_role("labels", label_path,
                                               [*KEYS, "instrument_id", "target", "vwap_return", "label_end"],
@@ -495,18 +617,18 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
             raise ValueError("labels: missing target or vwap_return")
         labels["target"] = pd.to_numeric(labels["target"], errors="raise")
         if "label_end" in labels:
-            labels["label_end"] = _dates(labels["label_end"], "labels.label_end")
+            labels["label_end"] = timestamps(labels["label_end"], "labels.label_end")
     else:
         labels = pd.DataFrame(columns=[*KEYS, "target"])
-    outside_policy = _get(config, "outside_universe_labels", "exclude")
+    outside_policy = config_option(config, "outside_universe_labels", "exclude")
     if outside_policy not in {"exclude", "error"}:
         raise ValueError("outside_universe_labels must be exclude or error")
     alignment = {"policy": outside_policy, "labels_input_rows": len(labels),
                  "outside_universe_label_rows": 0, "outside_universe_label_instruments": 0,
                  "labels_retained_rows": len(labels)}
     data_events = []
-    if _get(config, "instruments_path") and instruments is None:
-        instruments, records["instruments"] = read_role("instruments", _get(config, "instruments_path"),
+    if config_option(config, "instruments_path") and instruments is None:
+        instruments, records["instruments"] = read_role("instruments", config_option(config, "instruments_path"),
                                                         KEYS, start, end)
         instruments = validate_keys(instruments, "instruments")
     if instruments is not None and len(labels):
@@ -524,14 +646,15 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
             data_events.append({"event": "outside_universe_labels_excluded", **alignment})
     payload = json.dumps({"files": records, "monthly_sampling": sampling_audit},
                          sort_keys=True, separators=(",", ":")).encode()
-    metadata = {"schema_version": 1, "source": _get(config, "source"), "version": _get(config, "version"),
+    metadata = {"schema_version": 1, "data_contract_version": CONTRACT_VERSION,
+                "source": config_option(config, "source"), "version": config_option(config, "version"),
                 "data_sha256": hashlib.sha256(payload).hexdigest(), "files": records,
                 "requested_start": None if start is None else str(pd.Timestamp(start)),
                 "requested_end": None if end is None else str(pd.Timestamp(end)),
                 "bars_start": None if warm_start is None else str(warm_start),
                 "bar_rows": len(bars), "label_rows": len(labels), "alignment": alignment,
                 "missing_targets": int((~np.isfinite(labels["target"].to_numpy(dtype=float))).sum()),
-                "feature_columns": features, "price_scale": _get(config, "price_scale", 1.0),
+                "feature_columns": features, "price_scale": config_option(config, "price_scale", 1.0),
                 "label_definition": ("provided target; end_price/future_vwap - 1 is inferred from the "
                                      "official vwap_return field description; original labels are used unchanged"),
                 "timezone": "Asia/Shanghai (naive)", "history_days": history_days,
@@ -542,26 +665,26 @@ def load_data(config: Any, start: Any = None, end: Any = None) -> DataBundle:
 
 def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
     """Shared source-unit conversion and missing-value policy for local/platform inputs."""
-    features = list(_get(config, "feature_columns"))
+    features = list(config_option(config, "feature_columns"))
     bars = validate_keys(bars, "bars")
     for column in features:
         if column not in bars:
             raise ValueError(f"bars: missing feature {column}")
         bars[column] = pd.to_numeric(bars[column], errors="raise").astype(np.float64)
-        sentinel = _get(config, "missing_sentinel")
+        sentinel = config_option(config, "missing_sentinel")
         if sentinel is not None:
             bars[column] = bars[column].mask(bars[column].eq(sentinel))
         bars[column] = bars[column].replace([np.inf, -np.inf], np.nan)
         if tuple(features) == lob_trade_columns() and column in features[12:]:
             bars[column] = bars[column].mask(bars[column] < 0)
         if column in {"open", "high", "low", "close", "pre_close", "amount"} or re.match(r"^(ask|bid)_price\d+$", column):
-            bars[column] /= _get(config, "price_scale", 1.0)
+            bars[column] /= config_option(config, "price_scale", 1.0)
     bars = bars[[*KEYS, *features]]
     return bars
 
 
 def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
-                   *, sample_times: Sequence[str] | None = None) -> pd.DataFrame:
+                   *, sample_times: Sequence[str] | None = None, boundary: Any = None) -> pd.DataFrame:
     """Purge labels whose future observation window leaves the selected split.
 
     Explicit label_end is preferred. In its absence, 11:30 ends at 13:30 for
@@ -569,23 +692,26 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
     This inferred trading clock is recorded; overnight windows are excluded.
     Optional sampling times select a subset without changing existing rejection
     counts, which describe all labels within the requested split.
+
+    ``boundary`` is the exclusive start of the next interval (validation.start for a
+    training selection). Every selected sample must have ``label_end < boundary``; a split
+    that reaches into the next interval fails with its boundary samples instead of
+    silently training on a window that overlaps it.
     """
     frame = validate_keys(labels, "labels")
     if "target" not in frame:
         if "vwap_return" not in frame:
             raise ValueError("labels: missing target")
         frame = frame.rename(columns={"vwap_return": "target"})
-    start, end = pd.Timestamp(_get(split, "start")), pd.Timestamp(_get(split, "end"))
+    start, end = pd.Timestamp(config_option(split, "start")), pd.Timestamp(config_option(split, "end"))
+    boundary = end if boundary is None else pd.Timestamp(boundary)
     in_split = (frame["date"] >= start) & (frame["date"] < end)
     frame = frame.loc[in_split].copy()
     frame["target"] = pd.to_numeric(frame["target"], errors="raise")
     finite = np.isfinite(frame["target"].to_numpy(dtype=float))
-    required_end = frame["date"] + pd.Timedelta(minutes=horizon_minutes)
-    minute = frame["date"].dt.hour * 60 + frame["date"].dt.minute
-    lunch = minute.eq(690) & (horizon_minutes == 30)
-    required_end.loc[lunch] = frame.loc[lunch, "date"] + pd.Timedelta(hours=2)
+    required_end = required_label_end(frame["date"], horizon_minutes)
     if "label_end" in frame:
-        frame["label_end"] = _dates(frame["label_end"], "label_end")
+        frame["label_end"] = timestamps(frame["label_end"], "label_end")
         if (frame["label_end"] <= frame["date"]).any():
             raise ValueError("label_end must be later than prediction date")
         if (frame["label_end"] < required_end).any():
@@ -593,13 +719,16 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
         known_horizon = frame["label_end"].dt.normalize().eq(frame["date"].dt.normalize())
     else:
         frame["label_end"] = required_end
-        end_minute = minute + horizon_minutes
-        known_horizon = (((minute >= 570) & (end_minute <= 690))
-                         | ((minute >= 780) & (end_minute <= 900)) | lunch)
+        known_horizon = known_session_horizon(frame["date"], horizon_minutes)
+    if boundary < end:
+        # The split itself reaches into the next interval: refuse it, naming the samples.
+        assert_label_windows_before(frame, boundary, name="training split")
+        raise ValueError(f"Training split [{start}, {end}) reaches the exclusive boundary {boundary}")
     approved_time = (pd.Series(True, index=frame.index) if sample_times is None
                      else frame["date"].dt.strftime("%H:%M").isin(sample_times))
     valid = finite & known_horizon & (frame["label_end"] < end) & approved_time
     selected = frame.loc[valid].reset_index(drop=True)
+    assert_label_windows_before(selected, boundary, name="selected training samples")
     selected.attrs["selection"] = {"requested": len(frame), "selected": len(selected),
                                    "missing_labels": int((~finite).sum()),
                                    "unknown_session_horizon": int((~known_horizon).sum()),
@@ -612,7 +741,7 @@ def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int = 30,
 
 def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     """Build fixed-size trailing windows without accepting or accessing labels."""
-    features = list(_get(config, "feature_columns"))
+    features = list(config_option(config, "feature_columns"))
     history_feature_count = 12 if tuple(features) == lob_trade_columns() else len(features)
     if FORBIDDEN_FEATURES.intersection(features):
         raise ValueError("Future label columns cannot be input features")
@@ -620,15 +749,15 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     keys = validate_keys(keys[KEYS], "sample keys")
     if any(column not in bars for column in features):
         raise ValueError("Missing configured feature columns")
-    times = _get(config, "sample_times", [])
+    times = config_option(config, "sample_times", [])
     if times and not keys["date"].dt.strftime("%H:%M").isin(times).all():
         raise ValueError("Sample keys contain an unapproved sampling time")
     if not keys["date"].eq(keys["date"].dt.floor("min")).all():
         raise ValueError("Sample timestamps must be precise whole minutes")
-    lookback, minimum = int(_get(config, "lookback")), int(_get(config, "min_history", 1))
+    lookback, minimum = int(config_option(config, "lookback")), int(config_option(config, "min_history", 1))
     if not 1 <= minimum <= lookback:
         raise ValueError("min_history must be within [1, lookback]")
-    policy, limit = _get(config, "missing_policy", "zero"), int(_get(config, "max_ffill_steps", 0))
+    policy, limit = config_option(config, "missing_policy", "zero"), int(config_option(config, "max_ffill_steps", 0))
     if policy not in {"zero", "ffill"} or limit < 0:
         raise ValueError("Invalid missing-value policy")
     x = np.zeros((len(keys), lookback, len(features)), dtype=np.float32)
@@ -637,7 +766,9 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     groups = {}
     for instrument, frame in bars.groupby("instrument", sort=False, observed=True):
         frame = frame.sort_values("date")
-        values = frame[features].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32)
+        # Explicit copy: some pandas versions hand back a read-only view of the block, and the
+        # non-finite masking below is an in-place write on this window buffer.
+        values = frame[features].apply(pd.to_numeric, errors="raise").to_numpy(dtype=np.float32, copy=True)
         values[~np.isfinite(values)] = np.nan
         groups[instrument] = (frame["date"].to_numpy(dtype="datetime64[ns]"), values)
     enough = np.zeros(len(keys), dtype=bool)

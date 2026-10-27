@@ -1,7 +1,11 @@
 """Behavioral checks for configuration, isolation, archives and architecture."""
 
 import ast
+import hashlib
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -347,3 +351,141 @@ def test_evaluation_answer_removal_changes_coverage_but_never_predictions(tmp_pa
     coverage = next(item for item in results["checks"] if item["name"] == "expected_universe_coverage")
     assert coverage["details"]["missing_answers"] == 1
     assert coverage["details"]["minimum"] == 0.75
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA_LAYER_MODULES = ("data",)
+# Digest of the fixed fixture below, recorded before the data-layer module split and
+# unchanged by it: batch keys/arrays/history and the selected label windows.
+SPLIT_CONTRACT_DIGEST = "7b446b4a57116630609c643e64454215627e78cf954a607f522df7bc8e02f01e"
+
+
+def _arrays_digest(values) -> str:
+    return hashlib.sha256(np.ascontiguousarray(values).tobytes()).hexdigest()[:32]
+
+
+def _frame_digest(frame, columns) -> str:
+    parts = []
+    for column in columns:
+        values = frame[column].to_numpy()
+        if values.dtype == object:
+            values = values.astype(str).astype("S")
+        parts.append(np.ascontiguousarray(values))
+    return hashlib.sha256(b"".join(part.tobytes() for part in parts)).hexdigest()[:32]
+
+
+def _batch_digests(batch):
+    return {"keys": _frame_digest(batch.keys, ["date", "instrument"]), "x": _arrays_digest(batch.x),
+            "observed": _arrays_digest(batch.observed),
+            "history_dates": _arrays_digest(batch.history_dates.astype("int64")),
+            "coverage": hashlib.sha256(json.dumps(batch.coverage, sort_keys=True).encode()).hexdigest()[:32],
+            "history_feature_count": batch.history_feature_count}
+
+
+def _split_contract_payload():
+    from jinyiquant.data import select_targets
+
+    def stamp(day, text):
+        return pd.Timestamp(day) + pd.Timedelta(hours=int(text[:2]), minutes=int(text[3:]))
+
+    rows, labels = [], []
+    for day in ("2020-01-02", "2020-01-03", "2020-01-06", "2020-01-07"):
+        for stock in range(2):
+            instrument = f"{stock + 1:06d}.SZ"
+            for text in ("10:00", "14:30"):
+                cutoff = stamp(day, text)
+                for lag in range(3):
+                    rows.append({"date": cutoff - pd.Timedelta(minutes=2 - lag), "instrument": instrument,
+                                 "close": 10.0 + stock + 0.01 * lag, "volume": 100.0 + stock + lag})
+                labels.append({"date": cutoff, "instrument": instrument,
+                               "vwap_return": (stock - 1) * 0.001, "label_end": cutoff + pd.Timedelta(minutes=30)})
+    config = DataConfig(bars_path="unused", labels_path="unused", source="test", version="v1",
+                        feature_columns=("close", "volume"), lookback=3, min_history=2, history_days=1,
+                        missing_policy="ffill", max_ffill_steps=1, sample_times=("10:00", "14:30"))
+    frame = pd.DataFrame(labels)
+    selected = select_targets(frame, {"start": "2020-01-02", "end": "2020-01-07"},
+                              sample_times=["10:00", "14:30"])
+    batch = build_batch(pd.DataFrame(rows), selected[["date", "instrument"]], config)
+    payload = {"train_batch": _batch_digests(batch),
+               "targets": _frame_digest(selected, ["date", "instrument", "target", "label_end"]),
+               "selection": hashlib.sha256(
+                   json.dumps(selected.attrs["selection"], sort_keys=True).encode()).hexdigest()[:32]}
+    return payload
+
+
+def test_batch_and_label_contract_digest_is_unchanged_by_the_module_split():
+    payload = _split_contract_payload()
+    combined = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    assert combined == SPLIT_CONTRACT_DIGEST
+
+
+def test_data_layer_has_no_model_layer_dependency_and_one_contract_owner():
+    for module in DATA_LAYER_MODULES:
+        tree = ast.parse((ROOT / "src" / "jinyiquant" / f"{module}.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                assert not (node.module or "").startswith("modified_tlob"), f"{module} imports {node.module}"
+            elif isinstance(node, ast.Import):
+                assert not any(alias.name.startswith("modified_tlob") for alias in node.names), module
+    schema = ast.parse((ROOT / "modified_tlob" / "schema.py").read_text(encoding="utf-8"))
+    reexported = {alias.name for node in ast.walk(schema) if isinstance(node, ast.ImportFrom)
+                  and node.module == "jinyiquant.data" for alias in node.names}
+    assert {"lob_columns", "lob_trade_columns", "validate_input_schema"} <= reexported
+    owners = [module for module in DATA_LAYER_MODULES if any(
+        isinstance(node, ast.FunctionDef) and node.name == "lob_trade_columns"
+        for node in ast.parse((ROOT / "src" / "jinyiquant" / f"{module}.py").read_text(encoding="utf-8")).body)]
+    assert owners == ["data"]
+
+
+def test_core_imports_are_acyclic_and_importing_the_data_layer_skips_the_model_layer():
+    environment = {**os.environ, "PYTHONPATH": os.pathsep.join((str(ROOT / "src"), str(ROOT)))}
+    imports = subprocess.run([sys.executable, "-c",
+                              "import jinyiquant.data, "
+                              "jinyiquant.runner, jinyiquant.checks, modified_tlob.schema"],
+                             capture_output=True, text=True, env=environment)
+    assert imports.returncode == 0, imports.stderr
+    probe = subprocess.run([sys.executable, "-c",
+                            "import sys, jinyiquant.data; "
+                            "loaded = sorted(name for name in sys.modules if name.startswith('modified_tlob')); "
+                            "assert not loaded, loaded"],
+                           capture_output=True, text=True, env=environment)
+    assert probe.returncode == 0, probe.stderr
+
+
+def test_entry_points_keep_their_calling_conventions():
+    import inspect
+
+    from jinyiquant import data
+
+    assert list(inspect.signature(data.load_data).parameters) == ["config", "start", "end", "sealed_access"]
+    assert inspect.signature(data.load_data).parameters["sealed_access"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert list(inspect.signature(data.build_batch).parameters) == ["bars", "keys", "config"]
+    assert data.build_batch.__module__ == "jinyiquant.data"
+    assert list(inspect.signature(data.select_targets).parameters) == [
+        "labels", "split", "horizon_minutes", "sample_times", "boundary"]
+    assert list(inspect.signature(data.load_data).parameters)[:3] == ["config", "start", "end"]
+
+
+@pytest.mark.parametrize("module", ["modified_tlob.train"])
+def test_platform_training_cli_keeps_its_positional_config(module):
+    pytest.importorskip("torch")
+    environment = {**os.environ, "PYTHONPATH": os.pathsep.join((str(ROOT / "src"), str(ROOT)))}
+    result = subprocess.run([sys.executable, "-m", module, "--help"], capture_output=True, text=True,
+                            env=environment, cwd=ROOT)
+    assert result.returncode == 0, result.stderr
+    assert "config" in result.stdout and "usage" in result.stdout.lower()
+
+
+def test_declared_blend_weights_never_read_market_data():
+    """Blend weights stay explicit inputs; the builder has no data range to leak into them."""
+    tree = ast.parse((ROOT / "scripts" / "build_blend_weights.py").read_text(encoding="utf-8"))
+    modules, calls = set(), set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            modules.add(node.module)
+        elif isinstance(node, ast.Import):
+            modules |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            calls.add(node.func.id)
+    assert not {"jinyiquant.data", "jinyiquant.runner"} & modules
+    assert not {"load_data", "select_targets", "build_batch"} & calls

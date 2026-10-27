@@ -21,7 +21,7 @@ from jinyiquant.checks import batch_checks, check, prediction_checks, verify_art
 from jinyiquant.comparison import _block_indices
 from jinyiquant.config import Period, RunConfig, StrictModel, load_config
 from jinyiquant.data import KEYS, Batch, build_batch, history_diagnostics, load_data, select_targets
-from jinyiquant.evaluation import evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 from jinyiquant.io import digest, read_json, utc_now, write_json
 from jinyiquant.runner import (
     _aligned_targets,
@@ -271,6 +271,7 @@ def _fit(config, train, target, mask, validation, eval_targets, destination, sou
             metrics["evaluation"] = evaluation
             daily.to_csv(run_dir / "daily.csv", index=False)
             initial_daily.to_csv(run_dir / "initial_daily.csv", index=False)
+        metrics["evaluation_version"] = EVALUATION_VERSION
         recorder.event("evaluation", "completed", metrics=metrics)
         if not save_checks(run_dir, checks):
             raise ValueError(f"Fit behavior checks failed: {run_dir}")

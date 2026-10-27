@@ -19,8 +19,9 @@ for _path in (ROOT / "src", ROOT):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
+from jinyiquant.comparison import declared_cost_scenarios  # noqa: E402
 from jinyiquant.config import EvaluationConfig  # noqa: E402
-from jinyiquant.evaluation import evaluate  # noqa: E402
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate  # noqa: E402
 from jinyiquant.io import read_json, utc_now, write_json  # noqa: E402
 from modified_tlob.risk import (  # noqa: E402
     INDUSTRY_DUMMIES,
@@ -36,7 +37,7 @@ KEYS = ["date", "instrument"]
 SAMPLE_TIMES = ("09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30")
 METRICS = ("rank_ic_mean", "rank_ic_ir", "ic_mean", "ic_ir", "long_short_return_mean",
            "long_short_sharpe", "turnover_mean", "min_daily_long_short_return", "day_count",
-           "sample_count", "score_std")
+           "sample_count", "score_std", "evaluation_version", "economic_metrics")
 BLOCK_DAYS = 5
 BOOTSTRAP_DRAWS = 20000
 BOOTSTRAP_SEED = 20261026
@@ -143,18 +144,22 @@ def neutralize(predictions: pd.DataFrame, exposure_by_date: dict, exposure_dates
     return pd.concat(frames, ignore_index=True)
 
 
-def evaluate_scores(scores: pd.DataFrame, targets: pd.DataFrame, evaluation: EvaluationConfig,
-                    column: str):
+def merged_scores(scores: pd.DataFrame, targets: pd.DataFrame, column: str):
+    """Align one score column to the exact target key set for the single evaluator."""
     common = scores[KEYS].merge(targets[KEYS], on=KEYS, how="inner", validate="one_to_one")
     frame = scores.merge(common, on=KEYS, how="inner", validate="one_to_one")
     answer = targets.merge(common, on=KEYS, how="inner", validate="one_to_one")
     scored = frame[KEYS].assign(score=frame[column].to_numpy(dtype=np.float64))
+    return scored, answer
+
+
+def evaluate_scores(scores: pd.DataFrame, targets: pd.DataFrame, evaluation: EvaluationConfig,
+                    column: str):
+    scored, answer = merged_scores(scores, targets, column)
     metrics, daily, sections = evaluate(scored, answer, evaluation, return_sections=True,
                                         undefined_constant_portfolios=True)
     metrics = {key: metrics[key] for key in METRICS if key in metrics}
     metrics["score_std"] = float(scored.score.std())
-    ic_std = daily.ic.std(ddof=1)
-    metrics["ic_ir"] = float(daily.ic.mean() / ic_std) if ic_std > 0 else None
     return metrics, daily, sections
 
 
@@ -220,7 +225,11 @@ def main(argv=None) -> int:
     quantile = float(plan["evaluation"]["quantile"])
 
     record = {"schema_version": 1, "experiment_id": plan["experiment_id"],
-              "created_at_utc": utc_now(),
+              "created_at_utc": utc_now(), "evaluation_version": EVALUATION_VERSION,
+              "evaluation_contract": {"source": "src/jinyiquant/evaluation.py:evaluate",
+                                      "turnover_conversion_factor": 0.5,
+                                      "note": "all metric values come from the single eval-v2 contract; "
+                                              "the comparison report never recomputes IC/Sharpe/turnover/cost"},
               "scope": ("Frozen V3-recipe TLOB, MLPLOB and dual-scale patch checkpoints replayed on "
                         "2023-11, 2024-01 and 2024-03; pre-declared equal-weight arms scored on raw and "
                         "prior-day-exposure-neutralized scores."),
@@ -235,6 +244,7 @@ def main(argv=None) -> int:
                   "official BARRA implementation. All three months are used development windows, so none "
                   "is independent confirmation. Stress buckets use trailing 20-day medians and have few days.")}
     summary_rows, daily_rows, stress_rows, paired_rows = [], [], [], []
+    pooled_scores, pooled_targets = {"raw": [], "neutralized": []}, []
     monthly = {}
     for window in plan["windows"]:
         name = window["name"]
@@ -248,6 +258,12 @@ def main(argv=None) -> int:
                 neutral, targets, evaluation, "raw_score")
             processed_metrics, processed_daily, _ = evaluate_scores(
                 neutral, targets, evaluation, "processed_score")
+            if arm == "blend_all_equal":
+                raw_scored, answer = merged_scores(neutral, targets, "raw_score")
+                processed_scored, _ = merged_scores(neutral, targets, "processed_score")
+                pooled_scores["raw"].append(raw_scored)
+                pooled_scores["neutralized"].append(processed_scored)
+                pooled_targets.append(answer)
             window_record["arms"][arm] = raw_metrics
             window_record["neutralization"][arm] = processed_metrics
             summary_rows.append({"window": name, "arm": arm, "basis": "raw", **raw_metrics})
@@ -320,6 +336,12 @@ def main(argv=None) -> int:
         record["stress"][row["window"]].setdefault(row["regime"], {})[row["arm"]] = {
             "days": row["days"], "rank_ic_mean": row["rank_ic_mean"],
             "long_short_return_mean": row["long_short_return_mean"]}
+    if pooled_targets:
+        targets = pd.concat(pooled_targets, ignore_index=True)
+        for basis in ("raw", "neutralized"):
+            pooled = pd.concat(pooled_scores[basis], ignore_index=True)
+            record["evaluation_contract"][basis] = declared_cost_scenarios(
+                pooled, targets, evaluation, undefined_constant_portfolios=True)
     out = args.record.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     write_json(out, record)

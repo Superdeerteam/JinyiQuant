@@ -19,6 +19,7 @@ import pandas as pd
 
 from jinyiquant.checks import check
 from jinyiquant.data import build_batch, history_diagnostics, load_data
+from jinyiquant.evaluation import EVALUATION_VERSION
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir
 from modified_tlob.adapter import TLOBAdapter
@@ -33,7 +34,7 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
     started = time.monotonic()
     write_json(run_dir / "manifest.json", {"schema_version": 1, "run_id": run_dir.name,
         "experiment_id": rec.experiment_id, "started_at": utc_now(), "status": "running",
-        "scope": "local_inference_only"})
+        "scope": "local_inference_only", "evaluation_version": EVALUATION_VERSION})
     rec.event("run", "started", label_input=False, training=False)
     try:
         if not 0 < min_coverage <= 1:
@@ -59,6 +60,7 @@ def infer(weights, bars, keys, output_root, *, device="auto", price_scale=None,
                   "source": "local_inference_market_and_keys_only", "version": "1"}
         write_json(run_dir / "config.json", {"schema_version": 1, "weights": str(weights),
             "data": config, "device": device, "selected_device": str(model.device),
+            "evaluation_version": EVALUATION_VERSION,
             "start_date": None if first is None else str(first), "end_date": None if last is None else str(last),
             "min_coverage": min_coverage, "training": False, "label_input": False})
         manifest = read_json(run_dir / "manifest.json")

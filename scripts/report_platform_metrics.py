@@ -7,6 +7,12 @@ metrics under the frozen local approximation and a *local* percentile proxy over
 a fixed 16-arm panel (9 frozen checkpoints + 7 pre-declared equal-weight blends).
 The proxy is not the official score and must not be quoted as one.
 
+LEGACY CALIBER (stage A): the percentile composite is *descriptive only*. It is
+retired as a promotion/elimination input; ``composite`` rejects every use other
+than ``"description"`` and ``promotion_input_guard`` raises ``LegacyCaliberError``
+for promotion/elimination requests. The written record carries
+``promotion_allowed=false`` and the legacy mark. See ``runs/legacy_caliber.json``.
+
 Read-only over archived replay predictions; no training, no weight fitting.
 """
 
@@ -24,7 +30,9 @@ for _p in (ROOT / "src", ROOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+from jinyiquant.comparison import declared_cost_scenarios  # noqa: E402
 from jinyiquant.config import EvaluationConfig  # noqa: E402
+from jinyiquant.evaluation import EVALUATION_VERSION, aggregate_metric  # noqa: E402
 from scripts.compare_multiscale_replay import (  # noqa: E402
     SAMPLE_TIMES,
     arm_scores,
@@ -32,6 +40,7 @@ from scripts.compare_multiscale_replay import (  # noqa: E402
     evaluate_scores,
     load_exposure,
     load_window,
+    merged_scores,
     neutralize,
 )
 
@@ -51,6 +60,38 @@ HIGHER_IS_BETTER = {"ic": True, "ic_ir": True, "sharpe": True, "stress": True, "
 BLOCK_DAYS = 5
 BOOTSTRAP_DRAWS = 4000
 BOOTSTRAP_SEED = 20261026
+LEGACY_CALIBER = {
+    "caliber_id": "legacy-pre-eval-v2",
+    "status": "descriptive_only",
+    "promotion_allowed": False,
+    "legacy_mark": "旧口径结论——不得用于晋升",
+}
+DESCRIPTIVE_USES = frozenset({"description", "diagnostic", "report"})
+
+
+class LegacyCaliberError(RuntimeError):
+    """Raised when the retired percentile composite is used for promotion/elimination."""
+
+
+def promotion_input_guard(use: str) -> dict:
+    """Allow descriptive reads of the percentile panel and refuse promotion-shaped ones.
+
+    Any use that is not explicitly descriptive is rejected: the 16-arm percentile
+    composite is a legacy caliber conclusion and cannot authorise promotion or
+    elimination.
+    """
+    normalized = use.strip().lower()
+    if normalized not in DESCRIPTIVE_USES:
+        raise LegacyCaliberError(
+            f"{use!r} is not a descriptive use: 16-arm percentile composite is a legacy caliber "
+            "conclusion (旧口径结论——不得用于晋升); promotion_allowed=false")
+    return {"use": normalized, **LEGACY_CALIBER}
+
+
+def legacy_record_block() -> dict:
+    """Return the flags every written report record must carry."""
+    return {**LEGACY_CALIBER, "percentile_panel": "16-arm fixed panel",
+            "replacement_contract": "eval-v2 (pending)"}
 
 
 def run_windows() -> list[tuple[Path, dict]]:
@@ -83,15 +124,16 @@ def stress_conditions(start: pd.Timestamp, end: pd.Timestamp, instruments: set[s
 
 
 def five(daily: pd.DataFrame) -> dict:
-    ic = daily.ic.astype(float)
-    ls = daily.long_short_return.astype(float)
+    """Aggregate daily rows with the single contract aggregator (no local formulas)."""
     return {
-        "ic": float(ic.mean()),
-        "ic_ir": float(ic.mean() / ic.std(ddof=1)),
-        "sharpe": float(ls.mean() / ls.std(ddof=1) * np.sqrt(252)),
-        "turnover": float(daily.turnover.astype(float).mean()),
-        "rank_ic": float(daily.rank_ic.astype(float).mean()),
+        "ic": aggregate_metric(daily.ic.to_numpy(dtype=float), "mean"),
+        "ic_ir": aggregate_metric(daily.ic.to_numpy(dtype=float), "ir"),
+        "sharpe": aggregate_metric(daily.long_short_return.to_numpy(dtype=float), "sharpe"),
+        "turnover": aggregate_metric(daily.turnover.to_numpy(dtype=float), "mean"),
+        "rank_ic": aggregate_metric(daily.rank_ic.to_numpy(dtype=float), "mean"),
         "days": int(len(daily)),
+        "turnover_conversion_factor": 0.5,
+        "evaluation_version": EVALUATION_VERSION,
     }
 
 
@@ -132,7 +174,16 @@ def percentile(values: np.ndarray, higher: bool) -> list[float]:
     return out
 
 
-def composite(frame: pd.DataFrame) -> pd.DataFrame:
+def composite(frame: pd.DataFrame, *, use: str = "description") -> pd.DataFrame:
+    """Add the five percentiles and the equal-weight composite, for description only.
+
+    ``use`` exists to make the retired promotion path explicit: anything other
+    than a descriptive use raises ``LegacyCaliberError``.
+    """
+    if use.strip().lower() not in DESCRIPTIVE_USES:
+        raise LegacyCaliberError(
+            f"{use!r}: the 16-arm percentile composite is descriptive only "
+            "(旧口径结论——不得用于晋升); promotion input is not allowed")
     for name in COMPONENTS:
         frame[f"p_{name}"] = percentile(frame[name].to_numpy(dtype=float), HIGHER_IS_BETTER[name])
     frame["composite"] = frame[[f"p_{name}" for name in COMPONENTS]].mean(axis=1)
@@ -150,14 +201,24 @@ def main() -> int:
     record = {
         "schema_version": 1,
         "experiment_id": "round5-platform-five-20261026",
+        "evaluation_version": EVALUATION_VERSION,
         "target_score": TARGET,
         "metric_scope": "local approximation, not the official platform score",
+        "legacy_caliber": legacy_record_block(),
+        "promotion_allowed": False,
+        "evaluation_contract": {
+            "source": "src/jinyiquant/evaluation.py:evaluate",
+            "turnover_conversion_factor": 0.5,
+            "note": "All competition and economic values below come from the single eval-v2 contract. "
+                    "The retired percentile proxy stays in the legacy_caliber block, descriptive only.",
+        },
         "definitions": {
             "ic": "mean daily Pearson IC of the winsorized/z-scored/style-residualized score",
             "ic_ir": "daily IC mean / daily IC std (ddof=1); not annualized",
             "sharpe": "daily long-short mean/std * sqrt(252); gross, no fees or impact",
             "stress": "min(pooled high-volatility, pooled high-amount) rank IC, neutralized score",
-            "turnover": "mean daily 0.5*sum|dw|; lower is better",
+            "turnover": "eval-v2 turnover = U / 2 with conversion factor 0.5; "
+                        "U = sum(|target - pre-trade drifted|); lower is better",
             "percentile": "(worse + 0.5*ties) / (n-1) inside the frozen 16-arm panel",
             "composite": "equal-weight mean of the five component percentiles",
         },
@@ -178,6 +239,8 @@ def main() -> int:
     }
     pooled_daily = {"raw": {}, "neutralized": {}}
     pooled_five = {"raw": {}, "neutralized": {}}
+    pooled_scored = {"raw": [], "neutralized": []}
+    pooled_targets = []
     stress_per_window = {}
 
     for run, plan in run_windows():
@@ -206,6 +269,12 @@ def main() -> int:
                 raw, daily_raw, _ = evaluate_scores(scores, targets, CFG, "score")
                 neu_scores = neutralize(scores, exposure_by_date, exposure_dates, quantile=0.2)
                 neu, daily_neu, _ = evaluate_scores(neu_scores, targets, CFG, "processed_score")
+                if arm == BLEND:
+                    raw_scored, answer = merged_scores(scores, targets, "score")
+                    neu_scored, _ = merged_scores(neu_scores, targets, "processed_score")
+                    pooled_scored["raw"].append(raw_scored)
+                    pooled_scored["neutralized"].append(neu_scored)
+                    pooled_targets.append(answer)
                 buckets = stress_buckets(daily_neu, cond)
                 stress_per_window.setdefault(arm, {})[name] = buckets
                 record["arms"].setdefault(arm, {})[name] = {"raw": raw, "neutralized": neu,
@@ -244,6 +313,7 @@ def main() -> int:
         "days": int(scored.loc[BLEND, "days"]),
     }
     record["proxy"] = {
+        "legacy_caliber": legacy_record_block(),
         "panel_16": {
             "composite": float(scored.loc[BLEND, "composite"]),
             "gap_to_target": float(scored.loc[BLEND, "gap_to_target"]),
@@ -257,6 +327,24 @@ def main() -> int:
             "gap_contributions": {name: float(local.loc[BLEND, f"gap_contrib_{name}"]) for name in COMPONENTS},
         },
     }
+    if pooled_targets:
+        pooled_answer = pd.concat(pooled_targets, ignore_index=True)
+        contract = record["evaluation_contract"]
+        for basis in ("raw", "neutralized"):
+            pooled = pd.concat(pooled_scored[basis], ignore_index=True)
+            scenario_block = declared_cost_scenarios(
+                pooled, pooled_answer, CFG, undefined_constant_portfolios=True)
+            contract[basis] = {
+                "evaluation_version": scenario_block["evaluation_version"],
+                "source": scenario_block["source"],
+                "turnover_conversion_factor": scenario_block["turnover_conversion_factor"],
+                "comparison_usable": scenario_block["comparison_usable"],
+                "comparison_gate_reasons": scenario_block["comparison_gate_reasons"],
+                "cost_definition": scenario_block["definition"],
+                "competition_metrics": scenario_block["scenarios"]["0bp"]["competition_metrics"],
+                "economic_metrics": {name: block["economic_metrics"]
+                                     for name, block in scenario_block["scenarios"].items()},
+            }
     record["monthly"] = {
         name: {key: float(value) for key, value in
                {"ic": bucket["neutralized"]["ic_mean"], "ic_ir": bucket["neutralized"]["ic_ir"],

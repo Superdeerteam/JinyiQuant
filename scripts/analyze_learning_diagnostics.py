@@ -9,27 +9,29 @@ import numpy as np
 import pandas as pd
 
 from jinyiquant.checks import check, verify_artifacts
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 from jinyiquant.io import read_json, utc_now, write_json
 from jinyiquant.tracking import Recorder, capture_source, environment, finish
 
 
-def independent_daily(predictions, targets):
+def independent_daily(predictions, targets, evaluation):
+    """Recompute audit correlations with the single eval-v2 contract.
+
+    The audit stays independent of the archived daily.csv (it re-scores the saved
+    predictions), but it deliberately shares the contract implementation so the
+    same prediction cannot receive different IC values in different reports.
+    """
     keys = ["date", "instrument"]
     if predictions.duplicated(keys).any() or targets.duplicated(keys).any():
         raise ValueError("Independent audit requires unique prediction and answer keys")
     joined = predictions.merge(targets[keys + ["target"]], on=keys, validate="one_to_one")
     if len(joined) != len(targets) or not np.isfinite(joined[["score", "target"]]).all().all():
         raise ValueError("Independent audit requires complete finite answer alignment")
-    rows = []
-    for timestamp, section in joined.groupby("date"):
-        ranks = section[["score", "target"]].rank(method="average").to_numpy()
-        values = section[["score", "target"]].to_numpy()
-        rows.append({"date": pd.Timestamp(timestamp).normalize(),
-                     "rank_ic": float(np.corrcoef(ranks.T)[0, 1]) if (np.ptp(ranks, axis=0) > 0).all() else np.nan,
-                     "ic": float(np.corrcoef(values.T)[0, 1]) if (np.ptp(values, axis=0) > 0).all() else np.nan})
-    result = pd.DataFrame(rows).groupby("date", as_index=False)[["rank_ic", "ic"]].mean()
-    result["date"] = result.date.dt.strftime("%Y-%m-%d")
-    return result
+    scored = joined[keys + ["score"]]
+    answer = joined[keys + ["target"]]
+    metrics, daily, _ = evaluate(scored, answer, evaluation, return_sections=True,
+                                 undefined_constant_portfolios=False)
+    return daily[["date", "rank_ic", "ic"]].reset_index(drop=True), metrics
 
 
 def analyze(reference, destination):
@@ -58,7 +60,8 @@ def analyze(reference, destination):
                 raise ValueError("Training answers are constant; scale ratio undefined")
             predicted = pd.read_parquet(path / "predictions.parquet")
             targets = pd.read_parquet(reference / (keys[0] + "_data") / "targets.parquet")
-            independent = independent_daily(predicted, targets)
+            evaluation = read_json(path / "config.json")["evaluation"]
+            independent, independent_metrics = independent_daily(predicted, targets, evaluation)
             stored = pd.read_csv(path / "daily.csv")
             checked = independent.merge(stored, on="date", suffixes=("_independent", "_stored"),
                                          validate="one_to_one", how="outer")
@@ -69,13 +72,16 @@ def analyze(reference, destination):
             checks.append(check("independent_correlations", matched, **attempt))
             metrics = read_json(path / "metrics.json")
             initial = pd.read_parquet(path / "initial_predictions.parquet")
-            initial_daily = independent_daily(initial, targets)
+            initial_daily, initial_metrics = independent_daily(initial, targets, evaluation)
             rows.append({**attempt, "training_target_variance": variance,
                 "train_mse": metrics["train_mse"], "train_mse_to_constant_ratio": metrics["train_mse"] / variance,
                 "prediction_std": float(predicted.score.std(ddof=0)),
                 "evaluation_target_std": float(targets.target.std(ddof=0)),
-                "initial_rank_ic": float(initial_daily.rank_ic.mean()),
-                "rank_ic": float(independent.rank_ic.mean()), "ic": float(independent.ic.mean())})
+                "initial_rank_ic": initial_metrics["rank_ic_mean"],
+                "rank_ic": independent_metrics["rank_ic_mean"],
+                "ic": independent_metrics["ic_mean"],
+                "evaluation_version": independent_metrics["evaluation_version"],
+                "metric_source": "src/jinyiquant/evaluation.py:evaluate"})
             predictions.setdefault(keys, {})[arm] = predicted
         pairs = []
         for (period, seed), arms in predictions.items():
@@ -83,12 +89,17 @@ def analyze(reference, destination):
                                           suffixes=("_correct", "_shuffled"), validate="one_to_one", how="outer")
             finite = np.isfinite(paired[["score_correct", "score_shuffled"]]).all().all()
             checks.append(check("identical_pair_keys", finite, period=period, seed=seed))
-            pairs.append({"period": period, "seed": seed, "prediction_correlation": float(np.corrcoef(
-                paired[["score_correct", "score_shuffled"]].to_numpy().T)[0, 1])})
+            scores = paired[["score_correct", "score_shuffled"]].dropna()
+            pairs.append({"period": period, "seed": seed,
+                          "prediction_score_pearson": (
+                              float(scores["score_correct"].corr(scores["score_shuffled"]))
+                              if len(scores) > 1 else None)})
         passed = all(item["passed"] for item in checks)
         diagnostic = read_json(reference / "metrics.json")
         underfit = all(row["train_mse_to_constant_ratio"] > 1 for row in rows)
-        result = {"schema_version": 1, "passed": passed, "runs": rows, "pairs": pairs,
+        result = {"schema_version": 1, "evaluation_version": EVALUATION_VERSION,
+            "metric_source": "src/jinyiquant/evaluation.py:evaluate",
+            "passed": passed, "runs": rows, "pairs": pairs,
             "findings": {"small_sample_learning_passed": diagnostic["small_sample"]["learning_passed"],
                 "same_seed_reproduction_passed": diagnostic["small_sample"]["reproduction"]["passed"],
                 "negative_control_status": diagnostic["negative_control"]["status"],
@@ -96,7 +107,8 @@ def analyze(reference, destination):
                 "training_fit_conclusion": "underfit_at_frozen_budget" if underfit else "see_individual_runs",
                 "no_quality_improvement_claim": True, "model_promoted": False},
             "interpretation": {"scale_ratio": "Training MSE divided by best fitted constant MSE; >1 is worse",
-                "independent_metrics": "NumPy correlation of original values / average ranks, then equal timestamp/day means",
+                "independent_metrics": "eval-v2 contract evaluate() re-scored from the saved predictions; shared implementation, independent of archived daily.csv",
+                "prediction_score_pearson": "Diagnostic Pearson correlation between the correct and shuffled prediction scores; it is not an eval-v2 IC/return metric and must not be read as one",
                 "limits": "Short, fixed two-epoch control runs; high prediction correlation does not identify a leakage source",
                 "decision": "Diagnostic evidence only; no promotion or additional tuning"}}
         write_json(destination / "metrics.json", result)

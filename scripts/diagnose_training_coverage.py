@@ -13,6 +13,7 @@ import pandas as pd
 from jinyiquant.checks import verify_artifacts
 from jinyiquant.config import Period, RunConfig
 from jinyiquant.data import build_batch, history_diagnostics, load_data, select_targets
+from jinyiquant.evaluation import EVALUATION_VERSION
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.runner import inference_keys
 from jinyiquant.tracking import Recorder, capture_source, environment, finish, new_run_dir, resource_usage
@@ -152,6 +153,7 @@ def history_run(output_root, data_root, chunk_days=5):
             distribution_summary(detail, keys, columns).to_csv(run / f"{name}.csv", index=False)
         write_json(run / "input_artifacts.json", inputs)
         write_json(run / "conventions.json", {
+            "evaluation_version": EVALUATION_VERSION,
             "age": "Elapsed calendar minutes, including overnight, holidays and lunch; zero only at prediction cutoff. Positive age is descriptive, not automatically an error.",
             "window": "128 observed bar rows can span lunch or previous sessions; missing_fraction includes padding, source_missing_fraction excludes absent rows.",
             "statistics": "Per-timestamp source-stock distributions before ffill; monthly outputs describe distributions of those per-timestamp statistics, never pooled stock quantiles.",
@@ -161,7 +163,9 @@ def history_run(output_root, data_root, chunk_days=5):
                   "new_training": 0, "additional_inference": 0, "labels_loaded": False,
                   "reserved_label_views": 0, "annual_aggregates_exported": False}
         write_json(run / "checks.json", checks)
-        write_json(run / "metrics.json", {"scope": "Monthly/per-time CSV only", "wall_seconds": time.monotonic() - started})
+        write_json(run / "metrics.json", {"scope": "Monthly/per-time CSV only",
+                                           "evaluation_version": EVALUATION_VERSION,
+                                           "wall_seconds": time.monotonic() - started})
         rec.event("shutdown", "completed", **checks)
         finish(run, "completed", 0, resources=resource_usage())
     except BaseException as exc:
@@ -238,7 +242,8 @@ def inference_run(root, output_root, data_root, device="cuda", resume_from=None)
     run = new_run_dir(Path(output_root))
     rec = Recorder(run, EXP)
     write_json(run / "manifest.json", {"status": "running", "run_id": run.name, "experiment_id": EXP,
-               "kind": "quarter_origins", "started_at": utc_now(), "code": capture_source(run),
+               "kind": "quarter_origins", "evaluation_version": EVALUATION_VERSION,
+               "started_at": utc_now(), "code": capture_source(run),
                "environment": environment(), "index_sha256": file_sha256(INDEX)})
     write_json(run / "jobs.json", jobs)
     rec.event("startup", "started", new_training=0, additional_weight_month_inferences_max=6,

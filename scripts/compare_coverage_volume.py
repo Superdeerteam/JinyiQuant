@@ -19,9 +19,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from jinyiquant.comparison import _block_indices
+from jinyiquant.comparison import _block_indices, archived_cost_scenarios
 from jinyiquant.config import load_config
-from jinyiquant.evaluation import evaluate
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 
 SUMMARY = ("rank_ic_mean", "long_short_return_mean", "turnover_mean",
            "min_daily_long_short_return", "rank_ic_ir")
@@ -66,10 +66,15 @@ def main() -> int:
             raise ValueError(f"Arm {label} is not scored on the reference key set")
 
     result = {"schema_version": 1, "experiment_id": plan["experiment_id"],
+              "evaluation_version": EVALUATION_VERSION,
               "hypothesis": plan["hypothesis"], "arms": {}, "pairs": [], "seed_groups": {}}
     for label, arm in arms.items():
         result["arms"][label] = {"directory": arm["directory"], "seed": arm["seed"],
+                                 "evaluation_version": arm["metrics"]["evaluation_version"],
+                                 "economic_metrics": arm["metrics"]["economic_metrics"],
                                  "metrics": {key: float(arm["metrics"][key]) for key in SUMMARY}}
+    first_arm = arms[next(iter(arms))]["directory"]
+    result["evaluation_contract"] = archived_cost_scenarios(first_arm)
 
     for pair in plan["pairs"]:
         left, right = arms[pair["baseline"]], arms[pair["candidate"]]

@@ -13,6 +13,7 @@ def config(**kwargs):
     defaults = dict(feature_columns=["close", "volume"], lookback=3, min_history=2,
                     missing_policy="ffill", max_ffill_steps=1, sample_times=["10:00", "10:30"],
                     price_scale=1.0, missing_sentinel=None, source="test", version="v1", history_days=1,
+                    allowed_start="2020-01-01", allowed_end="2024-10-08",
                     bars_path=None, labels_path=None, instruments_path=None, instrument_map_path=None)
     return SimpleNamespace(**(defaults | kwargs))
 
@@ -351,3 +352,54 @@ def test_cache_projection_key_separates_date_ranges(tmp_path):
     assert len(early.bars) == len(later.bars) == 2
     assert early.bars.date.max() < later.bars.date.min()
     assert early.cache_events[0]["cache_key"] != later.cache_events[0]["cache_key"]
+
+
+def test_training_last_day_windows_end_before_the_validation_start():
+    """The last training day's 14:30 label runs to 15:00; 11:30 runs to 13:30 (lunch rule)."""
+    source = pd.DataFrame({"date": pd.to_datetime(["2020-01-06 10:00", "2020-01-06 11:30",
+                                                  "2020-01-06 14:30"]),
+                           "instrument": ["A"] * 3, "target": [0.1, 0.2, 0.3]})
+    full = select_targets(source, {"start": "2020-01-02", "end": "2020-01-07"},
+                          sample_times=["10:00", "11:30", "14:30"], boundary="2020-01-07")
+    assert full["label_end"].tolist() == [pd.Timestamp("2020-01-06 10:30"),
+                                          pd.Timestamp("2020-01-06 13:30"),
+                                          pd.Timestamp("2020-01-06 15:00")]
+    assert full["label_end"].lt(pd.Timestamp("2020-01-07")).all()
+    # A boundary at the close leaves no room for the 14:30 window, which ends exactly there.
+    close = select_targets(source, {"start": "2020-01-02", "end": "2020-01-06 15:00"},
+                           sample_times=["10:00", "11:30", "14:30"], boundary="2020-01-06 15:00")
+    assert close["date"].tolist() == [pd.Timestamp("2020-01-06 10:00"), pd.Timestamp("2020-01-06 11:30")]
+    assert close.attrs["selection"]["boundary_purged"] == 1
+
+
+def test_training_split_that_reaches_the_validation_start_fails_naming_the_boundary_sample():
+    source = pd.DataFrame({"date": pd.to_datetime(["2020-01-02 10:00", "2020-01-03 14:30"]),
+                           "instrument": ["A", "B"], "target": [0.1, 0.2]})
+    with pytest.raises(ValueError, match="label windows reach the exclusive boundary") as raised:
+        select_targets(source, {"start": "2020-01-02", "end": "2020-01-04"}, boundary="2020-01-03 15:00")
+    assert "'instrument': 'B'" in str(raised.value) and "'label_end'" in str(raised.value)
+    explicit = source.assign(label_end=[pd.Timestamp("2020-01-02 10:30"), pd.Timestamp("2020-01-06 09:30")])
+    with pytest.raises(ValueError, match="'B'"):
+        select_targets(explicit, {"start": "2020-01-02", "end": "2020-01-06 15:00"}, boundary="2020-01-06")
+
+
+def test_sealed_final_interval_has_no_development_read(tmp_path):
+    from jinyiquant import data
+
+    data.assert_development_read("2020-01-02", "2024-10-08")
+    for start, end in [("2024-10-08", "2024-10-09"), ("2024-01-01", "2024-12-31"),
+                       (None, "2024-12-31"), ("2024-12-01", None)]:
+        with pytest.raises(ValueError, match="Sealed final interval"):
+            data.assert_development_read(start, end)
+    data.assert_development_read("2024-10-08", "2024-10-09", sealed_access=True)
+    path = tmp_path / "bars.parquet"
+    bars().to_parquet(path)
+    with pytest.raises(ValueError, match="Sealed final interval"):
+        load_data(config(bars_path=path, allowed_end="2025-01-01"), start="2024-10-01", end="2024-10-20")
+    with pytest.raises(ValueError, match="Sealed final interval"):
+        load_data(config(bars_path=path, allowed_end="2025-01-01"))
+    with pytest.raises(ValueError, match="require an explicit end"):
+        load_data(config(bars_path=path, labels_path=path, allowed_start=None, allowed_end=None))
+    # Label-free local inference over caller-supplied keys stays possible (no answers are read).
+    assert len(load_data(config(bars_path=path, allowed_start=None, allowed_end=None)).bars) == len(bars())
+    assert len(load_data(config(bars_path=path), start="2020-01-02", end="2020-01-03").bars) == 4

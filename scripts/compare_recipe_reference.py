@@ -13,7 +13,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from jinyiquant.evaluation import evaluate
+from jinyiquant.comparison import archived_cost_scenarios
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.protocol import recipe, without_locations
 from scripts.compare_training_round import (
@@ -143,6 +144,7 @@ def compare(plan_path, destination):
     seeds = {seed for _, seed in seen}
     complete = len(windows) >= 2 and len(seeds) >= 3 and seen == {(p, s) for p in windows for s in seeds}
     result = {"schema_version": 1, "experiment_id": plan["experiment_id"], "created_at": utc_now(),
+              "evaluation_version": EVALUATION_VERSION,
               "comparison_kind": "cumulative_recipe_reference", "plan": plan, "inputs": inputs,
               "fixed_contract": fixed_contract, "recipe_changes": changes, "summary": summary,
               "paired_intervals": intervals, "complete_two_period_three_seed_grid": complete,
@@ -151,6 +153,8 @@ def compare(plan_path, destination):
               "limits": "Selected cumulative recipes, not a single-factor experiment. Local approximate gross metrics; "
                         "seed-averaged paired moving two-day blocks within periods. Few research dates and selection "
                         "bias remain. Inspect worst-day/tail risk and resources; positive main-metric CIs do not promote a model."}
+    result["evaluation_contract"] = archived_cost_scenarios(
+        (plan_path.parent / plan["pairs"][0]["baseline"]).resolve())
     destination.mkdir(parents=True, exist_ok=False)
     write_json(destination / "comparison.json", result)
     write_json(destination / "paired_intervals.json", intervals)

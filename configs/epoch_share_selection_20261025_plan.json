@@ -56,5 +56,14 @@
         "47": "../runs/v2-60d-csz-step22500-seed47/20261025T193512.790660Z_1a78da0bf710"
       }
     }
-  ]
+  ],
+  "legacy_caliber": {
+    "status": "disabled",
+    "legacy_mark": "旧口径结论——不得用于晋升",
+    "annotated_at_utc": "2026-10-27T02:48:28.910987+00:00",
+    "guardrail_usable_for_promotion": false,
+    "decision_usable_for_promotion": false,
+    "replaced_by": "eval-v2",
+    "reason": "A1 停止旧评价晋升模型：epoch 份额选择门槛（0.0046/1.3211 + 5 日块区间）降级为旧口径；原数值仅作历史保留，不得作为晋升或淘汰输入"
+  }
 }

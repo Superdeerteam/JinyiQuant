@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 
 from jinyiquant.checks import numerical_equal, verify_artifacts
-from jinyiquant.comparison import _block_indices, _fair_pair, _read_run
-from jinyiquant.evaluation import evaluate
+from jinyiquant.comparison import _block_indices, _fair_pair, _read_run, archived_cost_scenarios
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json
 from jinyiquant.protocol import recipe, validate_change
 
@@ -352,6 +352,7 @@ def compare(plan_path, destination, *, plots=False):
     rank = [row for row in intervals if row["metric"] == "rank_ic" and row["period"] != "all"]
     positive = bool(rank) and all(row["status"] == "estimated" and row["mean"] > 0 for row in rank)
     result = {"schema_version": 1, "experiment_id": plan["experiment_id"], "created_at": utc_now(),
+              "evaluation_version": EVALUATION_VERSION,
               "plan": plan, "inputs": inputs, "script_sha256": file_sha256(Path(__file__)),
               "checks": {"passed": True, "paired_keys_labels_data_and_single_factor": True,
                          "complete_two_period_three_seed_grid": complete,
@@ -363,6 +364,8 @@ def compare(plan_path, destination, *, plots=False):
               "limits": "Local approximate metrics, few research dates, exploratory comparisons and selection bias; "
                         "no practical threshold or automatic promotion. Review all metrics, costs and independent reruns."}
     result["screen_gate"] = screen_gate(result)
+    result["evaluation_contract"] = archived_cost_scenarios(
+        (Path(plan_path).resolve().parent / plan["pairs"][0]["baseline"]).resolve())
     destination.mkdir(parents=True, exist_ok=False)
     write_json(destination / "comparison.json", result)
     write_json(destination / "checks.json", result["checks"])

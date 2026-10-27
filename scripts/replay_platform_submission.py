@@ -20,6 +20,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from jinyiquant.evaluation import EVALUATION_VERSION  # noqa: E402
 from jinyiquant.io import read_json, write_json  # noqa: E402
 
 
@@ -138,6 +139,7 @@ def consolidate(platform_runs: list[Path], output: Path) -> Path:
     combined.to_csv(output.with_suffix(".csv"), index=False, encoding="utf-8")
     record = {
         "schema_version": 1,
+        "evaluation_version": EVALUATION_VERSION,
         "experiment_id": "model-version-platform-replay-20261023",
         "scope": ("Seven-file packages executed under Python 3.11 / Torch 2.5.0 CPU with the official "
                   "downloaded tables served as DAI. Probes cover the first two or three trading days of "

@@ -17,6 +17,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from record_model_versions import assert_only_label_transform_changes, numeric_tensors  # noqa: E402
 
+from jinyiquant.comparison import declared_cost_scenarios  # noqa: E402
+from jinyiquant.config import EvaluationConfig  # noqa: E402
+from jinyiquant.evaluation import EVALUATION_VERSION, evaluate  # noqa: E402
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,19 +110,29 @@ def interval_rows(record, block_days):
     return {(row["period"], row["metric"]): row for row in matches[0]["rows"]}
 
 
-def recompute_rank_ic(window, seed, arm):
+def cell_frames(window, seed, arm):
+    """Archived predictions + official labels aligned for the single evaluator."""
     run = CSZ_RUN if arm == "v1" else RAW_RUN
     predictions = pd.read_parquet(run / f"inference/{window}/seed{seed}_predictions.parquet")
     labels = pd.read_parquet(LABELS[window], columns=["date", "instrument", "vwap_return"])
     merged = predictions.merge(labels, on=["date", "instrument"], how="inner")
     merged = merged.dropna(subset=["vwap_return"])
     require(len(merged) > 0, f"{window}/{seed}/{arm}: no prediction rows have labels")
-    sections = pd.Series(
-        {timestamp: float(frame["score"].corr(frame["vwap_return"], method="spearman"))
-         for timestamp, frame in merged.groupby("date", sort=True)})
-    daily = sections.groupby(sections.index.normalize()).mean()
-    return {"rank_ic_mean": float(daily.mean()), "sections": int(len(sections)),
-            "days": int(len(daily)), "sample_count": int(len(merged))}
+    config = EvaluationConfig.model_validate(
+        read_json(run / f"fits/{window}_s{seed}/config.json")["evaluation"])
+    scored = merged[["date", "instrument", "score"]].reset_index(drop=True)
+    answer = merged[["date", "instrument"]].assign(
+        target=merged["vwap_return"].to_numpy(dtype=float)).reset_index(drop=True)
+    return scored, answer, config
+
+
+def recompute_rank_ic(window, seed, arm):
+    scored, answer, config = cell_frames(window, seed, arm)
+    metrics, _, _ = evaluate(scored, answer, config, return_sections=True,
+                             undefined_constant_portfolios=True)
+    return {"rank_ic_mean": metrics["rank_ic_mean"], "sections": metrics["cross_section_count"],
+            "days": metrics["day_count"], "sample_count": metrics["sample_count"],
+            "evaluation_version": metrics["evaluation_version"]}
 
 
 def version_pair():
@@ -192,7 +205,9 @@ def build():
         "source": "archived seed predictions merged with the official monthly vwap_return labels",
         "cells_checked": len(cells) * 2,
         "all_match": True,
-        "scope": "RankIC recomputed per complete timestamp with average ranks, then averaged by day; "
+        "metric_source": "src/jinyiquant/evaluation.py:evaluate",
+        "evaluation_version": EVALUATION_VERSION,
+        "scope": "RankIC recomputed by the single eval-v2 contract from the archived predictions; "
                  "prediction and sample coverage also checked.",
     }
 
@@ -218,6 +233,20 @@ def build():
                      for row in daily.itertuples() if row.rank_ic <= 0 or row.long_short_return <= 0]
 
     version, pairs = version_pair()
+    contract_cells = {}
+    for arm in ("v0", "v1"):
+        scored, answer, config = cell_frames("research_a", 11, arm)
+        contract_cells[arm] = declared_cost_scenarios(
+            scored, answer, config, undefined_constant_portfolios=True)
+    evaluation_contract = {
+        "evaluation_version": EVALUATION_VERSION,
+        "source": "src/jinyiquant/evaluation.py:evaluate",
+        "turnover_conversion_factor": 0.5,
+        "note": "Archived record values above keep their original caliber. The recomputation and "
+                "the declared cost scenarios below use eval-v2; turnover = U/2 is drift-aware, so "
+                "it must not be compared with the retired local turnover as a regression.",
+        "cells": contract_cells,
+    }
     csz_seed11 = record["results"]["windows"]["research_a"]["reference_comparison"][
         "per_seed_metrics"]["11"]["cand_csz"]
     raw_seed11 = record["results"]["windows"]["research_a"]["reference_comparison"][
@@ -243,6 +272,7 @@ def build():
     checks = decision["checks"]
     result = {
         "schema_version": 1,
+        "evaluation_version": EVALUATION_VERSION,
         "recorded_at_utc": utc_now(),
         "experiment_id": "model-versions-multi-seed-20261023",
         "policy": "V0 uses the raw official training label; V1 uses the full-timestamp "
@@ -277,6 +307,7 @@ def build():
         },
         "cells": cells,
         "prediction_recompute": prediction_recompute,
+        "evaluation_contract": evaluation_contract,
         "windows": windows,
         "pooled_seed_mean_delta": {key: float(recomputed["all"][key])
                                    for key in DELTA_KEYS.values()},
@@ -390,6 +421,21 @@ def report_text(record):
         "V1 是平均意义上的领先版本，尾部风险仍需在后续版本/确认区复核。",
         "",
         "限制：两窗三种子是已使用的选择数据；本地指标不是官方分数；确认/锁定/final 未打开。",
+    ]
+
+    contract = record["evaluation_contract"]["cells"]
+    v0_ic = contract["v0"]["scenarios"]["0bp"]["competition_metrics"]["metrics"]["ic_mean"]["value"]
+    v1_ic = contract["v1"]["scenarios"]["0bp"]["competition_metrics"]["metrics"]["ic_mean"]["value"]
+    eco0 = contract["v1"]["scenarios"]["0bp"]["economic_metrics"]
+    eco5 = contract["v1"]["scenarios"]["5bp"]["economic_metrics"]
+    lines += [
+        "",
+        "eval-v2 契约复算与成本情景（seed11 research_a）：",
+        f"  IC 复算：V0 {v0_ic:.6f} -> V1 {v1_ic:.6f}（比赛指标近似，非官方）",
+        (f"  V1 0bp：毛收益 {eco0['gross_return_mean']:+.8f}，净收益 "
+         f"{eco0['net_return_mean']:+.8f}，U/2 换手 {eco0['turnover_mean']:.6f}（换算系数 0.5）"),
+        (f"  V1 5bp：成本 {eco5['cost_mean']:+.8f}，净收益 "
+         f"{eco5['net_return_mean']:+.8f}，盈亏平衡费率 {eco5['breakeven_single_side_rate']:.6f}"),
     ]
     return "\n".join(lines) + "\n"
 

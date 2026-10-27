@@ -23,7 +23,7 @@ for _path in (ROOT / "src", ROOT):
         sys.path.insert(0, str(_path))
 
 from jinyiquant.data import build_batch, load_data, select_targets  # noqa: E402
-from jinyiquant.evaluation import evaluate  # noqa: E402
+from jinyiquant.evaluation import EVALUATION_VERSION, aggregate_metric, evaluate  # noqa: E402
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json  # noqa: E402
 from jinyiquant.tracking import Recorder, capture_source, finish, new_run_dir  # noqa: E402
 from modified_tlob.adapter import TLOBAdapter  # noqa: E402
@@ -250,6 +250,15 @@ def _block_delta(frame: pd.DataFrame, column: str, block: int, draws: int, seed:
             "ci_low": float(np.quantile(means, 0.025)), "ci_high": float(np.quantile(means, 0.975))}
 
 
+def contract_ic_ir(metrics: dict, daily: pd.DataFrame) -> tuple[float | None, str]:
+    """IC_IR from eval-v2 metrics, or the eval-v2 aggregator over archived daily IC."""
+    if metrics.get("evaluation_version") == EVALUATION_VERSION and "ic_ir" in metrics:
+        return metrics["ic_ir"], "eval-v2 metrics.json"
+    return (aggregate_metric(daily["ic"].to_numpy(dtype=float), "ir"),
+            "eval-v2 aggregate_metric over archived daily ic; other archived metrics keep their "
+            "original caliber")
+
+
 def pair_list(plan: dict) -> list[tuple[str, str]]:
     """Plan-defined comparison pairs, defaulting to the frozen 20261023 set."""
     pairs = [tuple(pair) for pair in plan.get("pairs", DEFAULT_PAIRS)]
@@ -280,12 +289,12 @@ def report(plan_path: Path, run_dir: Path) -> Path:
             time.insert(0, "window", name)
             time_rows.append(time)
             metrics = read_json(out / "metrics.json")
-            ic_series = daily["ic"].dropna()
-            ic_ir = (float(ic_series.mean() / ic_series.std(ddof=1)) if len(ic_series) > 1
-                     and ic_series.std(ddof=1) > 0 else None)
+            evaluation_version = metrics.get("evaluation_version")
+            ic_ir, ic_ir_source = contract_ic_ir(metrics, daily)
             summary_rows.append({
                 "window": name, "version": version, "label": labels[version],
-                "ic_ir": ic_ir,
+                "ic_ir": ic_ir, "ic_ir_source": ic_ir_source,
+                "evaluation_version": evaluation_version,
                 **{metric: metrics[metric] for metric in SUMMARY_METRICS},
                 "day_count": metrics["day_count"], "cross_section_count": metrics["cross_section_count"],
                 "sample_count": metrics["sample_count"],
@@ -323,6 +332,15 @@ def report(plan_path: Path, run_dir: Path) -> Path:
                                     "max_abs_date": str(delta.abs().idxmax()) if len(delta) else None})
     pd.DataFrame(delta_rows).to_csv(report_dir / "daily_deltas.csv", index=False)
     pd.DataFrame(paired_rows).to_csv(report_dir / "paired_summary.csv", index=False)
+    write_json(report_dir / "evaluation_contract.json", {
+        "evaluation_version": EVALUATION_VERSION,
+        "source": "src/jinyiquant/evaluation.py:evaluate",
+        "metric_source": "eval-v2 metrics.json where available; legacy archives use the "
+                         "eval-v2 aggregate_metric for ic_ir and keep their archived caliber for "
+                         "the other summary columns",
+        "ic_ir_definition": "mean(daily ic) / sample std(ddof=1); not annualized",
+        "turnover_definition": "turnover = U / 2 with conversion factor 0.5",
+    })
     return report_dir
 
 
