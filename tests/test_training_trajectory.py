@@ -301,6 +301,13 @@ def test_cloud_job_manifest_lists_code_data_commands_and_retrieval():
         assert name in manifest["commands"]
     assert manifest["retrieve"]["checkpoints"] and manifest["retrieve"]["budget_points"]
 
+    data_root = ROOT / "数据"
+    if data_root.is_dir():
+        mapped = build_manifest(PLAN, ROOT, digest=False, data_root=data_root)
+        assert mapped["data"]["totals"]["shards"] >= 1
+        # Canonical cloud paths from the recipe text, never a drive-rooted local rewrite.
+        assert all(row["path"].startswith("/root/v5/数据/") for row in mapped["data"]["files"])
+
 
 def test_cloud_job_manifest_selects_the_run_window_from_a_local_data_root(tmp_path):
     from jinyiquant.config import load_config
