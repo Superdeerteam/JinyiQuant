@@ -66,10 +66,14 @@ COMPONENTS = [
         "train_window": ["2022-01-04", "2023-10-31"],
         "declared_trading_days": 441,
         "seeds": [11, 29, 47],
-        "points": ["1.32", "2.64"],
+        "points": ["1.32"],
         "role": ("the largest window this dataset supports: 2022-01-04 is the earliest trading day in the "
                  "archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for "
-                 "'the model was always trained on too little data'"),
+                 "'the model was always trained on too little data'. Only the 1.32 point is scored here: the "
+                 "measured pool peak is 24.9 GB at 132 days and scales with days, so a 441-day pool allows one "
+                 "process at a time and the second point would not fit the window without dropping a seed. The "
+                 "primary declared reading is the 1.32 comparison, so the 2.64 point is dropped before any "
+                 "441-day value is read."),
     },
 ]
 
@@ -248,6 +252,9 @@ def build_prereg(artifacts: dict) -> dict:
         },
         "declared_reading": {
             "primary": "paired per-seed RankIC difference between adjacent rungs at 1.32 effective epochs",
+            "single_point_top_rung": ("the 441-day rung declares one point only; its 2.64 point was dropped for "
+                                      "resource reasons before any of its values were read, and no rung-to-rung "
+                                      "slope is claimed from it"),
             "monotone_rule": ("declare 'more data pays' only when the seed-mean RankIC rises across at least "
                               "three consecutive rungs and the 450-vs-132 paired difference has a 5-day block "
                               "bootstrap interval whose lower bound exceeds zero"),

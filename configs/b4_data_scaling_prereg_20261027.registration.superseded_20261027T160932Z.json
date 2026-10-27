@@ -1,0 +1,31 @@
+{
+ "schema_version": 1,
+ "prereg_path": "configs/b4_data_scaling_prereg_20261027.json",
+ "prereg_sha256": "3e60bd090450da7edbfb8206bc1313e614e9a2bf809f5f255ee31714f8af5870",
+ "registered_at": "2026-10-27T16:09:32.528392+00:00",
+ "git_head": "12aee7d3636598a225dadae3d2790a4edcac2231",
+ "plan_sha256": {
+  "configs/scaling_240d_seed11_2point_plan.json": "d9c2d654f2564506bcbccc0209d44ce460eb6dc3f4ff3e441090522fa60d3e34",
+  "configs/scaling_240d_seed29_2point_plan.json": "b8bd8fab220b6342fe63fa169a15dcce6d2e5b4ecb09291f155b0a4a2de26915",
+  "configs/scaling_240d_seed47_2point_plan.json": "320448192a2733cd0889d1abbbfc2535c1598b88f0b208a56b4d7dd3a8d149ce",
+  "configs/scaling_441d_seed11_2point_plan.json": "068090fb784510d03eca79aa7681f85ba67c700cc0d30bbdee7568c30086490a",
+  "configs/scaling_441d_seed29_2point_plan.json": "1a6dff3c27a69ba36407530e29c92e783d6e3929314582237de0521cb8291713",
+  "configs/scaling_441d_seed47_2point_plan.json": "8c161cd18f7df7ba77a45633867e06fdd60cd0ba8299d1dd6ef6935a145dc0d2"
+ },
+ "recipe_sha256": {
+  "configs/scaling_240d_csz_seed11.json": "6336255d412d236e36ed37f5da960562d8456489544782a4d2aeafea629379dd",
+  "configs/scaling_240d_csz_seed29.json": "5d3b91ae7dd02f6aa97725efae1318538c27f11091e2fde36c7bced40e4db17c",
+  "configs/scaling_240d_csz_seed47.json": "ea5754b028d9e259fb3d2bb94f36466400004f1da6c6d29dbb4c4d19506aff06",
+  "configs/scaling_441d_csz_seed11.json": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
+  "configs/scaling_441d_csz_seed29.json": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
+  "configs/scaling_441d_csz_seed47.json": "50699d51b426a7d8ea540aeb5afff1c6154cc8a5df4c86dd4a88140931d42280"
+ },
+ "ordering": {
+  "registered_before_any_scaling_process": true
+ },
+ "supersedes": {
+  "archived_as": "configs/b4_data_scaling_prereg_20261027.registration.superseded_20261027T160619Z.json",
+  "registered_at": "2026-10-27T16:06:19.806263+00:00",
+  "sha256": "a22e65e0eb1cb6e845327c55ead3fa42e261187853513dac034687b4a2984996"
+ }
+}

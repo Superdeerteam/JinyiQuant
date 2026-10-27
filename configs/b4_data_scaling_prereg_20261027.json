@@ -67,14 +67,13 @@
     47
    ],
    "effective_epoch_points": [
-    1.32,
-    2.64
+    1.32
    ],
-   "role": "the largest window this dataset supports: 2022-01-04 is the earliest trading day in the archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for 'the model was always trained on too little data'",
+   "role": "the largest window this dataset supports: 2022-01-04 is the earliest trading day in the archive, so 441 trading days ending 2023-10-31 is the hard ceiling; the decisive rung for 'the model was always trained on too little data'. Only the 1.32 point is scored here: the measured pool peak is 24.9 GB at 132 days and scales with days, so a 441-day pool allows one process at a time and the second point would not fit the window without dropping a seed. The primary declared reading is the 1.32 comparison, so the 2.64 point is dropped before any 441-day value is read.",
    "plans": [
-    "configs/scaling_441d_seed11_2point_plan.json",
-    "configs/scaling_441d_seed29_2point_plan.json",
-    "configs/scaling_441d_seed47_2point_plan.json"
+    "configs/scaling_441d_seed11_1point_plan.json",
+    "configs/scaling_441d_seed29_1point_plan.json",
+    "configs/scaling_441d_seed47_1point_plan.json"
    ]
   }
  ],
@@ -95,6 +94,7 @@
  },
  "declared_reading": {
   "primary": "paired per-seed RankIC difference between adjacent rungs at 1.32 effective epochs",
+  "single_point_top_rung": "the 441-day rung declares one point only; its 2.64 point was dropped for resource reasons before any of its values were read, and no rung-to-rung slope is claimed from it",
   "monotone_rule": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
   "flattening_rule": "declare 'more data stops paying' when the 450-vs-240 paired difference is negative or its interval straddles zero, while 240-vs-132 is positive",
   "falsification_rule": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
@@ -144,9 +144,9 @@
     "configs/scaling_441d_csz_seed47.json"
    ],
    "plans": [
-    "configs/scaling_441d_seed11_2point_plan.json",
-    "configs/scaling_441d_seed29_2point_plan.json",
-    "configs/scaling_441d_seed47_2point_plan.json"
+    "configs/scaling_441d_seed11_1point_plan.json",
+    "configs/scaling_441d_seed29_1point_plan.json",
+    "configs/scaling_441d_seed47_1point_plan.json"
    ]
   }
  }
