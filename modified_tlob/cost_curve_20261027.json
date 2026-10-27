@@ -1,0 +1,69 @@
+{
+  "checks": "runs/cost-curve-20261027/20261027T064815Z_c09acf8de16b/checks.json",
+  "checks_passed": true,
+  "controllability": "runs/cost-curve-20261027/20261027T064815Z_c09acf8de16b/controllability.json",
+  "cost_curve": "runs/cost-curve-20261027/20261027T064815Z_c09acf8de16b/cost_curve.json",
+  "created_at": "2026-10-27T06:54:30.136805+00:00",
+  "evaluation_version": "eval-v2",
+  "evidence_limits": [
+    "prices/labels are the archived vwap label table; local approximate caliber, not a platform score",
+    "turnover is the eval-v2 20% two-leg proxy; the official construction and its rank are unavailable",
+    "cost model is linear in traded notional with no impact term; 5bp is a declared stress assumption",
+    "all five months were already viewed development months; no sealed data was read"
+  ],
+  "experiment_id": "cost-curve-20261027",
+  "kind": "evaluation",
+  "plan": "runs/cost-curve-20261027/20261027T064815Z_c09acf8de16b/plan.json",
+  "platform_answer": "仅可提交因子（[date, instrument, factor]），不可提交持仓；唯一后续路径是因子输出的时间持久性",
+  "primary_stress_scenario": "5bp",
+  "reference": {
+    "breakeven_bp_range_across_non_control_objects": [
+      2.234143353351961,
+      2.400633807540912
+    ],
+    "breakeven_single_side_rate_bp": 2.400633807540912,
+    "cost_bp": {
+      "0bp": 0.0,
+      "10bp": 22.040652337834604,
+      "2bp": 4.408130467566919,
+      "5bp": 11.020326168917302
+    },
+    "gross_return_mean_bp": 5.291153514246138,
+    "month_count": 5,
+    "months_net_negative_at_5bp": 5,
+    "net_bp": {
+      "0bp": 5.291153514246138,
+      "10bp": -16.749498823588468,
+      "2bp": 0.8830230466792176,
+      "5bp": -5.7291726546711645
+    },
+    "object": "reference_nine_blend",
+    "turnover_local": 1.1019545306708005
+  },
+  "run_dir": "runs/cost-curve-20261027/20261027T064815Z_c09acf8de16b",
+  "schema_version": 1,
+  "single_follow_up_path": {
+    "because": "平台只接收 [date, instrument, factor]，持仓、仓位、调仓频率与成本假设都不可控",
+    "change": "在已冻结的参考因子上做一项单一改动：让因子输出在相邻时点更持久（可提交输出的时间一致性约束，或同一约束加到训练目标），不改主干/数据/标签/采样/评价口径",
+    "forbidden": [
+      "持仓或仓位层面的换手优化（平台不接受）",
+      "以标准化分数当 bp 收益来设交易门槛",
+      "同类平滑参数的细网格搜索",
+      "任何重训以外的第二次同向改动（一次只改一个主要因素）"
+    ],
+    "measured_by": [
+      "0/2/5/10bp 四个情景的毛收益/成本/净收益同评，5bp 为主压力结论",
+      "官方换手项只能以本地 U/2 代理的单调下降表达",
+      "RankIC/IC 与多空收益不得塌缩为常数信号"
+    ],
+    "path_id": "factor_temporal_persistence",
+    "quantified_gap": {
+      "cost_saving_per_0_1_turnover_reduction_bp": 1.0,
+      "reduction_required_share": 0.5198392159588276,
+      "turnover_local_now": 1.1019545306708005,
+      "turnover_local_required_at_5bp": 0.5291153514246137
+    },
+    "single_factor": true
+  },
+  "status": "completed"
+}
