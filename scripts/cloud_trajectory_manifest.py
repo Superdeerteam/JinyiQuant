@@ -98,12 +98,17 @@ def local_copy(declared: str, local_root: Path) -> Path:
 
 
 def data_inventory(data, *, digest: bool = True, local_root: Path | None = None,
-                   windows: dict | None = None) -> list[dict]:
-    """Every shard the fixed recipe reads inside the run window, with size and digest."""
+                   windows: dict | None = None, declared_paths: dict | None = None) -> list[dict]:
+    """Every shard the fixed recipe reads inside the run window, with size and digest.
+
+    ``declared_paths`` keeps the canonical cloud path from the recipe text: resolving the
+    recipe on Windows turns ``/root/v5/数据`` into a drive-rooted local path, which is right
+    for the filesystem but wrong for the upload target.
+    """
     rows = []
     windows = windows or {}
     for field in DATA_FIELDS:
-        declared = getattr(data, field)
+        declared = (declared_paths or {}).get(field) or getattr(data, field)
         if declared is None:
             continue
         window = windows.get(field.removesuffix("_path"))
@@ -113,7 +118,8 @@ def data_inventory(data, *, digest: bool = True, local_root: Path | None = None,
             present = shard.is_file()
             if present and window is not None and not _selected(shard, window):
                 continue
-            remote = (Path(declared) if not source.is_dir() else Path(declared) / shard.name).as_posix()
+            text = declared if isinstance(declared, str) else Path(declared).as_posix()
+            remote = text.rstrip("/") if not source.is_dir() else f"{text.rstrip('/')}/{shard.name}"
             row = {"field": field, "shard": shard.name, "path": remote,
                    "exists": present,
                    "bytes": shard.stat().st_size if present else None,
@@ -136,7 +142,10 @@ def build_manifest(plan_path: Path, repo: Path, *, digest: bool = True,
               if samples else plan["budget_points"])
     run_root = Path(plan["cloud"].get("remote_runs_root", "/root/v5/repo/runs")) / plan["experiment_id"]
     windows = read_windows(config)
-    files = data_inventory(config.data, digest=digest, local_root=data_root, windows=windows)
+    recipe_document = json.loads(recipe_path.read_text(encoding="utf-8"))
+    declared = {field: (recipe_document.get("data") or {}).get(field) for field in DATA_FIELDS}
+    files = data_inventory(config.data, digest=digest, local_root=data_root, windows=windows,
+                           declared_paths=declared)
     code = git_snapshot(repo)
     if archive is not None:
         code["deployment"] = git_archive(repo, Path(archive))
