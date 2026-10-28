@@ -1,0 +1,8 @@
+{"path": "acceptance.json", "size": 6159, "sha256": "28d592ce45c925bc1d7d04f124bc7755a2c64c16c5945d8a1ef203253e4c4a64", "committed": true}
+{"path": "armB.state.json", "size": 411330, "sha256": "94926741c838bdb3f4c9cf69a66a2c7f2d2c2603c27e17ce50d595d78280ef93", "committed": true}
+{"path": "armC.state.json", "size": 409187, "sha256": "f42f54f129d953de7e6644dc322dd7e9eb03ad57f4703c8686e01529c8da633e", "committed": true}
+{"path": "cache-manifest.json", "size": 6244, "sha256": "4999f38b9e9f9d87c08669f884b17bb63056bca54abfb5fcad9c2a66bce44faa", "committed": true}
+{"path": "package.json", "size": 731, "sha256": "15dccadfe9a7380b00e40d4bee3d6996f3ed352c652b03fd32c4bfdc89420adc", "committed": true}
+{"path": "verify.json", "size": 1994, "sha256": "418902b988b89ef9f9759a4de7fa0ace4f722984f5fc9eec99b749ba13931389", "committed": true}
+{"path": "weights/b-s11.json", "size": 11791262, "sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6", "committed": false, "location": "hz-t3 ZBzdgJ /root/runs/mktctx-head-20261028/weights/ (local backup under runs/, gitignored)"}
+{"path": "weights/c-s11.json", "size": 11789124, "sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5", "committed": false, "location": "hz-t3 ZBzdgJ /root/runs/mktctx-head-20261028/weights/ (local backup under runs/, gitignored)"}

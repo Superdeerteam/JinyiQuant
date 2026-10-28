@@ -73,6 +73,7 @@ node_modules/
 *.zip
 # The reviewed competition submission package is a binary deliverable, not scratch output.
 !artifacts/submission-*/package-flat.zip
+!artifacts/mktctx-20261028/MANIFEST.jsonl
 !artifacts/submission-*/evidence/*.log
 *.rar
 *.7z
