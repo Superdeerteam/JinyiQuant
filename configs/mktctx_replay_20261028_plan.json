@@ -1,0 +1,215 @@
+{
+ "schema_version": 1,
+ "experiment_id": "mktctx-replay-20261028",
+ "hypothesis": "The frozen 441-day candidate trunk already carries a cross-sectional 80-dim representation. Two additions are replayed on the same ten development windows: B adds one new scalar head on h (same parameter budget as C), C adds the multiplicative market-context interaction ds = w^T (P h * G(m_t)) with P: 80->16, G: m_t->16 and w zero-initialised so step 0 equals the frozen prediction. The question is whether C beats B on the paired daily rank_ic difference, not whether either beats A. Every checkpoint finished training on or before 2023-10-31, so all ten windows are out of sample; no window is used for training or selection, and no window touches the sealed interval (>= 2024-10-08).",
+ "output_root": "/root/runs/mktctx-20261028",
+ "seed": 20261028,
+ "bootstrap_draws": 20000,
+ "chunk_days": 6,
+ "predict_batch_size": 256,
+ "data": {
+  "bars_path": "/root/data/cpt_jyc_2026_e2e_bar1m",
+  "labels_path": "/root/data/cpt_jyc_2026_vwap",
+  "instruments_path": "/root/data/cpt_jyc_2026_instruments(1).parquet",
+  "instrument_map_path": "/root/data/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+  "cache_dir": null,
+  "source": "official_local_download_with_explicit_mapping",
+  "version": "cpt_jyc_2026",
+  "feature_columns": [
+   "ask_price1",
+   "ask_volume1",
+   "bid_price1",
+   "bid_volume1",
+   "ask_price2",
+   "ask_volume2",
+   "bid_price2",
+   "bid_volume2",
+   "ask_price3",
+   "ask_volume3",
+   "bid_price3",
+   "bid_volume3"
+  ],
+  "lookback": 128,
+  "min_history": 1,
+  "history_days": 10,
+  "max_ffill_steps": 5,
+  "missing_policy": "ffill",
+  "missing_sentinel": -1,
+  "price_scale": 100,
+  "outside_universe_labels": "exclude",
+  "label_horizon_minutes": 30,
+  "sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "training_sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "allowed_start": "2020-01-01T00:00:00",
+  "allowed_end": "2025-01-01T00:00:00"
+ },
+ "evaluation": {
+  "quantile": 0.2,
+  "periods_per_year": 252,
+  "min_cross_section": 3,
+  "constant_portfolios": "undefined"
+ },
+ "windows": [
+  {
+   "name": "nov2023",
+   "label": "2023-11 development month",
+   "start": "2023-11-01T00:00:00",
+   "end": "2023-12-01T00:00:00",
+   "expected_targets_sha256": "3c980d3f0410d88f3e3713c58c002ef174681a10a04409a92be1503b24040637",
+   "targets_content_sha256": "0969ae9841b0b4ceefec139ef2634ae3f6edef1e8666d381837b90c247cb231a"
+  },
+  {
+   "name": "jan2024",
+   "label": "2024-01 development month",
+   "start": "2024-01-01T00:00:00",
+   "end": "2024-02-01T00:00:00",
+   "expected_targets_sha256": "2b1bacd6f034368ef3d5d5bccb4edb058d41e1cbc15ad69afb172933715a2cc3",
+   "targets_content_sha256": "4de5626e18056c998fb604c5328d807361b2f30f8dab4ffdf238c74217d0b901"
+  },
+  {
+   "name": "feb2024",
+   "label": "2024-02 development month",
+   "start": "2024-02-01T00:00:00",
+   "end": "2024-03-01T00:00:00",
+   "expected_targets_sha256": "548e33ce5b7ae44f7d80c414e5c37dd7478a15bf736b784227d780235d47bf61",
+   "targets_content_sha256": "ec86f55535d745ebd18dc41a356469e55485f0230d3f7c05b696787fb2a41fed"
+  },
+  {
+   "name": "mar2024",
+   "label": "2024-03 development month",
+   "start": "2024-03-01T00:00:00",
+   "end": "2024-04-01T00:00:00",
+   "expected_targets_sha256": "063cf70df0a4405479f9906a10ff025a7b67ea267a92444413239aa212368e91",
+   "targets_content_sha256": "4f33679d991a3aede17db5d5002a14ef2139e4ac6ddaa80e1b1a274060efbf0b"
+  },
+  {
+   "name": "apr2024",
+   "label": "2024-04 development month",
+   "start": "2024-04-01T00:00:00",
+   "end": "2024-05-01T00:00:00",
+   "expected_targets_sha256": "acf77219e30ed3e8dfb3068f2fe4a3c00569c27d660f80d283bbd599a92daa8a",
+   "targets_content_sha256": "d840bc2d1fb6bc96160e679dd490e71ba772a4bdada981161402b6000a7fbeaf"
+  },
+  {
+   "name": "may2024",
+   "label": "2024-05 development month",
+   "start": "2024-05-01T00:00:00",
+   "end": "2024-06-01T00:00:00",
+   "expected_targets_sha256": "b2c683590f783870a2be2562feaccfbcf69b8604f7a3562d7f23207188863989",
+   "targets_content_sha256": "a2948735d186970b5b5ac268f5c8db162b6687ae288da01de6beb01684cbec32"
+  },
+  {
+   "name": "jun2024",
+   "label": "2024-06 development month",
+   "start": "2024-06-01T00:00:00",
+   "end": "2024-07-01T00:00:00",
+   "expected_targets_sha256": "d31567aef7cd65b320c29b5ac7e7bbc68d589c59a85bad39262449bcc1228911",
+   "targets_content_sha256": "d3dfb2cda174b9daef3848534069f2313c9c5adc3b638a9b6170356378f2fa53"
+  },
+  {
+   "name": "jul2024",
+   "label": "2024-07 development month",
+   "start": "2024-07-01T00:00:00",
+   "end": "2024-08-01T00:00:00",
+   "expected_targets_sha256": "e1a54d6394681a0c7aae87d2e7edc303ba041582b672edf4da13e1f5d48f0863",
+   "targets_content_sha256": "3c8bbef2be2688329a22d9fe19144c57054c83f8e1c2d4caa6e34f11194b7048"
+  },
+  {
+   "name": "aug2024",
+   "label": "2024-08 development month",
+   "start": "2024-08-01T00:00:00",
+   "end": "2024-09-01T00:00:00",
+   "expected_targets_sha256": "e6c6f282b313c1c13ac9d0acf7f807099a6fead67865454af5c2091425782218",
+   "targets_content_sha256": "ec9e98de80e0cfce7443ea6ffe5360cb6323c72ef0cd4738dd1afede1fc21231"
+  },
+  {
+   "name": "sep2024",
+   "label": "2024-09 development month",
+   "start": "2024-09-01T00:00:00",
+   "end": "2024-10-01T00:00:00",
+   "expected_targets_sha256": "7262b0e579516bd4d6b7579b8d354cee6e8a7a9a0d3d17c7f3215da886266049",
+   "targets_content_sha256": "645cdc22b4995f9313d7d294be054b9e2063f29cf1334ddbf806e631cc5d610c"
+  }
+ ],
+ "versions": [
+  {
+   "name": "a-s11",
+   "label": "A: frozen 441d@2.64 candidate seed 11 (no new head)",
+   "arm": "A",
+   "seed": 11,
+   "weights": "/root/weights/sealed/cand/cand_s11_264.json",
+   "expected_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+  },
+  {
+   "name": "a-s29",
+   "label": "A: frozen 441d@2.64 candidate seed 29 (no new head)",
+   "arm": "A",
+   "seed": 29,
+   "weights": "/root/weights/sealed/cand/cand_s29_264.json",
+   "expected_sha256": "621be03f01f830bb1bc0ada53f6fa564d13214d7598bea94660cdcae1adffcf4"
+  },
+  {
+   "name": "a-s47",
+   "label": "A: frozen 441d@2.64 candidate seed 47 (no new head)",
+   "arm": "A",
+   "seed": 47,
+   "weights": "/root/weights/sealed/cand/cand_s47_264.json",
+   "expected_sha256": "b0dad20812dcbf3107a39e8ba0dff14266c134fb098c393170fa9f4146ffe6e2"
+  },
+  {
+   "name": "b-s11",
+   "label": "B: new scalar head on the frozen 80-dim representation, seed 11",
+   "arm": "B",
+   "seed": 11,
+   "weights": "/root/runs/mktctx-head-20261028/weights/b-s11.json"
+  },
+  {
+   "name": "c-s11",
+   "label": "C: B plus the market-context multiplicative residual head, seed 11",
+   "arm": "C",
+   "seed": 11,
+   "weights": "/root/runs/mktctx-head-20261028/weights/c-s11.json"
+  }
+ ],
+ "pairs": [
+  [
+   "c-s11",
+   "b-s11"
+  ],
+  [
+   "c-s11",
+   "a-s11"
+  ],
+  [
+   "b-s11",
+   "a-s11"
+  ]
+ ],
+ "comparison": {
+  "script": "scripts/mktctx_compare.py",
+  "smoothing_alpha": 0.9111677303420447,
+  "block_days": 5,
+  "bootstrap_draws": 20000,
+  "pairing": "(arm, seed, trading day): candidate daily rank_ic minus control daily rank_ic, pooled across seeds and windows",
+  "positive_window_rule": "per-window pooled paired mean of the candidate minus control difference is positive"
+ },
+ "targets_identity_note": "expected_targets_sha256 is the byte hash of windows/<name>/targets.parquet as written in the environment that produced the artifact; parquet serialization differs across pandas/pyarrow versions, so the four windows first produced on hz-4 (may/jul/aug/sep 2024) carry hz-4 byte hashes while the other six carry the older local byte hashes. targets_content_sha256 is the environment-independent digest of the label content (int64 UTC-ns dates + float64 targets + instrument order) and was verified identical between the local archived 441d replays and the hz-4 A-arm pre-run for all shared windows. The replay toolchain verifies expected_sha256 for weights only, not for targets."
+}

@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "registration_id": "dev10-postprocess-20261028",
+  "prereg_path": "configs/dev10_postprocess_prereg_20261028.json",
+  "prereg_sha256": "6ecc44dd3fe006f8202584329e83bc4ba51ae0c73cbef28148272bc552e6eb9d",
+  "plan_path": "configs/dev10_replay_20261028_plan.json",
+  "plan_sha256": "d6c465bdd5e9d43b9f4676b650f11881f0cbaa4df55d40a9b58191dc6a4431a5",
+  "registered_at_utc": "2026-10-28T09:51:42Z",
+  "registered_by": "captain",
+  "host": "local Windows box, NVIDIA RTX 2060 6GB, python 3.13.12, torch 2.11.0+cu128",
+  "ordering": {
+    "registered_before_replay_started": true,
+    "registered_before_any_new_month_score": true,
+    "windows_and_versions_fixed_in_plan": true
+  },
+  "windows": [
+    "nov2023",
+    "jan2024",
+    "feb2024",
+    "mar2024",
+    "apr2024",
+    "may2024",
+    "jun2024",
+    "jul2024",
+    "aug2024",
+    "sep2024"
+  ],
+  "total_days": 203,
+  "pins": {
+    "weights": {
+      "tlob_s11": {
+        "path": "runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4/modified_tlob_weights.json",
+        "sha256": "dd43f06028591bc0aefe18698d35cc7fb4c1c3d30caf2b468f8fd6d7e131f3a1"
+      },
+      "tlob_s29": {
+        "path": "runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef/modified_tlob_weights.json",
+        "sha256": "9890dd83a3ae0df1e6415c34f3f6af5e7318d660221ade84c5587e54bf66599f"
+      },
+      "tlob_s47": {
+        "path": "runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21/modified_tlob_weights.json",
+        "sha256": "c4139bc5d4e604627b389db6a7adec95d2e39f2779a1e019bc94c46cb43b13d2"
+      },
+      "mlp_s11": {
+        "path": "runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607/modified_tlob_weights.json",
+        "sha256": "20def2da424af01c25e158e320bce048e9558ac2c1a9c54ccba162fb1b3b0f6f"
+      },
+      "mlp_s29": {
+        "path": "runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d/modified_tlob_weights.json",
+        "sha256": "2fcbb2e79848bc08a7927140e8dd96ceb16f8a7c0ad6b9cd9cab322d294314bc"
+      },
+      "mlp_s47": {
+        "path": "runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7/modified_tlob_weights.json",
+        "sha256": "21f4ec210153f865c38cb733262945fcfbeb81319784dfaef13bfc8b6842979d"
+      },
+      "r132_s11": {
+        "path": "runs/data-probe-132d-20261027/seed11/modified_tlob_weights-data-1.32.json",
+        "sha256": "5cdeca6345e6cc5b7f5b492e6a68c568a4f8cfbcc74635766d368ade42c1c159"
+      },
+      "r132_s29": {
+        "path": "runs/data-probe-132d-20261027/seed29/modified_tlob_weights-data-1.32.json",
+        "sha256": "24bd9b65f7942253b79eb58879b3f4bac9c8c711726c4ea34ad6e44c6f9f1b4d"
+      },
+      "r132_s47": {
+        "path": "runs/data-probe-132d-20261027/seed47/modified_tlob_weights-data-1.32.json",
+        "sha256": "b0e351ebee977cf0d72305b53083324d3fad34d6bfd39ca5ea5303f8c71d8964"
+      },
+      "r240_s11": {
+        "path": "runs/dose-replay-20261027/weights/240d-seed11/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "974d04d1c69f0edcb41cbf5518d0453e86d32a36f238ce262013105cee1eed48"
+      },
+      "r240_s29": {
+        "path": "runs/dose-replay-20261027/weights/240d-seed29/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "05f8d6adf68ece395c0cda204f03960410ceef227d0fc15e31ceca616d3a6499"
+      },
+      "r240_s47": {
+        "path": "runs/dose-replay-20261027/weights/240d-seed47/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "c51e8d7fe1d13259119fe9ddace085155cdfad10ab500b5541ed5b5749f9b976"
+      },
+      "r441_s11": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed11/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "f3466c6d207e6377c3b66e304a1acc026fe9d10963007373550a0e79848ee96a"
+      },
+      "r441_s29": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed29/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "7860d5cd51c6efeae15bcf85b18c15f543595b225732cd66ca4a7a430f3ddb19"
+      },
+      "r441_s47": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed47/modified_tlob_weights-scaling-1.32.json",
+        "sha256": "532e05bf807ed9ce27b0375df0dac814d355c7a4b358a188e27435742c707b94"
+      },
+      "r441p_s11": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed11/modified_tlob_weights-scaling-2.64.json",
+        "sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+      },
+      "r441p_s29": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed29/modified_tlob_weights-scaling-2.64.json",
+        "sha256": "621be03f01f830bb1bc0ada53f6fa564d13214d7598bea94660cdcae1adffcf4"
+      },
+      "r441p_s47": {
+        "path": "runs/dose-replay-20261027/weights/441d-seed47/modified_tlob_weights-scaling-2.64.json",
+        "sha256": "b0dad20812dcbf3107a39e8ba0dff14266c134fb098c393170fa9f4146ffe6e2"
+      }
+    },
+    "bars": {
+      "2023-09": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202309.0.feather",
+        "sha256": "fd9f81ef29181a6f544ae424ae714a66419d408a6c878a89614bf480ce86aad6"
+      },
+      "2023-10": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202310.0.feather",
+        "sha256": "1b6601d25a41911c0763908a82f4274c57d55b79a9db56dcb500f3cbfefbeff4"
+      },
+      "2024-01": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202401.0.feather",
+        "sha256": "678c89071ecd09ed8cd1360d38b68a5e55b003000c97fc3c55a5567fc9ff2d8e"
+      },
+      "2024-02": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202402.0.feather",
+        "sha256": "ec53b61b80cd4c42ba75972a45d90741c9b6c319b338adc6b2a073c1e768660d"
+      },
+      "2024-03": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202403.0.feather",
+        "sha256": "5dd0b55d9acd0257eda122f1fd76fcefb0d330ad9b604b763707b15aa1c57652"
+      },
+      "2024-04": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202404.0.feather",
+        "sha256": "1abe2fe87abdb892707e688e7e7296a8b3c194267605772cf8702472b46b323f"
+      },
+      "2024-05": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202405.0.feather",
+        "sha256": "813f51be60f624813442cc8815955247b54b1468bbf751e27f120956eb68f927"
+      },
+      "2024-06": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202406.0.feather",
+        "sha256": "11b1a2fd6b4b46b0c1da966293f8ba7d77ff2ca4b3e775ccf787aa5144fa4026"
+      },
+      "2024-07": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202407.0.feather",
+        "sha256": "6f010d541511f2372906f32c317c3e75eff328effecc1d32ddba7f8d1cc65cbb"
+      },
+      "2024-08": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202408.0.feather",
+        "sha256": "bbcbcfb65a0941db8c13762b29653e432f6d9abc73aa29298d308b542374c630"
+      },
+      "2024-09": {
+        "path": "数据/cpt_jyc_2026_e2e_bar1m/202409.0.feather",
+        "sha256": "272529643391795997c8592bd36e04e95e9fc81149ccf41e35079020ebb76770"
+      }
+    },
+    "vwap": {
+      "2023-08": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-08.parquet",
+        "sha256": "231de3a8de4928b48494d6b7f81ad043358bcb57d3d43b7d65f5b15821fa1bde"
+      },
+      "2023-09": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-09.parquet",
+        "sha256": "fe517e44fd472ec5291042cc7ddce7e67c1f8ba6058d6879025627b43cbf2aea"
+      },
+      "2023-10": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2023-10.parquet",
+        "sha256": "4519bdfd566e82c2190991aa06795bd812bdb0490bd0ced4db4e99e9be576bba"
+      },
+      "2024-01": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-01.parquet",
+        "sha256": "bae8766ee9de5a6843cf819887ea371455dd41d2d8c2424d934e4f99d9e7b0f3"
+      },
+      "2024-02": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-02.parquet",
+        "sha256": "edf842434d26fa03432b86fbab93c1aa735276b08cb2a60b6df0dfb94f0c056a"
+      },
+      "2024-03": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-03.parquet",
+        "sha256": "83a5e837cf9b7f5adb5b3c08dcbf8ccf2a478617c3c41bb6bac1153c3a16c449"
+      },
+      "2024-04": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-04.parquet",
+        "sha256": "4d949531f85da8f0c78dd3e458b259d369d9492182c23905c04fe86d2459eb87"
+      },
+      "2024-05": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-05.parquet",
+        "sha256": "74232c4b7f48527a87a9d5b672e3edb04be9c083651559892460b57a8dedaf1e"
+      },
+      "2024-06": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-06.parquet",
+        "sha256": "41b17ec15e6d384650286c536ec2472be17c5bb3fb096f7dac0608394979fe67"
+      },
+      "2024-07": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-07.parquet",
+        "sha256": "e699366ce5c91fb167aa6619f76ad27c922eab1e195bdcfe17f44d6813649a9b"
+      },
+      "2024-08": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-08.parquet",
+        "sha256": "21c71de3cb60c45dc425a4fd4fb96727d55cc14214d281eee06ee47da6c1077c"
+      },
+      "2024-09": {
+        "path": "数据/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_2024-09.parquet",
+        "sha256": "0e70f94ea59a04e34b92029f9c3437acfc5a744c917183165bfe4547cf3928a9"
+      }
+    },
+    "static": {
+      "instruments": {
+        "path": "数据/cpt_jyc_2026_instruments(1).parquet",
+        "sha256": "dc9fde46a3f58e9564cc01d00ca33cb74f0ded800130c36c970749f6443bb0b3"
+      },
+      "instrument_map": {
+        "path": "数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+        "sha256": "e41f0a8db4a76d356d6e2b29d69852e360f78983308c66f98956e2b2484255e5"
+      },
+      "exposure_2023": {
+        "path": "数据/cpt_jyc_2026_exposure/cpt_jyc_2026_exposure_2023_part_0001.parquet",
+        "sha256": "d650f8e74452efd8013f56ef2ee1a0b3b22f79de34b96466d18c02e4dc3d09fb"
+      },
+      "exposure_2024": {
+        "path": "数据/cpt_jyc_2026_exposure/cpt_jyc_2026_exposure_2024_part_0001.parquet",
+        "sha256": "d817035710cde1bc78632d6f42e96d3cd689fdb913d072a7fbac3be93981ec05"
+      }
+    }
+  }
+}

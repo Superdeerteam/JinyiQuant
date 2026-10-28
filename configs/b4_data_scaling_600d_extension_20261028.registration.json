@@ -1,0 +1,113 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-data-scaling-600d-extension-20261028",
+ "kind": "extension_of_registered_prereg",
+ "owner_role": "captain",
+ "parent_registration": "configs/b4_data_scaling_prereg_20261027.json",
+ "parent_component": "none: the parent declares rungs 60/132/240/441/927 and no rung between 441 and 927; this document adds rung J as a descriptive midpoint and does not extend a registered component",
+ "purpose_zh": "在已注册的 441 与 927 交易日之间取一个中点档位（600 交易日，2021-05-13..2023-10-31），只用于描述性判断数据量曲线在何处拐弯：此前只有端点，无法判断中间是否存在峰或平台。",
+ "purpose": "one descriptive interior point of the registered data axis; the endpoints 441 and 927 remain the decision rungs and the only ones that can move a verdict",
+ "registered_at_utc": "2026-10-28T09:28:50.834175+00:00",
+ "registered_by": "captain",
+ "declared_before_any_score_of_these_seeds": true,
+ "declared_before_any_score_note": "no run of these three (seed, rung) combinations has an out-of-sample score yet; the seeds are the registered anchor seeds reused at a new rung, and their scores at other rungs are irrelevant here because this document declares no threshold and no comparison against a fixed bar",
+ "descriptive_only": true,
+ "no_threshold_change": true,
+ "does_not_alter_parent_decision": true,
+ "why": [
+  "the registered axis jumps 441 -> 927 (2.1x in samples): a plateau, a rising line and an interior peak are all consistent with the two endpoint scores",
+  "a point in between costs one rung of compute and turns the curve's shape from unidentifiable into measured, at matched effective-epoch points and an unchanged evaluation caliber",
+  "the rung is watched for shape only: it may not by itself escalate a dose claim, replace the incumbent or be reported as a candidate"
+ ],
+ "seeds": [
+  11,
+  29,
+  47
+ ],
+ "seeds_reused_from_registered_rungs": true,
+ "rung_trading_days": 600,
+ "train_window": [
+  "2021-05-13",
+  "2023-10-31"
+ ],
+ "points": [
+  "1.32",
+  "2.64"
+ ],
+ "point_role": "descriptive curve-shape point, not a promotion arm",
+ "window_provenance": {
+  "source": "/root/data/cpt_jyc_2026_vwap (label archive, `date` column of all 58 month files)",
+  "measured_927_window": {
+   "range": [
+    "2020-01-02",
+    "2023-10-31"
+   ],
+   "distinct_trading_days": 927,
+   "label_rows": 7415987
+  },
+  "measured_600_window": {
+   "range": [
+    "2021-05-13",
+    "2023-10-31"
+   ],
+   "distinct_trading_days": 600,
+   "label_rows": 4799995
+  },
+  "anchor_day_index": 328,
+  "note": "2021-05-13 is the 328th trading day of the 927-day window, i.e. the first of its last 600"
+ },
+ "derived": {
+  "anchor": {
+   "trading_days": 132,
+   "usable_samples": 1054256
+  },
+  "usable_samples_estimate": 4792073,
+  "steps_expected": {
+   "1.32": 197673,
+   "2.64": 395346
+  },
+  "usable_samples_per_day": 7986.8,
+  "reference_density_per_day": 7982,
+  "density_deviation": "+0.06%",
+  "min_coverage": 1.0,
+  "estimate_not_budget": true,
+  "note": "the driver re-derives usable samples and steps from the pool it builds; the plan's +/-5% deviation tolerance is the post-run monitoring rule, not an automatic gate"
+ },
+ "unchanged": {
+  "recipe": "every field of the registered 927-day recipe except the training-window start and the fields derived from it (experiment_id, output_root, data.cache_dir, budget.max_train_samples, hypothesis, factor block of the plan)",
+  "train_window_end": "2023-10-31 (exclusive train end 2023-11-01T00:00:00)",
+  "validation_split": [
+   "2023-11-01T00:00:00",
+   "2023-11-15T00:00:00"
+  ],
+  "budget_points": "the same two points, 1.32 and 2.64 effective epochs, one continuous trajectory",
+  "evaluation": "the same five-window delivery caliber (104 trading days) used for every rung",
+  "thresholds": "none are introduced here"
+ },
+ "reading_rule": "read only as a descriptive shape point between the 441-day and 927-day rungs; it declares no threshold, no verdict and no candidate, and the parent decision is taken from its own registered rungs whether or not this point is ever scored",
+ "cost": {
+  "processes": 3,
+  "steps_per_seed": 593019,
+  "wall_estimate_hours": 6.0,
+  "host": "hz-t3.matpool.com:26155 (36 cores / 192 GB / 3x Tesla P100 16GB)",
+  "basis": "30.3 steps/s measured on hz-t3 by featnorm-control-seed11 (/root/runs/featnorm-control-seed11/20261028T060829.804730Z_15124166eb98, 86 976 steps in 2 870.59 s at 132 trading days); the extrapolation assumes the same per-step cost at a larger pool and three concurrent single-GPU processes"
+ },
+ "artifacts": {
+  "recipes": {
+   "configs/scaling_600d_csz_seed11.json": "69d1543ca98514f543843b15fc5667989c9d56ba0bfbc1331515cc6d2ccb4679",
+   "configs/scaling_600d_csz_seed29.json": "642a4c046a9cd1f88274f49b8cb6a6a89332725ada3aa8636f8d95f6c8c6bfbe",
+   "configs/scaling_600d_csz_seed47.json": "a94bee56fd84551ae9dd9c1ed3051a6f180b69d0b8c6da68509dcce15ad8d76d"
+  },
+  "plans": {
+   "configs/scaling_600d_seed11_2point_plan.json": "eca843356b31597294560166d840e06baa3a6849baded5f13bddf74d18e84980",
+   "configs/scaling_600d_seed29_2point_plan.json": "51b1963c8c02bc2a6d9917c67982e1fda1d6adb3165f4e9f27eb78ec6374adfd",
+   "configs/scaling_600d_seed47_2point_plan.json": "6c41b3da2c17e4e9ed50218633c8c5feb5b54c56f70c86106d63ca050118caa7"
+  }
+ },
+ "generation": {
+  "script": "scripts/scaling_600d_extension.py",
+  "sha256": "c52ffe0048e368d9743b57d37fafa3c7add0f418256f3704501ee05eade7c342",
+  "generated_at_utc": "2026-10-28T09:28:50.834175+00:00",
+  "generator": "data_scaling_prereg.build_recipe / build_plan (registered, reused verbatim)"
+ }
+}

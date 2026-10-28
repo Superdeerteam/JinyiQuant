@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dev10-measurement-20261028",
+  "kind": "zero_training_measurement_extension",
+  "registered_by": "captain",
+  "registered_on": "2026-10-28",
+  "amendments": [
+    {
+      "at_utc": "2026-10-28T09:44:10Z",
+      "phase": "pre_score",
+      "what": "plan version weight paths rewritten to plan-relative ../runs/...; plan sha256 updated",
+      "reason": "the first replay attempt resolved runs/... against configs/ and raised FileNotFoundError; no score was produced or read",
+      "plan_sha256_before": "3b0c481878d4c40c993feb60e753959ac46f530ce2056001d135770384434c56",
+      "plan_sha256_after": "d6c465bdd5e9d43b9f4676b650f11881f0cbaa4df55d40a9b58191dc6a4431a5"
+    },
+    {
+      "at_utc": "2026-10-28T09:44:10Z",
+      "phase": "pre_score",
+      "what": "primary evidence track declared gross eval-v2; local neutralized track declared secondary",
+      "reason": "the first draft named the metrics and a neutralized_track flag but not which track is primary; fixed before any score of any window existed"
+    },
+    {
+      "at_utc": "2026-10-28T09:44:58Z",
+      "phase": "pre_read",
+      "what": "clarified the composition order of all3 to match its own formula (vol then winsor then rank)",
+      "reason": "the first draft said winsor then vol then rank while the all3 formula and table said vol then winsor then rank; the explicit formula is kept",
+      "order_fixed_before": "winsor then vol then rank, in exactly this order when combined; no other order is evaluated"
+    },
+    {
+      "at_utc": "2026-10-28T09:51:20Z",
+      "phase": "pre_read",
+      "what": "defined the Sharpe statistics operationally: the gate keeps the paired daily long_short_return delta (registered block bootstrap, CI low > 0) plus rank_ic point >= -0.002 and turnover point <= +0.10; the winner statistic is the paired long_short_sharpe delta with its own month-aware block-bootstrap interval (Sharpe recomputed inside every draw), and the one-standard-error tie rule uses that interval's standard error",
+      "reason": "the first draft wrote 'long_short_sharpe: paired daily delta CI low > 0'; a Sharpe delta has no daily pairing, so the gate statistic and the winner statistic are now stated explicitly; declared before any dev10 score was read (nov2023 artifacts existed on disk but unread)"
+    }
+  ],
+  "goal": {
+    "request_ref": "user instruction 2026-10-28: widen the development window set from five to ten months and replay three zero-training post-processing transforms on saved predictions; no training, no retraining, no model change",
+    "why": [
+      "the five old months deliver 104 trading days; adding feb2024 and may2024 and jul2024 and aug2024 and sep2024 delivers 203 in total (+99), roughly doubling the paired-difference sample",
+      "the added months lie entirely outside every checkpoint training interval and outside the sealed interval [2024-10-08, 2025-01-01]",
+      "winsorizing, volatility scaling and cross-sectional rank centering train no parameters, so the study is replay plus arithmetic on saved scores"
+    ],
+    "status_claim": "no score of any new month existed when this file was written; no checkpoint was run on the new months; the plan was authored and hashed before the replay started"
+  },
+  "windows": {
+    "old_five": [
+      "nov2023",
+      "jan2024",
+      "mar2024",
+      "apr2024",
+      "jun2024"
+    ],
+    "new_five": [
+      "feb2024",
+      "may2024",
+      "jul2024",
+      "aug2024",
+      "sep2024"
+    ],
+    "all_ten": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jun2024",
+      "jul2024",
+      "aug2024",
+      "sep2024"
+    ],
+    "delivered_trading_days": {
+      "nov2023": 22,
+      "jan2024": 22,
+      "feb2024": 15,
+      "mar2024": 21,
+      "apr2024": 20,
+      "may2024": 20,
+      "jun2024": 19,
+      "jul2024": 23,
+      "aug2024": 22,
+      "sep2024": 19
+    },
+    "total_days": 203,
+    "old_set_days": 104,
+    "trading_day_source": "date column of data/cpt_jyc_2026_vwap/cpt_jyc_2026_vwap_YYYY-MM.parquet, eight clocks per day",
+    "training_boundary": "every replayed checkpoint trained on bars ending on or before 2023-10-31; the earliest replay window starts 2023-11-01",
+    "sealed_interval": [
+      "2024-10-08",
+      "2025-01-01"
+    ],
+    "sealed_untouched": true,
+    "status_after_use": "the five new months become development data; their never-seen status is forfeited and they may not be reported as out-of-sample evidence"
+  },
+  "replay": {
+    "plan_path": "configs/dev10_replay_20261028_plan.json",
+    "plan_sha256": "d6c465bdd5e9d43b9f4676b650f11881f0cbaa4df55d40a9b58191dc6a4431a5",
+    "runner": "scripts/replay_model_versions.py",
+    "command": "python scripts/replay_model_versions.py run configs/dev10_replay_20261028_plan.json",
+    "versions": 18,
+    "families": {
+      "submission_incumbents": [
+        "tlob_s11",
+        "tlob_s29",
+        "tlob_s47",
+        "mlp_s11",
+        "mlp_s29",
+        "mlp_s47"
+      ],
+      "dose_rungs": [
+        "r132_s11",
+        "r132_s29",
+        "r132_s47",
+        "r240_s11",
+        "r240_s29",
+        "r240_s47",
+        "r441_s11",
+        "r441_s29",
+        "r441_s47",
+        "r441p_s11",
+        "r441p_s29",
+        "r441p_s47"
+      ]
+    },
+    "checkpoints_invariant": "frozen weights; preprocessing dict equals the plan config (schema version 2, lookback 128, price_scale 100)",
+    "coverage_gaps": {
+      "dual_patch_seed11_seed29_seed47": "weights absent on this host (remote host only); excluded from the ten-month replay",
+      "927d_rung_seed11_seed29_seed47": "weights absent on this host, only saved predictions exist; excluded",
+      "441d_lotB_seed53_seed59_seed61": "weights absent on this host; excluded"
+    },
+    "consequence": "the nine-model submission blend is re-evaluated only on the five old months from stored predictions; the ten-month transform evidence uses the six-member TLOB plus MLPLOB equal blend, a trunk-count-equal subset of the same family; rule A4 keeps the nine-blend five-month check mandatory"
+  },
+  "postprocessing": {
+    "stage": "arithmetic on saved scores; the replay stage only produces raw scores",
+    "transform_definitions": {
+      "winsor": "per timestamp (date, sample time) clip each score at the empirical 1st and 99th percentile with linear interpolation",
+      "rank_csz": "per timestamp replace each score by the centered average rank u = (r - (n+1)/2) / (n/2), n = cross-section size; ties share the average rank; n < 2 gives 0",
+      "vol_scale": "sigma_i(d) = sqrt(mean over k=1..20 trading days with labels of rv_{i,d-k}^2), rv_{i,d} = sqrt(mean over the eight sample times of vwap_return^2); requires 10 observations; floor sigma per date at the 5th percentile across instruments and fill a remaining missing sigma with that date median sigma, fill count reported; score' = score / sigma",
+      "all3": "rank(winsor(vol(score)))"
+    },
+    "compositions": {
+      "vol": "score / sigma",
+      "vol_rank": "rank(score / sigma)",
+      "vol_winsor": "winsor(score / sigma)",
+      "winsor": "winsor(score)",
+      "winsor_rank": "rank(winsor(score))",
+      "rank": "rank(score)",
+      "all3": "rank(winsor(score / sigma))"
+    },
+    "order_fixed": "all3 applies vol, then winsor, then rank, exactly as its composition formula rank(winsor(score / sigma)); the single transforms stand alone; no other order is evaluated",
+    "arms": {
+      "ten_month": {
+        "incumbent6": "equal weight of the six submission incumbents",
+        "rung132": "equal weight of r132_s11 and r132_s29 and r132_s47",
+        "rung240": "equal weight of r240_s11 and r240_s29 and r240_s47",
+        "rung441": "equal weight of r441_s11 and r441_s29 and r441_s47",
+        "cand441p264": "equal weight of r441p_s11 and r441p_s29 and r441p_s47"
+      },
+      "five_month": {
+        "nine_blend": "equal weight of the nine archived members of runs/multiscale-replay-20261026 and runs/multiscale-replay-verify-20261026"
+      }
+    },
+    "evaluation": {
+      "version": "eval-v2",
+      "quantile": 0.2,
+      "periods_per_year": 252,
+      "min_cross_section": 3,
+      "constant_portfolios": "undefined",
+      "single_side_rate": 0.0,
+      "neutralized_track": true
+    }
+  },
+  "evidence": {
+    "primary_set": "ten months, every delivered trading day present in every arm, paired by date",
+    "track_contract": {
+      "primary": "gross eval-v2 scores from the saved predictions (no neutralization)",
+      "secondary": "local BARRA-style neutralization approximation from report_platform_metrics: previous-day exposure snapshot strictly before the signal day, MAD winsorization, cross-section z-score, OLS on 10 style and 32 industry regressors",
+      "note": "gate and winner decisions use the primary track; the secondary track is reported alongside and must not contradict"
+    },
+    "primary_metrics": [
+      "long_short_sharpe",
+      "rank_ic_mean",
+      "ic_ir",
+      "turnover_mean"
+    ],
+    "secondary_metrics": [
+      "worst_day_long_short_return",
+      "pooled_stress_rank_ic_neutralized",
+      "net_return_mean_5bp"
+    ],
+    "inference": {
+      "method": "month-aware moving block bootstrap, blocks never cross a month",
+      "block_days": 5,
+      "draws": 4000,
+      "seed": 20261028,
+      "confidence": 0.95,
+      "paired_by": "trading day"
+    },
+    "power_note": "report the paired-difference standard error on 104 days and on 203 days and their ratio; no test on the ratio itself; no claim from a single month or a single seed"
+  },
+  "hypotheses": {
+    "H1_vol": "volatility scaling raises pooled long_short_sharpe by at least 10 percent relative to the raw arm while rank_ic stays within -0.002",
+    "H2_winsor": "winsorizing lowers the worst-day loss and turnover without lowering pooled long_short_sharpe",
+    "H3_rank": "rank centering leaves selection and turnover unchanged (null check N1) and only changes presentation or downstream blend variance"
+  },
+  "null_checks": {
+    "N1_rank_selection_invariance": "for every arm, daily long_short_return and turnover from rank(score) must match the raw score to <= 1e-9 on every day; a breach fails the analysis as an implementation bug",
+    "N2_five_month_reproduction": "the five old months replayed by the new run must reproduce the archived per-member rank_ic within 5e-4 absolute; the archived runs used torch 2.5.1+cu118 and this host 2.11.0+cu128, a wider spread is a caliber breach to investigate before the new months are read",
+    "N3_coverage": "every window must deliver its expected trading days with a coverage ratio of at least 0.99; otherwise the window is excluded and the exclusion is reported with the run dir"
+  },
+  "adoption_rules": {
+    "gate": {
+      "long_short_return": "paired daily long_short_return delta, registered month-aware block bootstrap, CI low > 0 on the ten-month set",
+      "rank_ic": "point delta >= -0.002",
+      "turnover": "point delta <= +0.10",
+      "sharpe_delta": "reported with its own block-bootstrap interval; not a gate condition"
+    },
+    "winner": "among transforms passing the gate take the largest paired long_short_sharpe delta (block-bootstrap point estimate); within one standard error of that estimate prefer the pre-declared order vol, vol_winsor, vol_rank, all3, winsor, winsor_rank, rank",
+    "rank_family": "N1 implies it cannot change selection or turnover; it may be adopted only as a presentation normalization, never on a Sharpe claim",
+    "A4_nine_blend_confirmation": "on the five old months the nine-blend transform delta must share sign and order of magnitude; a contradiction blocks adoption and the conflict is reported",
+    "no_escalation": "no rung or seed becomes a promotion candidate from this experiment; promotion claims remain with the sealed-interval calibration and the preregistered rung reading"
+  },
+  "cost": {
+    "replay_estimate": "18 versions by 10 months on one RTX 2060 6GB; the archived 9-version by 3-window run took 984 s, so at most 90 min is expected",
+    "analysis_estimate": "at most 30 min CPU",
+    "gpu_hours_cap": 2
+  },
+  "prohibitions": [
+    "no training, fine-tuning, new checkpoints, architecture or feature changes",
+    "no read of the sealed interval and no using it for selection",
+    "no transform parameter tuning after scores are read; the 1 and 99 percent clip, 20-day window, 5 percent floor, 5-day blocks and 4000 draws are fixed here",
+    "no replacing a declared arm, window or metric after reading",
+    "no single month or single seed reported as evidence of improvement"
+  ],
+  "artifacts": [
+    "configs/dev10_replay_20261028_plan.json",
+    "runs/dev10-replay-20261028/<run>",
+    "runs/dev10-postprocess-20261028/<analysis>.json and daily csv",
+    "tests covering the transforms and null checks",
+    "README research-log section"
+  ]
+}

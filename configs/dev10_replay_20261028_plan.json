@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dev10-replay-20261028",
+  "hypothesis": "Extend the frozen replay family from the five declared development months to ten (2023-11 .. 2024-09). Every arm finished training on or before 2023-10-31, so all windows are out of sample; no checkpoint is retrained and no window changes the existing five. Coverage: six locally available incumbents (TLOB/MLPLOB x seeds 11/29/47) plus twelve frozen dose-rung checkpoints (132/240/441 trading days at 1.32 effective epochs, plus the 441-day rung at 2.64). The dual-patch incumbents and the 927-day rung are omitted: their weight files never left the remote host.",
+  "output_root": "../runs/dev10-replay-20261028",
+  "seed": 20261028,
+  "bootstrap_draws": 4000,
+  "chunk_days": 6,
+  "predict_batch_size": 256,
+  "data": {
+    "bars_path": "../数据/cpt_jyc_2026_e2e_bar1m",
+    "labels_path": "../数据/cpt_jyc_2026_vwap",
+    "instruments_path": "../数据/cpt_jyc_2026_instruments(1).parquet",
+    "instrument_map_path": "../数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+    "cache_dir": null,
+    "source": "official_local_download_with_explicit_mapping",
+    "version": "cpt_jyc_2026",
+    "feature_columns": [
+      "ask_price1",
+      "ask_volume1",
+      "bid_price1",
+      "bid_volume1",
+      "ask_price2",
+      "ask_volume2",
+      "bid_price2",
+      "bid_volume2",
+      "ask_price3",
+      "ask_volume3",
+      "bid_price3",
+      "bid_volume3"
+    ],
+    "lookback": 128,
+    "min_history": 1,
+    "history_days": 10,
+    "max_ffill_steps": 5,
+    "missing_policy": "ffill",
+    "missing_sentinel": -1,
+    "price_scale": 100,
+    "outside_universe_labels": "exclude",
+    "label_horizon_minutes": 30,
+    "sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "training_sample_times": [
+      "09:30",
+      "10:00",
+      "10:30",
+      "11:00",
+      "11:30",
+      "13:30",
+      "14:00",
+      "14:30"
+    ],
+    "allowed_start": "2020-01-01T00:00:00",
+    "allowed_end": "2025-01-01T00:00:00"
+  },
+  "evaluation": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined"
+  },
+  "windows": [
+    {
+      "name": "nov2023",
+      "label": "2023-11 development month",
+      "start": "2023-11-01T00:00:00",
+      "end": "2023-12-01T00:00:00"
+    },
+    {
+      "name": "jan2024",
+      "label": "2024-01 development month",
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-02-01T00:00:00"
+    },
+    {
+      "name": "feb2024",
+      "label": "2024-02 development month",
+      "start": "2024-02-01T00:00:00",
+      "end": "2024-03-01T00:00:00"
+    },
+    {
+      "name": "mar2024",
+      "label": "2024-03 development month",
+      "start": "2024-03-01T00:00:00",
+      "end": "2024-04-01T00:00:00"
+    },
+    {
+      "name": "apr2024",
+      "label": "2024-04 development month",
+      "start": "2024-04-01T00:00:00",
+      "end": "2024-05-01T00:00:00"
+    },
+    {
+      "name": "may2024",
+      "label": "2024-05 development month",
+      "start": "2024-05-01T00:00:00",
+      "end": "2024-06-01T00:00:00"
+    },
+    {
+      "name": "jun2024",
+      "label": "2024-06 development month",
+      "start": "2024-06-01T00:00:00",
+      "end": "2024-07-01T00:00:00"
+    },
+    {
+      "name": "jul2024",
+      "label": "2024-07 development month",
+      "start": "2024-07-01T00:00:00",
+      "end": "2024-08-01T00:00:00"
+    },
+    {
+      "name": "aug2024",
+      "label": "2024-08 development month",
+      "start": "2024-08-01T00:00:00",
+      "end": "2024-09-01T00:00:00"
+    },
+    {
+      "name": "sep2024",
+      "label": "2024-09 development month",
+      "start": "2024-09-01T00:00:00",
+      "end": "2024-10-01T00:00:00"
+    }
+  ],
+  "versions": [
+    {
+      "name": "tlob_s11",
+      "label": "TLOB 60d/19800 seed 11",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800/20261025T111253.841923Z_a647dae8eee4/modified_tlob_weights.json",
+      "expected_sha256": "dd43f06028591bc0aefe18698d35cc7fb4c1c3d30caf2b468f8fd6d7e131f3a1"
+    },
+    {
+      "name": "tlob_s29",
+      "label": "TLOB 60d/19800 seed 29",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800-seed29/20261025T134621.015575Z_c473f1410fef/modified_tlob_weights.json",
+      "expected_sha256": "9890dd83a3ae0df1e6415c34f3f6af5e7318d660221ade84c5587e54bf66599f"
+    },
+    {
+      "name": "tlob_s47",
+      "label": "TLOB 60d/19800 seed 47",
+      "role": "member",
+      "weights": "../runs/v2-60d-csz-19800-seed47/20261025T145238.334605Z_d83e9dea6e21/modified_tlob_weights.json",
+      "expected_sha256": "c4139bc5d4e604627b389db6a7adec95d2e39f2779a1e019bc94c46cb43b13d2"
+    },
+    {
+      "name": "mlp_s11",
+      "label": "MLPLOB 60d/19800 seed 11",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T035134.888319Z_d257977a0607/modified_tlob_weights.json",
+      "expected_sha256": "20def2da424af01c25e158e320bce048e9558ac2c1a9c54ccba162fb1b3b0f6f"
+    },
+    {
+      "name": "mlp_s29",
+      "label": "MLPLOB 60d/19800 seed 29",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T040053.397686Z_ddf5c8807f7d/modified_tlob_weights.json",
+      "expected_sha256": "2fcbb2e79848bc08a7927140e8dd96ceb16f8a7c0ad6b9cd9cab322d294314bc"
+    },
+    {
+      "name": "mlp_s47",
+      "label": "MLPLOB 60d/19800 seed 47",
+      "role": "member",
+      "weights": "../runs/mlplob-v3-60d-csz-19800/20261026T040053.419871Z_417a35eae4d7/modified_tlob_weights.json",
+      "expected_sha256": "21f4ec210153f865c38cb733262945fcfbeb81319784dfaef13bfc8b6842979d"
+    },
+    {
+      "name": "r132_s11",
+      "label": "MLPLOB 132d 1.32 epochs seed 11",
+      "role": "rung",
+      "weights": "../runs/data-probe-132d-20261027/seed11/modified_tlob_weights-data-1.32.json",
+      "expected_sha256": "5cdeca6345e6cc5b7f5b492e6a68c568a4f8cfbcc74635766d368ade42c1c159"
+    },
+    {
+      "name": "r132_s29",
+      "label": "MLPLOB 132d 1.32 epochs seed 29",
+      "role": "rung",
+      "weights": "../runs/data-probe-132d-20261027/seed29/modified_tlob_weights-data-1.32.json",
+      "expected_sha256": "24bd9b65f7942253b79eb58879b3f4bac9c8c711726c4ea34ad6e44c6f9f1b4d"
+    },
+    {
+      "name": "r132_s47",
+      "label": "MLPLOB 132d 1.32 epochs seed 47",
+      "role": "rung",
+      "weights": "../runs/data-probe-132d-20261027/seed47/modified_tlob_weights-data-1.32.json",
+      "expected_sha256": "b0e351ebee977cf0d72305b53083324d3fad34d6bfd39ca5ea5303f8c71d8964"
+    },
+    {
+      "name": "r240_s11",
+      "label": "MLPLOB 240d 1.32 epochs seed 11",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/240d-seed11/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "974d04d1c69f0edcb41cbf5518d0453e86d32a36f238ce262013105cee1eed48"
+    },
+    {
+      "name": "r240_s29",
+      "label": "MLPLOB 240d 1.32 epochs seed 29",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/240d-seed29/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "05f8d6adf68ece395c0cda204f03960410ceef227d0fc15e31ceca616d3a6499"
+    },
+    {
+      "name": "r240_s47",
+      "label": "MLPLOB 240d 1.32 epochs seed 47",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/240d-seed47/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "c51e8d7fe1d13259119fe9ddace085155cdfad10ab500b5541ed5b5749f9b976"
+    },
+    {
+      "name": "r441_s11",
+      "label": "MLPLOB 441d 1.32 epochs seed 11",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed11/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "f3466c6d207e6377c3b66e304a1acc026fe9d10963007373550a0e79848ee96a"
+    },
+    {
+      "name": "r441_s29",
+      "label": "MLPLOB 441d 1.32 epochs seed 29",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed29/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "7860d5cd51c6efeae15bcf85b18c15f543595b225732cd66ca4a7a430f3ddb19"
+    },
+    {
+      "name": "r441_s47",
+      "label": "MLPLOB 441d 1.32 epochs seed 47",
+      "role": "rung",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed47/modified_tlob_weights-scaling-1.32.json",
+      "expected_sha256": "532e05bf807ed9ce27b0375df0dac814d355c7a4b358a188e27435742c707b94"
+    },
+    {
+      "name": "r441p_s11",
+      "label": "MLPLOB 441d 2.64 epochs seed 11",
+      "role": "candidate",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed11/modified_tlob_weights-scaling-2.64.json",
+      "expected_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+    },
+    {
+      "name": "r441p_s29",
+      "label": "MLPLOB 441d 2.64 epochs seed 29",
+      "role": "candidate",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed29/modified_tlob_weights-scaling-2.64.json",
+      "expected_sha256": "621be03f01f830bb1bc0ada53f6fa564d13214d7598bea94660cdcae1adffcf4"
+    },
+    {
+      "name": "r441p_s47",
+      "label": "MLPLOB 441d 2.64 epochs seed 47",
+      "role": "candidate",
+      "weights": "../runs/dose-replay-20261027/weights/441d-seed47/modified_tlob_weights-scaling-2.64.json",
+      "expected_sha256": "b0dad20812dcbf3107a39e8ba0dff14266c134fb098c393170fa9f4146ffe6e2"
+    }
+  ],
+  "pairs": [
+    [
+      "r441p_s11",
+      "r441_s11"
+    ],
+    [
+      "r441p_s29",
+      "r441_s29"
+    ],
+    [
+      "r441p_s47",
+      "r441_s47"
+    ]
+  ]
+}

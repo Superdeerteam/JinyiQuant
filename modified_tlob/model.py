@@ -206,15 +206,43 @@ class MLPLOB(nn.Module):
         self.finite_check(x)
         return self._forward_impl(x)
 
-    def _forward_impl(self, x):
-        """Validated, branch-free trunk math: the only region that may be compiled."""
+    @property
+    def representation_dim(self):
+        """Width of the representation the scalar head consumes (read-only interface)."""
+        return int(self.final_layers[-1].in_features)
+
+    def represent(self, x):
+        """Frozen representation [batch, representation_dim] fed to the scalar head."""
+        if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
+            raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
+        self.finite_check(x)
+        return self._representation(x)
+
+    def forward_with_representation(self, x):
+        """One pass returning both the scalar score and the representation.
+
+        The scalar score is the same tensor ``forward`` returns: the trunk and the head layers
+        run in the same order on the same values, so both paths are bitwise identical.
+        """
+        if x.ndim != 3 or x.shape[1:] != (self.seq_size, self.num_features):
+            raise ValueError(f"Expected [batch, {self.seq_size}, {self.num_features}]")
+        self.finite_check(x)
+        state = self._representation(x)
+        return self.final_layers[-1](state)[:, 0], state
+
+    def _representation(self, x):
+        """Validated, branch-free trunk math plus everything before the scalar head."""
         x = self.norm_layer(x.transpose(1, 2)).transpose(1, 2)
         for layer in self.layers:
             x = layer(x).transpose(1, 2)
         x = x.reshape(x.shape[0], -1)
-        for layer in self.final_layers:
+        for layer in self.final_layers[:-1]:
             x = layer(x)
-        return x[:, 0]
+        return x
+
+    def _forward_impl(self, x):
+        """Validated, branch-free trunk math: the only region that may be compiled."""
+        return self.final_layers[-1](self._representation(x))[:, 0]
 
 
 DUAL_PATCH_CHANNEL_DIM = 8

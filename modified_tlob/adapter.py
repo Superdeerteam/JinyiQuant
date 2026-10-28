@@ -16,6 +16,8 @@ import torch
 from jinyiquant.io import write_json
 
 from .device import device_resources, select_device
+from .market_head import (MIN_CROSS_SECTION, cross_section_floor, head_from_payload, head_payload,
+                          market_context, text_state as _text_state, timestamp_codes)
 from .model import MLPLOB, DualPatchTLOB, ModifiedTLOB, configure_finite_check, parameter_groups
 from .schema import validate_input_schema
 
@@ -347,6 +349,12 @@ class TLOBAdapter:
         self.target_centering_stats = None
         self.time_loss_weighting_stats = None
         self.trained = False
+        # Default-off: a checkpoint without a market-context head keeps the frozen prediction
+        # path byte for byte, including the batch-size slicing of the device forward.
+        self.market_head = None
+        # Set to True only to measure the damage of scoring a fragment: a market-context
+        # head needs the whole same-timestamp cross-section in one call (see _market_residual).
+        self.allow_cross_section_fragment = False
         if recorder:
             recorder.event("training", "determinism", seed=seed, algorithms=True, cpu_threads=torch.get_num_threads(),
                            device=str(self.device),
@@ -1063,7 +1071,13 @@ class TLOBAdapter:
         """
         pool = _streaming_pool(batch)
         if pool is None:
-            return self._score(self._input(batch), batch.observed)
+            return self._score(self._input(batch), batch.observed, batch.keys)
+        if self.market_head is not None:
+            raise ValueError(
+                "A market-context head needs one materialised Batch per same-timestamp "
+                "cross-section: a streaming pool chunk is not a cross-section, so its market "
+                "summaries would be computed on an arbitrary subset. Score whole "
+                "cross-section batches (build_batch per day chunk) instead of the pool.")
         width = self.config["batch_size"]
         chunk_rows = max(width, -(-PREDICT_CHUNK_ROWS // width) * width)
         scores = np.empty(len(pool), dtype=np.float64)
@@ -1073,23 +1087,64 @@ class TLOBAdapter:
             scores[rows] = self._score(self._input(batch_chunk), batch_chunk.observed)
         return scores
 
-    def _score(self, x, observed):
+    def _score(self, x, observed, keys=None):
         """Device forward in batch-size slices, then the missing-history fallback score."""
-        scores = np.empty(len(x), dtype=np.float64)
+        raw = np.empty(len(x), dtype=np.float64)
+        hidden = (np.empty((len(x), self.network.representation_dim), dtype=np.float32)
+                  if self.market_head is not None else None)
+        if hidden is not None and keys is None:
+            raise ValueError("A market-context head needs the batch keys for its timestamps")
         self.network.eval()
         with torch.inference_mode():
             for offset in range(0, len(x), self.config["batch_size"]):
                 xb = torch.from_numpy(x[offset:offset + self.config["batch_size"]]).to(self.device)
-                scores[offset:offset + len(xb)] = self.network(xb).cpu().numpy()
-        scores *= self.target_scale
+                if hidden is None:
+                    raw[offset:offset + len(xb)] = self.network(xb).cpu().numpy()
+                else:
+                    score, state = self.network.forward_with_representation(xb)
+                    raw[offset:offset + len(xb)] = score.cpu().numpy()
+                    hidden[offset:offset + len(xb)] = state.cpu().numpy()
         missing = (observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
                    < self.preprocessing["min_history"])
+        scores = raw if hidden is None else raw + self._market_residual(hidden, keys, missing)
+        scores *= self.target_scale
         # Fallback is the fitted training-target mean. For timestamp-centered training
         # this is a relative score; no future timestamp mean or evaluation label exists here.
         scores[missing] = self.intercept
         if not np.isfinite(scores).all():
             raise FloatingPointError("Nonfinite predictions")
         return scores
+
+    def _market_residual(self, hidden, keys, missing):
+        """Market-context residual per row, evaluated once for the whole cross-section.
+
+        Rows are put in canonical ``(date, instrument)`` order before aggregating, so a
+        permutation of the batch cannot change a timestamp's summary, and a row's residual
+        depends only on its own representation and its own timestamp's summary -- never on how
+        the device forward was sliced or on any label.
+        """
+        head = self.market_head
+        order, codes, groups, counts = timestamp_codes(keys)
+        if not getattr(self, "allow_cross_section_fragment", False):
+            smallest = cross_section_floor(codes, groups)
+            if smallest < MIN_CROSS_SECTION:
+                raise ValueError(
+                    f"predict() got {len(codes)} rows whose smallest same-timestamp cross-section "
+                    f"is {smallest} rows; a market-context head must see the whole cross-section in "
+                    f"one call (score each replay chunk whole, never re-chunk it). Set "
+                    f"adapter.allow_cross_section_fragment=True only to measure that damage.")
+        summary = market_context(hidden[order], codes, valid=~np.asarray(missing, dtype=bool)[order],
+                                 counts=counts, n_groups=groups)
+        with torch.inference_mode():
+            state = torch.from_numpy(np.ascontiguousarray(hidden[order])).to(self.device)
+            if head.arm == "C":
+                per_row = torch.from_numpy(np.ascontiguousarray(summary[codes])).to(self.device)
+                residual = head.delta(state, per_row)
+            else:
+                residual = head.delta(state)
+        result = np.empty(len(hidden), dtype=np.float64)
+        result[order] = residual.cpu().numpy().astype(np.float64)
+        return result
 
     def validate_training_preprocessing(self, batch, sample_mask):
         self._input(batch)
@@ -1106,7 +1161,7 @@ class TLOBAdapter:
     def _payload(self):
         if not self.trained:
             raise ValueError("Cannot save an unfitted model")
-        return {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
+        payload = {"schema_version": 3 if self.new_input_contract else (2 if self.config["target_scaling"] == "train_std" else 1),
                 "kind": self.config["kind"], "architecture": self.architecture,
                 "model_config": self.config, "preprocessing": self.preprocessing, "seed": self.seed,
                 "training_mean": self.intercept,
@@ -1120,14 +1175,20 @@ class TLOBAdapter:
                 "time_loss_weighting_stats": self.time_loss_weighting_stats,
                 "torch_version": str(torch.__version__),
                 "state_dict": {k: v.detach().cpu() for k, v in self.network.state_dict().items()}}
+        # Default-off: only a model carrying a market-context head writes this block, so every
+        # existing checkpoint keeps its exact payload layout.
+        if self.market_head is not None:
+            payload["market_head"] = head_payload(self.market_head)
+        return payload
 
     def save(self, path):
         torch.save(self._payload(), Path(path))
 
     def export_text(self, path):
         payload = self._payload()
-        payload["state_dict"] = {k: {"dtype": str(t.dtype).removeprefix("torch."), "shape": list(t.shape),
-                                     "data": t.reshape(-1).tolist()} for k, t in payload["state_dict"].items()}
+        payload["state_dict"] = _text_state(payload["state_dict"])
+        if payload.get("market_head") is not None:
+            payload["market_head"]["state_dict"] = _text_state(payload["market_head"]["state_dict"])
         Path(path).write_text(json.dumps(payload, allow_nan=False, ensure_ascii=False), encoding="utf-8")
 
     @classmethod
@@ -1196,6 +1257,12 @@ class TLOBAdapter:
             if (not isinstance(result.time_loss_weighting_stats, dict)
                     or result.time_loss_weighting_stats.get("method") != "date_decay_10d"):
                 raise ValueError("Date-weighted checkpoint is missing its training weight statistics")
+        if payload.get("market_head") is not None:
+            # Additive block: an attached residual head is rebuilt and loaded strictly, and its
+            # rows are scored through the market summary of their own timestamp.
+            result.market_head = head_from_payload(payload["market_head"],
+                                                   text_state_weights=text_state).to(result.device)
+            result.market_head.eval()
         result.trained = True
         return result
 
