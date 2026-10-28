@@ -12,3 +12,5 @@ configs/data_probe_132d_20261027_seed11_plan.json -text
 configs/data_probe_132d_20261027_seed29_plan.json -text
 configs/data_probe_132d_20261027_seed47_plan.json -text
 scripts/training_memory_preflight.py -text
+# Submission artifacts are byte-exact copies of reviewed package members.
+artifacts/submission-20261028/** -text
