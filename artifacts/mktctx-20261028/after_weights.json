@@ -1,0 +1,198 @@
+{
+ "schema_version": 1,
+ "audit": "t3 after-weights checklist",
+ "threshold": 1e-06,
+ "weights_dir": "/root/runs/mktctx-head-20261028/weights",
+ "items": [
+  {
+   "item": "weights-present",
+   "status": "pass",
+   "files": {
+    "C": [
+     "c-s11.json"
+    ],
+    "B": [
+     "b-s11.json"
+    ]
+   },
+   "state_json": {
+    "C": [],
+    "B": []
+   }
+  },
+  {
+   "item": "weights-decode",
+   "status": "pass",
+   "rule": "decoded adapter JSON vs same-named .state.json: key set, dtype, shape and every value must agree exactly",
+   "files": {
+    "c-s11.json": {
+     "status": "pass",
+     "mode": "head_payload",
+     "tensors": 6,
+     "finite": true,
+     "parameters": 12704,
+     "state_json": "armC.state.json",
+     "same_source": true,
+     "keys_complete": true,
+     "missing_in_state_json": [],
+     "extra_in_state_json": [],
+     "shape_mismatch": {},
+     "dtype_mismatch": {},
+     "bitwise_equal": true,
+     "max_abs_diff": 0.0
+    },
+    "b-s11.json": {
+     "status": "pass",
+     "mode": "head_payload",
+     "tensors": 4,
+     "finite": true,
+     "parameters": 12793,
+     "state_json": "armB.state.json",
+     "same_source": true,
+     "keys_complete": true,
+     "missing_in_state_json": [],
+     "extra_in_state_json": [],
+     "shape_mismatch": {},
+     "dtype_mismatch": {},
+     "bitwise_equal": true,
+     "max_abs_diff": 0.0
+    }
+   }
+  },
+  {
+   "item": "provenance-record",
+   "status": "pass",
+   "rule": "the .state.json record must name the same adapter JSON digest, the same head-state digest and the same parameter count",
+   "arms": {
+    "C": {
+     "record": "armC.state.json",
+     "agrees": {
+      "adapter_digest": true,
+      "head_state_digest": true,
+      "parameters": true
+     },
+     "recorded_code_sha256": {
+      "modified_tlob/adapter.py": "1a40de9fe3058ec6",
+      "modified_tlob/market_head.py": "84d141d9f83ca4cf",
+      "modified_tlob/model.py": "615d506222b79860",
+      "scripts/market_context.py": "a4237116caf158ce"
+     },
+     "code_drift_vs_live": {}
+    },
+    "B": {
+     "record": "armB.state.json",
+     "agrees": {
+      "adapter_digest": true,
+      "head_state_digest": true,
+      "parameters": true
+     },
+     "recorded_code_sha256": {
+      "modified_tlob/adapter.py": "1a40de9fe3058ec6",
+      "modified_tlob/market_head.py": "84d141d9f83ca4cf",
+      "modified_tlob/model.py": "615d506222b79860",
+      "scripts/market_context.py": "a4237116caf158ce"
+     },
+     "code_drift_vs_live": {}
+    }
+   }
+  },
+  {
+   "item": "zero-init-before-load",
+   "status": "pass",
+   "C": {
+    "parameter": "mix.weight",
+    "max_abs_at_build": 0.0
+   },
+   "B": {
+    "parameter": "layers.2.weight",
+    "max_abs_at_build": 0.0
+   }
+  },
+  {
+   "item": "residual-alive",
+   "status": "pass",
+   "residual_abs_max": 1.50754714012146,
+   "residual_std": 0.2759440541267395,
+   "nonzero_fraction": 1.0,
+   "context_effect_abs_max": 0.5401486158370972,
+   "rows": 3200,
+   "groups": 8
+  },
+  {
+   "item": "armB-ignores-context",
+   "status": "pass",
+   "bitwise_same_with_and_without_m": true,
+   "residual_abs_max": 0.5788889527320862,
+   "residual_alive": true
+  },
+  {
+   "item": "sealed-window-guard",
+   "status": "pass",
+   "splits": {
+    "train": {
+     "resolved": "t"
+    },
+    "validation": {
+     "resolved": "v"
+    },
+    "final": {
+     "raises": "ValueError: Unknown cache split 'final'; expected ['replay', 'train', 'validation']"
+    }
+   },
+   "config_importable": true
+  },
+  {
+   "item": "signature-freeze",
+   "status": "pass",
+   "drift": {}
+  },
+  {
+   "item": "full-audit",
+   "status": "pass",
+   "command": "/root/venv312/bin/python scripts/audit_market_context.py --target t1 --check all --size full --out /root/repo_featnorm/runs/mktctx-20261028/audit_trained.json",
+   "exit_code": 0,
+   "verdict": "pass",
+   "report": "runs/mktctx-20261028/audit_trained.json",
+   "tail": "  self-test nonzero_init_w       expected=zeroinit   caught=True failing=['zeroinit']\n  self-test std_unbiased         expected=formula    caught=True failing=['formula', 'zeroinit']\n  self-test dead_residual        expected=zeroinit   caught=True failing=['zeroinit']\n[audit] verdict=pass -> /root/repo_featnorm/runs/mktctx-20261028/audit_trained.json"
+  }
+ ],
+ "weights_files": {
+  "armB.state.json": {
+   "sha256": "94926741c838bdb3f4c9cf69a66a2c7f2d2c2603c27e17ce50d595d78280ef93",
+   "bytes": 411330
+  },
+  "armC.state.json": {
+   "sha256": "f42f54f129d953de7e6644dc322dd7e9eb03ad57f4703c8686e01529c8da633e",
+   "bytes": 409187
+  },
+  "b-s11.json": {
+   "sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6",
+   "bytes": 11791262
+  },
+  "c-s11.json": {
+   "sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5",
+   "bytes": 11789124
+  },
+  "package.json": {
+   "sha256": "15dccadfe9a7380b00e40d4bee3d6996f3ed352c652b03fd32c4bfdc89420adc",
+   "bytes": 731
+  }
+ },
+ "candidates": {
+  "C": [
+   "/root/runs/mktctx-head-20261028/weights/c-s11.json"
+  ],
+  "B": [
+   "/root/runs/mktctx-head-20261028/weights/b-s11.json"
+  ]
+ },
+ "signatures": {
+  "build_head": "(arm, *, represent_dim=80, width=16, context_hidden=64, scalar_hidden=156, hidden=None, ctx_dim=None)",
+  "MarketInteractionHead.delta": "(self, h, m)",
+  "ScalarResidualHead.delta": "(self, h, m=None)",
+  "market_context": "(h, group, *, valid=None, counts=None, n_groups=None)",
+  "timestamp_codes": "(keys, *, instrument_column='instrument', date_column='date')"
+ },
+ "status": "pass",
+ "elapsed_seconds": 31.86
+}

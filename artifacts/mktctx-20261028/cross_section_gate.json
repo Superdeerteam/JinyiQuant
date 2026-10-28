@@ -1,0 +1,78 @@
+{
+ "schema_version": 1,
+ "audit": "cross-section gate (MIN_CROSS_SECTION)",
+ "threshold": 1e-06,
+ "min_cross_section": 64,
+ "cases": {
+  "floor_50": {
+   "passed": true,
+   "raised": true,
+   "error": "ValueError: predict() got 242 rows whose smallest same-timestamp cross-section is 50 rows; a market-context head must see the whole cross-section in one call (score each replay chunk whole, never re-chunk it). Set adapter.allow_cross_section_fragment=True only to measure that damage.",
+   "group_sizes": [
+    96,
+    96,
+    50
+   ]
+  },
+  "boundary_63": {
+   "passed": true,
+   "raised": true,
+   "error": "ValueError: predict() got 159 rows whose smallest same-timestamp cross-section is 63 rows; a market-context head must see the whole cross-section in one call (score each replay chunk whole, never re-chunk it). Set adapter.allow_cross_section_fragment=True only to measure that damage."
+  },
+  "boundary_64": {
+   "passed": true,
+   "raised": false,
+   "max_abs": 0.013790509663522243,
+   "rows": 160
+  },
+  "fragment_allowed": {
+   "passed": true,
+   "raised": false,
+   "max_abs": 0.013150203973054886,
+   "rows": 242
+  },
+  "fragment_damage": {
+   "passed": true,
+   "whole_group_rows": 1000,
+   "fragment_rows": 50,
+   "rows_compared": 50,
+   "max_abs_residual_difference": 0.020122138783335686,
+   "note": "the same 50 rows score differently when m_t is summarised over 50 rows instead of the 1000-row cross-section: this is what the gate protects"
+  },
+  "real_replay_keys": {
+   "passed": true,
+   "raised": false,
+   "keys": "D:\\tmp\\mktctx_r8keys.parquet",
+   "rows": 80000,
+   "groups": 80,
+   "min_group": 1000,
+   "max_group": 1000,
+   "max_abs": 0.04049083590507507,
+   "error": null
+  },
+  "arm_b": {
+   "passed": true,
+   "refused_without_flag": true,
+   "passed_with_flag": true,
+   "max_abs_with_flag": 0.219939723610878
+  },
+  "no_head": {
+   "passed": true,
+   "evidence_line": 1109,
+   "note": "scores = raw when the adapter carries no market head (line above); the gate lives only in _market_residual"
+  }
+ },
+ "failures": [],
+ "verdict": "pass",
+ "elapsed_seconds": 0.68,
+ "files": {
+  "modified_tlob/adapter.py": {
+   "sha256": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "bytes": 87836
+  },
+  "modified_tlob/market_head.py": {
+   "sha256": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "bytes": 12871
+  }
+ }
+}

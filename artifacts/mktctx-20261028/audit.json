@@ -1,0 +1,2357 @@
+{
+ "schema_version": 1,
+ "audit": "market-context-head-invariance",
+ "threshold": 1e-06,
+ "target": {
+  "name": "t1",
+  "module": "modified_tlob\\market_head.py",
+  "heads": {
+   "C": "MarketInteractionHead",
+   "B": "ScalarResidualHead"
+  },
+  "summary_entry": "market_context(h, codes, valid=, counts=)",
+  "zero_init_observable": "ArmC.mix.weight",
+  "armed_from": "random residual weight (scale=0.02)",
+  "declared_interface_mismatch": [
+   "market_summary(...) does not exist (landed: market_context with integer codes)",
+   "build_head takes no seed=/device= kwargs",
+   "heads expose .delta(h, m), not forward()",
+   "zero-init weight is mix.weight, not residual_weight/residual_bias"
+  ]
+ },
+ "resolved_target": "t1",
+ "environment": {
+  "python": "3.11.16",
+  "numpy": "2.2.6",
+  "torch": "2.5.0+cpu",
+  "platform": "Windows-10-10.0.22621-SP0",
+  "git_head": "ca76d91443ffd1ed2adbfe4173899094eacc8888",
+  "torch_threads": 1
+ },
+ "audited_files": {
+  "modified_tlob\\market_head.py": {
+   "sha256": "3cf403487f597ec05337d5cd5b042baec08ebff6ea16cb06aca7454c5dd5e91c",
+   "bytes": 11172,
+   "mtime": 1793183189128339700
+  },
+  "scripts\\market_context.py": {
+   "sha256": "67f13d975061a5e23d06992fd98aaa14feb94e7f13500f99ff48424947d83a4a",
+   "bytes": 36574,
+   "mtime": 1793184050865233300
+  },
+  "modified_tlob\\model.py": {
+   "sha256": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742",
+   "bytes": 17032,
+   "mtime": 1793183198808984300
+  }
+ },
+ "findings": [
+  {
+   "id": "interface-drift",
+   "severity": "info",
+   "summary": "The landed market_head.py API differs from the interface announced in the team channel; this audit targets the landed code.",
+   "detail": {
+    "announced": [
+     "market_summary(h, group, valid)",
+     "build_head(arm, hidden=, ctx_dim=, seed=, device=)",
+     "heads expose forward()",
+     "zero-init on residual_weight/residual_bias",
+     "MLPLOB.score_from_representation"
+    ],
+    "landed": [
+     "market_context(h, codes, valid=, counts=, n_groups=)",
+     "build_head(arm, represent_dim=80, width=16, context_hidden=64, scalar_hidden=156)",
+     "heads expose delta(h, m) / delta(h) returning a residual only",
+     "zero-init on Member.mix.weight (arm C) and layers[-1] (arm B)",
+     "no score_from_representation; use represent() + final_layers[-1]"
+    ]
+   },
+   "impact": "Any downstream code written against the announced names raises AttributeError/TypeError, not a silently wrong number."
+  },
+  {
+   "id": "replay-split-unreachable",
+   "severity": "medium",
+   "file": "scripts/market_context.py",
+   "line": 81,
+   "summary": "split_of() accepts only train/validation, but the cache entry point defaults to --splits train,replay and builds cache/replay.",
+   "lines_involved": {
+    "guard": "81-83",
+    "iterate": "368",
+    "cache_path": "597",
+    "cli_default": "646"
+   },
+   "evidence": "scripts/audit_market_pipeline.py probe 'split_guard': final -> ValueError: Unknown split 'final' (sealed window correctly unreachable), replay -> ValueError: Unknown split 'replay'.",
+   "impact": "`market_context.py cache` with its default arguments cannot complete, so the replay cache the ten-window comparison needs is not produced by the documented command. Fix before t4 depends on it."
+  },
+  {
+   "id": "nonfinite-guard-is-global",
+   "severity": "low",
+   "file": "modified_tlob/market_head.py",
+   "line": 107,
+   "summary": "market_context raises FloatingPointError when any row of h is non-finite, including rows the caller marked valid=False.",
+   "detail": "The pipeline derives valid from bar history (effective_count >= min_history), not from finiteness, so one NaN representation returned by the frozen trunk aborts the entire timestamp table instead of dropping that row.",
+   "impact": "No leakage or unfairness, but a crash where the caller would prefer an excluded row. Callers should pass valid & isfinite(h).all(1)."
+  },
+  {
+   "id": "coverage-degenerate-without-counts",
+   "severity": "low",
+   "file": "modified_tlob/market_head.py",
+   "line": 85,
+   "summary": "counts=None makes the coverage denominator the number of rows present in h, so a caller that materialises only usable rows always sees coverage 1.0 and the third context channel carries no information.",
+   "detail": "scripts/market_context.py:203-204 passes counts from the prediction universe, which is why the audited path is not degenerate.",
+   "impact": "Silent feature loss if a future caller forgets counts."
+  },
+  {
+   "id": "representation-noise-margin",
+   "severity": "info",
+   "summary": "The frozen trunk's own batching noise on the 80-dim representation is 8.34e-7 (1.2x under the gate) versus 1.6e-7 on the score.",
+   "detail": "This is float32 GEMM blocking inside MLPLOB.forward_with_representation, not the market head: the head sees h that is extracted once. Any replay comparison across chunk sizes must use a >=1e-6 tolerance, never bitwise equality on the representation.",
+   "impact": "Batch-size-dependent bits in the representation do not change the reported scores beyond 1.6e-7."
+  },
+  {
+   "id": "trained-artifact-missing",
+   "severity": "info",
+   "summary": "runs/market-context-441d-s11/armC.pt and armC.state.json are absent, so the 'trained residual is non-zero' leg was measured on a 60-step proxy training run, not on the delivered head.",
+   "impact": "Re-run --check zeroinit once the trained head lands; the step-0 identity and the gradient-at-step-0 (>0) are already proven on the real class.",
+   "resolved": true,
+   "resolution": {
+    "delivered": [
+     "b-s11.json 64ec8c68bcaf",
+     "c-s11.json a54c307ec99b"
+    ],
+    "notes": "both arms load, parameters 12,793 / 12,704 match the delivery, provenance records byte-equal the adapter JSON, and the trained C passes the full six-item audit (see phase_b.after_weights)"
+   }
+  }
+ ],
+ "pipeline_audit": {
+  "report": "runs\\mktctx-20261028\\pipeline.json",
+  "script": "scripts/audit_market_pipeline.py",
+  "verdict": "pass",
+  "max_abs_deviation": 8.344650268554688e-07,
+  "module_sha256": "67f13d975061a5e23d06992fd98aaa14feb94e7f13500f99ff48424947d83a4a",
+  "trunk_forward_slice_rows": {
+   "32": 8.344650268554688e-07,
+   "256": 6.258487701416016e-07,
+   "8192": 0.0
+  },
+  "extract_part_rows": {
+   "1500": 6.258487701416016e-07,
+   "400": 8.344650268554688e-07,
+   "111": 2.682209014892578e-07
+  },
+  "context_table_block": {
+   "1": 0.0,
+   "7": 0.0,
+   "1000": 0.0
+  },
+  "future_shock": {
+   "max_abs": 0.0,
+   "mean_abs": 0.0,
+   "nan_mismatch": 0,
+   "compared": 1932,
+   "nonfinite_mismatch": false
+  },
+  "split_guard": {
+   "train": {
+    "resolved": "'t'"
+   },
+   "validation": {
+    "resolved": "'v'"
+   },
+   "final": {
+    "raises": "ValueError: Unknown split 'final'"
+   },
+   "replay": {
+    "raises": "ValueError: Unknown split 'replay'"
+   }
+  }
+ },
+ "checks": {
+  "formula": {
+   "check": "formula",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 4.6213613380530205e-08,
+   "against_reference": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3864000
+    },
+    "coverage": {
+     "max_abs": 2.95639037695139e-08,
+     "max_abs_finite": 2.95639037695139e-08,
+     "mean_abs": 1.2417634332832309e-08,
+     "p99_abs": 2.95639037695139e-08,
+     "nan_mismatch": 0,
+     "compared": 24000
+    }
+   },
+   "against_numpy_one_shot": {
+    "group": 13,
+    "valid_rows": 819,
+    "pool": 1000,
+    "mean": 4.6213613380530205e-08,
+    "std": 2.93528749084615e-08,
+    "coverage": 5.7220459481754915e-09
+   },
+   "ddof0_vs_ddof1_gap": 0.0005085564492769423,
+   "note": "Order/batch invariance only proves m is well defined, not that it is the contracted statistic; this compares it to two independent implementations.",
+   "repro": "--check formula"
+  },
+  "permute": {
+   "check": "permute",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "rows": 24000,
+   "groups": 24,
+   "instruments_per_group": 1000,
+   "reads": [
+    {
+     "read": 1,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 2,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 3,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 4,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 5,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    }
+   ],
+   "float32_reduction_noise_floor": null,
+   "repro": "--check permute"
+  },
+  "batch": {
+   "check": "batch",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 5.3551048040390015e-09,
+   "per_chunk_m_max_abs_deviation": 0.003546709194779396,
+   "per_chunk_m_amplification": 662304.3478260869,
+   "rows": 24000,
+   "per_batch": {
+    "32": {
+     "chunks": 750,
+     "whole_pool_m": {
+      "max_abs": 5.3551048040390015e-09,
+      "max_abs_finite": 5.3551048040390015e-09,
+      "mean_abs": 4.974390321876854e-11,
+      "p99_abs": 1.3969838619232178e-09,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.003546709194779396,
+      "max_abs_finite": 0.003546709194779396,
+      "mean_abs": 0.00040047577292292165,
+      "p99_abs": 0.0016908795922063282,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    "256": {
+     "chunks": 94,
+     "whole_pool_m": {
+      "max_abs": 3.4924596548080444e-09,
+      "max_abs_finite": 3.4924596548080444e-09,
+      "mean_abs": 9.077969783296188e-12,
+      "p99_abs": 3.4924596548080444e-10,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.0026674456894397736,
+      "max_abs_finite": 0.0026674456894397736,
+      "mean_abs": 0.00013953382094708408,
+      "p99_abs": 0.00060658979229629,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    "8192": {
+     "chunks": 3,
+     "whole_pool_m": {
+      "max_abs": 1.3969838619232178e-09,
+      "max_abs_finite": 1.3969838619232178e-09,
+      "mean_abs": 1.1156468341747919e-13,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.0005852135363966227,
+      "max_abs_finite": 0.0005852135363966227,
+      "mean_abs": 5.390154271784316e-06,
+      "p99_abs": 0.00015349416236858766,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    }
+   },
+   "note": "per_chunk_m is the design contrast: a head that recomputes the market pool per inference chunk is not batch invariant, which is why m_t has to be built once over the whole timestamp pool.",
+   "repro": "--check batch"
+  },
+  "represent": {
+   "check": "represent",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 8.344650268554688e-07,
+   "rows": 2500,
+   "per_batch": {
+    "32": {
+     "chunks": 79,
+     "representation": {
+      "max_abs": 8.344650268554688e-07,
+      "max_abs_finite": 8.344650268554688e-07,
+      "mean_abs": 6.601639001928561e-09,
+      "p99_abs": 1.2665987014770508e-07,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 1.6391277313232422e-07,
+      "max_abs_finite": 1.6391277313232422e-07,
+      "mean_abs": 1.1681020259857178e-08,
+      "p99_abs": 7.458031177520576e-08,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    },
+    "256": {
+     "chunks": 10,
+     "representation": {
+      "max_abs": 6.258487701416016e-07,
+      "max_abs_finite": 6.258487701416016e-07,
+      "mean_abs": 4.002556306659244e-10,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 1.564621925354004e-07,
+      "max_abs_finite": 1.564621925354004e-07,
+      "mean_abs": 3.397464752197266e-10,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    },
+    "8192": {
+     "chunks": 1,
+     "representation": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    }
+   },
+   "sensitivity_control_max_abs": 0.6076366305351257,
+   "represent_forward_compat": {
+    "represent_vs_independent_trunk": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 200000
+    },
+    "represent_then_head_vs_forward": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 2500
+    },
+    "forward_with_representation_rep_vs_represent": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 200000
+    },
+    "forward_with_representation_score_vs_forward": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 2500
+    }
+   },
+   "note": "Batch-size dependence here would make the frozen representations (and hence base scores) depend on the inference chunking, before any market context is involved.",
+   "repro": "--check represent"
+  },
+  "pool": {
+   "check": "pool",
+   "passed": true,
+   "threshold": 1e-06,
+   "coverage_without_counts": {
+    "coverage_min": 0.782,
+    "coverage_max": 0.819,
+    "reading": "all-ones coverage means the summary counts only the rows it was handed: the pool size must be supplied by the caller"
+   },
+   "max_abs_deviation": 0.0,
+   "fallback_removal": {
+    "dropped_rows": 480,
+    "kept_rows": 23520,
+    "dropped_kind": "fallback (no history)",
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3786720
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 23520
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 23520
+    }
+   },
+   "fallback_addition": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3864000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 24000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 24000
+    },
+    "added_fallback_rows": 2400
+   },
+   "eligible_removal": {
+    "dropped_rows": 1920,
+    "kept_rows": 22080,
+    "dropped_kind": "eligible (in pool)",
+    "m": {
+     "max_abs": 0.025465622544288635,
+     "max_abs_finite": 0.025465622544288635,
+     "mean_abs": 0.004532626308242304,
+     "p99_abs": 0.017495542764663696,
+     "nan_mismatch": 0,
+     "compared": 3554880
+    },
+    "coverage": {
+     "max_abs": 0.020601749420166016,
+     "max_abs_finite": 0.020601749420166016,
+     "mean_abs": 0.017339442373401875,
+     "p99_abs": 0.020601749420166016,
+     "nan_mismatch": 0,
+     "compared": 22080
+    },
+    "score_c": {
+     "max_abs": 0.00017068814486265182,
+     "max_abs_finite": 0.00017068814486265182,
+     "mean_abs": 2.4639914277426925e-05,
+     "p99_abs": 9.093541186302896e-05,
+     "nan_mismatch": 0,
+     "compared": 22080
+    }
+   },
+   "nonfinite_fallback_probe": {
+    "raises": true,
+    "error": "FloatingPointError: Nonfinite market context"
+   },
+   "coverage_semantics_probe": {
+    "observed_median_coverage": 0.8005000352859497,
+    "expected_if_valid_over_pool": 0.8,
+    "reading": "0.8 means coverage = finite representation / timestamp pool; anything else needs the definition spelled out"
+   },
+   "note": "Dropping fallback (no-history) rows must be invisible to the surviving stocks. Dropping genuinely pooled rows is expected to move the market summary; its size is reported as context, not as a failure.",
+   "repro": "--check pool"
+  },
+  "lookahead": {
+   "check": "lookahead",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "cutoff_group": 21,
+   "earlier_rows": 22000,
+   "future_rows_shocked": 2000,
+   "future_shock": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3542000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    }
+   },
+   "future_deleted": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3542000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    }
+   },
+   "note": "Shocking or deleting everything after the cutoff must leave the earlier predictions bitwise unchanged. A global (cross-timestamp) standard deviation or any backward fill fails here.",
+   "repro": "--check lookahead"
+  },
+  "label": {
+   "check": "label",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "labels_missing": 4800,
+   "labels_missing_m": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 3864000
+   },
+   "labels_missing_score": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "labels_randomised_m": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 3864000
+   },
+   "labels_randomised_score": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "note": "Labels may change the loss and the evaluation sample only. A market summary that inner-joins labels first silently shrinks the pool whenever a label is missing, which moves every surviving stock's score.",
+   "repro": "--check label"
+  },
+  "zeroinit": {
+   "check": "zeroinit",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "step0_C_vs_A": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "step0_identity_bitwise": true,
+   "residual_weight_max_abs_at_step0": 0.0,
+   "gradient_max_abs_at_step0": {
+    "project.weight": 0.0,
+    "context.0.weight": 0.0,
+    "context.0.bias": 0.0,
+    "context.2.weight": 0.0,
+    "context.2.bias": 0.0,
+    "mix.weight": 4.771444946527481e-05
+   },
+   "residual_weight_gradient_at_step0": 4.771444946527481e-05,
+   "after_micro_training": {
+    "steps": 60,
+    "lr": 0.05,
+    "residual_abs_max": 0.0574905201792717,
+    "residual_std": 0.010818405556990747,
+    "nonzero_fraction": 0.9999583333333333,
+    "context_effect_abs_max": 0.02345476858317852,
+    "alive": true
+   },
+   "trained_checkpoint": null,
+   "repro": "--check zeroinit"
+  },
+  "wiring": {
+   "check": "wiring",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "grouping_probe": {
+    "expected_groups": 24,
+    "rows": 1200,
+    "groups_with_date_only_key": 3,
+    "groups_with_combined_stamp_key": 24,
+    "date_only_collapses_day": true,
+    "stamp_keeps_timestamps": true
+   },
+   "sealed_window_hits": {},
+   "deferred": [
+    "runs/market-context-441d-s11/armC.* missing: residual liveness is measured on a micro-trained head, not on the delivered weights"
+   ],
+   "note": "If the pipeline hands over a date-only key column, one group covers a whole day and the same-timestamp requirement fails by wiring, not by arithmetic.",
+   "repro": "--check wiring"
+  }
+ },
+ "failures": [],
+ "static_scan": {
+  "modified_tlob\\market_head.py": {
+   "zero_init": [
+    {
+     "line": 92,
+     "text": "context = np.zeros((n_groups, 2 * width + 1), dtype=np.float64)"
+    },
+    {
+     "line": 93,
+     "text": "sums = np.zeros((n_groups, width), dtype=np.float64)"
+    },
+    {
+     "line": 94,
+     "text": "squares = np.zeros((n_groups, width), dtype=np.float64)"
+    },
+    {
+     "line": 105,
+     "text": "context[:, 2 * width] = np.divide(seen, total, out=np.zeros(n_groups), where=total > 0)"
+    },
+    {
+     "line": 147,
+     "text": "nn.init.zeros_(self.mix.weight)"
+    },
+    {
+     "line": 169,
+     "text": "nn.init.zeros_(self.layers[-1].weight)"
+    },
+    {
+     "line": 170,
+     "text": "nn.init.zeros_(self.layers[-1].bias)"
+    }
+   ]
+  },
+  "scripts\\market_context.py": {
+   "sealed_window": [
+    {
+     "line": 49,
+     "text": "DEFAULT_WEIGHTS = \"/root/weights/sealed/cand/cand_s11_264.json\""
+    }
+   ],
+   "chunking": [
+    {
+     "line": 62,
+     "text": "def file_sha256(path, chunk=1 << 24):"
+    },
+    {
+     "line": 65,
+     "text": "for block in iter(lambda: handle.read(chunk), b\"\"):"
+    },
+    {
+     "line": 125,
+     "text": "for start in range(0, len(x), slice_rows):"
+    },
+    {
+     "line": 133,
+     "text": "def day_chunk(keys, days, *, first=0):"
+    },
+    {
+     "line": 134,
+     "text": "\"\"\"Keys of the ``first``-th..``days``-th trading day, like the replay script's chunks.\"\"\""
+    },
+    {
+     "line": 140,
+     "text": "def reference_scores(adapter, batch, batch_size):"
+    },
+    {
+     "line": 146,
+     "text": "for start in range(0, len(x), batch_size):"
+    },
+    {
+     "line": 147,
+     "text": "xb = torch.from_numpy(x[start:start + batch_size]).to(adapter.device)"
+    },
+    {
+     "line": 210,
+     "text": "for start in range(0, len(timestamps), block):"
+    },
+    {
+     "line": 225,
+     "text": "for start in range(0, total, part_rows):"
+    },
+    {
+     "line": 392,
+     "text": "def train_arm(arm, cached, *, steps, batch_size, lr, seed, device, log_every):"
+    },
+    {
+     "line": 411,
+     "text": "take = min(batch_size, total - cursor)"
+    },
+    {
+     "line": 438,
+     "text": "return head.eval(), {\"arm\": arm, \"steps\": steps, \"batch_size\": batch_size, \"lr\": lr,"
+    },
+    {
+     "line": 452,
+     "text": "steps=args.steps, arms=args.arms, lr=args.lr, batch_size=args.batch_size)"
+    },
+    {
+     "line": 456,
+     "text": "\"recipe\": {\"optimizer\": \"Adam\", \"lr\": args.lr, \"batch_size\": args.batch_size,"
+    },
+    {
+     "line": 462,
+     "text": "head, record = train_arm(arm, cached, steps=args.steps, batch_size=args.batch_size,"
+    },
+    {
+     "line": 467,
+     "text": "adapter.config[\"batch_size\"] = int(args.batch_size)"
+    },
+    {
+     "line": 494,
+     "text": "keys = day_chunk(inference_keys(bundle, split, config.data), args.days)"
+    },
+    {
+     "line": 506,
+     "text": "adapter.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 508,
+     "text": "reference = reference_scores(adapters[\"A\"], batch, args.batch_size)"
+    },
+    {
+     "line": 523,
+     "text": "fresh.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 557,
+     "text": "adapter.config[\"batch_size\"] = width"
+    },
+    {
+     "line": 568,
+     "text": "width_check[\"a_reference_bitwise\"] = max_abs(per_width[\"A\"][args.batch_size], reference)"
+    },
+    {
+     "line": 569,
+     "text": "report[\"checks\"][\"3_batch_size_invariance\"] = width_check"
+    },
+    {
+     "line": 571,
+     "text": "adapter.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 619,
+     "text": "for start in range(0, len(x), args.batch_size):"
+    },
+    {
+     "line": 620,
+     "text": "xb = torch.from_numpy(x[start:start + args.batch_size]).to(args.device)"
+    },
+    {
+     "line": 632,
+     "text": "report[\"checks\"][\"3_batch_size_invariance\"][\"per_arm_max_abs_diff\"].values())"
+    },
+    {
+     "line": 633,
+     "text": "and report[\"checks\"][\"3_batch_size_invariance\"][\"c_residual_max_abs_diff\"] == 0.0"
+    }
+   ],
+   "label_inner_join": [
+    {
+     "line": 83,
+     "text": "return hashlib.sha256(\"\\n\".join(lines).encode(\"utf-8\")).hexdigest()"
+    },
+    {
+     "line": 274,
+     "text": "mapping = rows_keys[[\"date\", \"instrument\"]].merge("
+    },
+    {
+     "line": 284,
+     "text": "aligned = keys.merge(labels, on=[\"date\", \"instrument\"], how=\"left\", validate=\"one_to_one\")"
+    },
+    {
+     "line": 604,
+     "text": "report[\"checks\"][\"5_unit_tests\"] = {\"command\": \" \".join(command),"
+    },
+    {
+     "line": 613,
+     "text": "joined = batch.keys[[\"date\", \"instrument\"]].assign(_row=np.arange(len(batch.keys))).merge("
+    }
+   ],
+   "zero_init": [
+    {
+     "line": 209,
+     "text": "context = np.zeros((len(timestamps), market_head.CONTEXT_DIM), dtype=np.float64)"
+    },
+    {
+     "line": 524,
+     "text": "probe = torch.zeros((16, market_head.REPRESENTATION_DIM), dtype=torch.float32,"
+    },
+    {
+     "line": 525,
+     "text": "device=args.device), torch.zeros((16, market_head.CONTEXT_DIM),"
+    }
+   ],
+   "aggregate": [
+    {
+     "line": 264,
+     "text": "union = (union.groupby([\"date\", \"instrument\"], as_index=False)"
+    },
+    {
+     "line": 340,
+     "text": "\"coverage_mean\": float(context[:, -1].mean()),"
+    },
+    {
+     "line": 421,
+     "text": "loss = torch.mean((batch_base + delta - batch_target) ** 2)"
+    }
+   ]
+  }
+ },
+ "self_test": {
+  "passed": true,
+  "rows": [
+   {
+    "mutant": "per_chunk_m",
+    "expected_check": "batch",
+    "failing_checks": [
+     "batch",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.8633055643444436e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 1.862645149230957e-09
+     },
+     "batch": {
+      "passed": false,
+      "max_abs": 0.0025755594251677394
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 1.3969838619232178e-09
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "label_dropna",
+    "expected_check": "label",
+    "failing_checks": [
+     "label",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.8633055643444436e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 2.0954757928848267e-09
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 3.259629011154175e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 1.3969838619232178e-09
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": false,
+      "max_abs": Infinity
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "fallback_in_pool",
+    "expected_check": "pool",
+    "failing_checks": [
+     "formula",
+     "pool",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.23000001907348633
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 1.862645149230957e-09
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 3.3760443329811096e-09
+     },
+     "pool": {
+      "passed": false,
+      "max_abs": 0.3815932720899582
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "global_std",
+    "expected_check": "lookahead",
+    "failing_checks": [
+     "formula",
+     "lookahead",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 1.5046620965003967
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 9.5367431640625e-07
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 3.026798367500305e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 1.862645149230957e-09
+     },
+     "lookahead": {
+      "passed": false,
+      "max_abs": 0.4244906008243561
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "float32_loop_order",
+    "expected_check": "permute",
+    "failing_checks": [
+     "formula",
+     "permute",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.0027336478233337402
+     },
+     "permute": {
+      "passed": false,
+      "max_abs": 1.0728836059570312e-06
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 2.7939677238464355e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 8.149072527885437e-10
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "nonzero_init_w",
+    "expected_check": "zeroinit",
+    "failing_checks": [
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.8633055643444436e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 3.14321368932724e-09
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 4.6566128730773926e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 4.656612873077393e-10
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.025637174025177956
+     }
+    }
+   },
+   {
+    "mutant": "std_unbiased",
+    "expected_check": "formula",
+    "failing_checks": [
+     "formula",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.0027336478233337402
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 3.259629011154175e-09
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 4.423782229423523e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 9.313225746154785e-10
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "dead_residual",
+    "expected_check": "zeroinit",
+    "failing_checks": [
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.8633055643444436e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 2.7939677238464355e-09
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 4.6566128730773926e-09
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 3.026798367500305e-09
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   }
+  ],
+  "note": "Each mutant breaks exactly one invariance; the check named in expected_check must report >1e-6 for that mutant."
+ },
+ "verdict": "pass",
+ "elapsed_seconds": 54.64,
+ "repro_command": "python scripts/audit_market_context.py --target t1 --check all --size full",
+ "split_fix_audit": {
+  "schema_version": 1,
+  "phase": "A — independent verification of the split_of fix (not the author's tests)",
+  "audited_file": "scripts/market_context.py",
+  "audited_sha256": "1599ba91a0538e916529c347f582b460172d3e94da30a95743c6c28217b9f11e",
+  "audited_bytes": 42902,
+  "host": "ZBzdgJ (ssh -p 27794 root@hz-4.matpool.com), repo /root/repo_featnorm, venv /root/venv312",
+  "verdict": "fix confirmed for every path t4 needs, re-certified on the current revision 1599ba91; one residual defect F1 (interrupt before the first split completes leaves a manifest-less directory) and one low-severity F2 (part cache has no identity check)",
+  "revision_churn": [
+   {
+    "sha256": "67f13d975061a5e23d06992fd98aaa14feb94e7f13500f99ff48424947d83a4a",
+    "bytes": 36574,
+    "note": "pre-fix revision certified by the six-item audit above"
+   },
+   {
+    "sha256": "f663694278f2105250afb1d7a3dee552c1d8b029f0118d121f6fc0eee07f7fbc",
+    "bytes": 42641,
+    "mtime_utc": "2026-10-28T10:53:15Z",
+    "note": "split_of fix landed mid-audit; runs r1-r4 were built under it"
+   },
+   {
+    "sha256": "e3683db2c7946fa395b4d6add8aac571fec0685dcfdc1cced56c37934cc73676",
+    "bytes": 42904,
+    "mtime_utc": "2026-10-28T10:56:47Z",
+    "note": "current revision; runs r5-r7 are pinned to it (sha checked before and after every run)"
+   }
+  ],
+  "commands": [
+   "/root/venv312/bin/python scripts/market_context.py cache --cache /root/cache/audit-t5/r5 --out /mnt/work/audit-t5/r5 --splits replay",
+   "/root/venv312/bin/python scripts/market_context.py cache --cache /root/cache/audit-t5/r6 --out /mnt/work/audit-t5/r6 --splits replay   # killed at 15 s",
+   "/root/venv312/bin/python scripts/market_context.py cache --cache /root/cache/audit-t5/r7 --out /mnt/work/audit-t5/r7 --splits train,replay --max-days 1   # killed after the first split"
+  ],
+  "replay_cache": {
+   "exit_code": 0,
+   "sha_before_after": [
+    "e3683db2c7946fa395b4d6add8aac571fec0685dcfdc1cced56c37934cc73676",
+    "e3683db2c7946fa395b4d6add8aac571fec0685dcfdc1cced56c37934cc73676"
+   ],
+   "cache_dir": "/root/cache/audit-t5/r5",
+   "manifest": {
+    "complete": true,
+    "splits": [
+     "replay"
+    ],
+    "rows": 80000,
+    "timestamps": 80,
+    "days": 10,
+    "start": "2023-11-01",
+    "end": "2023-11-15",
+    "parts_retained": false,
+    "coverage_mean": 0.999,
+    "coverage_min": 0.999,
+    "cross_section_keys": 80000,
+    "rows_min": 1000,
+    "rows_max": 1000,
+    "labels_finite": 79920,
+    "labels_rows": 80000,
+    "keys_sha256": "17655258f2052923..."
+   },
+   "independent_rederivation": {
+    "keys_rows": 80000,
+    "distinct_days": 10,
+    "distinct_timestamps": 80,
+    "context_shape": [
+     80,
+     161
+    ],
+    "context_coverage_mean": 0.999,
+    "h_shape": [
+     80000,
+     80
+    ],
+    "h_finite": true
+   },
+   "determinism": "keys_sha256 and every array digest identical between the two builds r1/f663694 and r2/f663694, and keys_sha256 identical again under r5/e3683db2 -> the key set and representations do not depend on the revision of the manifest code",
+   "deviation_from_brief": "ran --splits replay, not the default train,replay: the acceptance numbers (80000 rows / 80 timestamps / 10 days / 0.999) are the replay split's, and the 441-day train split was already being extracted by the in-flight job pid 822 (started 18:47:40, i.e. under the pre-fix module). The parser default is still train,replay and both roles resolve through the same split_of path.",
+   "on_current_sha_r8": {
+    "sha_before_after": [
+     "1599ba91a0538e916529c347f582b460172d3e94da30a95743c6c28217b9f11e",
+     "1599ba91a0538e916529c347f582b460172d3e94da30a95743c6c28217b9f11e"
+    ],
+    "command": "cache --config configs/scaling_441d_csz_seed11.json --cache /root/cache/audit-t5/r8 --out /mnt/work/audit-t5/r8 --splits replay",
+    "exit_code": 0,
+    "cache_root_manifest": {
+     "complete": true,
+     "keys": [
+      "complete",
+      "config",
+      "config_sha256",
+      "generated_utc",
+      "splits",
+      "torch",
+      "weights",
+      "weights_sha256"
+     ],
+     "config_sha256": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
+     "weights_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+    },
+    "per_split_manifest": {
+     "rows": 80000,
+     "timestamps": 80,
+     "days": 10,
+     "start": "2023-11-01 00:00:00",
+     "end": "2023-11-15 00:00:00",
+     "context": {
+      "coverage_mean": 0.999,
+      "coverage_min": 0.999,
+      "cross_section_keys": 80000
+     },
+     "labels": {
+      "finite": 79920,
+      "rows": 80000
+     },
+     "parts_retained": false,
+     "part_rows": 65536,
+     "seconds": 40.3,
+     "keys_sha256": "17655258f20529234707505a9052ef5411beced0c3addbd55872b29518842999"
+    },
+    "independent_rederivation": {
+     "h_shape": [
+      80000,
+      80
+     ],
+     "h_finite": true,
+     "h_dtype": "float32",
+     "base_shape": [
+      80000
+     ],
+     "base_finite": true,
+     "context_shape": [
+      80,
+      161
+     ],
+     "coverage_min": 0.999,
+     "coverage_mean": 0.999,
+     "context_mean_std_finite": true,
+     "keys_rows": 80000,
+     "distinct_days": 10,
+     "distinct_timestamps": 80,
+     "context_count_sum": 80000,
+     "first_two_timestamps": [
+      "2023-11-01T09:30:00",
+      "2023-11-01T10:00:00"
+     ],
+     "manifest_agreement": true
+    },
+    "determinism": "keys_sha256 17655258f2052923... is identical for the builds on e3683db2 (r1/r2/r5) and on 1599ba91 (r8): the replay key set and context do not depend on the revision",
+    "schema_change_note": "on 1599ba91 the aggregate manifest (cache_root/manifest.json) carries complete + config_sha256 + weights_sha256, while the per-split manifest carries rows/timestamps/days/context/labels; on e3683db2 the complete flag was on the per-split manifest. Both satisfy the invariant 'a finished cache has complete=true'."
+   },
+   "default_args_r10": {
+    "purpose": "exercise the DEFAULT two-split argument path that used to raise on 'replay'",
+    "command": "cache --config configs/scaling_441d_csz_seed11.json --cache /root/cache/audit-t5/r10 --out /mnt/work/audit-t5/r10 --splits train,replay --max-days 1",
+    "exit_code": 0,
+    "manifest": {
+     "complete": true,
+     "splits": [
+      "replay",
+      "train"
+     ],
+     "replay": {
+      "rows": 8000,
+      "timestamps": 8,
+      "days": 1,
+      "parts_retained": false
+     },
+     "train": {
+      "rows": 7976,
+      "timestamps": 8,
+      "days": 1,
+      "parts_retained": false
+     }
+    },
+    "note": "--max-days 1 truncates both splits (8000/7976 rows, 8 stamps, 1 day) so the check stays a two-minute smoke test; the full-window replay numbers are r8 above."
+   }
+  },
+  "interrupt": {
+   "r6_mid_first_split": {
+    "killed_after_s": 15,
+    "dirs": [
+     "<cache_root>",
+     "<cache_root>/replay",
+     "<cache_root>/replay/parts"
+    ],
+    "manifest_json_count": 0,
+    "invariant": "FAIL — a cache directory exists with no manifest"
+   },
+   "r7_after_first_split": {
+    "killed_after": "manifest.json appeared (20 s)",
+    "manifest_present": true,
+    "complete_present": false,
+    "splits": [
+     "train"
+    ],
+    "replay_dir": "partially created",
+    "invariant": "PASS — manifest exists and complete is absent"
+   },
+   "write_json_atomic": true,
+   "r9_current_sha": {
+    "sha": "1599ba91a0538e916529c347f582b460172d3e94da30a95743c6c28217b9f11e",
+    "killed_after_seconds": 12,
+    "kill_signal": "SIGKILL",
+    "exit": 137,
+    "dirs_left": [
+     "/root/cache/audit-t5/r9",
+     "/root/cache/audit-t5/r9/replay",
+     "/root/cache/audit-t5/r9/replay/parts"
+    ],
+    "manifests_found": 0,
+    "invariant_holds": false,
+    "note": "same first-split window as r6 on e3683db2: F1 is not revision-specific"
+   }
+  },
+  "split_of": {
+   "signature": "split_of(config, name)",
+   "windows": {
+    "train": "2022-01-04 .. 2023-11-01",
+    "validation": "2023-11-01 .. 2023-11-15",
+    "replay": "2023-11-01 .. 2023-11-15 (maps to validation)"
+   },
+   "refusals": {
+    "final": "ValueError: Unknown cache split 'final'; expected ['replay', 'train', 'validation']",
+    "FINAL": "ValueError: Unknown cache split 'FINAL'",
+    "bogus": "ValueError: Unknown cache split 'bogus'",
+    "''": "ValueError: Unknown cache split ''"
+   },
+   "guard_lines": "scripts/market_context.py:90-100 (roles at :98, raise at :100)"
+  },
+  "findings": [
+   {
+    "id": "F1",
+    "severity": "medium",
+    "problem": "cache_split creates the split directory and its parts/ at :262 but writes its manifest.json only at :367; cache_stage writes cache_root/manifest.json only after a split returns (:399) and only then sets complete (:400-401). A kill during the first split therefore leaves a cache tree with zero manifest.json (measured r6 on e3683db2 and r9 on 1599ba91).",
+    "empirical": "r6: kill at 15 s -> 3 directories, 0 manifest.json",
+    "impact": "an interrupted build leaves inert directories (no silent contamination: load_cache requires manifest.json at :203 and the train/check stages guard with (cached_path/'manifest.json').exists() at :687)",
+    "required_fix": "write cache_root/manifest.json with complete=false immediately after cache_root.mkdir (before the first split) and refresh it after each split; refuse to start when a split directory exists without its manifest.json (stale/partial build)",
+    "file": "scripts/market_context.py",
+    "lines": [
+     262,
+     367,
+     399,
+     400,
+     401
+    ]
+   },
+   {
+    "id": "F2",
+    "severity": "low",
+    "problem": "_extract reuses {name}_{start:07d}_{stop:07d}.npz purely by filename and shape (:240-246) with no config/weights digest; a stale part left by an interrupted run with the same row count is silently reused (measured: a fabricated part with h=9.5 was returned without invoking the trunk). The manifest now records config_sha256 and weights_sha256, but nothing checks them before reusing parts.",
+    "empirical": "a fabricated part file with h=9.5 was returned by _extract without calling the trunk (probe on ZBzdgJ)",
+    "impact": "only reachable after an interruption that left parts behind (drop_parts removes them on success)",
+    "required_fix": "put config_sha256/weights_sha256 (or a short prefix) in the part filename or verify them against the manifest before reuse",
+    "file": "scripts/market_context.py",
+    "lines": [
+     240,
+     241,
+     242,
+     243,
+     244,
+     245,
+     246,
+     256
+    ]
+   },
+   {
+    "id": "F3",
+    "severity": "low",
+    "file": "scripts/market_context.py",
+    "problem": "the file changed four times while Phase A was running (67f13d9 -> f663694 -> e3683db2 -> 1599ba91, 42,641 -> 42,904 -> 42,902 bytes); every phase-A number above is pinned to an explicit sha_before_after pair, and the t4 run must pin one sha in its manifest because the revision now moves under the audit.",
+    "required_fix": "freeze scripts/market_context.py + modified_tlob/market_head.py for the t4 replay and record their sha256 in the run manifest",
+    "lines": []
+   }
+  ],
+  "not_blocking_t4": "the replay cache that t4 consumes is either complete (verified here) or absent; F1/F2 are integrity/cleanliness issues on the retry path, not on the delivered cache"
+ },
+ "reaudit_current_revisions": {
+  "audit_file": "runs/mktctx-20261028/audit_head_current.json",
+  "verdict": "pass",
+  "audited_files": {
+   "modified_tlob/market_head.py": "ce503122d58b4dd3...",
+   "scripts/market_context.py": "e3683db2c7946fa3...",
+   "modified_tlob/model.py": "615d506222b79860..."
+  },
+  "note": "the six-item invariance audit was re-run on the post-fix head (market_head.py moved 3cf40348 -> ce503122, market_context.py 67f13d9 -> e3683db2); all nine checks pass, see that file",
+  "pipeline_file": "runs/mktctx-20261028/pipeline.json",
+  "pipeline_verdict": "pass",
+  "pipeline_note": "re-run on e3683db2 with the guard strengthened: replay_maps_to_validation=true, sealed_window_reachable=false, max 8.34e-7"
+ },
+ "cross_section_gate": {
+  "purpose": "the new MIN_CROSS_SECTION=64 guard must refuse chunk fragments and must not refuse a normal replay cross-section",
+  "report": "runs/mktctx-20261028/cross_section_gate.json",
+  "script": "scripts/audit_cross_section_gate.py",
+  "config": {
+   "min_cross_section": 64,
+   "threshold": 1e-06
+  },
+  "verdict": "pass",
+  "cases": {
+   "floor_50": {
+    "passed": true,
+    "raised": true,
+    "error": "ValueError: predict() got 242 rows whose smallest same-timestamp cross-section is 50 rows; a market-context head must see the whole cross-section in one call (score each replay chunk whole, never re-chunk it). Set adapter.allow_cross_section_fragment=True only to measure that damage.",
+    "group_sizes": [
+     96,
+     96,
+     50
+    ]
+   },
+   "boundary_63": {
+    "passed": true,
+    "raised": true,
+    "error": "ValueError: predict() got 159 rows whose smallest same-timestamp cross-section is 63 rows; a market-context head must see the whole cross-section in one call (score each replay chunk whole, never re-chunk it). Set adapter.allow_cross_section_fragment=True only to measure that damage."
+   },
+   "boundary_64": {
+    "passed": true,
+    "raised": false,
+    "max_abs": 0.013790509663522243,
+    "rows": 160
+   },
+   "fragment_allowed": {
+    "passed": true,
+    "raised": false,
+    "max_abs": 0.013150203973054886,
+    "rows": 242
+   },
+   "fragment_damage": {
+    "passed": true,
+    "whole_group_rows": 1000,
+    "fragment_rows": 50,
+    "rows_compared": 50,
+    "max_abs_residual_difference": 0.020122138783335686,
+    "note": "the same 50 rows score differently when m_t is summarised over 50 rows instead of the 1000-row cross-section: this is what the gate protects"
+   },
+   "real_replay_keys": {
+    "passed": true,
+    "raised": false,
+    "keys": "D:\\tmp\\mktctx_r8keys.parquet",
+    "rows": 80000,
+    "groups": 80,
+    "min_group": 1000,
+    "max_group": 1000,
+    "max_abs": 0.04049083590507507,
+    "error": null
+   },
+   "arm_b": {
+    "passed": true,
+    "refused_without_flag": true,
+    "passed_with_flag": true,
+    "max_abs_with_flag": 0.219939723610878
+   },
+   "no_head": {
+    "passed": true,
+    "evidence_line": 1109,
+    "note": "scores = raw when the adapter carries no market head (line above); the gate lives only in _market_residual"
+   }
+  },
+  "numbers": {
+   "refused_at_50_rows": true,
+   "refused_at_63_rows": true,
+   "passed_at_64_rows": true,
+   "passed_with_allow_flag_at_50_rows": true,
+   "fragment_vs_cross_section_residual_abs_diff": 0.020122138783335686,
+   "real_replay_rows": 80000,
+   "real_replay_groups": 80,
+   "real_replay_rows_per_group": [
+    1000,
+    1000
+   ],
+   "real_replay_raised": false,
+   "arm_b_refused_without_flag": true,
+   "arm_b_passed_with_flag": true,
+   "gate_is_unreachable_without_a_head_at_adapter_line": 1109
+  },
+  "error_text": "ValueError: predict() got 242 rows whose smallest same-timestamp cross-section is 50 rows; a market-context head must see the whole cross-section in one call (score each replay chunk whole, never re-chunk it). Set adapter.allow_cross_section_fragment=True only to measure that damage.",
+  "audited_files": {
+   "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208"
+  },
+  "interpretation": "the guard fires only below 64 rows in the smallest same-timestamp group; the real replay table (80,000 rows, 1,000 per timestamp) passes untouched, and the flag-gated 50-row fragment changes those rows' residual by 1.4e-2, so the guard protects a real effect rather than a rounding artefact",
+  "design_necessity": {
+   "refused_rows_min": 50,
+   "refused_rows_boundary": 63,
+   "accepted_rows_min": 64,
+   "fragment_damage_abs": 0.0201,
+   "fragment_damage_vs_gate": 20100,
+   "real_replay_keys": "80000 rows / 80 timestamps / 1000 rows each -> passes the gate untouched, max|delta_s| 0.032",
+   "arm_b_gated_identically": true,
+   "unreachable_without_market_head": "modified_tlob/adapter.py:1109 (scores = raw if hidden is None)",
+   "reading": "a truncated cross-section is not an equivalent transform: the same 50 rows moved into the full 1000-row cross-section change their residual by 2.01e-2, 20,100x the gate; scoring every timestamp whole is a design requirement, not a safety margin."
+  }
+ },
+ "delivery_format_audit": {
+  "purpose": "checklist items 1-2 realigned to T1's actual delivery: adapter JSON (the only format TLOBAdapter.load reads) plus a per-arm .state.json provenance record; no .pt",
+  "script": "scripts/audit_after_weights.py",
+  "items": {
+   "weights-present": "finds {b,c}-s11.json under /root/runs/mktctx-head-20261028/weights, or MKTCTX_HEAD_DIR, or the in-repo mirrors; .state.json is never a candidate",
+   "weights-decode": "decodes the embedded head from the JSON (strict), then decodes the same-named .state.json and requires identical key set, dtype, shape and values, plus all finite; the old .pt comparison is gone"
+  },
+  "verification": {
+   "method": "synthetic delivery fixture built with market_head.head_payload + text_state",
+   "consistent_fixture": {
+    "dir": "D:/tmp/mktctx_fixture2",
+    "status": "pass",
+    "same_source": true,
+    "bitwise_equal": true
+   },
+   "mutated_fixture": {
+    "dir": "D:/tmp/mktctx_fixture3",
+    "mutation": "one float in c-s11.state.json bumped by 1e-3",
+    "status": "fail",
+    "item": "weights-decode",
+    "same_source": false,
+    "bitwise_equal": false,
+    "max_abs_diff": 0.0010000001639127731
+   },
+   "conclusion": "the check passes a faithful pair and catches a one-value provenance divergence"
+  },
+  "expected_delivery_path": "/root/runs/mktctx-head-20261028/weights/{b,c}-s11.json (+ .state.json)",
+  "not_yet_verified": "the real delivered files do not exist yet (phase B trigger)"
+ },
+ "finding_status": {
+  "F1": {
+   "severity": "medium",
+   "state": "known_issue_deferred_to_t10",
+   "why": "a kill during the first split still leaves a directory with no manifest at all; nothing looks finished so no wrong cache can be consumed, and the captain deferred the fix to t10 to keep the pinned shas stable before t4",
+   "evidence": "r6 reproduction on 4b08026b / 1599ba91 / a4237116"
+  },
+  "F2": {
+   "state": "fixed at the cache-consumption boundary, open at the part-resume boundary",
+   "detail": "load_cache(path, *, verify='digest') re-hashes the key table and every array and refuses complete=false (scripts/market_context.py:200-224); _extract still reuses {key}_{start:07d}_{stop:07d}.npz on shape alone (:243-254)"
+  },
+  "F3": {
+   "severity": "low",
+   "state": "resolved: the captain moved the pin to a4237116 (see pin_decision)",
+   "detail": "52c62202 stays in frozen_revision as superseded_pre_delivery_snapshot; market_head.py 84d141d9, adapter.py 1a40de9f and model.py 615d5062 never moved"
+  },
+  "F4": {
+   "severity": "low",
+   "state": "known_issue_deferred_to_t10",
+   "why": "cache --splits final exits 0 with an empty split map instead of raising; no sealed data is read because the loop only ever iterates train/replay, but a silent no-op success is a misleading signal",
+   "evidence": "frozen_cache_audit.commands"
+  },
+  "F5": {
+   "severity": "info",
+   "state": "open_cosmetic",
+   "why": "build.log stays empty until the process exits (stdout block buffering); monitoring sees a silent build, no data consequence"
+  },
+  "F6": {
+   "severity": "info",
+   "state": "design rule confirmed at real weights (the single criterion for t4's review)",
+   "clause": "layout_agnostic_under_width_sweep {A:true,B:true,C:true} (max |delta| 6.02e-10 at batch_size 32/256/8192) but layout_agnostic_fragment {A:true,B:true,C:false} (C 4.4185509557093496e-4) -> the whole same-timestamp cross-section must be delivered in one call; the device-side slice width is free"
+  }
+ },
+ "frozen_revision": {
+  "pinned_by_captain": {
+   "scripts/market_context.py": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59 (53,638 B, CRLF bytes)",
+   "scripts/market_context.py_lf": "456c881522fa1f582273997f7b099d82430ff5820c97b73844b1743a4d886908 (git/LF)",
+   "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "modified_tlob/model.py": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742"
+  },
+  "recomputed_by_auditor": {
+   "sha256_crlf": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59",
+   "sha256_lf": "456c881522fa1f582273997f7b099d82430ff5820c97b73844b1743a4d886908",
+   "bytes": 53638,
+   "crlf_pairs": 950,
+   "local_equals_remote": true,
+   "other_files_match": true,
+   "method": "sha256 of the raw file, then sha256 of the same bytes with b'\r\n' replaced by b'\n'; both hashes match the two the captain pinned"
+  },
+  "note": "pinned_by_captain and recomputed_by_auditor below are the historical record of what was pinned and measured at the start of t3 and t5; the authority is the 'authoritative' block in this section and pin_decision at the top level",
+  "authoritative": {
+   "scripts/market_context.py": {
+    "sha256_disk_crlf": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
+    "sha256_lf_git": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78",
+    "bytes": 54576,
+    "lines": 968,
+    "crlf_pairs": 968,
+    "role": "authoritative build revision: produced the delivered cache h/context and the b-s11/c-s11 heads, and is the revision phase_b, after_weights, audit_trained and the cache evidence in this report were measured on"
+   },
+   "scripts/market_context.py_lf": {
+    "sha256_git_lf": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78"
+   },
+   "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "modified_tlob/model.py": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742"
+  },
+  "superseded_pre_delivery_snapshot": {
+   "sha256_disk_crlf": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59",
+   "sha256_lf_git": "456c881522fa1f582273997f7b099d82430ff5820c97b73844b1743a4d886908",
+   "bytes": 53638,
+   "crlf_pairs": 950,
+   "file": "scripts/market_context.py",
+   "note": "snapshot taken when the t3 audit started, before the two report-side edits (layout_agnostic_within_tolerance went from a single bool to a per-arm dict, plus a +121 B edit); what it lacks relative to a4237116 is reporting code only — it never touched h, the cache or the weights, and no audited number or delivered artifact in this report derives from it"
+  }
+ },
+ "threshold_basis": {
+  "gate": 1e-06,
+  "why_not_bitwise": "float32 GEMM blocking means the same row produces different rounding depending on which rows share its batch, so bitwise equality is not achievable through the frozen trunk; the gate must sit above that blocking noise and far below any semantic error.",
+  "measured_noise_floor": {
+   "frozen_trunk_representation_abs_max": 8.344650268554688e-07,
+   "frozen_trunk_representation_bs256": 6.26e-07,
+   "frozen_trunk_score_abs_max": 1.64e-07,
+   "conditions": "MLPLOB(hidden_dim=40, num_layers=3, seq_size=128, num_features=12), torch.manual_seed, 2500 synthetic rows, batch 32/256/8192 vs one batch, torch 2.5.0+cpu",
+   "market_summary_float64": "1e-15 .. 5.4e-9 over 24000 rows (reference implementation)"
+  },
+  "semantic_error_magnitudes_measured": {
+   "per_chunk_m_residual_change": 0.00322,
+   "cross_section_fragment_damage": 0.0201,
+   "global_std_leak": 0.424,
+   "ratio_gate_to_smallest_semantic_error": 3220
+  },
+  "caveat": "the representation number leaves only 1.2x headroom under the gate, so the represent item is read as 'no batch-dependent semantic change' and the score-level 1.64e-07 is the primary batch evidence; the gate is never applied as a requirement of bitwise equality."
+ },
+ "post_weights_checklist": {
+  "note": "items that cannot be judged until armB/armC adapter JSON land; scripts/audit_after_weights.py runs 1-8 automatically",
+  "items": [
+   {
+    "id": "W1",
+    "item": "both arms' adapter JSON present",
+    "why": "no head to audit without them"
+   },
+   {
+    "id": "W2",
+    "item": "embedded state_dict decodes and equals the same-named .state.json",
+    "why": "provenance of the shipped numbers"
+   },
+   {
+    "id": "W3",
+    "item": "freshly built head still zero-inits mix.weight / B last layer",
+    "why": "step-0 identity must hold on the shipped code"
+   },
+   {
+    "id": "W4",
+    "item": "trained residual is alive on real h (abs max > 1e-4, std > 1e-6, nonzero > 0.5)",
+    "why": "a dead head makes C==A and voids the C-vs-B comparison"
+   },
+   {
+    "id": "W5",
+    "item": "context actually used: swapping m between adjacent timestamps changes delta_s > 1e-6",
+    "why": "separates 'alive' from 'alive but context-blind'"
+   },
+   {
+    "id": "W6",
+    "item": "arm B ignores m bitwise (delta(h) == delta(h, m))",
+    "why": "B is the control arm"
+   },
+   {
+    "id": "W7",
+    "item": "B/C parameter counts and spec names/shapes recorded from the landed heads",
+    "why": "layout check (3c_layout_trained): B 80-156-1, C 80-16 x 161-64-16-1"
+   },
+   {
+    "id": "W8",
+    "item": "six-item harness re-run with the trained checkpoint armed (--check all --size full)",
+    "why": "items 1-5 must hold for the shipped weights, and item 6 with real weights"
+   },
+   {
+    "id": "W9",
+    "item": "sealed-window guard and final refusal re-checked on the frozen revision",
+    "why": "no code path may read 202410-202412"
+   },
+   {
+    "id": "W10",
+    "item": "cross-section gate re-probed with trained residuals",
+    "why": "confirms the gate is not hiding a degenerate head"
+   }
+  ]
+ },
+ "frozen_cache_audit": {
+  "target": "scripts/market_context.py 52c62202 (frozen, both machines; shas verified before and after every run)",
+  "task1_default_split_loop": {
+   "clean_run_truncated_to_one_day": {
+    "command": "python scripts/market_context.py cache --cache <own>/cache --out <own>/out --max-days 1",
+    "note": "--splits left at its default 'train,replay'; only --cache/--out redirected so the canonical cache is not clobbered; --max-days 1 clips both splits to their first day so the run costs 38 s instead of the 441-day extraction",
+    "returncode": 0,
+    "seconds": 38.2,
+    "complete": true,
+    "splits": [
+     "replay",
+     "train"
+    ],
+    "per_split": {
+     "train": {
+      "rows": 7976,
+      "timestamps": 8,
+      "days": 1
+     },
+     "replay": {
+      "rows": 8000,
+      "timestamps": 8,
+      "days": 1
+     }
+    },
+    "load_cache_train": {
+     "ok": true,
+     "context_shape": [
+      8,
+      161
+     ],
+     "coverage_mean": 0.999,
+     "h_finite": true
+    },
+    "load_cache_replay": {
+     "ok": true,
+     "context_shape": [
+      8,
+      161
+     ],
+     "coverage_mean": 0.999,
+     "h_finite": true,
+     "labels_finite": 0
+    }
+   },
+   "read": "the default two-split loop completes and the aggregate manifest flips to complete=true only after both splits return; load_cache(verify='digest') accepts both splits",
+   "full_default_run": {
+    "command": "python scripts/market_context.py cache --cache <own>/cache --out <own>/out",
+    "note": "literal defaults: --splits train,replay, --max-days None, --part-rows 65536, --slice-rows 8192; only --cache/--out redirected so the canonical cache under /root/cache/frozen-h is not clobbered",
+    "returncode": 0,
+    "manifest": {
+     "complete": true,
+     "splits": [
+      "replay",
+      "train"
+     ],
+     "train": {
+      "rows": 3521680,
+      "timestamps": 3528,
+      "days": 441,
+      "seconds": 1120.3,
+      "keys_sha256": "bbf65dca2fb3d8119e7d279df9aba31c136d5cbc0b5f618e6202d286a0a5541a",
+      "context": {
+       "coverage_mean": 0.999,
+       "coverage_min": 0.999,
+       "cross_section_keys": 3528000,
+       "rows_min": 1000,
+       "rows_max": 1000
+      },
+      "labels": {
+       "finite": 3521680,
+       "rows": 3521680
+      }
+     },
+     "replay": {
+      "rows": 80000,
+      "timestamps": 80,
+      "days": 10,
+      "seconds": 38.8,
+      "keys_sha256": "17655258f20529234707505a9052ef5411beced0c3addbd55872b29518842999",
+      "context": {
+       "coverage_mean": 0.999,
+       "coverage_min": 0.999,
+       "cross_section_keys": 80000,
+       "rows_min": 1000,
+       "rows_max": 1000
+      }
+     }
+    },
+    "load_cache": {
+     "train": {
+      "ok": true,
+      "h_shape": [
+       3521680,
+       80
+      ],
+      "h_dtype": "float32",
+      "h_finite": true,
+      "context_shape": [
+       3528,
+       161
+      ],
+      "counts_min": 1000,
+      "counts_max": 1000
+     },
+     "replay": {
+      "ok": true,
+      "h_shape": [
+       80000,
+       80
+      ],
+      "h_dtype": "float32",
+      "h_finite": true,
+      "context_shape": [
+       80,
+       161
+      ],
+      "counts_min": 1000,
+      "counts_max": 1000
+     }
+    },
+    "replay_key_set_cross_check": "replay keys_sha256 17655258f2052923... equals the digest certified in the phase-A runs, so the replay universe is revision-independent",
+    "read": "the literal default command builds both splits and flips the aggregate manifest to complete=true; load_cache(verify='digest') accepts both splits afterwards, so item 1 passes on defaults, not only truncated"
+   }
+  },
+  "task1_interrupt_semantics": {
+   "i1_kill_during_first_split": {
+    "killed_after_seconds": 7,
+    "manifests_found": 0,
+    "dirs": [
+     "cache",
+     "cache/train",
+     "cache/train/parts"
+    ],
+    "load_cache_train": {
+     "type": "FileNotFoundError",
+     "message": ".../i1_first_split/cache/train/manifest.json: No such file or directory"
+    },
+    "reading": "refused, but by a missing file rather than by the complete=false message -> F1 still open"
+   },
+   "i2_kill_after_first_split_manifest": {
+    "killed_when": "as soon as the aggregate manifest appeared",
+    "aggregate_manifest_complete": false,
+    "split_manifest_present_without_complete_field": true,
+    "load_cache_train": {
+     "type": "ValueError",
+     "message": ".../i2_after_first_manifest/cache/train: the build owning this split did not finish (.../cache/manifest.json has complete=false)"
+    },
+    "load_cache_replay": {
+     "type": "FileNotFoundError",
+     "message": ".../i2_after_first_manifest/cache/replay/manifest.json: No such file or directory"
+    },
+    "reading": "the complete=false handshake works exactly as designed for any interruption after the first split"
+   },
+   "reproduced_independently": "own directories under /root/cache/audit-t5/interrupt, head-builder's evidence not reused"
+  },
+  "task2_final_still_refused": {
+   "roles_dict": "scripts/market_context.py:110 roles = {'train': 'train', 'validation': 'validation', 'replay': 'validation'}",
+   "refusal": "scripts/market_context.py:112 raise ValueError(f'Unknown cache split {name!r}; expected {sorted(roles)}')",
+   "probe": {
+    "train": "2022-01-04 .. 2023-11-01",
+    "validation": "2023-11-01 .. 2023-11-15",
+    "replay": "2023-11-01 .. 2023-11-15 (= validation)",
+    "final": "ValueError: Unknown cache split 'final'; expected ['replay', 'train', 'validation']",
+    "FINAL": "refused",
+    "Final": "refused",
+    "'replay '": "refused (no whitespace tolerance)",
+    "''": "refused"
+   },
+   "sealed_window_still_unreachable": true,
+   "reading": "no name maps to the final window; replay maps to validation and to nothing else"
+  },
+  "findings": {
+   "F1": {
+    "status": "open",
+    "severity": "low",
+    "detail": "an interrupt during the FIRST split leaves cache/, <split>/ and <split>/parts/ with no manifest anywhere, so load_cache fails with FileNotFoundError instead of the designed complete=false message",
+    "fix": "write cache_root/manifest.json with complete=false immediately after cache_root.mkdir (cache_stage:397) and refuse to start when a split dir exists without a manifest"
+   },
+   "F4": {
+    "status": "open",
+    "severity": "low",
+    "detail": "cache --splits final exits 0 and writes {'complete': true, 'splits': {}}: unknown split names are silently skipped by the loop at market_context.py:420-421, so a build that did nothing reports success",
+    "fix": "reject names outside ('train', 'replay') before the loop, i.e. fail_on_unknown(splits) next to split_of",
+    "data_safety": "no leak: the loop only ever iterates ('train', 'replay'), so the sealed window stays unreachable; the hazard is a silent no-op reported as a finished cache"
+   },
+   "F5": {
+    "status": "open",
+    "severity": "low",
+    "detail": "build.log stays 0 bytes for the first ~18 minutes of the default build (stdout is block-buffered when redirected), so an in-flight build is indistinguishable from a hung one; the log only appeared at 19:39 with the train summary",
+    "fix": "flush in log()/print(..., flush=True), or document `python -u`"
+   }
+  },
+  "no_code_changed_by_auditor": true
+ },
+ "phase_b": {
+  "verdict": "pass",
+  "scope": "real delivered heads on ZBzdgJ, 2026-10-28",
+  "audited_revision": {
+   "scripts/market_context.py": {
+    "disk_sha256": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
+    "pinned_by_captain": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59",
+    "note": "one revision newer than the pin; both delivery provenance records name a4237116 as the revision they were produced on, and no other audited file moved"
+   },
+   "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "modified_tlob/model.py": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742"
+  },
+  "delivered_files": {
+   "A": {
+    "sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7",
+    "bytes": 8322401
+   },
+   "B": {
+    "sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6",
+    "bytes": 11791262
+   },
+   "C": {
+    "sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5",
+    "bytes": 11789124
+   }
+  },
+  "load": {
+   "B": {
+    "market_head": true,
+    "claimed_parameters": 12793,
+    "parameters_match": true,
+    "fresh_build_parameters": 12793,
+    "fresh_build_zero_init": true,
+    "state_digest_reproduced_by": [
+     "json_text_sorted"
+    ],
+    "head": {
+     "class": "ScalarResidualHead",
+     "arm": "B",
+     "parameters": 12793,
+     "spec": {
+      "arm": "B",
+      "represent_dim": 80,
+      "scalar_hidden": 156
+     },
+     "state_sha256": "97d771c34c1e499b637480a1a1498ba7f8e9e42f6ee02e12be11434cdd8398f3",
+     "nonfinite": 0
+    }
+   },
+   "C": {
+    "market_head": true,
+    "claimed_parameters": 12704,
+    "parameters_match": true,
+    "fresh_build_parameters": 12704,
+    "fresh_build_zero_init": true,
+    "state_digest_reproduced_by": [
+     "json_text_sorted"
+    ],
+    "head": {
+     "class": "MarketInteractionHead",
+     "arm": "C",
+     "parameters": 12704,
+     "spec": {
+      "arm": "C",
+      "represent_dim": 80,
+      "width": 16,
+      "context_hidden": 64
+     },
+     "state_sha256": "c289c88a5a87f577a62d0b2c1b184b8b2fb20fe43f4e7124923325ccab0a98eb",
+     "nonfinite": 0
+    }
+   },
+   "A": {
+    "market_head": false,
+    "note": "no head: _score() keeps the pre-existing head-less path"
+   }
+  },
+  "layout": {
+   "probe": {
+    "window": [
+     "2023-11-02 00:00:00",
+     "2023-11-03 00:00:00"
+    ],
+    "rows": 8000,
+    "timestamps": 8,
+    "probe_timestamp": "2023-11-02 14:30:00",
+    "probe_rows": 1000
+   },
+   "target_scale": 0.0041997609822677275,
+   "units_note": "layout/day metrics come from predict(), which multiplies by target_scale; the cache_widths metrics are raw head.delta output, so divide by target_scale to compare them with predict()-level numbers",
+   "width_sweep_production_knob": {
+    "32": {
+     "width": 32,
+     "A_max_abs_vs_whole": 1.8774394614905904e-10,
+     "B_max_abs_vs_whole": 5.241185162198521e-10,
+     "C_max_abs_vs_whole": 6.023451604576617e-10
+    },
+    "256": {
+     "width": 256,
+     "A_max_abs_vs_whole": 0.0,
+     "B_max_abs_vs_whole": 0.0,
+     "C_max_abs_vs_whole": 0.0
+    },
+    "8192": {
+     "width": 8192,
+     "A_max_abs_vs_whole": 0.0,
+     "B_max_abs_vs_whole": 0.0,
+     "C_max_abs_vs_whole": 0.0
+    }
+   },
+   "layout_agnostic_under_width_sweep": {
+    "A": true,
+    "B": true,
+    "C": true
+   },
+   "fragment_experiment": {
+    "chunk_rows": 32,
+    "A_max_abs": 1.8774394614905904e-10,
+    "B_max_abs": 5.241185162198521e-10,
+    "C_max_abs": 0.00044185509557093496,
+    "C-B_delta_moved": 0.00044185509557093496,
+    "C-A_delta_moved": 0.00044185509557093496,
+    "B-A_delta_moved": 3.3637457007079305e-10,
+    "layout_agnostic_fragment": {
+     "A": true,
+     "B": true,
+     "C": false
+    }
+   },
+   "head_residual": {
+    "probe_timestamp_abs_max": 0.0009307045034570992,
+    "probe_timestamp_std": 9.23015810661484e-05,
+    "probe_timestamp_abs_max_raw": 0.2216089218854904,
+    "nonzero_fraction": 0.999,
+    "day_abs_max": 0.0013652685941712302,
+    "day_abs_max_raw": 0.32508245110511785,
+    "day_per_timestamp_abs_max": {
+     "2023-11-02T09:30:00.000000000": 0.0006532521817743254,
+     "2023-11-02T10:00:00.000000000": 0.0010274511492373358,
+     "2023-11-02T10:30:00.000000000": 0.001103767436219782,
+     "2023-11-02T11:00:00.000000000": 0.001077187399304292,
+     "2023-11-02T11:30:00.000000000": 0.0006855860699877851,
+     "2023-11-02T13:30:00.000000000": 0.000817912383903271,
+     "2023-11-02T14:00:00.000000000": 0.0013652685941712302,
+     "2023-11-02T14:30:00.000000000": 0.0009307045034570992
+    },
+    "cache_abs_max_prediction": 0.0017718956973086508,
+    "cache_abs_max_raw": 0.42190393805503845,
+    "cache_std_prediction": 0.00013262323096627012
+   },
+   "cache_level_width_sweep": {
+    "sweep": {
+     "32": 0.20952360332012177,
+     "256": 0.05072292685508728,
+     "8192": 0.0
+    },
+    "stored_context_reproduced_max_abs": 0.0,
+    "reading": "re-chunking a timestamp recomputes its market summary on a fragment; the 32-row summary moves C's residual, A and B never look at the summary"
+   }
+  },
+  "reproduction_of_head_builder_number": {
+   "head_builder": 0.0017718956973086506,
+   "mine": 0.0017718956973086508,
+   "definition": "max over the 80,000-row replay cache of raw |delta| times target_scale",
+   "verdict": "reproduced to the last digit"
+  },
+  "cache_vs_live_representation": {
+   "h_max_abs": 0.0002169683575630188,
+   "context_max_abs": 4.0291998476549296e-07,
+   "delta_raw_max_abs": 8.195638656616211e-06,
+   "delta_prediction_units": 3.4417e-08,
+   "note": "the cache was built on the GPU, the live probe ran on CPU; the representation differs at float32 GEMM level and the residual by 8.2e-6 raw (3.4e-8 prediction units), far below the 1e-6 gate, so a replay may mix cached and live representations without breaking the cross-arm comparison; bitwise equality between them is not expected"
+  },
+  "after_weights": {
+   "status": "pass",
+   "items": {
+    "weights-present": "pass",
+    "weights-decode": "pass",
+    "provenance-record": "pass",
+    "zero-init-before-load": "pass",
+    "residual-alive": "pass",
+    "armB-ignores-context": "pass",
+    "sealed-window-guard": "pass",
+    "signature-freeze": "pass",
+    "full-audit": "pass"
+   },
+   "provenance": {
+    "C": {
+     "record": "armC.state.json",
+     "agrees": {
+      "adapter_digest": true,
+      "head_state_digest": true,
+      "parameters": true
+     },
+     "recorded_code_sha256": {
+      "modified_tlob/adapter.py": "1a40de9fe3058ec6",
+      "modified_tlob/market_head.py": "84d141d9f83ca4cf",
+      "modified_tlob/model.py": "615d506222b79860",
+      "scripts/market_context.py": "a4237116caf158ce"
+     },
+     "code_drift_vs_live": {}
+    },
+    "B": {
+     "record": "armB.state.json",
+     "agrees": {
+      "adapter_digest": true,
+      "head_state_digest": true,
+      "parameters": true
+     },
+     "recorded_code_sha256": {
+      "modified_tlob/adapter.py": "1a40de9fe3058ec6",
+      "modified_tlob/market_head.py": "84d141d9f83ca4cf",
+      "modified_tlob/model.py": "615d506222b79860",
+      "scripts/market_context.py": "a4237116caf158ce"
+     },
+     "code_drift_vs_live": {}
+    }
+   },
+   "trained_full_audit": {
+    "checkpoint": "/root/runs/mktctx-head-20261028/weights/armC.state.json",
+    "verdict": "pass",
+    "report": "runs/mktctx-20261028/audit_trained.json"
+   }
+  },
+  "artifacts": [
+   "runs/mktctx-20261028/phase_b.json",
+   "runs/mktctx-20261028/after_weights.json",
+   "runs/mktctx-20261028/audit_trained.json",
+   "scripts/audit_phase_b.py",
+   "scripts/audit_after_weights.py"
+  ],
+  "repro_command": "source /root/run_env.sh && MKTCTX_HEAD_DIR=/root/runs/mktctx-head-20261028/weights $VENV_PY scripts/audit_phase_b.py && $VENV_PY scripts/audit_after_weights.py"
+ },
+ "phase_b_revision_drift": {
+  "what": "scripts/market_context.py moved from the pinned 52c62202 to a4237116 after the freeze and before the weights landed",
+  "evidence": [
+   "both arm state.json records list a4237116 under code_sha256_disk",
+   "the live file on ZBzdgJ and locally is a4237116 (54,576 B)"
+  ],
+  "consequence": "phase B certifies a4237116; the pin in frozen_revision is stale for that file",
+  "action": "ask the captain either to re-pin a4237116 or to confirm 52c62202 as the authoritative build revision; no audited file changed during phase B"
+ },
+ "pin_decision": {
+  "decided_by": "captain",
+  "date": "2026-10-28",
+  "authoritative_build_sha256_disk": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
+  "authoritative_build_sha256_lf": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78",
+  "authoritative_bytes": 54576,
+  "authoritative_lines": 968,
+  "superseded_sha256_disk": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59",
+  "superseded_bytes": 53638,
+  "rationale": [
+   "the delivered artifacts (cache h/context, b-s11 and c-s11 heads) were produced by a4237116: both state.json records, both machines and the captain's independent recomputation agree, and the cached h is bitwise reproducible with scored_identity=0.0",
+   "52c62202 is the snapshot from the moment the t3 audit started; it predates the two report-side edits (layout_agnostic_within_tolerance became a per-arm dict, plus a +121 B edit) and took part in no training",
+   "t4's prereg configs/mktctx_t4_prereg_20261028.json pins a4237116 and all four sha pre-checks match, so the re-pin moves no prereg and does not disturb the running t4"
+  ],
+  "prereg_unaffected": true,
+  "t4_blocked": false,
+  "audit_effect": "phase_b, after_weights, audit_trained and the cache evidence were all produced on a4237116, so no number in this report needs restating"
+ },
+ "lesson": "冻结必须在出权重之后做；出权重之后若再改任何被 pin 的文件，都必须重新 pin，并显式声明那次改动「仅报表侧」、不触碰 h/cache/weights。"
+}

@@ -11,8 +11,9 @@ Exit codes: 0 every item passed; 1 at least one item failed; 3 blocked (weights 
 checklist could not run - run it again once they are synced).
 
 Items (each reports status pass/fail/blocked with evidence):
-  1 weights-present        armC/armB checkpoint files exist
-  2 weights-decode         strict load, keys/shapes match, finite, .pt and .state.json agree
+  1 weights-present        the armB/armC adapter JSON the pipeline loads exists
+  2 weights-decode         strict load from that JSON, keys/shapes complete, all finite, and the
+                           embedded state_dict agrees bitwise with the same-named .state.json
   3 zero-init-before-load  a freshly built head still starts with an all-zero residual
   4 residual-alive         trained delta(h, m) is non-zero and actually reads the market context
   5 armB-ignores-context   B's delta ignores m bitwise, and B's residual is non-zero
@@ -28,6 +29,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import types
@@ -43,7 +45,22 @@ for entry in (str(ROOT), str(HERE)):
         sys.path.insert(0, entry)
 
 THRESHOLD = 1e-6
-DEFAULT_WEIGHTS = ROOT / "runs" / "market-context-441d-s11"
+# T1 delivers adapter JSON (``{b,c}-s11.json`` - the only format ``TLOBAdapter.load`` reads
+# directly) plus a ``.state.json`` provenance record per arm; there is no ``.pt``.
+DELIVERY_DIR = Path("/root/runs/mktctx-head-20261028/weights")
+FALLBACK_WEIGHT_DIRS = (ROOT / "runs" / "mktctx-head-20261028" / "weights",
+                        ROOT / "runs" / "market-context-441d-s11")
+
+
+def default_weights_dir():
+    """Delivery directory, honouring MKTCTX_HEAD_DIR and any local mirror of the remote path."""
+    env = os.environ.get("MKTCTX_HEAD_DIR")
+    if env:
+        return Path(env)
+    for candidate in (DELIVERY_DIR, *FALLBACK_WEIGHT_DIRS):
+        if candidate.exists():
+            return candidate
+    return DELIVERY_DIR
 DEFAULT_OUT = ROOT / "runs" / "mktctx-20261028" / "after_weights.json"
 POSITIONS = ("09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30")
 FROZEN_SIGNATURES = {
@@ -95,16 +112,62 @@ def item(name, status, **evidence):
 
 
 def find_weights(directory, arm):
-    """Checkpoint candidates for one arm, in preference order."""
+    """Adapter-JSON candidates for one arm, in preference order.
+
+    ``.state.json`` files are provenance records, never loadable checkpoints: they are the
+    comparison target of item 2, not a candidate.
+    """
+    directory = Path(directory)
+    lower = arm.lower()
     found = []
-    for suffix in (".pt", ".state.json", ".json"):
-        candidate = Path(directory) / f"arm{arm}{suffix}"
+    for name in (f"{lower}-s11.json", f"{lower}-s11.pt", f"arm{arm}.json", f"arm{arm}.pt"):
+        candidate = directory / name
         if candidate.exists():
             found.append(candidate)
-    for candidate in sorted(Path(directory).glob(f"*{arm}*")):
-        if candidate.suffix in (".pt", ".json") and candidate not in found:
+    for candidate in sorted(directory.glob(f"*{lower}*s11*.json")):
+        if not candidate.name.endswith(".state.json") and candidate not in found:
             found.append(candidate)
     return found
+
+
+def state_json_path(path):
+    """``c-s11.json`` -> ``c-s11.state.json``; ``armC.json`` -> ``armC.state.json``."""
+    path = Path(path)
+    return path.with_name(path.stem + ".state.json")
+
+
+def provenance_paths(path, arm):
+    """Every name the delivery may use for one arm's provenance record, best guess first."""
+    path = Path(path)
+    lower = arm.lower()
+    ordered = [state_json_path(path), path.parent / f"arm{arm}.state.json",
+               path.parent / f"{path.stem.lower()}.state.json",
+               path.parent.parent / f"arm{arm}.state.json"]
+    ordered.extend(sorted(path.parent.glob(f"*{lower}*state.json")))
+    ordered.extend(sorted(path.parent.parent.glob(f"*{lower}*state.json")))
+    seen, unique = set(), []
+    for candidate in ordered:
+        if candidate not in seen:
+            seen.add(candidate)
+            unique.append(candidate)
+    return unique
+
+
+def file_sha256(path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def canonical_state_sha256(head) -> str:
+    """The digest the delivery publishes: sha256 of the sorted text-state JSON."""
+    state = head_state(head)
+    text = {name: {"dtype": str(value.dtype).removeprefix("torch."),
+                   "shape": list(value.shape), "data": value.reshape(-1).tolist()}
+            for name, value in state.items()}
+    return hashlib.sha256(json.dumps(text, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def load_head(path, market_head, arm):
@@ -137,7 +200,7 @@ def head_state(head):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--weights-dir", type=Path, default=DEFAULT_WEIGHTS)
+    parser.add_argument("--weights-dir", type=Path, default=default_weights_dir())
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--size", choices=("full", "medium", "small"), default="medium")
     parser.add_argument("--seed", type=int, default=20261028)
@@ -153,7 +216,7 @@ def main(argv=None):
     try:
         weights_dir_label = str(Path(args.weights_dir).resolve().relative_to(ROOT))
     except ValueError:  # a fixture or a mounted path outside the repo
-        weights_dir_label = str(Path(args.weights_dir).resolve())
+        weights_dir_label = str(args.weights_dir)
     report = {"schema_version": 1, "audit": "t3 after-weights checklist", "threshold": THRESHOLD,
               "weights_dir": weights_dir_label, "items": []}
     digests = {}
@@ -171,20 +234,25 @@ def main(argv=None):
             return str(Path(path).resolve())
 
     report["candidates"] = {arm: [label(p) for p in paths] for arm, paths in found.items()}
-    if not found["C"]:
-        report["items"].append(item("weights-present", "blocked",
-                                    expected=weights_dir_label,
-                                    detail="no armC checkpoint on disk yet"))
+    if not found["C"] or not found["B"]:
+        missing = [arm for arm in ("C", "B") if not found[arm]]
+        report["items"].append(item("weights-present", "blocked", expected=weights_dir_label,
+                                    missing=missing,
+                                    detail="adapter JSON for every arm is required; no .pt is expected"))
         report["status"] = "blocked"
         report["elapsed_seconds"] = round(time.time() - started, 2)
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(report, indent=1), encoding="utf-8")
-        print(f"[weights] blocked: no armC checkpoint under {args.weights_dir}")
+        print(f"[weights] blocked: no adapter JSON for arm C to audit under {args.weights_dir}")
         return 3
     report["items"].append(item("weights-present", "pass",
-                                files={arm: [p.name for p in paths] for arm, paths in found.items()}))
+                                files={arm: [p.name for p in paths] for arm, paths in found.items()},
+                                state_json={arm: [state_json_path(p).name for p in paths
+                                                  if state_json_path(p).exists()]
+                                            for arm, paths in found.items()}))
 
-    # 2) decode every candidate, and require the .pt / .state.json pair to agree bitwise.
+    # 2) decode each adapter JSON and require its embedded state dict to agree bitwise with the
+    #    same-named .state.json provenance record (dtype, shape, data), keys complete, all finite.
     heads, decode_evidence, decode_ok = {}, {}, True
     for arm, paths in found.items():
         for path in paths:
@@ -197,22 +265,105 @@ def main(argv=None):
             state = head_state(head)
             finite = all(bool(torch.isfinite(value).all()) for value in state.values())
             heads.setdefault(arm, head)
-            decode_evidence[path.name] = {"status": "pass", "mode": mode,
-                                          "tensors": len(state), "finite": finite,
-                                          "parameters": int(market_head.parameter_count(head))}
+            entry = {"status": "pass" if finite else "fail", "mode": mode, "tensors": len(state),
+                     "finite": finite, "parameters": int(market_head.parameter_count(head))}
+            record = next((candidate for candidate in provenance_paths(path, arm)
+                           if candidate.exists()), None)
+            if record is None:
+                entry.update({"state_json": None, "same_source": None,
+                              "note": "no .state.json provenance record next to this JSON"})
+            else:
+                try:
+                    meta = json.loads(record.read_text(encoding="utf-8"))
+                    if isinstance(meta, dict) and "market_head" in meta:
+                        meta = meta["market_head"]
+                    if isinstance(meta, dict) and "state_dict" in meta:
+                        meta = meta["state_dict"]
+                    decoded = market_head.decode_state(meta, True)
+                except Exception as exc:  # noqa: BLE001
+                    entry.update({"state_json": record.name, "status": "fail",
+                                  "same_source": False,
+                                  "error": f"{type(exc).__name__}: {exc}"})
+                    decode_ok = False
+                    decode_evidence[path.name] = entry
+                    continue
+                keys_complete = set(decoded) == set(state)
+                shapes = {name: {"json": list(decoded[name].shape),
+                                 "state_json": list(state[name].shape)}
+                          for name in set(decoded) & set(state)
+                          if decoded[name].shape != state[name].shape}
+                dtypes = {name: {"json": str(decoded[name].dtype),
+                                 "state_json": str(state[name].dtype)}
+                          for name in set(decoded) & set(state)
+                          if decoded[name].dtype != state[name].dtype}
+                worst = 0.0
+                agree = True
+                for name in set(decoded) & set(state):
+                    left = decoded[name].to(torch.float64)
+                    right = state[name].to(torch.float64)
+                    if left.shape != right.shape:
+                        agree = False
+                        continue
+                    if not torch.equal(decoded[name], state[name]):
+                        agree = False
+                    worst = max(worst, float((left - right).abs().max()) if left.numel() else 0.0)
+                same = bool(keys_complete and not shapes and not dtypes and agree)
+                entry.update({"state_json": record.name, "same_source": same,
+                              "keys_complete": keys_complete,
+                              "missing_in_state_json": sorted(set(state) - set(decoded)),
+                              "extra_in_state_json": sorted(set(decoded) - set(state)),
+                              "shape_mismatch": shapes, "dtype_mismatch": dtypes,
+                              "bitwise_equal": bool(agree), "max_abs_diff": worst})
+                if not same:
+                    entry["status"] = "fail"
+                decode_ok = decode_ok and same
             decode_ok = decode_ok and finite
+            decode_evidence[path.name] = entry
     for arm, paths in found.items():
         if len(paths) > 1:
-            first, second = load_head(paths[0], market_head, arm)[0], \
-                load_head(paths[1], market_head, arm)[0]
+            first, second = load_head(paths[0], market_head, arm)[0],                 load_head(paths[1], market_head, arm)[0]
             left, right = head_state(first), head_state(second)
             agree = all(torch.equal(left[key], right[key]) for key in left)
-            decode_evidence[f"{paths[0].name}=={paths[1].name}"] = {"status": "pass" if agree
-                                                                    else "fail",
-                                                                    "bitwise_equal": bool(agree)}
+            decode_evidence[f"{paths[0].name}=={paths[1].name}"] = {
+                "status": "pass" if agree else "fail", "bitwise_equal": bool(agree)}
             decode_ok = decode_ok and agree
     report["items"].append(item("weights-decode", "pass" if decode_ok else "fail",
+                                rule="decoded adapter JSON vs same-named .state.json: key set, dtype, "
+                                     "shape and every value must agree exactly",
                                 files=decode_evidence))
+
+    # 2b) the provenance record has to describe this exact delivery: recorded adapter digest,
+    #     recorded head-state digest, recorded parameter count, and the code revision it ran on.
+    provenance_evidence, provenance_ok = {}, True
+    for arm, paths in found.items():
+        for path in paths:
+            record = next((candidate for candidate in provenance_paths(path, arm)
+                           if candidate.exists()), None)
+            if record is None:
+                continue
+            data = json.loads(record.read_text(encoding="utf-8"))
+            head = heads.get(arm) or load_head(path, market_head, arm)[0]
+            recorded_file = (data.get("adapter_json") or {}).get("sha256")
+            recorded_head = data.get("head_state_sha256")
+            recorded_parameters = (data.get("metrics") or {}).get("parameters")
+            recorded_code = data.get("code_sha256_disk") or {}
+            live_code = {name: file_sha256(ROOT / name) for name in recorded_code
+                         if (ROOT / name).exists()}
+            drift = {name: {"recorded": recorded_code[name][:16],
+                            "live": live_code.get(name, "missing")[:16]}
+                     for name in recorded_code if live_code.get(name) != recorded_code[name]}
+            agreement = {"adapter_digest": recorded_file == file_sha256(path),
+                         "head_state_digest": recorded_head == canonical_state_sha256(head),
+                         "parameters": recorded_parameters == int(market_head.parameter_count(head))}
+            provenance_ok = provenance_ok and all(agreement.values())
+            provenance_evidence[arm] = {
+                "record": record.name, "agrees": agreement,
+                "recorded_code_sha256": {name: value[:16] for name, value in recorded_code.items()},
+                "code_drift_vs_live": drift}
+    report["items"].append(item("provenance-record", "pass" if provenance_ok else "fail",
+                                rule="the .state.json record must name the same adapter JSON digest, "
+                                     "the same head-state digest and the same parameter count",
+                                arms=provenance_evidence))
 
     # 3) the class must still start zero-initialised: a re-trained arm has to begin at A.
     zero = {}

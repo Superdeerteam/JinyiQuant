@@ -1,0 +1,203 @@
+{
+ "schema_version": 1,
+ "tolerance": 1e-06,
+ "arms": {
+  "A": {
+   "file_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7",
+   "market_head": false,
+   "batch_size": 32,
+   "trained": true
+  },
+  "B": {
+   "file_sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6",
+   "market_head": true,
+   "batch_size": 32,
+   "trained": true,
+   "head": {
+    "class": "ScalarResidualHead",
+    "arm": "B",
+    "parameters": 12793,
+    "spec": {
+     "arm": "B",
+     "represent_dim": 80,
+     "scalar_hidden": 156
+    },
+    "state_sha256": "97d771c34c1e499b637480a1a1498ba7f8e9e42f6ee02e12be11434cdd8398f3",
+    "nonfinite": 0
+   },
+   "claimed_parameters": 12793,
+   "parameters_match": true,
+   "claimed_head_state_sha256": "e781915380c295b0e2910c44494912d3cd360ceb207326793284190cbff5f43f",
+   "state_digests": {
+    "bytes_concat_f32": "97d771c34c1e499b637480a1a1498ba7f8e9e42f6ee02e12be11434cdd8398f3",
+    "json_text_sorted": "e781915380c295b0e2910c44494912d3cd360ceb207326793284190cbff5f43f",
+    "json_text_sorted_compact": "2f439b891ee6cff92321eaee7ff1db1437b3cf0d1c18355da119f2ea8002839c",
+    "json_text_plain": "0e4e67996cb1fb2f027384701a5281208b994193d932d75b22e408028eb80aca"
+   },
+   "state_digest_reproduced_by": [
+    "json_text_sorted"
+   ],
+   "fresh_build_parameters": 12793,
+   "fresh_build_zero_init": true
+  },
+  "C": {
+   "file_sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5",
+   "market_head": true,
+   "batch_size": 32,
+   "trained": true,
+   "head": {
+    "class": "MarketInteractionHead",
+    "arm": "C",
+    "parameters": 12704,
+    "spec": {
+     "arm": "C",
+     "represent_dim": 80,
+     "width": 16,
+     "context_hidden": 64
+    },
+    "state_sha256": "c289c88a5a87f577a62d0b2c1b184b8b2fb20fe43f4e7124923325ccab0a98eb",
+    "nonfinite": 0
+   },
+   "claimed_parameters": 12704,
+   "parameters_match": true,
+   "claimed_head_state_sha256": "d732b7ca8355fedb53c39a33c08f29038e2fdae71d4cc35462f104e026fbb286",
+   "state_digests": {
+    "bytes_concat_f32": "c289c88a5a87f577a62d0b2c1b184b8b2fb20fe43f4e7124923325ccab0a98eb",
+    "json_text_sorted": "d732b7ca8355fedb53c39a33c08f29038e2fdae71d4cc35462f104e026fbb286",
+    "json_text_sorted_compact": "15ad34a5be474b346f2a4c340834057191f9b6daf4fc96fb441797df0ad61c93",
+    "json_text_plain": "5c870146b939f9a222da8346fa823f2023971a3e9b1206e8b7712372466568c6"
+   },
+   "state_digest_reproduced_by": [
+    "json_text_sorted"
+   ],
+   "fresh_build_parameters": 12704,
+   "fresh_build_zero_init": true
+  },
+  "headless_path_unchanged": {
+   "market_head": true,
+   "note": "with market_head=None _score() skips _market_residual entirely, so the head-less candidate still scores through the pre-existing path"
+  }
+ },
+ "files": {
+  "A": {
+   "path": "/root/weights/sealed/cand/cand_s11_264.json",
+   "sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7",
+   "bytes": 8322401
+  },
+  "B": {
+   "path": "/root/runs/mktctx-head-20261028/weights/b-s11.json",
+   "sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6",
+   "bytes": 11791262
+  },
+  "C": {
+   "path": "/root/runs/mktctx-head-20261028/weights/c-s11.json",
+   "sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5",
+   "bytes": 11789124
+  }
+ },
+ "batch": {
+  "window": [
+   "2023-11-02 00:00:00",
+   "2023-11-03 00:00:00"
+  ],
+  "rows": 8000,
+  "timestamps": 8,
+  "probe_timestamp": "2023-11-02 14:30:00",
+  "probe_rows": 1000
+ },
+ "day_residual": {
+  "rows": 8000,
+  "timestamps": 8,
+  "abs_max": 0.0013652685941712302,
+  "std": 0.00011577894058828075,
+  "per_timestamp_abs_max": {
+   "2023-11-02T09:30:00.000000000": 0.0006532521817743254,
+   "2023-11-02T10:00:00.000000000": 0.0010274511492373358,
+   "2023-11-02T10:30:00.000000000": 0.001103767436219782,
+   "2023-11-02T11:00:00.000000000": 0.001077187399304292,
+   "2023-11-02T11:30:00.000000000": 0.0006855860699877851,
+   "2023-11-02T13:30:00.000000000": 0.000817912383903271,
+   "2023-11-02T14:00:00.000000000": 0.0013652685941712302,
+   "2023-11-02T14:30:00.000000000": 0.0009307045034570992
+  },
+  "abs_max_raw": 0.32508245110511785
+ },
+ "layout": {
+  "rows": 1000,
+  "timestamps": 1,
+  "width_sweep": {
+   "32": {
+    "width": 32,
+    "A_max_abs_vs_whole": 1.8774394614905904e-10,
+    "B_max_abs_vs_whole": 5.241185162198521e-10,
+    "C_max_abs_vs_whole": 6.023451604576617e-10
+   },
+   "256": {
+    "width": 256,
+    "A_max_abs_vs_whole": 0.0,
+    "B_max_abs_vs_whole": 0.0,
+    "C_max_abs_vs_whole": 0.0
+   },
+   "8192": {
+    "width": 8192,
+    "A_max_abs_vs_whole": 0.0,
+    "B_max_abs_vs_whole": 0.0,
+    "C_max_abs_vs_whole": 0.0
+   }
+  },
+  "layout_agnostic_under_width_sweep": {
+   "A": true,
+   "B": true,
+   "C": true
+  },
+  "fragment_chunk_rows": 32,
+  "A_fragment32_vs_whole_max_abs": 1.8774394614905904e-10,
+  "B_fragment32_vs_whole_max_abs": 5.241185162198521e-10,
+  "C_fragment32_vs_whole_max_abs": 0.00044185509557093496,
+  "layout_agnostic_fragment": {
+   "A": true,
+   "B": true,
+   "C": false
+  },
+  "head_residual_abs_max": 0.0009307045034570992,
+  "head_residual_std": 9.23015810661484e-05,
+  "residual_fraction_nonzero": 0.999,
+  "C-B_fragment_vs_whole_max_abs": 0.00044185509557093496,
+  "C-A_fragment_vs_whole_max_abs": 0.00044185509557093496,
+  "B-A_fragment_vs_whole_max_abs": 3.3637457007079305e-10,
+  "head_residual_abs_max_raw": 0.2216089218854904
+ },
+ "cache_widths": {
+  "timestamps": 80,
+  "rows": 80000,
+  "sweep": {
+   "32": 0.20952360332012177,
+   "256": 0.05072292685508728,
+   "8192": 0.0
+  },
+  "stored_context_reproduced_max_abs": 0.0,
+  "residual_abs_max_cache": 0.42190393805503845,
+  "residual_std_cache": 0.031578756868839264,
+  "residual_fraction_nonzero_cache": 1.0,
+  "residual_abs_max_first_three_timestamps": 0.2839321792125702,
+  "reading": "re-chunking a timestamp recomputes its market summary on a fragment; the 32-row summary moves C's residual, A and B never look at the summary",
+  "residual_abs_max_cache_prediction": 0.0017718956973086508,
+  "residual_std_cache_prediction": 0.00013262323096627012
+ },
+ "units": {
+  "prediction_units_per_raw": 0.0041997609822677275,
+  "note": "layout/day metrics come from predict(), which multiplies by target_scale; the cache_widths metrics are raw head.delta output, so divide by target_scale to compare them with predict()-level numbers"
+ },
+ "checks": {
+  "heads_restored": true,
+  "headless_unchanged": true,
+  "parameters_match": true,
+  "heads_nonfinite": 0,
+  "width_sweep_agnostic": true,
+  "fragment_A": true,
+  "fragment_B": true,
+  "fragment_C": false,
+  "residual_alive": true
+ },
+ "verdict": "pass"
+}

@@ -1,0 +1,1377 @@
+{
+ "schema_version": 1,
+ "audit": "market-context-head-invariance",
+ "threshold": 1e-06,
+ "target": {
+  "name": "t1",
+  "module": "modified_tlob/market_head.py",
+  "heads": {
+   "C": "MarketInteractionHead",
+   "B": "ScalarResidualHead"
+  },
+  "summary_entry": "market_context(h, codes, valid=, counts=)",
+  "zero_init_observable": "ArmC.mix.weight",
+  "armed_from": "/root/runs/mktctx-head-20261028/weights/armC.state.json",
+  "declared_interface_mismatch": [
+   "market_summary(...) does not exist (landed: market_context with integer codes)",
+   "build_head takes no seed=/device= kwargs",
+   "heads expose .delta(h, m), not forward()",
+   "zero-init weight is mix.weight, not residual_weight/residual_bias"
+  ]
+ },
+ "resolved_target": "t1",
+ "environment": {
+  "python": "3.12.4",
+  "numpy": "2.2.6",
+  "torch": "2.6.0+cu124",
+  "platform": "Linux-4.19.0-19-amd64-x86_64-with-glibc2.35",
+  "git_head": "f7d8f136c305c82f1680947e5bb99aad85c13cb6",
+  "torch_threads": 1
+ },
+ "audited_files": {
+  "modified_tlob/market_head.py": {
+   "sha256": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "bytes": 12871,
+   "mtime": 1793185460000000000
+  },
+  "scripts/market_context.py": {
+   "sha256": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
+   "bytes": 54576,
+   "mtime": 1793187108000000000
+  },
+  "modified_tlob/model.py": {
+   "sha256": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742",
+   "bytes": 17032,
+   "mtime": 1793183198000000000
+  }
+ },
+ "findings": [
+  {
+   "id": "interface-drift",
+   "severity": "info",
+   "summary": "The landed market_head.py API differs from the interface announced in the team channel; this audit targets the landed code.",
+   "detail": {
+    "announced": [
+     "market_summary(h, group, valid)",
+     "build_head(arm, hidden=, ctx_dim=, seed=, device=)",
+     "heads expose forward()",
+     "zero-init on residual_weight/residual_bias",
+     "MLPLOB.score_from_representation"
+    ],
+    "landed": [
+     "market_context(h, codes, valid=, counts=, n_groups=)",
+     "build_head(arm, represent_dim=80, width=16, context_hidden=64, scalar_hidden=156)",
+     "heads expose delta(h, m) / delta(h) returning a residual only",
+     "zero-init on Member.mix.weight (arm C) and layers[-1] (arm B)",
+     "no score_from_representation; use represent() + final_layers[-1]"
+    ]
+   },
+   "impact": "Any downstream code written against the announced names raises AttributeError/TypeError, not a silently wrong number."
+  },
+  {
+   "id": "replay-split-unreachable",
+   "severity": "medium",
+   "file": "scripts/market_context.py",
+   "line": 81,
+   "summary": "split_of() accepts only train/validation, but the cache entry point defaults to --splits train,replay and builds cache/replay.",
+   "lines_involved": {
+    "guard": "81-83",
+    "iterate": "368",
+    "cache_path": "597",
+    "cli_default": "646"
+   },
+   "evidence": "scripts/audit_market_pipeline.py probe 'split_guard': final -> ValueError: Unknown split 'final' (sealed window correctly unreachable), replay -> ValueError: Unknown split 'replay'.",
+   "impact": "`market_context.py cache` with its default arguments cannot complete, so the replay cache the ten-window comparison needs is not produced by the documented command. Fix before t4 depends on it."
+  },
+  {
+   "id": "nonfinite-guard-is-global",
+   "severity": "low",
+   "file": "modified_tlob/market_head.py",
+   "line": 107,
+   "summary": "market_context raises FloatingPointError when any row of h is non-finite, including rows the caller marked valid=False.",
+   "detail": "The pipeline derives valid from bar history (effective_count >= min_history), not from finiteness, so one NaN representation returned by the frozen trunk aborts the entire timestamp table instead of dropping that row.",
+   "impact": "No leakage or unfairness, but a crash where the caller would prefer an excluded row. Callers should pass valid & isfinite(h).all(1)."
+  },
+  {
+   "id": "coverage-degenerate-without-counts",
+   "severity": "low",
+   "file": "modified_tlob/market_head.py",
+   "line": 85,
+   "summary": "counts=None makes the coverage denominator the number of rows present in h, so a caller that materialises only usable rows always sees coverage 1.0 and the third context channel carries no information.",
+   "detail": "scripts/market_context.py:203-204 passes counts from the prediction universe, which is why the audited path is not degenerate.",
+   "impact": "Silent feature loss if a future caller forgets counts."
+  },
+  {
+   "id": "representation-noise-margin",
+   "severity": "info",
+   "summary": "The frozen trunk's own batching noise on the 80-dim representation is 8.34e-7 (1.2x under the gate) versus 1.6e-7 on the score.",
+   "detail": "This is float32 GEMM blocking inside MLPLOB.forward_with_representation, not the market head: the head sees h that is extracted once. Any replay comparison across chunk sizes must use a >=1e-6 tolerance, never bitwise equality on the representation.",
+   "impact": "Batch-size-dependent bits in the representation do not change the reported scores beyond 1.6e-7."
+  },
+  {
+   "id": "trained-artifact-missing",
+   "severity": "info",
+   "summary": "runs/market-context-441d-s11/armC.pt and armC.state.json are absent, so the 'trained residual is non-zero' leg was measured on a 60-step proxy training run, not on the delivered head.",
+   "impact": "Re-run --check zeroinit once the trained head lands; the step-0 identity and the gradient-at-step-0 (>0) are already proven on the real class."
+  }
+ ],
+ "pipeline_audit": {
+  "report": null,
+  "script": "scripts/audit_market_pipeline.py",
+  "note": "not run in this session"
+ },
+ "signatures": {
+  "build_head": "(arm, *, represent_dim=80, width=16, context_hidden=64, scalar_hidden=156, hidden=None, ctx_dim=None)",
+  "MarketInteractionHead.delta": "(self, h, m)",
+  "ScalarResidualHead.delta": "(self, h, m=None)",
+  "market_context": "(h, group, *, valid=None, counts=None, n_groups=None)",
+  "timestamp_codes": "(keys, *, instrument_column='instrument', date_column='date')",
+  "head_from_payload": "(payload, *, text_state_weights: 'bool' = False)",
+  "head_payload": "(head)",
+  "MLPLOB.represent": "(self, x)",
+  "MLPLOB.forward_with_representation": "(self, x)",
+  "zero_init_parameter": {
+   "C": "MarketInteractionHead.mix.weight",
+   "B": "ScalarResidualHead.layers[-1].weight/bias"
+  }
+ },
+ "checks": {
+  "formula": {
+   "check": "formula",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 3.882671295585283e-08,
+   "against_reference": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3864000
+    },
+    "coverage": {
+     "max_abs": 2.95639037695139e-08,
+     "max_abs_finite": 2.95639037695139e-08,
+     "mean_abs": 1.2417634332832309e-08,
+     "p99_abs": 2.95639037695139e-08,
+     "nan_mismatch": 0,
+     "compared": 24000
+    }
+   },
+   "against_numpy_one_shot": {
+    "group": 13,
+    "valid_rows": 819,
+    "pool": 1000,
+    "mean": 3.882671295585283e-08,
+    "std": 2.9422327907369095e-08,
+    "coverage": 5.7220459481754915e-09
+   },
+   "ddof0_vs_ddof1_gap": 0.0005085564667436371,
+   "note": "Order/batch invariance only proves m is well defined, not that it is the contracted statistic; this compares it to two independent implementations.",
+   "repro": "--check formula"
+  },
+  "permute": {
+   "check": "permute",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "rows": 24000,
+   "groups": 24,
+   "instruments_per_group": 1000,
+   "reads": [
+    {
+     "read": 1,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 2,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 3,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 4,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    {
+     "read": 5,
+     "perm_kind": "full row shuffle",
+     "m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 3864000
+     },
+     "coverage": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "score_c": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    }
+   ],
+   "float32_reduction_noise_floor": null,
+   "repro": "--check permute"
+  },
+  "batch": {
+   "check": "batch",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "per_chunk_m_max_abs_deviation": 0.4115626811981201,
+   "per_chunk_m_amplification": null,
+   "rows": 24000,
+   "per_batch": {
+    "32": {
+     "chunks": 750,
+     "whole_pool_m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.4115626811981201,
+      "max_abs_finite": 0.4115626811981201,
+      "mean_abs": 0.03775728458778273,
+      "p99_abs": 0.1848289763927459,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    "256": {
+     "chunks": 94,
+     "whole_pool_m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.17979830503463745,
+      "max_abs_finite": 0.17979830503463745,
+      "mean_abs": 0.01258581641673421,
+      "p99_abs": 0.06238385170698162,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    },
+    "8192": {
+     "chunks": 3,
+     "whole_pool_m": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 24000
+     },
+     "per_chunk_m": {
+      "max_abs": 0.07961666584014893,
+      "max_abs_finite": 0.07961666584014893,
+      "mean_abs": 0.0008301968674641103,
+      "p99_abs": 0.01311142385005947,
+      "nan_mismatch": 0,
+      "compared": 24000
+     }
+    }
+   },
+   "note": "per_chunk_m is the design contrast: a head that recomputes the market pool per inference chunk is not batch invariant, which is why m_t has to be built once over the whole timestamp pool.",
+   "repro": "--check batch"
+  },
+  "represent": {
+   "check": "represent",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 7.748603820800781e-07,
+   "rows": 2500,
+   "per_batch": {
+    "32": {
+     "chunks": 79,
+     "representation": {
+      "max_abs": 7.748603820800781e-07,
+      "max_abs_finite": 7.748603820800781e-07,
+      "mean_abs": 7.059512427076697e-11,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 9.685754776000977e-08,
+      "max_abs_finite": 9.685754776000977e-08,
+      "mean_abs": 8.791685104370117e-11,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    },
+    "256": {
+     "chunks": 10,
+     "representation": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    },
+    "8192": {
+     "chunks": 1,
+     "representation": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 200000
+     },
+     "score": {
+      "max_abs": 0.0,
+      "max_abs_finite": 0.0,
+      "mean_abs": 0.0,
+      "p99_abs": 0.0,
+      "nan_mismatch": 0,
+      "compared": 2500
+     }
+    }
+   },
+   "sensitivity_control_max_abs": 0.6076366901397705,
+   "represent_forward_compat": {
+    "represent_vs_independent_trunk": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 200000
+    },
+    "represent_then_head_vs_forward": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 2500
+    },
+    "forward_with_representation_rep_vs_represent": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 200000
+    },
+    "forward_with_representation_score_vs_forward": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 2500
+    }
+   },
+   "note": "Batch-size dependence here would make the frozen representations (and hence base scores) depend on the inference chunking, before any market context is involved.",
+   "repro": "--check represent"
+  },
+  "pool": {
+   "check": "pool",
+   "passed": true,
+   "threshold": 1e-06,
+   "coverage_without_counts": {
+    "coverage_min": 0.782,
+    "coverage_max": 0.819,
+    "reading": "all-ones coverage means the summary counts only the rows it was handed: the pool size must be supplied by the caller"
+   },
+   "max_abs_deviation": 0.0,
+   "fallback_removal": {
+    "dropped_rows": 480,
+    "kept_rows": 23520,
+    "dropped_kind": "fallback (no history)",
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3786720
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 23520
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 23520
+    }
+   },
+   "fallback_addition": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3864000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 24000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 24000
+    },
+    "added_fallback_rows": 2400
+   },
+   "eligible_removal": {
+    "dropped_rows": 1920,
+    "kept_rows": 22080,
+    "dropped_kind": "eligible (in pool)",
+    "m": {
+     "max_abs": 0.025465622544288635,
+     "max_abs_finite": 0.025465622544288635,
+     "mean_abs": 0.004532626645606358,
+     "p99_abs": 0.017495542764663696,
+     "nan_mismatch": 0,
+     "compared": 3554880
+    },
+    "coverage": {
+     "max_abs": 0.020601749420166016,
+     "max_abs_finite": 0.020601749420166016,
+     "mean_abs": 0.017339442373401875,
+     "p99_abs": 0.020601749420166016,
+     "nan_mismatch": 0,
+     "compared": 22080
+    },
+    "score_c": {
+     "max_abs": 0.010100603103637695,
+     "max_abs_finite": 0.010100603103637695,
+     "mean_abs": 0.001661593846411974,
+     "p99_abs": 0.006692222356796264,
+     "nan_mismatch": 0,
+     "compared": 22080
+    }
+   },
+   "nonfinite_fallback_probe": {
+    "raises": false
+   },
+   "coverage_semantics_probe": {
+    "observed_median_coverage": 0.8005000352859497,
+    "expected_if_valid_over_pool": 0.8,
+    "reading": "0.8 means coverage = finite representation / timestamp pool; anything else needs the definition spelled out"
+   },
+   "note": "Dropping fallback (no-history) rows must be invisible to the surviving stocks. Dropping genuinely pooled rows is expected to move the market summary; its size is reported as context, not as a failure.",
+   "repro": "--check pool"
+  },
+  "lookahead": {
+   "check": "lookahead",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "cutoff_group": 21,
+   "earlier_rows": 22000,
+   "future_rows_shocked": 2000,
+   "future_shock": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3542000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    }
+   },
+   "future_deleted": {
+    "m": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 3542000
+    },
+    "coverage": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    },
+    "score_c": {
+     "max_abs": 0.0,
+     "max_abs_finite": 0.0,
+     "mean_abs": 0.0,
+     "p99_abs": 0.0,
+     "nan_mismatch": 0,
+     "compared": 22000
+    }
+   },
+   "note": "Shocking or deleting everything after the cutoff must leave the earlier predictions bitwise unchanged. A global (cross-timestamp) standard deviation or any backward fill fails here.",
+   "repro": "--check lookahead"
+  },
+  "label": {
+   "check": "label",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "labels_missing": 4800,
+   "labels_missing_m": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 3864000
+   },
+   "labels_missing_score": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "labels_randomised_m": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 3864000
+   },
+   "labels_randomised_score": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "note": "Labels may change the loss and the evaluation sample only. A market summary that inner-joins labels first silently shrinks the pool whenever a label is missing, which moves every surviving stock's score.",
+   "repro": "--check label"
+  },
+  "zeroinit": {
+   "check": "zeroinit",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "step0_C_vs_A": {
+    "max_abs": 0.0,
+    "max_abs_finite": 0.0,
+    "mean_abs": 0.0,
+    "p99_abs": 0.0,
+    "nan_mismatch": 0,
+    "compared": 24000
+   },
+   "step0_identity_bitwise": true,
+   "residual_weight_max_abs_at_step0": 0.0,
+   "gradient_max_abs_at_step0": {
+    "project.weight": 0.0,
+    "context.0.weight": 0.0,
+    "context.0.bias": 0.0,
+    "context.2.weight": 0.0,
+    "context.2.bias": 0.0,
+    "mix.weight": 4.7714518586872146e-05
+   },
+   "residual_weight_gradient_at_step0": 4.7714518586872146e-05,
+   "after_micro_training": {
+    "steps": 60,
+    "lr": 0.05,
+    "residual_abs_max": 0.057501912117004395,
+    "residual_std": 0.01082030340235134,
+    "nonzero_fraction": 0.9999166666666667,
+    "context_effect_abs_max": 0.023483268916606903,
+    "alive": true
+   },
+   "trained_checkpoint": {
+    "checkpoint": "/root/runs/mktctx-head-20261028/weights/armC.state.json",
+    "residual_abs_max": 1.5118026733398438,
+    "residual_abs_mean": 0.27765772612245443,
+    "residual_std": 0.2738750923289919,
+    "nonzero_fraction": 1.0,
+    "context_effect_abs_max": 1.522256008349359
+   },
+   "repro": "--check zeroinit"
+  },
+  "wiring": {
+   "check": "wiring",
+   "passed": true,
+   "threshold": 1e-06,
+   "max_abs_deviation": 0.0,
+   "grouping_probe": {
+    "expected_groups": 24,
+    "rows": 1200,
+    "groups_with_date_only_key": 3,
+    "groups_with_combined_stamp_key": 24,
+    "date_only_collapses_day": true,
+    "stamp_keeps_timestamps": true
+   },
+   "sealed_window_hits": {},
+   "deferred": [],
+   "note": "If the pipeline hands over a date-only key column, one group covers a whole day and the same-timestamp requirement fails by wiring, not by arithmetic.",
+   "repro": "--check wiring"
+  }
+ },
+ "failures": [],
+ "static_scan": {
+  "modified_tlob/market_head.py": {
+   "chunking": [
+    {
+     "line": 44,
+     "text": "# whose smallest timestamp group is far below that has almost certainly been re-chunked, which"
+    }
+   ],
+   "zero_init": [
+    {
+     "line": 109,
+     "text": "context = np.zeros((n_groups, 2 * width + 1), dtype=np.float64)"
+    },
+    {
+     "line": 110,
+     "text": "sums = np.zeros((n_groups, width), dtype=np.float64)"
+    },
+    {
+     "line": 111,
+     "text": "squares = np.zeros((n_groups, width), dtype=np.float64)"
+    },
+    {
+     "line": 122,
+     "text": "context[:, 2 * width] = np.divide(seen, total, out=np.zeros(n_groups), where=total > 0)"
+    },
+    {
+     "line": 170,
+     "text": "nn.init.zeros_(self.mix.weight)"
+    },
+    {
+     "line": 192,
+     "text": "nn.init.zeros_(self.layers[-1].weight)"
+    },
+    {
+     "line": 193,
+     "text": "nn.init.zeros_(self.layers[-1].bias)"
+    }
+   ]
+  },
+  "scripts/market_context.py": {
+   "sealed_window": [
+    {
+     "line": 49,
+     "text": "DEFAULT_WEIGHTS = \"/root/weights/sealed/cand/cand_s11_264.json\""
+    },
+    {
+     "line": 108,
+     "text": "name stay rejected: this cache never touches the sealed final window."
+    }
+   ],
+   "chunking": [
+    {
+     "line": 66,
+     "text": "def file_sha256(path, chunk=1 << 24):"
+    },
+    {
+     "line": 69,
+     "text": "for block in iter(lambda: handle.read(chunk), b\"\"):"
+    },
+    {
+     "line": 149,
+     "text": "for start in range(0, len(x), slice_rows):"
+    },
+    {
+     "line": 157,
+     "text": "def day_chunk(keys, days, *, first=0):"
+    },
+    {
+     "line": 158,
+     "text": "\"\"\"Keys of the ``first``-th..``days``-th trading day, like the replay script's chunks.\"\"\""
+    },
+    {
+     "line": 164,
+     "text": "def reference_scores(adapter, batch, batch_size):"
+    },
+    {
+     "line": 170,
+     "text": "for start in range(0, len(x), batch_size):"
+    },
+    {
+     "line": 171,
+     "text": "xb = torch.from_numpy(x[start:start + batch_size]).to(adapter.device)"
+    },
+    {
+     "line": 252,
+     "text": "for start in range(0, len(timestamps), block):"
+    },
+    {
+     "line": 267,
+     "text": "for start in range(0, total, part_rows):"
+    },
+    {
+     "line": 440,
+     "text": "def train_arm(arm, cached, *, steps, batch_size, lr, seed, device, log_every):"
+    },
+    {
+     "line": 459,
+     "text": "take = min(batch_size, total - cursor)"
+    },
+    {
+     "line": 486,
+     "text": "return head.eval(), {\"arm\": arm, \"steps\": steps, \"batch_size\": batch_size, \"lr\": lr,"
+    },
+    {
+     "line": 500,
+     "text": "steps=args.steps, arms=args.arms, lr=args.lr, batch_size=args.batch_size)"
+    },
+    {
+     "line": 504,
+     "text": "\"recipe\": {\"optimizer\": \"Adam\", \"lr\": args.lr, \"batch_size\": args.batch_size,"
+    },
+    {
+     "line": 510,
+     "text": "head, record = train_arm(arm, cached, steps=args.steps, batch_size=args.batch_size,"
+    },
+    {
+     "line": 515,
+     "text": "adapter.config[\"batch_size\"] = int(args.batch_size)"
+    },
+    {
+     "line": 542,
+     "text": "keys = day_chunk(inference_keys(bundle, split, config.data), args.days)"
+    },
+    {
+     "line": 554,
+     "text": "adapter.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 556,
+     "text": "reference = reference_scores(adapters[\"A\"], batch, args.batch_size)"
+    },
+    {
+     "line": 571,
+     "text": "fresh.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 608,
+     "text": "adapter.config[\"batch_size\"] = width"
+    },
+    {
+     "line": 634,
+     "text": "\"a_reference_bitwise\": max_abs(per_width[\"A\"][args.batch_size], reference),"
+    },
+    {
+     "line": 649,
+     "text": "# 3c) layout: every scored chunk must go through ONE predict() call (whole same-timestamp"
+    },
+    {
+     "line": 660,
+     "text": "chunked, whole = {}, {}"
+    },
+    {
+     "line": 662,
+     "text": "adapter.config[\"batch_size\"] = 32"
+    },
+    {
+     "line": 665,
+     "text": "chunked[name] = np.concatenate([adapter.predict(subset(start))"
+    },
+    {
+     "line": 666,
+     "text": "for start in range(0, whole_width, 32)])"
+    },
+    {
+     "line": 669,
+     "text": "adapter.config[\"batch_size\"] = whole_width"
+    },
+    {
+     "line": 671,
+     "text": "layout = {\"rows\": whole_width, \"chunk_rows\": 32, \"tolerance\": TOLERANCE,"
+    },
+    {
+     "line": 672,
+     "text": "\"rule\": (\"score each replay chunk with a single predict() call over the whole \""
+    },
+    {
+     "line": 673,
+     "text": "\"same-timestamp cross-section; never re-chunk a batch for C\"),"
+    },
+    {
+     "line": 674,
+     "text": "\"note\": (\"chunking re-derives m_t on a 32-row cross-section, which is not the \""
+    },
+    {
+     "line": 677,
+     "text": "layout[f\"{name}_chunked32_vs_whole_max_abs\"] = max_abs(chunked[name], whole[name])"
+    },
+    {
+     "line": 679,
+     "text": "layout[f\"{lower}-{upper}_delta_chunked_vs_whole_max_abs\"] = float(np.max(np.abs("
+    },
+    {
+     "line": 680,
+     "text": "(chunked[lower] - chunked[upper]) - (whole[lower] - whole[upper]))))"
+    },
+    {
+     "line": 682,
+     "text": "# are layout agnostic (they never look at the cross-section), C is not (re-chunking gives it a"
+    },
+    {
+     "line": 683,
+     "text": "# 32-row market context), which is why the chunking rule exists."
+    },
+    {
+     "line": 685,
+     "text": "name: bool(layout[f\"{name}_chunked32_vs_whole_max_abs\"] <= TOLERANCE) for name in adapters}"
+    },
+    {
+     "line": 694,
+     "text": "adapter.config[\"batch_size\"] = args.batch_size"
+    },
+    {
+     "line": 742,
+     "text": "for start in range(0, len(x), args.batch_size):"
+    },
+    {
+     "line": 743,
+     "text": "xb = torch.from_numpy(x[start:start + args.batch_size]).to(args.device)"
+    }
+   ],
+   "label_inner_join": [
+    {
+     "line": 99,
+     "text": "return hashlib.sha256(\"\\n\".join(lines).encode(\"utf-8\")).hexdigest()"
+    },
+    {
+     "line": 316,
+     "text": "mapping = rows_keys[[\"date\", \"instrument\"]].merge("
+    },
+    {
+     "line": 327,
+     "text": "aligned = keys.merge(labels, on=[\"date\", \"instrument\"], how=\"left\", validate=\"one_to_one\")"
+    },
+    {
+     "line": 727,
+     "text": "report[\"checks\"][\"5_unit_tests\"] = {\"command\": \" \".join(command),"
+    },
+    {
+     "line": 736,
+     "text": "joined = batch.keys[[\"date\", \"instrument\"]].assign(row_at=np.arange(len(batch.keys))).merge("
+    }
+   ],
+   "zero_init": [
+    {
+     "line": 251,
+     "text": "context = np.zeros((len(timestamps), market_head.CONTEXT_DIM), dtype=np.float64)"
+    },
+    {
+     "line": 572,
+     "text": "probe = torch.zeros((16, market_head.REPRESENTATION_DIM), dtype=torch.float32,"
+    },
+    {
+     "line": 573,
+     "text": "device=args.device), torch.zeros((16, market_head.CONTEXT_DIM),"
+    }
+   ],
+   "aggregate": [
+    {
+     "line": 306,
+     "text": "union = (union.groupby([\"date\", \"instrument\"], as_index=False)"
+    },
+    {
+     "line": 383,
+     "text": "\"coverage_mean\": float(context[:, -1].mean()),"
+    },
+    {
+     "line": 469,
+     "text": "loss = torch.mean((batch_base + delta - batch_target) ** 2)"
+    }
+   ]
+  }
+ },
+ "self_test": {
+  "passed": true,
+  "rows": [
+   {
+    "mutant": "per_chunk_m",
+    "expected_check": "batch",
+    "failing_checks": [
+     "batch",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.5446361623669986e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": false,
+      "max_abs": 0.002575559774413705
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "label_dropna",
+    "expected_check": "label",
+    "failing_checks": [
+     "label",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.5446361623669986e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": false,
+      "max_abs": Infinity
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "fallback_in_pool",
+    "expected_check": "pool",
+    "failing_checks": [
+     "formula",
+     "pool",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.23000001907348633
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": false,
+      "max_abs": 0.3815932869911194
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "global_std",
+    "expected_check": "lookahead",
+    "failing_checks": [
+     "formula",
+     "lookahead",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 1.5046621561050415
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 8.940696716308594e-07
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": false,
+      "max_abs": 0.42449063062667847
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "float32_loop_order",
+    "expected_check": "permute",
+    "failing_checks": [
+     "formula",
+     "permute",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.0027336478233337402
+     },
+     "permute": {
+      "passed": false,
+      "max_abs": 1.0728836059570312e-06
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "nonzero_init_w",
+    "expected_check": "zeroinit",
+    "failing_checks": [
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.5446361623669986e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.025637168437242508
+     }
+    }
+   },
+   {
+    "mutant": "std_unbiased",
+    "expected_check": "formula",
+    "failing_checks": [
+     "formula",
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": false,
+      "max_abs": 0.0027337074279785156
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   },
+   {
+    "mutant": "dead_residual",
+    "expected_check": "zeroinit",
+    "failing_checks": [
+     "zeroinit"
+    ],
+    "caught": true,
+    "per_check": {
+     "formula": {
+      "passed": true,
+      "max_abs": 3.5446361623669986e-08
+     },
+     "permute": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "batch": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "pool": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "lookahead": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "label": {
+      "passed": true,
+      "max_abs": 0.0
+     },
+     "zeroinit": {
+      "passed": false,
+      "max_abs": 0.0
+     }
+    }
+   }
+  ],
+  "note": "Each mutant breaks exactly one invariance; the check named in expected_check must report >1e-6 for that mutant."
+ },
+ "threshold_basis": {
+  "gate": 1e-06,
+  "rule": "No item may exceed 1e-6; bitwise equality is never required of the frozen trunk's representation.",
+  "measured_noise_floors": {
+   "market_summary_float64": "1e-15 .. 5e-9 (float64 accumulation order only)",
+   "frozen_trunk_representation": 7.748603820800781e-07,
+   "frozen_trunk_score": "1.6e-7 (same trunk, before any market context)"
+  },
+  "why": "The ~8.3e-7 representation deviation is float32 GEMM blocking inside MLPLOB.forward_with_representation when the inference batch varies; the head consumes an h that is extracted once, so this noise never enters the market summary or the residual. Any replay comparison across chunk sizes must use a >=1e-6 tolerance and must not assert bitwise equality on the representation."
+ },
+ "verdict": "pass",
+ "elapsed_seconds": 28.15,
+ "repro_command": "python scripts/audit_market_context.py --target t1 --check all --size full"
+}
