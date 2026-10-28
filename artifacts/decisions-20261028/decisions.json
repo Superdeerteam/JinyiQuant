@@ -1,0 +1,275 @@
+{
+  "schema_version": "decision-log/1",
+  "log_id": "decisions-20261028",
+  "captured_at_utc": "2026-10-28T13:30:23.375020+00:00",
+  "caliber_note_zh": "所有区间均为修正后的 5 日块移动 bootstrap（ceil(n/5) 块、20000 draws、seed 20261028）；`block_interval` 旧单块实现在 2026-10-28 被修复，旧区间保留在归档里但不得用于任何判定。",
+  "decisions": [
+    {
+      "id": "D1-927-extension-not-triggered",
+      "question_zh": "927 交易日档位是否从 2.64 续训到 3.96？",
+      "verdict": "not_triggered",
+      "numbers": {
+        "pooled_delta_2.64_minus_1.32": -0.00046,
+        "ci95": [
+          -0.00821,
+          0.00677
+        ],
+        "positive_windows": "2/5",
+        "per_seed": {
+          "11": 0.0032,
+          "29": -0.00517,
+          "47": 0.00059
+        }
+      },
+      "consequence_zh": "停在 2.64，不训 3.96；该档位的种子离散在 2 epoch 以上放大到 ±0.004。",
+      "evidence": [
+        "/root/runs/927d-extension-decision.json (hz-4)",
+        "configs/b4_scaling_extension_prereg_20261028.json"
+      ]
+    },
+    {
+      "id": "D2-feature-normalization-stop",
+      "question_zh": "价格相对化 + log1p 成交量能否提高交付口径表现？",
+      "verdict": "stop",
+      "numbers": {
+        "pooled_delta_at_1.32": 0.0016687,
+        "ci95_corrected": [
+          0.00023,
+          0.003112
+        ],
+        "registered_threshold": 0.003,
+        "positive_windows": "4/5",
+        "extension_seeds_delta": -1e-05
+      },
+      "consequence_zh": "注册判定仍是 stop（改进量 < 阈值）；12 列原始盘口价+原始股数不是该架构的瓶颈。",
+      "evidence": [
+        "/root/runs/featnorm-replay-20261028/*/decision.json (hz-t3)",
+        "/root/runs/featnorm-ext-replay-20261028/*/decision_ext.json (hz-t3)",
+        "configs/b4_feature_norm_prereg_20261028.json"
+      ]
+    },
+    {
+      "id": "D3-market-context-head-rejected",
+      "question_zh": "冻结主干 + 同刻股票池市场上下文残差头，能否高于同结构无上下文的新头？",
+      "verdict": "rejected",
+      "numbers": {
+        "C_minus_B": -0.00011229556376858769,
+        "ci95": [
+          -0.0008473677608332482,
+          0.0006268345258980143
+        ],
+        "positive_windows": "6/10",
+        "C_minus_A": -0.00036624233130575233,
+        "arm_levels": {
+          "A": 0.07279744448251253,
+          "B": 0.0689712352453894,
+          "C": 0.0688589396816208
+        }
+      },
+      "consequence_zh": "否决，不扩种子、不做第二轮；本因子里 C 连 A 都没赢。",
+      "evidence": [
+        "/root/runs/mktctx-t4-captain/comparison.json (ZBzdgJ)",
+        "configs/mktctx_t4_prereg_20261028.json",
+        "artifacts/mktctx-20261028/audit.json"
+      ]
+    },
+    {
+      "id": "D4-sealed-interval-spent",
+      "question_zh": "现行提交候选在一次性封存窗 [2024-10-08, 2025-01-01) 上是否仍优于现任九模型？",
+      "verdict": "positive_and_window_spent",
+      "numbers": {
+        "candidate_rank_ic": 0.089952,
+        "incumbent_rank_ic": 0.079721,
+        "delta": 0.010288,
+        "ci95_corrected": [
+          0.005089,
+          0.015253
+        ],
+        "days": 61,
+        "positive_days": "47/61",
+        "ls_mean_candidate": 0.0008163,
+        "ls_mean_incumbent": 0.0007207
+      },
+      "consequence_zh": "开发窗增益在封存窗更大且同一方向 → 提交候选得到独立证据支持；该窗已花掉，此后只能当已见数据。",
+      "evidence": [
+        "runs/sealed-final-20261028/sealed_result.json",
+        "runs/sealed-final-20261028/summary_metrics.json"
+      ]
+    },
+    {
+      "id": "D5-bootstrap-caliber-fixed",
+      "question_zh": "项目里用于判定的 5 日块 bootstrap 是否给出了错误宽度？",
+      "verdict": "defect_confirmed_fixed_zero_verdict_flips",
+      "numbers": {
+        "inflation_factor": "sqrt(n/5): n=104 → 4.56x, n=61 → 3.49x",
+        "archived_ci_reproduced_pointwise": "8/8 gaps 0.0",
+        "registered_verdicts_flipping": 0,
+        "debt_bearing_comparisons": 5
+      },
+      "consequence_zh": "修 `scripts/compare_blend_replay.py::block_interval`；旧实现保留为 archived_single_block_interval（永不用于判定）；已注册判定翻转 0 条，仅把 5 条区间改窄并重新记录；下游不得再以'区间宽所以保守'为理由。",
+      "evidence": [
+        "artifacts/caliber-20261028/impact.json",
+        "runs/mbb-caliber-20261028/recompute.json",
+        "runs/t7-caliber/regression_check.json"
+      ]
+    },
+    {
+      "id": "D6-window-roles-frozen",
+      "question_zh": "十窗已被反复使用后，新方向该在哪读分、怎么读？",
+      "verdict": "protocol_frozen",
+      "numbers": {
+        "screen_windows": 8,
+        "screen_days": 165,
+        "confirmation_windows": [
+          "jun2024",
+          "sep2024"
+        ],
+        "confirmation_days": 38,
+        "screen_rule": "0.003 + CI excludes 0 + 7/8 positive",
+        "confirmation_rule": "pooled > 0 and >= 21/38 positive (veto line)"
+      },
+      "consequence_zh": "筛查可反复看；确认窗每方向只读一次；十窗/203 天池化读数只允许出现在最终报告里，且一旦出现即视为花掉确认额度。",
+      "evidence": [
+        "configs/dev10_window_roles_20261028.json",
+        "configs/screen10_screening_addendum_20261028.json"
+      ]
+    },
+    {
+      "id": "D7-alpha-frontier-answers",
+      "question_zh": "换手-IC 前沿是否逐窗平移？改成固定换手目标代价多大？",
+      "verdict": "cheap_and_portable",
+      "numbers": {
+        "fixed_target_1_05": {
+          "alpha_star": 0.8400697,
+          "delta_rank_ic": -0.0001984,
+          "ci95": [
+            -0.00172034,
+            0.00139151
+          ]
+        },
+        "fixed_target_1_00": {
+          "alpha_star": 0.7717,
+          "delta_rank_ic": -0.00062911
+        },
+        "incumbent_turnover_mean": 1.10637,
+        "incumbent_turnover_sd": 0.02315
+      },
+      "consequence_zh": "现行包维持 α=0.9111677303420447（换手匹配到现任）；下次因别的改进重打包时改用固定目标 1.05 的 α=0.8400697。",
+      "evidence": [
+        "artifacts/alpha-frontier-20261028/answers.json",
+        "artifacts/alpha-frontier-20261028/registration.json"
+      ]
+    },
+    {
+      "id": "D8-routes-closed-R5-R7-R9-R10",
+      "question_zh": "时点条件头 / 权重平均 / 风险残差标签 / 分组稳健训练，这四条值得投入吗？",
+      "verdict": "closed",
+      "numbers": {
+        "R5": {
+          "oracle_over_14_arms": 0.07290047,
+          "candidate": 0.0727943,
+          "delta": 0.000106
+        },
+        "R10": {
+          "groups_negative": 0,
+          "groups_positive_significant": 16,
+          "groups_total": 25
+        },
+        "R7": {
+          "swa_blend_minus_264_blend": 0.000176,
+          "ci95": [
+            -0.000403,
+            0.00074
+          ],
+          "turnover": [
+            1.17,
+            1.1341
+          ]
+        },
+        "R9": "instruments table has only date/instrument/name"
+      },
+      "consequence_zh": "R5/R10/R7 关闭但**结论收窄**：只证明'从现有 14 个模型按时点选择无价值''改善量在各组同为正'，不等于新模型学'时点×盘口形态'或分组稳健训练没有上界；R9 因无暴露矩阵不做。",
+      "evidence": [
+        "runs/screen-premise-20261028/verdict.json"
+      ]
+    },
+    {
+      "id": "D9-600d-position",
+      "question_zh": "600 交易日档位在两个已训档位之间落在哪？",
+      "verdict": "descriptive_only",
+      "numbers": {
+        "ten_window_blend_132": {
+          "441": 0.071287,
+          "600": 0.072159,
+          "927": 0.073294
+        },
+        "five_window_blend_132": {
+          "441": 0.076606,
+          "600": 0.078204,
+          "927": 0.07905
+        },
+        "share_of_441_to_927_gap": {
+          "ten_window": 0.434,
+          "five_window": 0.654
+        },
+        "within_600d_264_minus_132": {
+          "delta": 0.001642,
+          "ci95": [
+            -0.003981,
+            0.008975
+          ]
+        }
+      },
+      "consequence_zh": "水平随训练数据量单调上升、边际递减且伴随换手上升；不作为提交候选、不触发晋升。",
+      "evidence": [
+        "/root/runs/screen10-600d-20261028/20261028T124658.254334Z_45739f58c615 (ZBzdgJ)",
+        "configs/b4_data_scaling_600d_extension_20261028.registration.json"
+      ]
+    },
+    {
+      "id": "D10-screening-addendum",
+      "question_zh": "今天新注册的四条臂（排序损失、lookback240、标签波动率、多期限标签）在什么口径下判定？",
+      "verdict": "registered_before_any_score",
+      "numbers": {
+        "screen_baseline_rank_ic": 0.075639,
+        "screen_baseline_turnover": 1.1288,
+        "min_improvement": 0.003,
+        "min_positive_windows": "7/8",
+        "arms_scored_at_freeze": 0
+      },
+      "consequence_zh": "统一按 8 窗 165 天筛查、7/8 与 CI 判据；jun/sep 留作确认；四臂在任何评分点产生之前冻结。",
+      "evidence": [
+        "configs/screen10_screening_addendum_20261028.json",
+        "configs/screen10_prereg_20261028.json",
+        "configs/screen10_voladj_prereg_20261028.json",
+        "configs/screen10_mh_prereg_20261028.json"
+      ]
+    },
+    {
+      "id": "D11-submission-package",
+      "question_zh": "当前提交包是什么、验证到什么程度？",
+      "verdict": "accepted_locally_platform_unverified",
+      "numbers": {
+        "zip_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+        "zip_bytes": 10236143,
+        "gate_status": "accept",
+        "improvement": 0.008235609120890754,
+        "ci95": [
+          0.005234086005151287,
+          0.009942125220239689
+        ],
+        "platform_acceptance": "not_verified"
+      },
+      "consequence_zh": "包已在远端仓库逐字节验证；平台首次提交仍需端到端验收。",
+      "evidence": [
+        "artifacts/submission-20261028/package-flat.zip",
+        "artifacts/submission-20261028/evidence/gate-decision-resource.json"
+      ]
+    }
+  ],
+  "not_decided_zh": [
+    "跨档集成（441/600/927 混合）是否值得替换现行候选 —— 筛查中",
+    "R6 LightGBM 特征树 / R11 邻居 / R12 跨日同时段 / R13 归一化旁路 / R14 自监督 / R15+R16 / R17 MiniRocket / R18 SAM —— 团队 alpha-routes-20261029 在跑",
+    "R8 OFI 特征 —— 实现已交付，等掩码与裁剪规则重验后决定是否上训练臂"
+  ]
+}
