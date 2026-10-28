@@ -1,0 +1,195 @@
+{
+ "schema_version": 1,
+ "experiment_id": "featnorm-ext-replay-20261028",
+ "hypothesis": "The six 132d extension-seed runs (seeds 53/59/61 x two arms) replayed on the same five declared development months, reporting the declared replication of the registered 11/29/47 comparison. The registered decision stands on 11/29/47.",
+ "output_root": "/root/runs/featnorm-ext-replay-20261028",
+ "seed": 20261027,
+ "bootstrap_draws": 4000,
+ "chunk_days": 6,
+ "predict_batch_size": 256,
+ "data": {
+  "bars_path": "/root/data/cpt_jyc_2026_e2e_bar1m",
+  "labels_path": "/root/data/cpt_jyc_2026_vwap",
+  "instruments_path": "/root/data/cpt_jyc_2026_instruments(1).parquet",
+  "instrument_map_path": "/root/data/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+  "cache_dir": null,
+  "source": "official_local_download_with_explicit_mapping",
+  "version": "cpt_jyc_2026",
+  "feature_columns": [
+   "ask_price1",
+   "ask_volume1",
+   "bid_price1",
+   "bid_volume1",
+   "ask_price2",
+   "ask_volume2",
+   "bid_price2",
+   "bid_volume2",
+   "ask_price3",
+   "ask_volume3",
+   "bid_price3",
+   "bid_volume3"
+  ],
+  "lookback": 128,
+  "min_history": 1,
+  "history_days": 10,
+  "max_ffill_steps": 5,
+  "missing_policy": "ffill",
+  "missing_sentinel": -1,
+  "price_scale": 100,
+  "outside_universe_labels": "exclude",
+  "label_horizon_minutes": 30,
+  "sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "training_sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "allowed_start": "2020-01-01T00:00:00",
+  "allowed_end": "2025-01-01T00:00:00"
+ },
+ "evaluation": {
+  "quantile": 0.2,
+  "periods_per_year": 252,
+  "min_cross_section": 3,
+  "constant_portfolios": "undefined"
+ },
+ "windows": [
+  {
+   "name": "nov2023",
+   "label": "2023-11-01 declared development month",
+   "start": "2023-11-01T00:00:00",
+   "end": "2023-12-01T00:00:00",
+   "expected_targets_sha256": "3c980d3f0410d88f3e3713c58c002ef174681a10a04409a92be1503b24040637"
+  },
+  {
+   "name": "jan2024",
+   "label": "2024-01-01 declared development month",
+   "start": "2024-01-01T00:00:00",
+   "end": "2024-02-01T00:00:00",
+   "expected_targets_sha256": "2b1bacd6f034368ef3d5d5bccb4edb058d41e1cbc15ad69afb172933715a2cc3"
+  },
+  {
+   "name": "mar2024",
+   "label": "2024-03-01 declared development month",
+   "start": "2024-03-01T00:00:00",
+   "end": "2024-04-01T00:00:00",
+   "expected_targets_sha256": "063cf70df0a4405479f9906a10ff025a7b67ea267a92444413239aa212368e91"
+  },
+  {
+   "name": "apr2024",
+   "label": "2024-04-01 declared development month",
+   "start": "2024-04-01T00:00:00",
+   "end": "2024-05-01T00:00:00",
+   "expected_targets_sha256": "acf77219e30ed3e8dfb3068f2fe4a3c00569c27d660f80d283bbd599a92daa8a"
+  },
+  {
+   "name": "jun2024",
+   "label": "2024-06-01 declared development month",
+   "start": "2024-06-01T00:00:00",
+   "end": "2024-07-01T00:00:00",
+   "expected_targets_sha256": "d31567aef7cd65b320c29b5ac7e7bbc68d589c59a85bad39262449bcc1228911"
+  }
+ ],
+ "versions": [
+  {
+   "name": "c-s53-132",
+   "label": "control seed53 data-1.32",
+   "weights": "/root/runs/featnorm-ext-control-seed53/20261028T071150.338460Z_d628d5650b95/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "c-s53-264",
+   "label": "control seed53 data-2.64",
+   "weights": "/root/runs/featnorm-ext-control-seed53/20261028T071150.338460Z_d628d5650b95/modified_tlob_weights-data-2.64.json"
+  },
+  {
+   "name": "p-s53-132",
+   "label": "pricerel seed53 data-1.32",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed53/20261028T071207.285780Z_31a846470267/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "p-s53-264",
+   "label": "pricerel seed53 data-2.64",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed53/20261028T071207.285780Z_31a846470267/modified_tlob_weights-data-2.64.json"
+  },
+  {
+   "name": "c-s59-132",
+   "label": "control seed59 data-1.32",
+   "weights": "/root/runs/featnorm-ext-control-seed59/20261028T071155.430425Z_b815570a9b9f/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "c-s59-264",
+   "label": "control seed59 data-2.64",
+   "weights": "/root/runs/featnorm-ext-control-seed59/20261028T071155.430425Z_b815570a9b9f/modified_tlob_weights-data-2.64.json"
+  },
+  {
+   "name": "p-s59-132",
+   "label": "pricerel seed59 data-1.32",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed59/20261028T071210.721404Z_58850418b82f/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "p-s59-264",
+   "label": "pricerel seed59 data-2.64",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed59/20261028T071210.721404Z_58850418b82f/modified_tlob_weights-data-2.64.json"
+  },
+  {
+   "name": "c-s61-132",
+   "label": "control seed61 data-1.32",
+   "weights": "/root/runs/featnorm-ext-control-seed61/20261028T071158.484634Z_eaf1f7a4f558/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "c-s61-264",
+   "label": "control seed61 data-2.64",
+   "weights": "/root/runs/featnorm-ext-control-seed61/20261028T071158.484634Z_eaf1f7a4f558/modified_tlob_weights-data-2.64.json"
+  },
+  {
+   "name": "p-s61-132",
+   "label": "pricerel seed61 data-1.32",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed61/20261028T071219.350442Z_e4e8cd0bc5d6/modified_tlob_weights-data-1.32.json"
+  },
+  {
+   "name": "p-s61-264",
+   "label": "pricerel seed61 data-2.64",
+   "weights": "/root/runs/featnorm-ext-pricerel-seed61/20261028T071219.350442Z_e4e8cd0bc5d6/modified_tlob_weights-data-2.64.json"
+  }
+ ],
+ "pairs": [
+  [
+   "p-s53-132",
+   "c-s53-132"
+  ],
+  [
+   "p-s53-264",
+   "c-s53-264"
+  ],
+  [
+   "p-s59-132",
+   "c-s59-132"
+  ],
+  [
+   "p-s59-264",
+   "c-s59-264"
+  ],
+  [
+   "p-s61-132",
+   "c-s61-132"
+  ],
+  [
+   "p-s61-264",
+   "c-s61-264"
+  ]
+ ]
+}
