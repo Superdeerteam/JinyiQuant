@@ -1,0 +1,52 @@
+{
+ "schema_version": 1,
+ "experiment_id": "sealed-final-20261028",
+ "hypothesis": "One-shot sealed check: the frozen submission candidate (441d@2.64 seeds 11/29/47 equal-weight blend with causal EWMA alpha=0.9111677303420447) replayed with each checkpoint's own saved preprocessing on the sealed interval [2024-10-08, 2025-01-01) alongside the nine-member reference blend, so the candidate-minus-reference gap can be read in a regime no development window covered. Read once, never re-selected on.",
+ "output_root": "/root/runs/sealed-final-20261028",
+ "seed": 20261027,
+ "bootstrap_draws": 20000,
+ "chunk_days": 6,
+ "predict_batch_size": 256,
+ "data": {
+  "bars_path": "/root/data/cpt_jyc_2026_e2e_bar1m",
+  "labels_path": "/root/data/cpt_jyc_2026_vwap",
+  "instruments_path": "/root/data/cpt_jyc_2026_instruments(1).parquet",
+  "instrument_map_path": "/root/data/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+  "cache_dir": null,
+  "source": "official_local_download_with_explicit_mapping",
+  "version": "cpt_jyc_2026",
+  "feature_columns": ["ask_price1","ask_volume1","bid_price1","bid_volume1","ask_price2","ask_volume2","bid_price2","bid_volume2","ask_price3","ask_volume3","bid_price3","bid_volume3"],
+  "lookback": 128,
+  "min_history": 1,
+  "history_days": 10,
+  "max_ffill_steps": 5,
+  "missing_policy": "ffill",
+  "missing_sentinel": -1,
+  "price_scale": 100,
+  "outside_universe_labels": "exclude",
+  "label_horizon_minutes": 30,
+  "sample_times": ["09:30","10:00","10:30","11:00","11:30","13:30","14:00","14:30"],
+  "training_sample_times": ["09:30","10:00","10:30","11:00","11:30","13:30","14:00","14:30"],
+  "allowed_start": "2020-01-01T00:00:00",
+  "allowed_end": "2025-01-01T00:00:00"
+ },
+ "evaluation": {"quantile": 0.2, "periods_per_year": 252, "min_cross_section": 3, "constant_portfolios": "undefined"},
+ "windows": [
+  {"name": "sealed2024q4", "label": "sealed interval 2024-10-08 .. 2025-01-01 (read once)", "start": "2024-10-08T00:00:00", "end": "2025-01-01T00:00:00"}
+ ],
+ "versions": [
+  {"name": "inc-tlob-s11", "label": "reference TLOB 60d seed11", "role": "member", "weights": "/root/weights/sealed/inc/tlob_s11.json"},
+  {"name": "inc-tlob-s29", "label": "reference TLOB 60d seed29", "role": "member", "weights": "/root/weights/sealed/inc/tlob_s29.json"},
+  {"name": "inc-tlob-s47", "label": "reference TLOB 60d seed47", "role": "member", "weights": "/root/weights/sealed/inc/tlob_s47.json"},
+  {"name": "inc-mlp-s11", "label": "reference MLPLOB 60d seed11", "role": "member", "weights": "/root/weights/sealed/inc/mlp_s11.json"},
+  {"name": "inc-mlp-s29", "label": "reference MLPLOB 60d seed29", "role": "member", "weights": "/root/weights/sealed/inc/mlp_s29.json"},
+  {"name": "inc-mlp-s47", "label": "reference MLPLOB 60d seed47", "role": "member", "weights": "/root/weights/sealed/inc/mlp_s47.json"},
+  {"name": "inc-patch-s11", "label": "reference dual-patch 60d seed11", "role": "member", "weights": "/root/weights/sealed/inc/patch_s11.json"},
+  {"name": "inc-patch-s29", "label": "reference dual-patch 60d seed29", "role": "member", "weights": "/root/weights/sealed/inc/patch_s29.json"},
+  {"name": "inc-patch-s47", "label": "reference dual-patch 60d seed47", "role": "member", "weights": "/root/weights/sealed/inc/patch_s47.json"},
+  {"name": "cand-s11-264", "label": "candidate 441d@2.64 seed11", "role": "candidate", "weights": "/root/weights/sealed/cand/cand_s11_264.json"},
+  {"name": "cand-s29-264", "label": "candidate 441d@2.64 seed29", "role": "candidate", "weights": "/root/weights/sealed/cand/cand_s29_264.json"},
+  {"name": "cand-s47-264", "label": "candidate 441d@2.64 seed47", "role": "candidate", "weights": "/root/weights/sealed/cand/cand_s47_264.json"}
+ ],
+ "pairs": [["cand-s11-264", "inc-tlob-s11"]]
+}
