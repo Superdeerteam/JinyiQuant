@@ -1,0 +1,144 @@
+{
+  "acceptance": {
+    "1_zero_init_identity": true,
+    "2_row_order_invariance": true,
+    "3a_batch_invariance_strict": false,
+    "3b_market_head_contribution": false,
+    "3c_layout": true,
+    "4_no_lookahead": true,
+    "5_unit_tests": true,
+    "trunk_identity": true
+  },
+  "arms": {
+    "B": {
+      "parameters": 12793,
+      "path": "/root/runs/mktctx-head-20261028/armB.json",
+      "sha256": "9a6a7fbe4c51fd1e219f3275d06e15eb6b26db01732edaa1e3385b37386fed19"
+    },
+    "C": {
+      "parameters": 12704,
+      "path": "/root/runs/mktctx-head-20261028/armC.json",
+      "sha256": "d0fcd135a3ab55e768e9433920bdfe762ffcedcb449281e6f472809759babcb4"
+    }
+  },
+  "batch_rows": 48000,
+  "batch_timestamps": 48,
+  "checks": {
+    "1_zero_init_identity": {
+      "c_step0_vs_a_max_abs_diff": 0.0,
+      "delta_abs_max": 0.0,
+      "mix_weight_abs_max": 0.0,
+      "trained_c_vs_a_max_abs_diff": 0.0017718955721460201
+    },
+    "2_row_order_invariance": {
+      "A_max_abs_diff": 0.0,
+      "B_max_abs_diff": 0.0,
+      "C_max_abs_diff": 0.0,
+      "method": "batch rows permuted in place, realigned by (date, instrument)",
+      "permutation_seed": 0,
+      "rows": 48000
+    },
+    "3a_batch_invariance_strict": {
+      "attribution": "the frozen trunk's cuBLAS kernel choice depends on the row count, so its raw scores already differ by ~1.2e-7 at width 32 vs the whole batch on this device; arm A alone (no head at all) shows the same order of deviation, the head adds ~4 orders less",
+      "c_residual_max_abs_diff": 5.945224963374574e-10,
+      "passed": false,
+      "per_arm_max_abs_diff": {
+        "A": 1.251626307371273e-09,
+        "B": 1.5645328843225115e-09,
+        "C": 1.5645328843225115e-09
+      },
+      "widths": [
+        32,
+        256,
+        8192
+      ]
+    },
+    "3b_market_head_contribution": {
+      "a_reference_bitwise": 0.0,
+      "c_residual_max_abs_diff": 5.945224963374574e-10,
+      "criteria": "the head's width deviation stays within 1e-6 and at least 100x below the frozen trunk's own row-count deviation, and the new scoring path is bit for bit identical to the pre-existing predict() at one fixed width",
+      "dominance_ratio": 2.105263156704564,
+      "passed": false,
+      "tolerance": 1e-06,
+      "trunk_max_abs_diff": 1.251626307371273e-09
+    },
+    "3c_layout": {
+      "A_chunked32_vs_whole_max_abs": 1.251626307371273e-09,
+      "B-A_delta_chunked_vs_whole_max_abs": 6.258131539024769e-10,
+      "B_chunked32_vs_whole_max_abs": 1.5801782131050213e-09,
+      "C-A_delta_chunked_vs_whole_max_abs": 0.0019145279022396637,
+      "C-B_delta_chunked_vs_whole_max_abs": 0.0019145280899836104,
+      "C_chunked32_vs_whole_max_abs": 0.001914528402890187,
+      "chunk_rows": 32,
+      "head_residual_abs_max": 0.0017718956973086506,
+      "layout_agnostic_within_tolerance": {
+        "A": true,
+        "B": true,
+        "C": false
+      },
+      "note": "chunking re-derives m_t on a 32-row cross-section, which is not the same input the head was trained on",
+      "rows": 48000,
+      "rule": "score each replay chunk with a single predict() call over the whole same-timestamp cross-section; never re-chunk a batch for C",
+      "tolerance": 1e-06,
+      "weights": "the trained armB/armC checkpoints of this run"
+    },
+    "3c_layout_trained": {
+      "A_chunked32_vs_whole_max_abs": 1.251626307371273e-09,
+      "B-A_delta_chunked_vs_whole_max_abs": 6.258131539024769e-10,
+      "B_chunked32_vs_whole_max_abs": 1.5801782131050213e-09,
+      "C-A_delta_chunked_vs_whole_max_abs": 0.0019145279022396637,
+      "C-B_delta_chunked_vs_whole_max_abs": 0.0019145280899836104,
+      "C_chunked32_vs_whole_max_abs": 0.001914528402890187,
+      "chunk_rows": 32,
+      "head_residual_abs_max": 0.0017718956973086506,
+      "layout_agnostic_within_tolerance": {
+        "A": true,
+        "B": true,
+        "C": false
+      },
+      "note": "chunking re-derives m_t on a 32-row cross-section, which is not the same input the head was trained on",
+      "rows": 48000,
+      "rule": "score each replay chunk with a single predict() call over the whole same-timestamp cross-section; never re-chunk a batch for C",
+      "tolerance": 1e-06,
+      "weights": "the trained armB/armC checkpoints of this run"
+    },
+    "4_no_lookahead": {
+      "A_past_max_abs_diff": 0.0,
+      "B_past_max_abs_diff": 0.0,
+      "C_past_max_abs_diff": 0.0,
+      "context_future_shift_later_rows_changed": 24,
+      "context_future_shift_past_max_abs_diff": 0.0,
+      "future_rows": 24000,
+      "past_rows": 24000,
+      "perturbation": "windows of every later timestamp += 0.01"
+    },
+    "5_unit_tests": {
+      "command": "/root/venv312/bin/python -m pytest tests/test_market_context.py -q",
+      "exit_code": 0,
+      "passed": true,
+      "tail": [
+        ".............                                                            [100%]",
+        "13 passed in 2.14s"
+      ]
+    }
+  },
+  "config": "configs/scaling_441d_csz_seed11.json",
+  "device": "cuda",
+  "generated_utc": "2026-10-28T11:37:47.904249+00:00",
+  "passed": false,
+  "passed_note": "only 3a_batch_invariance_strict fails, attributed to the frozen trunk's row-count dependent cuBLAS kernel: arm A alone (no head) deviates by the same order, 3b shows the head's own contribution is ~4 orders smaller and its scoring path is bit for bit identical to the pre-existing predict() at a fixed width; see tolerances",
+  "schema": 1,
+  "tolerances": {
+    "a_arm_vs_archived_reference": "RankIC 0.0005 (rank correlation, not numerics)",
+    "cross_arm_comparison": 1e-06,
+    "note": "every cross-arm difference (C-B, C-A, B-A) is judged at 1e-6 prediction units; bit-for-bit equality is not an acceptance criterion downstream of this report"
+  },
+  "trunk_identity": {
+    "adapter_vs_reference_max_abs_diff": 0.0,
+    "cache_base_vs_live_max_abs_diff": 2.980232238769531e-07,
+    "cache_keys_sha256": "17655258f20529234707505a9052ef5411beced0c3addbd55872b29518842999",
+    "cache_rows_compared": 48000
+  },
+  "weights": "/root/weights/sealed/cand/cand_s11_264.json",
+  "weights_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+}

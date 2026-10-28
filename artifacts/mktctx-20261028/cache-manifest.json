@@ -1,0 +1,211 @@
+{
+  "complete": true,
+  "config": "configs/scaling_441d_csz_seed11.json",
+  "config_sha256": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
+  "generated_utc": "2026-10-28T10:47:43.632245+00:00",
+  "splits": {
+    "replay": {
+      "arrays": {
+        "base": {
+          "dtype": "float64",
+          "sha256": "6f15cd9971de0e3961712dfd25eeb22e01b20e25dbb33c419523d455de56c6fe",
+          "shape": [
+            80000
+          ]
+        },
+        "context": {
+          "dtype": "float64",
+          "sha256": "0b65d240944b279a9558eeaea7535c157a9d13d33f9f37ea23ee3507f7704d20",
+          "shape": [
+            80,
+            161
+          ]
+        },
+        "context_code": {
+          "dtype": "int32",
+          "sha256": "b12364b8ddeddf41cbcb4aa9345e9b9cc9e1ab8e49201582e67bdfc761896974",
+          "shape": [
+            80000
+          ]
+        },
+        "context_count": {
+          "dtype": "int64",
+          "sha256": "f7a8460b42990d10a4cc4cb1f90dd3b3d1f1dd1de0bda1e0f66656a1dfa5a977",
+          "shape": [
+            80
+          ]
+        },
+        "context_timestamp": {
+          "dtype": "datetime64[ns]",
+          "sha256": "057c54b0404beb15095605a21ddd0b25df7decb1e59d78b50801863118562fb3",
+          "shape": [
+            80
+          ]
+        },
+        "h": {
+          "dtype": "float32",
+          "sha256": "9607964f835f8346030770323fb934148fb668bd1fc71ce5697d0383f991b95b",
+          "shape": [
+            80000,
+            80
+          ]
+        },
+        "target": {
+          "dtype": "float64",
+          "sha256": "52f9386556092ca2e59d08d8e6e45c722ecfb83125460acf3e98365588a351b5",
+          "shape": [
+            80000
+          ]
+        },
+        "valid": {
+          "dtype": "bool",
+          "sha256": "69675f3e79e67c4db3e3d6d9a40ec22b5ffcf85b97733a4b9b79eb3857c83e66",
+          "shape": [
+            80000
+          ]
+        },
+        "y_optimization": {
+          "dtype": "float32",
+          "sha256": "56e5ecfdeaea58102751bc5290273cfdf8e9411a7da406e513bf7ee290b05124",
+          "shape": [
+            80000
+          ]
+        }
+      },
+      "context": {
+        "coverage_mean": 0.999,
+        "coverage_min": 0.999,
+        "cross_section_keys": 80000,
+        "rows_max": 1000,
+        "rows_min": 1000
+      },
+      "days": 10,
+      "end": "2023-11-15 00:00:00",
+      "keys_sha256": "17655258f20529234707505a9052ef5411beced0c3addbd55872b29518842999",
+      "labels": {
+        "finite": 79920,
+        "rows": 80000
+      },
+      "min_history": 1,
+      "part_rows": 131072,
+      "parts_retained": false,
+      "rows": 80000,
+      "schema": 1,
+      "seconds": 37.8,
+      "split": "replay",
+      "start": "2023-11-01 00:00:00",
+      "target_centering": "timestamp_zscore_train_rms_matched",
+      "target_centering_selfcheck": {
+        "max_abs_diff": null,
+        "mode": "not_applicable"
+      },
+      "target_scale": 0.0041997609822677275,
+      "timestamps": 80,
+      "weights": "/root/weights/sealed/cand/cand_s11_264.json",
+      "weights_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+    },
+    "train": {
+      "arrays": {
+        "base": {
+          "dtype": "float64",
+          "sha256": "42423645f8049108a9f344c6dadf76072da602d589a10b59b7985337ab37a174",
+          "shape": [
+            3521680
+          ]
+        },
+        "context": {
+          "dtype": "float64",
+          "sha256": "b7e6aeef097be8cfaf87de3779d48bc4a11051743d38db1adb168d26115fbba6",
+          "shape": [
+            3528,
+            161
+          ]
+        },
+        "context_code": {
+          "dtype": "int32",
+          "sha256": "75dfe195d4ce09b829386f2e49e2c7e590b1b0144915e9877d6c3b981bceefe9",
+          "shape": [
+            3521680
+          ]
+        },
+        "context_count": {
+          "dtype": "int64",
+          "sha256": "e8efbbbe5fdcf3a4170a5a88b11c897338722dd3bd158caf0cce5ea87ab03222",
+          "shape": [
+            3528
+          ]
+        },
+        "context_timestamp": {
+          "dtype": "datetime64[ns]",
+          "sha256": "a5111f8c7650b4f063ac62927bf4e92c76202e480b056eefed2424c2260abc35",
+          "shape": [
+            3528
+          ]
+        },
+        "h": {
+          "dtype": "float32",
+          "sha256": "24ecabf109f6722961c41e7fb7b307d9c73dee3c6b46fbed4f3d90442583f3f0",
+          "shape": [
+            3521680,
+            80
+          ]
+        },
+        "target": {
+          "dtype": "float64",
+          "sha256": "dab832258bac877141430ec9ac7f18ac76d711dd9986e3a5aa6be153ff6ee20e",
+          "shape": [
+            3521680
+          ]
+        },
+        "valid": {
+          "dtype": "bool",
+          "sha256": "f4fdaec0025c2af1d414577a56133ad9601b968831dc684263ec0ce72ce39b19",
+          "shape": [
+            3521680
+          ]
+        },
+        "y_optimization": {
+          "dtype": "float32",
+          "sha256": "b9799d080a5cc67e1100f8f9d2546c9fdb709e4b015794d7b83a93f1f9c5d840",
+          "shape": [
+            3521680
+          ]
+        }
+      },
+      "context": {
+        "coverage_mean": 0.9990000000000002,
+        "coverage_min": 0.999,
+        "cross_section_keys": 3528000,
+        "rows_max": 1000,
+        "rows_min": 1000
+      },
+      "days": 441,
+      "end": "2023-11-01 00:00:00",
+      "keys_sha256": "bbf65dca2fb3d8119e7d279df9aba31c136d5cbc0b5f618e6202d286a0a5541a",
+      "labels": {
+        "finite": 3521680,
+        "rows": 3521680
+      },
+      "min_history": 1,
+      "part_rows": 131072,
+      "parts_retained": false,
+      "rows": 3521680,
+      "schema": 1,
+      "seconds": 1113.7,
+      "split": "train",
+      "start": "2022-01-04 00:00:00",
+      "target_centering": "timestamp_zscore_train_rms_matched",
+      "target_centering_selfcheck": {
+        "max_abs_diff": 0.0,
+        "mode": "compared"
+      },
+      "target_scale": 0.0041997609822677275,
+      "timestamps": 3528,
+      "weights": "/root/weights/sealed/cand/cand_s11_264.json",
+      "weights_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+    }
+  },
+  "torch": "2.6.0+cu124",
+  "weights": "/root/weights/sealed/cand/cand_s11_264.json",
+  "weights_sha256": "4be890a1618e4e41ebc807fdaa8d9aa966954f835eab3de43e53086fa1d196d7"
+}

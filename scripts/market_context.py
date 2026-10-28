@@ -78,6 +78,18 @@ def array_record(array):
             "sha256": hashlib.sha256(data.tobytes()).hexdigest()}
 
 
+def normalised_sha256(path):
+    """Digest with CRLF folded to LF: what git stores, so a pin survives a checkout."""
+    data = Path(path).read_bytes().replace(bytes([13, 10]), bytes([10]))
+    return hashlib.sha256(data).hexdigest()
+
+
+def code_digests():
+    """Disk and LF-normalised digests of the files a run depends on."""
+    return {"disk": {name: file_sha256(name) for name in CODE_FILES},
+            "lf": {name: normalised_sha256(name) for name in CODE_FILES}}
+
+
 def keys_sha256(keys):
     """Digest of the key set, independent of row order: the cache's identity check."""
     frame = keys[["date", "instrument"]].copy()
@@ -197,10 +209,22 @@ def compare_stats(actual, expected):
 
 
 # ------------------------------------------------------------------------------- cache stage
-def load_cache(path):
-    """Load one cached split and re-verify its row count and key digest against the manifest."""
+def load_cache(path, *, verify="digest"):
+    """Load one cached split and re-verify it against the manifest.
+
+    ``verify="digest"`` (default) re-hashes every array and the key table, so a cache that was
+    rebuilt, truncated or edited after its manifest was written is rejected instead of silently
+    feeding a run different numbers; ``verify="shape"`` only checks row counts.
+    """
     path = Path(path)
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
+    if not manifest.get("complete", True):
+        raise ValueError(f"{path}: cache build did not finish (manifest has complete=false)")
+    aggregate = path.parent / "manifest.json"
+    if aggregate.exists():
+        if not json.loads(aggregate.read_text(encoding="utf-8")).get("complete", True):
+            raise ValueError(f"{path}: the build owning this split did not finish "
+                             f"({aggregate} has complete=false)")
     cached = SimpleNamespace(manifest=manifest, keys=pd.read_parquet(path / "keys.parquet"))
     for name in CACHE_ARRAYS:
         setattr(cached, name, np.load(path / f"{name}.npy"))
@@ -208,6 +232,12 @@ def load_cache(path):
         raise ValueError(f"{path}: cached row count disagrees with its manifest")
     if keys_sha256(cached.keys) != manifest["keys_sha256"]:
         raise ValueError(f"{path}: cached key digest disagrees with its manifest")
+    if verify == "digest":
+        for name, record in manifest["arrays"].items():
+            if array_record(getattr(cached, name))["sha256"] != record["sha256"]:
+                raise ValueError(f"{path}: cached array {name!r} disagrees with its manifest")
+    elif verify != "shape":
+        raise ValueError(f"unknown cache verification mode {verify!r}")
     return cached
 
 
@@ -395,7 +425,9 @@ def cache_stage(args):
             weights=args.weights, cache_root=cache_root, part_rows=args.part_rows,
             slice_rows=args.slice_rows, drop_parts=not args.keep_parts,
             strict_centering=args.max_days is None, recorder=recorder)
-        # Rewritten per split so an interrupted build never leaves a cache without a manifest.
+        # Rewritten per split, with complete=false, so an interrupted build leaves a manifest that
+        # load_cache refuses instead of a directory that looks finished.
+        manifest["complete"] = False
         write_json(cache_root / "manifest.json", manifest)
     manifest["complete"] = True
     write_json(cache_root / "manifest.json", manifest)
@@ -646,8 +678,11 @@ def check_stage(args):
     for lower, upper in (("C", "B"), ("C", "A"), ("B", "A")):
         layout[f"{lower}-{upper}_delta_chunked_vs_whole_max_abs"] = float(np.max(np.abs(
             (chunked[lower] - chunked[upper]) - (whole[lower] - whole[upper]))))
-    layout["layout_agnostic_within_tolerance"] = bool(
-        max(layout[f"{name}_chunked32_vs_whole_max_abs"] for name in ("A", "B")) <= TOLERANCE)
+    # Per arm, because the answer differs per arm and that difference *is* the finding: A and B
+    # are layout agnostic (they never look at the cross-section), C is not (re-chunking gives it a
+    # 32-row market context), which is why the chunking rule exists.
+    layout["layout_agnostic_within_tolerance"] = {
+        name: bool(layout[f"{name}_chunked32_vs_whole_max_abs"] <= TOLERANCE) for name in adapters}
     # How big the trained residual actually is on this batch: the layout error scales with it,
     # so the reader can tell a near-identity head from a real one.
     layout["head_residual_abs_max"] = float(np.max(np.abs(whole["C"] - whole["A"])))
@@ -698,17 +733,17 @@ def check_stage(args):
     cached_path = Path(args.cache) / "replay"
     if (cached_path / "manifest.json").exists():
         cached = load_cache(cached_path)
-        joined = batch.keys[["date", "instrument"]].assign(_row=np.arange(len(batch.keys))).merge(
-            cached.keys[["date", "instrument"]].assign(_cache=np.arange(len(cached.keys))),
+        joined = batch.keys[["date", "instrument"]].assign(row_at=np.arange(len(batch.keys))).merge(
+            cached.keys[["date", "instrument"]].assign(cache_at=np.arange(len(cached.keys))),
             on=["date", "instrument"], how="inner", validate="one_to_one")
-        x = np.asarray(adapters["A"]._input(batch), dtype=np.float32)[joined._row.to_numpy()]
+        x = np.asarray(adapters["A"]._input(batch), dtype=np.float32)[joined["row_at"].to_numpy()]
         live = np.empty(len(x), dtype=np.float64)
         with torch.inference_mode():
             for start in range(0, len(x), args.batch_size):
                 xb = torch.from_numpy(x[start:start + args.batch_size]).to(args.device)
                 live[start:start + len(xb)] = adapters["A"].network(xb).cpu().numpy()
         report["trunk_identity"]["cache_base_vs_live_max_abs_diff"] = max_abs(
-            live, cached.base[joined._cache.to_numpy()])
+            live, cached.base[joined["cache_at"].to_numpy()])
         report["trunk_identity"]["cache_rows_compared"] = int(len(joined))
         report["trunk_identity"]["cache_keys_sha256"] = cached.manifest["keys_sha256"]
 
@@ -726,7 +761,9 @@ def check_stage(args):
             for name in adapters),
         "3a_batch_invariance_strict": report["checks"]["3a_batch_invariance_strict"]["passed"],
         "3b_market_head_contribution": report["checks"]["3b_market_head_contribution"]["passed"],
-        "3c_layout": report["checks"]["3c_layout"]["layout_agnostic_within_tolerance"],
+        # The rule is necessary exactly when C is the only layout-sensitive arm.
+        "3c_layout": bool((lambda agnostic: agnostic["A"] and agnostic["B"] and not agnostic["C"])(
+            report["checks"]["3c_layout"]["layout_agnostic_within_tolerance"])),
         "4_no_lookahead": bool(
             all(report["checks"]["4_no_lookahead"].get(f"{name}_past_max_abs_diff") == 0.0
                 for name in adapters)
@@ -754,9 +791,149 @@ def check_stage(args):
 
 
 # ------------------------------------------------------------------------------------- entry
+# ---------------------------------------------------------------------------- verify stage
+def verify_stage(args):
+    """Re-derive each cached split with the *current* modules and compare against the artefacts.
+
+    The market context of a split whose rows *are* the prediction universe (the replay split) is
+    recomputed exactly and must match bitwise.  For the train split that identity cannot hold by
+    construction: its context universe is the label-independent cross-section (1000 keys per
+    timestamp) while only the 992-999 label-eligible rows were cached, so restarting the summary
+    over the cache measures how much those few absent rows move the mean/std.  That number is
+    reported, with the analytic band it must stay inside, but it is not an identity claim; the
+    identity claim rests on the replay split plus the finite/batch-consistency checks.
+    """
+    torch.set_num_threads(1)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    report = {"cache": str(args.cache), "generated_utc": pd.Timestamp.utcnow().isoformat(),
+              "code_digests": code_digests(), "splits": {}}
+    for name in args.splits.split(","):
+        cached = load_cache(Path(args.cache) / name)
+        valid = np.asarray(cached.valid)
+        timestamps = np.asarray(cached.context_timestamp).astype("datetime64[ns]")
+        codes = np.searchsorted(timestamps, cached.keys["date"].to_numpy().astype("datetime64[ns]"))
+        counts = np.bincount(codes, minlength=len(timestamps))
+        universe = np.asarray(cached.context_count)
+        hidden = np.asarray(cached.h, dtype=np.float32)
+        whole = int(counts.sum()) == int(universe.sum())
+        entry = {"rows": int(len(cached.keys)), "valid_rows": int(valid.sum()),
+                 "keys_sha256": cached.manifest["keys_sha256"],
+                 "timestamps": int(len(timestamps)), "universe_keys": int(universe.sum()),
+                 "universe_per_timestamp": [int(universe.min()), int(universe.max())],
+                 "cached_rows_per_timestamp": [int(counts.min()), int(counts.max())],
+                 "universe_matches_rows": whole}
+        for key in ("h", "base", "target", "y_optimization"):
+            entry[f"{key}_nonfinite"] = int(np.count_nonzero(
+                ~np.isfinite(np.asarray(getattr(cached, key))[valid])))
+        # A row can have enough history and still have no label (the replay universe is label
+        # independent); those targets are NaN by design and must not be read as a defect.
+        entry["label_missing_rows"] = int(cached.manifest["labels"]["rows"]
+                                          - cached.manifest["labels"]["finite"])
+        # The optimisation target exists only where the frozen candidate's timestamp centring
+        # applies, i.e. inside the training window; a replay split is scored against ``target``.
+        entry["optimisation_target_defined"] = bool(
+            cached.manifest["target_centering_selfcheck"]["mode"] == "compared")
+        recomputed = market_head.market_context(hidden, codes, counts=universe, valid=valid,
+                                               n_groups=len(timestamps))
+        difference = np.abs(recomputed - np.asarray(cached.context))
+        dropout = universe - counts
+        band = float(np.max(np.abs(hidden[valid])) * dropout.max() / max(counts.min(), 1))
+        entry.update({
+            "context_mode": "identity" if whole else "subset_cross_check",
+            "context_max_abs_diff": float(difference.max()),
+            "context_abs_diff_by_block": {"mean": float(difference[:, :80].max()),
+                                         "std": float(difference[:, 80:160].max()),
+                                         "coverage": float(difference[:, 160].max())},
+            "dropped_rows_per_timestamp": [int(dropout.min()), int(dropout.max())],
+            "dropout_explains_diff": bool(difference.max() <= band * 1.5),
+            "analytic_dropout_band": band,
+        })
+        finite = (entry["h_nonfinite"] == 0 and entry["base_nonfinite"] == 0
+                  and entry["target_nonfinite"] <= entry["label_missing_rows"]
+                  and (not entry["optimisation_target_defined"]
+                       or entry["y_optimization_nonfinite"] <= entry["label_missing_rows"]))
+        if not finite:
+            entry["passed"] = False
+        elif whole:
+            entry["passed"] = bool(difference.max() == 0.0)
+        else:
+            entry["passed"] = None  # subset cross-check: reported and band-checked, not graded
+        report["splits"][name] = entry
+        log(f"verify {name}: rows={entry['rows']} scored_identity={whole} "
+            f"max_abs_diff={entry['context_max_abs_diff']:.3e} band={band:.3e} finite={finite}")
+    graded = {name: entry for name, entry in report["splits"].items() if entry["passed"] is not None}
+    report["passed"] = bool(graded) and all(entry["passed"] for entry in graded.values())
+    report["graded_splits"] = sorted(graded)
+    write_json(out / "verify.json", report)
+    log(f"cache verification: graded={report['graded_splits']} passed={report['passed']} "
+        f"-> {out / 'verify.json'}")
+    return report
+
+
+# --------------------------------------------------------------------------- package stage
+CODE_FILES = ("scripts/market_context.py", "modified_tlob/market_head.py",
+              "modified_tlob/adapter.py", "modified_tlob/model.py")
+
+
+def text_digest(state):
+    """Digest of a text-form state dict, so two artefacts can be compared without loading them."""
+    return hashlib.sha256(json.dumps(state, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def package_stage(args):
+    """Write the two artefacts the replay and audit side consume from a finished training run.
+
+    ``weights/{b,c}-s11.json`` is the adapter export ``TLOBAdapter.load`` eats (what t4 puts into
+    its replay plan); ``weights/arm{B,C}.state.json`` carries the *same* head state dict plus the
+    provenance (trunk / cache / recipe / code digests), so "the audited weights are the replayed
+    weights" is an equality check on the state dicts instead of two copies that drifted apart.
+    """
+    out = Path(args.out)
+    weights = out / "weights"
+    weights.mkdir(parents=True, exist_ok=True)
+    training = json.loads((out / "training.json").read_text(encoding="utf-8"))
+    code = code_digests()
+    records = {}
+    for arm in ("B", "C"):
+        source = out / f"arm{arm}.json"
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        block = payload.get("market_head")
+        if not block or block.get("arm") != arm:
+            raise ValueError(f"{source} does not carry the arm {arm} market head")
+        target = weights / f"{arm.lower()}-s11.json"
+        write_json(target, payload)
+        trained = TLOBAdapter.load(source, device="cpu").market_head
+        packaged = TLOBAdapter.load(target, device="cpu").market_head
+        for name, tensor in trained.state_dict().items():
+            if not torch.equal(tensor, packaged.state_dict()[name]):
+                raise ValueError(f"{target}: packaged weight {name!r} differs from the trained one")
+        state = {"schema": "market-context-head/1", "arm": arm,
+                 "adapter_json": {"path": str(target), "sha256": file_sha256(target)},
+                 "trunk": {"weights": str(args.weights), "sha256": file_sha256(args.weights),
+                           "state_dict_sha256": text_digest(payload["state_dict"])},
+                 "cache": {"path": str(Path(args.cache) / "train"),
+                           "rows": training["rows"], "keys_sha256": training["keys_sha256"]},
+                 "recipe": training["recipe"], "metrics": training["arms"][arm],
+                 "code_sha256_disk": code["disk"], "code_sha256_lf": code["lf"],
+                 "market_head": block,
+                 "head_state_sha256": text_digest(block["state_dict"]),
+                 "generated_utc": pd.Timestamp.utcnow().isoformat()}
+        state_path = weights / f"arm{arm}.state.json"
+        write_json(state_path, state)
+        records[arm] = {"adapter_json": str(target), "sha256": file_sha256(target),
+                        "state_json": str(state_path),
+                        "head_state_sha256": state["head_state_sha256"],
+                        "parameters": int(training["arms"][arm]["parameters"])}
+        log(f"package arm {arm}: {target.name} ({records[arm]['sha256'][:12]}) + {state_path.name}")
+    write_json(weights / "package.json", records)
+    log(f"packaged weights: {weights}")
+    return records
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("stage", choices=("cache", "train", "check"))
+    parser.add_argument("stage", choices=("cache", "train", "check", "package", "verify"))
     parser.add_argument("--config", default=DEFAULT_CONFIG)
     parser.add_argument("--weights", default=DEFAULT_WEIGHTS)
     parser.add_argument("--cache", default=DEFAULT_CACHE)
@@ -780,6 +957,10 @@ def main(argv=None):
         return cache_stage(args)
     if args.stage == "train":
         return train_stage(args)
+    if args.stage == "package":
+        return package_stage(args)
+    if args.stage == "verify":
+        return verify_stage(args)
     return check_stage(args)
 
 

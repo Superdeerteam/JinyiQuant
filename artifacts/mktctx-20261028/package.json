@@ -1,0 +1,16 @@
+{
+  "B": {
+    "adapter_json": "/root/runs/mktctx-head-20261028/weights/b-s11.json",
+    "head_state_sha256": "e781915380c295b0e2910c44494912d3cd360ceb207326793284190cbff5f43f",
+    "parameters": 12793,
+    "sha256": "64ec8c68bcaf0ee7f821c038d058b86e69c4b7c08c357a9dac9c7518ba04add6",
+    "state_json": "/root/runs/mktctx-head-20261028/weights/armB.state.json"
+  },
+  "C": {
+    "adapter_json": "/root/runs/mktctx-head-20261028/weights/c-s11.json",
+    "head_state_sha256": "d732b7ca8355fedb53c39a33c08f29038e2fdae71d4cc35462f104e026fbb286",
+    "parameters": 12704,
+    "sha256": "a54c307ec99b7e15b8b61358f4af4c76793fc54de4e55a22eb28f09e06a48ed5",
+    "state_json": "/root/runs/mktctx-head-20261028/weights/armC.state.json"
+  }
+}

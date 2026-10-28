@@ -1,0 +1,60 @@
+{
+  "cache": "/root/cache/frozen-h/441d-s11",
+  "code_digests": {
+    "disk": {
+      "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+      "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+      "modified_tlob/model.py": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742",
+      "scripts/market_context.py": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617"
+    },
+    "lf": {
+      "modified_tlob/adapter.py": "c3faf847ced73c4fe04a83d37844a15109ae5b136107b88473dc943cf37d7532",
+      "modified_tlob/market_head.py": "81ba7f52ce777107ea1447586cc6ece1794ab61e8d2ac5241ffed47323a6bfbc",
+      "modified_tlob/model.py": "7da4212dc4e4e66ca0fb47eca78608bde6e8516c0da4d2c503f3cf324037431e",
+      "scripts/market_context.py": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78"
+    }
+  },
+  "generated_utc": "2026-10-28T11:32:03.906816+00:00",
+  "graded_splits": [
+    "replay"
+  ],
+  "passed": true,
+  "splits": {
+    "replay": {
+      "analytic_dropout_band": 0.0,
+      "base_nonfinite": 0,
+      "cached_rows_per_timestamp": [
+        1000,
+        1000
+      ],
+      "context_abs_diff_by_block": {
+        "coverage": 0.0,
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "context_max_abs_diff": 0.0,
+      "context_mode": "identity",
+      "dropout_explains_diff": true,
+      "dropped_rows_per_timestamp": [
+        0,
+        0
+      ],
+      "h_nonfinite": 0,
+      "keys_sha256": "17655258f20529234707505a9052ef5411beced0c3addbd55872b29518842999",
+      "label_missing_rows": 80,
+      "optimisation_target_defined": false,
+      "passed": true,
+      "rows": 80000,
+      "target_nonfinite": 0,
+      "timestamps": 80,
+      "universe_keys": 80000,
+      "universe_matches_rows": true,
+      "universe_per_timestamp": [
+        1000,
+        1000
+      ],
+      "valid_rows": 79920,
+      "y_optimization_nonfinite": 79920
+    }
+  }
+}
