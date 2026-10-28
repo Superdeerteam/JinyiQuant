@@ -99,3 +99,4 @@ tmp/
 !artifacts/alpha-frontier-20261028/*.csv
 !artifacts/alpha-frontier-20261028/MANIFEST.jsonl
 !artifacts/decisions-20261028/MANIFEST.jsonl
+!artifacts/blend-search-20261028/MANIFEST.jsonl

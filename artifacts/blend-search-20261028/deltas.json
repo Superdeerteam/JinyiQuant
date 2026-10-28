@@ -1,0 +1,476 @@
+{
+ "experiment": "blendrung-20261028",
+ "reference": "A",
+ "reference_alpha": 0.9111677303420447,
+ "metric": "day-paired RankIC difference (candidate - A)",
+ "days": 165,
+ "screening_windows": [
+  "nov2023",
+  "jan2024",
+  "feb2024",
+  "mar2024",
+  "apr2024",
+  "may2024",
+  "jul2024",
+  "aug2024"
+ ],
+ "bootstrap": {
+  "estimator": "compare_blend_replay.block_interval",
+  "block": 5,
+  "draws": 20000,
+  "seed": 20261028,
+  "ci": "percentile 2.5 / 97.5 of resampled means",
+  "estimator_source_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+  "source": "def block_interval(values, *, block: int = 5, draws: int = 20000, seed: int = 20261026) -> dict:\n    \"\"\"Whole-series moving-block bootstrap for the pooled mean of a daily series.\n\n    Each replicate draws ``ceil(n / block)`` random start indices, takes ``block`` consecutive\n    values from each (wrapping modulo n), concatenates them into a series of length\n    ``ceil(n / block) * block`` (approximately n) and averages it.  The interval therefore\n    describes the sampling variability of the pooled daily mean.\n\n    Before 2026-10-28 this function averaged a single block per replicate, so its half width was\n    ``sqrt(n / block)`` too large (n=104 -> 4.6x, n=203 -> 6.4x).  Every archived reading of the\n    form \"the interval includes zero\" produced with that version is too conservative.  The\n    retired estimator is kept verbatim as :func:`archived_single_block_interval`, for\n    reproducing archived numbers and side-by-side reporting only.\n    \"\"\"\n    values = np.asarray([v for v in values if np.isfinite(v)], dtype=float)\n    n = len(values)\n    if n < 2:\n        return {\"days\": int(n), \"mean\": None, \"ci_low\": None, \"ci_high\": None}\n    means = _resampled_means(values, block=block, draws=draws, seed=seed,\n                             n_blocks=int(math.ceil(n / block)))\n    return {\"days\": int(n), \"mean\": float(values.mean()),\n            \"ci_low\": float(np.quantile(means, 0.025)),\n            \"ci_high\": float(np.quantile(means, 0.975))}\n"
+ },
+ "criteria": {
+  "rank_ic_lift": 0.003,
+  "windows_required": 7
+ },
+ "deltas": {
+  "A": {
+   "mean": 0.0,
+   "ci_low": 0.0,
+   "ci_high": 0.0,
+   "days": 165,
+   "positive_days": 0,
+   "positive_share": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "std": 0.0,
+   "positive_windows": 0,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": false,
+    "windows_positive_ge_7": false
+   },
+   "per_window": {
+    "nov2023": 0.0,
+    "jan2024": 0.0,
+    "feb2024": 0.0,
+    "mar2024": 0.0,
+    "apr2024": 0.0,
+    "may2024": 0.0,
+    "jul2024": 0.0,
+    "aug2024": 0.0
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "B": {
+   "mean": 0.0011177701854131108,
+   "ci_low": 0.0006101275282755509,
+   "ci_high": 0.001620371459152462,
+   "days": 165,
+   "positive_days": 97,
+   "positive_share": 0.5878787878787879,
+   "min": -0.006616863616863616,
+   "max": 0.010805111724951397,
+   "std": 0.0032620572130317694,
+   "positive_windows": 8,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.0014714466029450918,
+    "jan2024": 0.0016019613608333947,
+    "feb2024": 0.0008972310616876678,
+    "mar2024": 0.0005322420434668943,
+    "apr2024": 0.0024110156523869065,
+    "may2024": 0.0006341685003678873,
+    "jul2024": 0.0010515168890821414,
+    "aug2024": 0.0003224084112696205
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "C": {
+   "mean": 0.001495723587329962,
+   "ci_low": 0.0006036057564401911,
+   "ci_high": 0.00238244747971275,
+   "days": 165,
+   "positive_days": 104,
+   "positive_share": 0.6303030303030303,
+   "min": -0.012060714809532871,
+   "max": 0.020083665583665616,
+   "std": 0.005296181440033202,
+   "positive_windows": 5,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": false
+   },
+   "per_window": {
+    "nov2023": 0.001410315238749979,
+    "jan2024": 0.002954757488455087,
+    "feb2024": 0.0032521205580427334,
+    "mar2024": -0.000286180038693322,
+    "apr2024": 0.001875528672362663,
+    "may2024": -0.00019145714341727016,
+    "jul2024": 0.003711620844226331,
+    "aug2024": -0.0005026338928755627
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "D": {
+   "mean": 0.0020699587286916554,
+   "ci_low": 0.0014566786730902937,
+   "ci_high": 0.002692175220744218,
+   "days": 165,
+   "positive_days": 118,
+   "positive_share": 0.7151515151515152,
+   "min": -0.005865095865095843,
+   "max": 0.01607725157725161,
+   "std": 0.003894983208696986,
+   "positive_windows": 8,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.002053818446681224,
+    "jan2024": 0.0035813434458290536,
+    "feb2024": 0.0022547644356651865,
+    "mar2024": 0.0013613776470188918,
+    "apr2024": 0.0025560208934513407,
+    "may2024": 0.0009698736587691398,
+    "jul2024": 0.002649831615917094,
+    "aug2024": 0.0010770551484554415
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "E": {
+   "mean": 0.0011690889633818272,
+   "ci_low": 0.0006312948310960597,
+   "ci_high": 0.0017351308328414877,
+   "days": 165,
+   "positive_days": 97,
+   "positive_share": 0.5878787878787879,
+   "min": -0.009399233446530781,
+   "max": 0.016646305646305704,
+   "std": 0.0035947124442187533,
+   "positive_windows": 7,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.0016539141043267187,
+    "jan2024": 0.0015475759170064127,
+    "feb2024": 0.001737245559624237,
+    "mar2024": 0.00010922652667750994,
+    "apr2024": 0.0023205710418952048,
+    "may2024": 0.00042561374095467645,
+    "jul2024": 0.002039046322087201,
+    "aug2024": -0.0003503319559509967
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "F": {
+   "mean": 0.0024389790993504567,
+   "ci_low": 0.0015603090244014268,
+   "ci_high": 0.003299075390470658,
+   "days": 165,
+   "positive_days": 111,
+   "positive_share": 0.6727272727272727,
+   "min": -0.014715175965110877,
+   "max": 0.02080387200828082,
+   "std": 0.006108928885096778,
+   "positive_windows": 7,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.0036294155662708358,
+    "jan2024": 0.0024021738516046953,
+    "feb2024": 0.0035127280137230437,
+    "mar2024": -0.001722805718708688,
+    "apr2024": 0.0033402335864828048,
+    "may2024": 0.0013502005246286788,
+    "jul2024": 0.004187633906039444,
+    "aug2024": 0.002868196455702889
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "G": {
+   "mean": 0.002779947334846987,
+   "ci_low": 0.0022045361194742296,
+   "ci_high": 0.0033682554980467316,
+   "days": 165,
+   "positive_days": 124,
+   "positive_share": 0.7515151515151515,
+   "min": -0.007556481055093031,
+   "max": 0.01630001745232207,
+   "std": 0.004286163963465617,
+   "positive_windows": 8,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.0033494404410740223,
+    "jan2024": 0.0037441103726955248,
+    "feb2024": 0.002934418145249394,
+    "mar2024": 0.000863399700482765,
+    "apr2024": 0.003353732520759703,
+    "may2024": 0.0017413212377366018,
+    "jul2024": 0.0037043815558437413,
+    "aug2024": 0.002426530704709622
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "H": {
+   "mean": 0.0017086871716091706,
+   "ci_low": 0.001191925592135269,
+   "ci_high": 0.002231719111143464,
+   "days": 165,
+   "positive_days": 114,
+   "positive_share": 0.6909090909090909,
+   "min": -0.008078860846080345,
+   "max": 0.014463699963699964,
+   "std": 0.003727728719741906,
+   "positive_windows": 7,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.0025364213787604363,
+    "jan2024": 0.0017692289774320672,
+    "feb2024": 0.0020349579134826064,
+    "mar2024": -0.00020326863160766712,
+    "apr2024": 0.0033678701934835185,
+    "may2024": 0.0012737361345092596,
+    "jul2024": 0.001995079116722815,
+    "aug2024": 0.001010654627105438
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "G_alt_927_132": {
+   "mean": 0.002271700448069301,
+   "ci_low": 0.0017141981876704444,
+   "ci_high": 0.0028372338723595112,
+   "days": 165,
+   "positive_days": 117,
+   "positive_share": 0.7090909090909091,
+   "min": -0.006781526100505093,
+   "max": 0.01547112197112202,
+   "std": 0.00398017401869532,
+   "positive_windows": 8,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": true,
+    "windows_positive_ge_7": true
+   },
+   "per_window": {
+    "nov2023": 0.002763194290783402,
+    "jan2024": 0.0031946152251844068,
+    "feb2024": 0.002812514665484628,
+    "mar2024": 0.0006455533958420606,
+    "apr2024": 0.0032273658939044976,
+    "may2024": 0.0013251030389371137,
+    "jul2024": 0.002897302608879729,
+    "aug2024": 0.0013785038465510984
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "P1a": {
+   "mean": -0.0002822794091901768,
+   "ci_low": -0.0003706556769687552,
+   "ci_high": -0.00019201639758911835,
+   "days": 165,
+   "positive_days": 59,
+   "positive_share": 0.3575757575757576,
+   "min": -0.0016975414800061012,
+   "max": 0.0012006716134972534,
+   "std": 0.0006473850321630549,
+   "positive_windows": 0,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": false,
+    "windows_positive_ge_7": false
+   },
+   "per_window": {
+    "nov2023": -5.760146026499177e-05,
+    "jan2024": -0.00017495062359423354,
+    "feb2024": -0.00019137626913408843,
+    "mar2024": -0.0002926069496515883,
+    "apr2024": -0.000408124800944052,
+    "may2024": -0.0003557512139111818,
+    "jul2024": -0.0004944906825187347,
+    "aug2024": -0.00026335275894299803
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "P1b": {
+   "mean": -0.0001405441778237069,
+   "ci_low": -0.00021436141724156225,
+   "ci_high": -6.506040395969705e-05,
+   "days": 165,
+   "positive_days": 68,
+   "positive_share": 0.4121212121212121,
+   "min": -0.0015765555139614779,
+   "max": 0.0012128558006673507,
+   "std": 0.0005011632555536825,
+   "positive_windows": 1,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": false,
+    "windows_positive_ge_7": false
+   },
+   "per_window": {
+    "nov2023": 9.756194614803614e-05,
+    "jan2024": -0.00013780524977196243,
+    "feb2024": -9.823875268712773e-05,
+    "mar2024": -0.00011293907218864319,
+    "apr2024": -0.00021253341850438798,
+    "may2024": -0.00031123611429873037,
+    "jul2024": -0.0002794251327102271,
+    "aug2024": -7.077118847814756e-05
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  },
+  "P2": {
+   "mean": 0.0,
+   "ci_low": 0.0,
+   "ci_high": 0.0,
+   "days": 165,
+   "positive_days": 0,
+   "positive_share": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "std": 0.0,
+   "positive_windows": 0,
+   "criteria_met": {
+    "mean_ge_0.003": false,
+    "ci_low_gt_zero": false,
+    "windows_positive_ge_7": false
+   },
+   "per_window": {
+    "nov2023": 0.0,
+    "jan2024": 0.0,
+    "feb2024": 0.0,
+    "mar2024": 0.0,
+    "apr2024": 0.0,
+    "may2024": 0.0,
+    "jul2024": 0.0,
+    "aug2024": 0.0
+   },
+   "per_window_days": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jul2024": 23,
+    "aug2024": 22
+   }
+  }
+ }
+}

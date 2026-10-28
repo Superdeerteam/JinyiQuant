@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "decision": "no_cross_tier_blend_passes_the_registered_screen",
+  "date_utc": "2026-10-28",
+  "caliber": {
+    "windows": 8,
+    "trading_days": 165,
+    "metric": "rank_ic",
+    "pairing": "candidate - A within trading day, pooled over 165 days",
+    "interval": "5-day moving-block bootstrap, ceil(n/5) blocks, 20000 draws, seed 20261028",
+    "thresholds": {
+      "min_improvement": 0.003,
+      "ci_must_exclude_zero": true,
+      "min_positive_windows": 7
+    }
+  },
+  "reference": {
+    "name": "A",
+    "members": 3,
+    "alpha": 0.9111677303420447,
+    "rank_ic": 0.07687589696908032,
+    "turnover": 1.1026278543829335,
+    "note": "incumbent submission candidate replayed on the 8 screening windows"
+  },
+  "best": {
+    "name": "G",
+    "members": 15,
+    "alpha": 0.968396,
+    "rank_ic": 0.079656,
+    "turnover": 1.102497,
+    "d_rank_ic": 0.00278,
+    "ci": [
+      0.002205,
+      0.003368
+    ],
+    "positive_days": 124,
+    "positive_windows": 8,
+    "why_rejected": "mean improvement 0.002780 < pre-registered 0.003"
+  },
+  "largest_submittable_alternative": {
+    "name": "F",
+    "members": 6,
+    "alpha": 0.962744,
+    "rank_ic": 0.079315,
+    "d_rank_ic": 0.002439,
+    "ci": [
+      0.00156,
+      0.003299
+    ],
+    "positive_windows": 7,
+    "weights_bytes": 47590383,
+    "zip_estimate_bytes": 20400000,
+    "why_rejected": "still below the 0.003 line; kept as the next candidate if a size-feasible upgrade is ever needed"
+  },
+  "upload_limit": {
+    "bytes": 50000000,
+    "current_package_weights_bytes": 23799122,
+    "means": "candidates with more than about 6 shared-width members cannot be submitted as one package",
+    "not_submittable": [
+      "G",
+      "G_alt_927_132",
+      "D",
+      "H",
+      "E",
+      "C"
+    ]
+  },
+  "postprocessing_findings": {
+    "P2_identity": {
+      "max_abs_diff_rank_ic": 0.0,
+      "max_abs_diff_turnover": 0.0,
+      "reading": "evaluation is invariant to any per-timestamp monotone map applied after smoothing"
+    },
+    "P1a_rank_n": {
+      "d_rank_ic": -0.000282,
+      "ci": [
+        -0.000371,
+        -0.000192
+      ],
+      "positive_windows": 0
+    },
+    "P1b_gauss_rank": {
+      "d_rank_ic": -0.000141,
+      "ci": [
+        -0.000214,
+        -6.5e-05
+      ],
+      "positive_windows": 1
+    },
+    "reading": "the causal EWMA consumes score amplitude, not only the cross-sectional order; ranking before smoothing destroys part of the signal"
+  },
+  "provenance_note": {
+    "gate3_member_set_substitution": {
+      "archived_member_set_max_abs_diff": 1.1102230246251565e-16,
+      "a_s_star_max_abs_diff": 2.0340982264527296e-06,
+      "anchor_turnover_delta": 0.0,
+      "anchor_rank_ic_delta": 4.132153799685234e-09,
+      "recorded_as": "gate 3 NOT passed as declared; caliber verified on the archived member set"
+    },
+    "confirmation_windows": {
+      "jun2024": "read for alignment only, no metric computed",
+      "sep2024": "not downloaded, not read"
+    },
+    "multiple_comparisons": "12 candidates on 165 days already used by a dozen earlier candidates; no correction applied"
+  },
+  "consequence_zh": "提交候选维持 441 日 @2.64 三种子 + EWMA alpha=0.9111677303420447；跨档集成这条线按注册口径不通过，不换候选。"
+}

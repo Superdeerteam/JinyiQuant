@@ -1,0 +1,256 @@
+{
+ "experiment": "blendrung-20261028",
+ "purpose": "zero-training cross-tier blend search on replay predictions; search run only",
+ "generated_at_utc": "2026-10-28T14:14:47.110619+00:00",
+ "machine": {
+  "host": "ZW75JY",
+  "python": "3.12.4",
+  "executable": "/root/py312",
+  "cpu_count": 96,
+  "thread_env": {
+   "OMP_NUM_THREADS": "1",
+   "OPENBLAS_NUM_THREADS": "1",
+   "MKL_NUM_THREADS": "1",
+   "NUMEXPR_NUM_THREADS": "1"
+  },
+  "pool_size": 4
+ },
+ "inputs": {
+  "root": "/root/runs/blendrung-20261028/inputs",
+  "inventory": {
+   "predictions_files": 123,
+   "targets_files": 25,
+   "total_bytes": 227903387,
+   "runs": [
+    "mktctx-t4-20261028",
+    "screen10-600d-20261028",
+    "screen10-927lotb-20261028"
+   ]
+  },
+  "runs": {
+   "mktctx": "/root/runs/blendrung-20261028/inputs/mktctx-t4-20261028/20261028T114713.442476Z_55faa17a78ee",
+   "lotb441": "/root/runs/screen10-441lotb-20261028/20261028T122927.794375Z_c6df34b73a27",
+   "lotb927": "/root/runs/blendrung-20261028/inputs/screen10-927lotb-20261028/20261028T125104.014172Z_06adeaae56e2",
+   "d600": "/root/runs/blendrung-20261028/inputs/screen10-600d-20261028/20261028T124658.254334Z_45739f58c615"
+  },
+  "versions": {
+   "a-s11": [
+    "mktctx",
+    "a-s11"
+   ],
+   "a-s29": [
+    "mktctx",
+    "a-s29"
+   ],
+   "a-s47": [
+    "mktctx",
+    "a-s47"
+   ],
+   "l441-s53-264": [
+    "lotb441",
+    "l441-s53-264"
+   ],
+   "l441-s59-264": [
+    "lotb441",
+    "l441-s59-264"
+   ],
+   "l441-s61-264": [
+    "lotb441",
+    "l441-s61-264"
+   ],
+   "s11-132": [
+    "d600",
+    "s11-132"
+   ],
+   "s11-264": [
+    "d600",
+    "s11-264"
+   ],
+   "s29-132": [
+    "d600",
+    "s29-132"
+   ],
+   "s29-264": [
+    "d600",
+    "s29-264"
+   ],
+   "s47-132": [
+    "d600",
+    "s47-132"
+   ],
+   "s47-264": [
+    "d600",
+    "s47-264"
+   ],
+   "l927-s53-132": [
+    "lotb927",
+    "l927-s53-132"
+   ],
+   "l927-s53-264": [
+    "lotb927",
+    "l927-s53-264"
+   ],
+   "l927-s59-132": [
+    "lotb927",
+    "l927-s59-132"
+   ],
+   "l927-s59-264": [
+    "lotb927",
+    "l927-s59-264"
+   ],
+   "l927-s61-132": [
+    "lotb927",
+    "l927-s61-132"
+   ],
+   "l927-s61-264": [
+    "lotb927",
+    "l927-s61-264"
+   ]
+  },
+  "transfer_integrity": {
+   "files": 144,
+   "bytes": 222245437,
+   "sha256_multiset": "20e658839e4a9523ee149a6965f74429d79d309b21984756bd446204e32a5fa1"
+  }
+ },
+ "caliber": {
+  "evaluation": {
+   "evaluation_config": {
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined",
+    "single_side_rate": 0.0
+   },
+   "return_sections": true,
+   "undefined_constant_portfolios": true,
+   "screening_windows": [
+    "nov2023",
+    "jan2024",
+    "feb2024",
+    "mar2024",
+    "apr2024",
+    "may2024",
+    "jul2024",
+    "aug2024"
+   ],
+   "screening_days": 165,
+   "frozen_windows_excluded": [
+    "jun2024",
+    "sep2024"
+   ],
+   "jun2024_note": "read for alignment only (gate 3), no metric computed, does not count as a confirmation read",
+   "sep2024_note": "not downloaded, not read"
+  },
+  "alpha_policy": {
+   "target": "A pooled turnover over the 8 screening windows at the incumbent alpha, never re-selected",
+   "tolerance": 0.005,
+   "search": "secant on the pooled-turnover / alpha curve, alpha in [0, 1)",
+   "alpha_A": 0.9111677303420447
+  },
+  "alpha_A": 0.9111677303420447,
+  "alpha_target_turnover_gates": 1.1026278543829335,
+  "alpha_target_turnover_search": 1.1026278543829335,
+  "alpha_target_agreement": 0.0,
+  "hb_turnover_target": 1.1026278543829335,
+  "reproduction_reference": {
+   "archived": {
+    "unsmoothed": "/root/runs/archived-441/daily_0bp_blend.csv",
+    "smoothed": "/root/runs/archived-441/daily_0bp_ewma_match.csv"
+   },
+   "archived_sha256": {
+    "unsmoothed": "3fa29e207477e8da395e204eb712fda1edca421c974ba68df34925b972320849",
+    "smoothed": "7aebcaad512385163566de16346b34269b8def54baff14786d4d46dcf3deeb99"
+   },
+   "days": 104,
+   "declared_member_set": {
+    "max_abs_difference": 2.0340982264527296e-06
+   },
+   "archived_member_set": {
+    "max_abs_difference": 1.1102230246251565e-16
+   },
+   "member_identity_max_abs_score_diff": 1.5488875554586865e-09
+  }
+ },
+ "gate3_member_set_substitution": {
+  "archived_member_set_max_abs_diff": 1.1102230246251565e-16,
+  "a_s_star_max_abs_diff": 2.0340982264527296e-06,
+  "anchor_turnover_delta": 0.0,
+  "anchor_rank_ic_delta": 4.132153799685234e-09,
+  "accepted_by": "captain",
+  "reason_zh": "闸 3 在归档成员集（dose-replay 三个 s*-2.64）上以 1.1102230246251565e-16 复现，说明加载/blend/EWMA/evaluate 口径与归档逐位一致；八窗筛查只能用 a-s*，因为 dose-replay 只回放了五个交付窗、feb/may/jul/aug 不存在；成员集替换的漂移已实测并接受：池化 RankIC 差 2.03e-06（锚点 4.13e-09），turnover 与 alpha 目标逐位相同，比 0.003 的决策尺度小三个数量级。",
+  "recorded_as": "gate 3 NOT passed as declared; caliber verified on the archived member set"
+ },
+ "gates": {
+  "gate1_key_alignment": true,
+  "gate2_label_identity": true,
+  "gate3_reproduction_as_declared": false,
+  "gate3_reproduction_on_archived_members": true,
+  "gates_json_status": "fail",
+  "gates_json_sha256": "3b0866783ffcf034a498e0723fb1a1a07bf9eb32a802bd99c477feed57429350"
+ },
+ "bootstrap": {
+  "block": 5,
+  "draws": 20000,
+  "seed": 20261028,
+  "module": "/root/repo_featnorm/scripts/compare_blend_replay.py",
+  "module_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+  "function": "block_interval",
+  "function_source_sha256": "2eb5827e3402dc49f60f84b259080c848840b215e7b57bf7c3f7b903b440762f",
+  "function_source_length": 1460,
+  "retired_estimator": "archived_single_block_interval (not used)"
+ },
+ "scripts": {
+  "blendlib.py": "4f81c3da16ab73fc67c5f42ae51882f4bcff0bca43b4e9eed9f3bc770d73f550",
+  "gates.py": "8626bcb659085597cc8abb23148d20b420d45fe0a5f8299d80e16f36d07d410c",
+  "search.py": "84877b58b6150d6ff4104a04ea4da275734f23c76bbf0958185d70ecd97a9cd2",
+  "provenance.py": "260572cc96de7ccb8790cdb9e31ffd7c73c6ec4d55139f904fd7fb5127249311"
+ },
+ "repo_files": {
+  "compare_blend_replay.py": {
+   "path": "/root/repo_featnorm/scripts/compare_blend_replay.py",
+   "sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1"
+  },
+  "rung_candidate_compare.py": {
+   "path": "/root/repo_featnorm/scripts/rung_candidate_compare.py",
+   "sha256": "7239c1964502267c6b54c2518a3f50d281cc71a7c44c5737d0762cbbaeeaa9c8"
+  },
+  "verify_turnover_change.py": {
+   "path": "/root/repo_featnorm/scripts/verify_turnover_change.py",
+   "sha256": "219374c8ea18d858128c4a58e90ccf0f7e3eccd4f78533e0ba262014cad3689e"
+  },
+  "alpha_frontier.py": {
+   "path": "/root/repo_featnorm/scripts/alpha_frontier.py",
+   "sha256": "4a9ae4facf567073c98de1a767753f74be3ab18cdf7a9054cbf9b5fbe3454524"
+  },
+  "evaluation.py": {
+   "path": "/root/repo_featnorm/src/jinyiquant/evaluation.py",
+   "sha256": "0786b9d8238f0dc4dab9ffd062cdd84368f6bbc50c40bd05f80da3d025ad4560"
+  }
+ },
+ "artefacts": {
+  "candidates.json": "851f066fe2ff90b8bfe8cba3cc75e7293ed14f56798a0c6d847042e915b3226e",
+  "deltas.json": "939f593b9115db2d4b46472f7bf7d4a6cbd632ee405fc777473db208b698f524",
+  "table.txt": "83f3d82b2bc6d3986e670f075d11aaf4211309500f6f23b2f7e2891a4ffb693d"
+ },
+ "data_policy": {
+  "screening_windows": [
+   "nov2023",
+   "jan2024",
+   "feb2024",
+   "mar2024",
+   "apr2024",
+   "may2024",
+   "jul2024",
+   "aug2024"
+  ],
+  "frozen_windows": [
+   "jun2024",
+   "sep2024"
+  ],
+  "jun2024": "predictions of a-s11/a-s29/a-s47 and targets were read for gate-3 alignment only; no metric was computed for jun2024 and no jun2024 metric value is written into any file; this does not count as a confirmation read",
+  "sep2024": "not downloaded, not read, not evaluated",
+  "forbidden_paths": "/root/data/202410..202412 never touched",
+  "training": "no training, no repo edits, no git, existing training PIDs untouched"
+ }
+}

@@ -1,0 +1,6 @@
+{"path": "candidates.json", "bytes": 25970, "sha256": "851f066fe2ff90b8bfe8cba3cc75e7293ed14f56798a0c6d847042e915b3226e"}
+{"path": "decision.json", "bytes": 3393, "sha256": "bc6c6ae5516807c2944d565fca6804311e2526c6fb5635de52a645df09a5cce8"}
+{"path": "deltas.json", "bytes": 13095, "sha256": "939f593b9115db2d4b46472f7bf7d4a6cbd632ee405fc777473db208b698f524"}
+{"path": "gates.json", "bytes": 16024, "sha256": "3b0866783ffcf034a498e0723fb1a1a07bf9eb32a802bd99c477feed57429350"}
+{"path": "provenance.json", "bytes": 7900, "sha256": "7e5026f826eb1bdc8196653aac4e98d22d931c8e6e22010f57d5752d83f1cc32"}
+{"path": "table.txt", "bytes": 5569, "sha256": "83f3d82b2bc6d3986e670f075d11aaf4211309500f6f23b2f7e2891a4ffb693d"}
