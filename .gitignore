@@ -100,3 +100,11 @@ tmp/
 !artifacts/alpha-frontier-20261028/MANIFEST.jsonl
 !artifacts/decisions-20261028/MANIFEST.jsonl
 !artifacts/blend-search-20261028/MANIFEST.jsonl
+
+# Scratch workspaces and pre-package trees are local only.
+.tmp_r14/
+.tmp_screen10/
+
+# R15+R16 negative-result archive: per-window CSVs are evidence, but *.csv is ignored globally.
+!artifacts/r15r16-20261028/**/*.csv
+!artifacts/r15r16-20261028/weights/*.npz

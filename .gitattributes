@@ -20,3 +20,9 @@ artifacts/mktctx-20261028/** -text
 artifacts/alpha-frontier-20261028/** -text
 artifacts/decisions-20261028/** -text
 artifacts/blend-search-20261028/** -text
+# R15+R16 negative-result archive: pins exact bytes of the probe exports.
+artifacts/r15r16-20261028/** -text
+# Files pinned by their on-disk sha256 (gate reads them byte-for-byte); never normalise.
+configs/fusion_increment_registration_20261028.json -text
+configs/r12_slot1430_tilt_plan_20261028.json -text
+configs/fusion_round2_prereg_draft_20261028.json -text

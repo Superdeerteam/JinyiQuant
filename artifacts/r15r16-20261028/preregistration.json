@@ -1,0 +1,55 @@
+{
+  "artifact": "r15r16",
+  "registered_utc": "2026-10-28T22:05:00Z",
+  "registered_before_any_dev_scoring": true,
+  "tasks": ["t6"],
+  "owner": "condition-owner",
+  "frozen_trunk": {
+    "checkpoint": "runs/scaling-441d-seed11/20261027T191119.061322Z_2303ea6816b5/model-scaling-1.32.pt",
+    "sha256": "38c9402bdfea4a04d978a1dc1ec109ce44c62e76326652943531db9b5f2b55f4",
+    "recipe": "configs/scaling_441d_csz_seed11.json",
+    "representation_dim": 80,
+    "note": "trunk is never updated; every head sees the frozen 80-d representation h(X) plus, for the state family only, point-in-time stock state s(d-1)"
+  },
+  "hypotheses": {
+    "R15": "The same book shape means different things under high/low volatility, wide/narrow spread and active/quiet conditions. A gate that reads only point-in-time stock state (never the current bar's own features) should let one frozen representation specialise per stock state.",
+    "R16": "Mean reversion ignores tails and skew. Predicting three fixed quantiles (0.2/0.5/0.8) of the same 30-minute label with a pinball loss exposes asymmetric tails that a single MSE head cannot express."
+  },
+  "minimal_experiment": {
+    "shared": "All heads are small probes on the frozen trunk representation extracted once per row from the seed-11 @1.32 trunk; training rows are exactly the trunk training window (2022-01-04..2023-11-01) selected by the same recipe.",
+    "R15": "statistics-bypass head (state only) -> concat-mlp control (rep + state) -> gate head (state gates rep channels); the bypass head decides whether gating complexity is worth it. Parameter counts are matched between the gate head and its concat control (reported, tolerance 1.2%).",
+    "R16": "rep-mlp control with two outputs collapses to a single MSE head; the treatment is an 80->64->3 pinball head with a parameter-matched rep-mlp control trained with the same schedule."
+  },
+  "arms": {
+    "rep_linear": "80-d representation -> scalar (reference probe)",
+    "rep_mlp": "80-d representation -> 64 -> scalar (MSE; control for R15 concat and R16)",
+    "stats_linear": "4-d point-in-time state -> scalar (R15 statistics bypass, no representation)",
+    "r15_concat": "80-d representation + 4-d state -> 64 -> scalar (R15 control)",
+    "r15_gate": "80-d representation -> 64 channels gated by sigma(W_s s) -> scalar (R15 treatment)",
+    "r16_quantile": "80-d representation -> 64 -> 3 quantiles, pinball loss (R16 treatment)",
+    "s_base": "frozen trunk raw score, no head (reference)"
+  },
+  "score_rules": {
+    "r16_quantile": "the traded score is the predicted median q50 only; q20/q80 are reported as tail diagnostics and MUST NOT be combined into an expected return",
+    "r15_gate": "the traded score is the gated scalar output; gate inputs are restricted to 4 point-in-time state variables",
+    "others": "the traded score is the single scalar head output",
+    "state_variables": ["vol20", "logamt20", "illiq20", "logprice"],
+    "point_in_time": "every state variable uses days strictly earlier than the prediction day (shift(1) then a 20-day rolling window)"
+  },
+  "windows": {
+    "screening": ["nov2023", "jan2024", "feb2024", "mar2024", "apr2024", "may2024", "jul2024", "aug2024"],
+    "confirmation_blocks_not_read": ["jun2024", "sep2024"],
+    "note": "the two confirmation blocks are never read by this route; only the captain may judge them once"
+  },
+  "decision_criteria": {
+    "primary": "paired per-trading-day delta of rank IC against the existing 3-seed blend basis (s_base = frozen trunk score) and against each arm's parameter-matched control, with a 5-day moving-block bootstrap interval (20000 draws, seed 20261028) over the pooled 8 screening windows",
+    "secondary": "long-short return, turnover (U/2), tail behaviour and inference cost are reported next to every delta; a positive rank-IC delta with a materially worse long-short or turnover is not a pass",
+    "verdict": "R15 and R16 each pass only if the pooled paired delta interval excludes zero in favour of the treatment; otherwise the route is reported as a negative result with its mechanism",
+    "no_post_hoc_thresholds": "criteria fixed before scoring; no threshold may be revised after seeing results"
+  },
+  "cost_budget": {
+    "compute": "one frozen-trunk extraction pass (about 5M rows) plus six small heads trained for 3000 steps on a single GPU",
+    "inference": "each head is a 2-layer MLP on an 80-d vector, except the gate head which adds a 4-d gate"
+  },
+  "red_lines": ["no sealed-window read", "no git commit", "no interference with running jobs"]
+}

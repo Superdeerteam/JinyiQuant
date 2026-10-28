@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "route": "R15+R16",
+  "why": "Records every place where the executed configuration departs from preregistration.json, in order, with the measurement that motivated it.",
+  "items": [
+    {
+      "id": "D1",
+      "stage": "R16 training recipe",
+      "preregistered": "Adam lr 1e-4, 3000 steps, batch 4096, seed 20261028, raw label target (same recipe as the MSE arms)",
+      "executed": "R16 reportable arm: target standardised by its train std, output bias initialised at the empirical train quantiles, Adam lr 3e-3, 12000 steps; the preregistered recipe is kept as sensitivity run (out_s11)",
+      "evidence": "Preregistered recipe never left its constant-output plateau: pinball loss 0.257938 at step 200 and 0.257938 at step 3000, q50 cross-sectional std 0.0025 vs 0.059 for the parameter-matched MSE head, pooled rank_ic 0.001997, every |IC(q20/q50/q80)| < 0.02. Reason: pinball gradients are tau/(1-tau)-scaled and independent of error size, so the raw fat-tailed target (kurtosis 9-13) gives a far weaker signal than MSE.",
+      "effect_on_conclusion": "none for the verdict; the accommodated fit only makes the negative result interpretable (see D2). Both recipes fail the screening criterion."
+    },
+    {
+      "id": "D2",
+      "stage": "R16 degenerate ranking",
+      "observation": "With the accommodated fit the q50 score is literally constant inside every timestamp in Apr-2024 and May-2024 (evaluation reports rank_ic null, ranking_defined_sections 0/160) and sign-flips elsewhere: Nov-2023 +0.0548, Jan-2024 +0.0331, Feb-2024 -0.0545, Mar-2024 -0.0331, Jul-2024 -0.0503, Aug-2024 -0.0043",
+      "cross_check": "Removing the per-timestamp cross-sectional mean from the label (--center-target) left Jan/Jul ICs bit-identical and flipped Nov-2023 from +0.0548 to -0.0548, i.e. the surviving ranking tracks the market-wide level rather than cross-sectional median information",
+      "effect_on_conclusion": "R16 is reported as a failed route: the conditional median of the 30-minute label is not recoverable as a cross-sectional ranking from the frozen 80-d representation, while the conditional mean of the same representation reaches rank_ic 0.0706-0.0721"
+    },
+    {
+      "id": "D3",
+      "stage": "data routing",
+      "detail": "Training (2022-01-04..2023-11-01) and Nov-2023 read /root/data (2020-01..2023-11); the seven 2024 screening windows read /mnt/work/r15r16/data, which holds the locally-generated 2023-12..2024-08 bar feathers and label parquets because the remote copy stops at 2023-11",
+      "effect_on_conclusion": "none: the same load_data/build_batch training_pool code path is used and the frozen trunk is bit-identical to the local checkpoint (sha256 match)"
+    },
+    {
+      "id": "D4",
+      "stage": "state definition used by R15",
+      "detail": "vol20/logamt20/illiq20/logprice computed causally from the last 20 trading days before each sample timestamp (label horizons of the current day excluded); coverage 0.955-0.9999 per unit, missing rows zero-filled after z-scoring",
+      "effect_on_conclusion": "none; the gate still learns a state-dependent rescaling (corr 0.985 with vol20)"
+    },
+    {
+      "id": "D5",
+      "stage": "fusion probe granularity",
+      "detail": "fusion.csv / fusion.json report delta over 176 *30-minute sections* (8 clocks x 22 days of the pooled screening set), not 165 trading days; the arm is rank-normalised per timestamp, blended with the rank-normalised frozen base at fixed weights 0.1/0.2/0.3, and the interval is the 5-section moving-block bootstrap (20000 draws, seed 20261028)",
+      "interpretation": "the fusion intervals are section-level and therefore tighter than the trading-day intervals used for pooled rank_ic; conclusions rest on both views agreeing (deltas <= 0.0012 in magnitude, CIs straddling zero)",
+      "effect_on_conclusion": "none"
+    }
+  ],
+  "verification": {
+    "sealed_window_clear": "selfcheck.json: 9 units (8 screening windows + train unit) clear of the sealed interval",
+    "quantile_output_rule": "selfcheck.json quantile_rule: exported score == q_hat(0.5), max_abs_diff 0.0 over 175784 Nov-2023 rows, combine_quantiles false",
+    "state_point_in_time": "selfcheck.json state_point_in_time max_abs_diff 0.0 between cached and recomputed state arrays",
+    "no_git_commit": true,
+    "running_jobs_untouched": "screen10 rankhinge seed11/29/47 kept running on GPU 1 (/mnt/work/runs/screen10-rankhinge-seed*); this route used GPU 0 and /mnt/work/r15r16 only"
+  }
+}

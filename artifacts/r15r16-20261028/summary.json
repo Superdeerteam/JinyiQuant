@@ -1,0 +1,227 @@
+{
+  "block_bootstrap": {
+    "block": 5,
+    "draws": 20000,
+    "seed": 20261028,
+    "unit": "trading day, eight sample times averaged"
+  },
+  "control_of": {
+    "r15_concat": "rep_mlp",
+    "r15_gate": "r15_concat",
+    "r16_quantile": "rep_mlp",
+    "stats_linear": "rep_linear"
+  },
+  "generated_utc": "2026-10-28T15:24:36.750466+00:00",
+  "paired": [
+    {
+      "control": "r15_concat",
+      "delta_long_short": {
+        "ci_high": 0.00010656520323834005,
+        "ci_low": -7.516613480490001e-05,
+        "days": 165,
+        "mean": -1.9310951244622023e-06
+      },
+      "delta_rank_ic": {
+        "ci_high": 0.010370691026435416,
+        "ci_low": -0.0071650995594377985,
+        "days": 165,
+        "mean": 0.0007235319196350892
+      },
+      "treatment": "r15_gate"
+    },
+    {
+      "control": "rep_mlp",
+      "delta_long_short": {
+        "ci_high": -0.00022555878656947115,
+        "ci_low": -0.00086536821313252,
+        "days": 165,
+        "mean": -0.0005471086631167325
+      },
+      "delta_rank_ic": {
+        "ci_high": -0.053751952397153455,
+        "ci_low": -0.06730196402893666,
+        "days": 7,
+        "mean": -0.06270775744929054
+      },
+      "treatment": "r16_quantile"
+    },
+    {
+      "control": "rep_mlp",
+      "delta_long_short": {
+        "ci_high": 0.00011531481388506,
+        "ci_low": -8.995966138325292e-05,
+        "days": 165,
+        "mean": 1.6642191570495555e-05
+      },
+      "delta_rank_ic": {
+        "ci_high": 0.00961876021815144,
+        "ci_low": -0.010170259324519398,
+        "days": 165,
+        "mean": 0.00024187435250375345
+      },
+      "treatment": "r15_concat"
+    },
+    {
+      "control": "rep_linear",
+      "delta_long_short": {
+        "ci_high": 9.599664668270452e-05,
+        "ci_low": -0.0007663186991124325,
+        "days": 165,
+        "mean": -0.00039058044780970383
+      },
+      "delta_rank_ic": {
+        "ci_high": -0.00365457182829398,
+        "ci_low": -0.09884187389997243,
+        "days": 165,
+        "mean": -0.05291931614105663
+      },
+      "treatment": "stats_linear"
+    }
+  ],
+  "pooled": [
+    {
+      "arm": "r15_gate",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": 0.00011355473192958003,
+        "ci_low": -3.411985222517928e-05,
+        "days": 165,
+        "mean": 2.6321287151768866e-05
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": 0.009533428455782101,
+        "ci_low": -0.005030014249286019,
+        "days": 165,
+        "mean": 0.0021123454876744905
+      },
+      "long_short_return_mean": 0.0005617273534988175,
+      "rank_ic_mean": 0.0730351859784093,
+      "turnover_mean": 1.1432400159542226
+    },
+    {
+      "arm": "r15_concat",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": 0.00012896475620202,
+        "ci_low": -7.083846395072001e-05,
+        "days": 165,
+        "mean": 2.8252382276231063e-05
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": 0.011870013980503838,
+        "ci_low": -0.009650076505017997,
+        "days": 165,
+        "mean": 0.0013888135680394016
+      },
+      "long_short_return_mean": 0.0005636584486232798,
+      "rank_ic_mean": 0.07231165405877421,
+      "turnover_mean": 1.0905077001258425
+    },
+    {
+      "arm": "rep_mlp",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": 0.00010319724397581947,
+        "ci_low": -3.5980991992840015e-05,
+        "days": 165,
+        "mean": 1.1610190705735512e-05
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": 0.005812235512687082,
+        "ci_low": -0.0028013967868853007,
+        "days": 165,
+        "mean": 0.001146939215535648
+      },
+      "long_short_return_mean": 0.0005470162570527843,
+      "rank_ic_mean": 0.07206977970627046,
+      "turnover_mean": 1.1691754575424933
+    },
+    {
+      "arm": "s_base",
+      "days": 165,
+      "delta_long_short_vs_base": null,
+      "delta_rank_ic_vs_base": null,
+      "long_short_return_mean": 0.0005354060663470487,
+      "rank_ic_mean": 0.07092284049073481,
+      "turnover_mean": 1.1285133107480172
+    },
+    {
+      "arm": "rep_linear",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": 5.91095141238e-05,
+        "ci_low": -5.399727248342e-05,
+        "days": 165,
+        "mean": -4.273272833339504e-06
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": 0.0038352384904673797,
+        "ci_low": -0.005048630907401781,
+        "days": 165,
+        "mean": -0.00032836139719615275
+      },
+      "long_short_return_mean": 0.0005311327935137092,
+      "rank_ic_mean": 0.07059447909353865,
+      "turnover_mean": 1.1848952704540443
+    },
+    {
+      "arm": "stats_linear",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": 0.00011056028323427583,
+        "ci_low": -0.0007713999075984479,
+        "days": 165,
+        "mean": -0.00039485372064304336
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": -0.002386610531010123,
+        "ci_low": -0.10137283857981605,
+        "days": 165,
+        "mean": -0.053247677538252776
+      },
+      "long_short_return_mean": 0.00014055234570400539,
+      "rank_ic_mean": 0.017675162952482035,
+      "turnover_mean": 0.010416549092376352
+    },
+    {
+      "arm": "r16_quantile",
+      "days": 165,
+      "delta_long_short_vs_base": {
+        "ci_high": -0.0002314958833609063,
+        "ci_low": -0.00084318821709624,
+        "days": 165,
+        "mean": -0.0005354984724109971
+      },
+      "delta_rank_ic_vs_base": {
+        "ci_high": -0.0524346025075174,
+        "ci_low": -0.06705772857397818,
+        "days": 7,
+        "mean": -0.0628746127712573
+      },
+      "long_short_return_mean": -9.240606394830342e-08,
+      "rank_ic_mean": -0.014949191407820656,
+      "turnover_mean": 6.086068082754788e-05
+    }
+  ],
+  "score_rules": {
+    "r15_gate": {
+      "gate_inputs": "point-in-time stock state only",
+      "score": "gated scalar output"
+    },
+    "r16_quantile": {
+      "combine_quantiles": false,
+      "interpretation": "median of the label, NOT an expected return",
+      "score": "q_hat(0.5)"
+    }
+  },
+  "windows": [
+    "nov2023",
+    "jan2024",
+    "feb2024",
+    "mar2024",
+    "apr2024",
+    "may2024",
+    "jul2024",
+    "aug2024"
+  ]
+}

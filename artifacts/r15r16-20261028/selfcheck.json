@@ -1,0 +1,68 @@
+{
+  "quantile_rule": {
+    "max_abs_diff": 0.0,
+    "rows": 175784,
+    "rule": {
+      "combine_quantiles": false,
+      "interpretation": "median of the label, NOT an expected return",
+      "score": "q_hat(0.5)"
+    }
+  },
+  "state_point_in_time": {
+    "days": {
+      "2023-11-01": 0.0,
+      "2023-11-02": 0.0,
+      "2023-11-03": 0.0,
+      "2023-11-06": 0.0
+    },
+    "max_abs_diff": 0.0,
+    "unit": "nov2023"
+  },
+  "units": {
+    "apr2024": {
+      "end": "2024-05-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-04-01 00:00:00"
+    },
+    "aug2024": {
+      "end": "2024-09-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-08-01 00:00:00"
+    },
+    "feb2024": {
+      "end": "2024-03-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-02-01 00:00:00"
+    },
+    "jan2024": {
+      "end": "2024-02-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-01-01 00:00:00"
+    },
+    "jul2024": {
+      "end": "2024-08-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-07-01 00:00:00"
+    },
+    "mar2024": {
+      "end": "2024-04-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-03-01 00:00:00"
+    },
+    "may2024": {
+      "end": "2024-06-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2024-05-01 00:00:00"
+    },
+    "nov2023": {
+      "end": "2023-12-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2023-11-01 00:00:00"
+    },
+    "train": {
+      "end": "2023-11-01 00:00:00",
+      "sealed_clear": true,
+      "start": "2022-01-04 00:00:00"
+    }
+  }
+}
