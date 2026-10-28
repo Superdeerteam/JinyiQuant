@@ -10,6 +10,7 @@ time-of-day behaviour. No training, no weight fitting, no platform access.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -101,16 +102,55 @@ def section_correlations(left: pd.DataFrame, right: pd.DataFrame) -> pd.DataFram
     return out
 
 
-def block_interval(values, *, block: int = 5, draws: int = 20000, seed: int = 20261026) -> dict:
-    values = np.asarray([v for v in values if np.isfinite(v)], dtype=float)
-    if len(values) < 2:
-        return {"days": int(len(values)), "mean": None, "ci_low": None, "ci_high": None}
+def _resampled_means(values: np.ndarray, *, block: int, draws: int, seed: int,
+                     n_blocks: int) -> np.ndarray:
+    """Mean of ``n_blocks`` concatenated blocks, drawn with random starts and wrap-around."""
     rng = np.random.default_rng(seed)
-    starts = rng.integers(0, len(values), size=draws)
-    indices = (starts[:, None] + np.arange(block)[None, :]) % len(values)
-    means = values[indices].mean(axis=1)
-    return {"days": int(len(values)), "mean": float(values.mean()),
-            "ci_low": float(np.quantile(means, 0.025)), "ci_high": float(np.quantile(means, 0.975))}
+    starts = rng.integers(0, values.size, size=(draws, n_blocks))
+    indices = (starts[:, :, None] + np.arange(block)[None, None, :]) % values.size
+    return values[indices.reshape(draws, -1)].mean(axis=1)
+
+
+def block_interval(values, *, block: int = 5, draws: int = 20000, seed: int = 20261026) -> dict:
+    """Whole-series moving-block bootstrap for the pooled mean of a daily series.
+
+    Each replicate draws ``ceil(n / block)`` random start indices, takes ``block`` consecutive
+    values from each (wrapping modulo n), concatenates them into a series of length
+    ``ceil(n / block) * block`` (approximately n) and averages it.  The interval therefore
+    describes the sampling variability of the pooled daily mean.
+
+    Before 2026-10-28 this function averaged a single block per replicate, so its half width was
+    ``sqrt(n / block)`` too large (n=104 -> 4.6x, n=203 -> 6.4x).  Every archived reading of the
+    form "the interval includes zero" produced with that version is too conservative.  The
+    retired estimator is kept verbatim as :func:`archived_single_block_interval`, for
+    reproducing archived numbers and side-by-side reporting only.
+    """
+    values = np.asarray([v for v in values if np.isfinite(v)], dtype=float)
+    n = len(values)
+    if n < 2:
+        return {"days": int(n), "mean": None, "ci_low": None, "ci_high": None}
+    means = _resampled_means(values, block=block, draws=draws, seed=seed,
+                             n_blocks=int(math.ceil(n / block)))
+    return {"days": int(n), "mean": float(values.mean()),
+            "ci_low": float(np.quantile(means, 0.025)),
+            "ci_high": float(np.quantile(means, 0.975))}
+
+
+def archived_single_block_interval(values, *, block: int = 5, draws: int = 20000,
+                                   seed: int = 20261026) -> dict:
+    """Retired pre-2026-10-28 estimator: one block mean per replicate.
+
+    Reproduces archived intervals bit for bit.  Use it only to reproduce or contrast historical
+    readings; never gate a decision on it (its interval is ``sqrt(n / block)`` too wide).
+    """
+    values = np.asarray([v for v in values if np.isfinite(v)], dtype=float)
+    n = len(values)
+    if n < 2:
+        return {"days": int(n), "mean": None, "ci_low": None, "ci_high": None}
+    means = _resampled_means(values, block=block, draws=draws, seed=seed, n_blocks=1)
+    return {"days": int(n), "mean": float(values.mean()),
+            "ci_low": float(np.quantile(means, 0.025)),
+            "ci_high": float(np.quantile(means, 0.975))}
 
 
 def load_conditions(plan: dict, window: dict, instruments: set) -> pd.DataFrame:

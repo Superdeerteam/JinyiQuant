@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import pickle
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +44,7 @@ RUNS = ROOT / "runs"
 BLOCK = 5
 DRAWS = 20000
 BOOT_SEED = 20261028
+VALIDATION_DRAWS = 4000
 
 FEATNORM_RUN = RUNS / "featnorm-replay-20261028" / "20261028T071015.646405Z_8dd7831f6bdb"
 EXT_A = RUNS / "927d-replay-20261028-batchA" / "20261028T073610.848937Z_f89d015d6ae2"
@@ -51,42 +54,42 @@ HERE = Path(__file__).resolve().parent
 ARCHIVED = HERE / "archived"
 OUT = HERE / "recompute.json"
 
-sys.path.insert(0, str(REPO / "scripts"))
-sys.path.insert(0, str(REPO))
+SCRIPTS_DIR = Path(os.environ.get("MBB_SCRIPTS_DIR") or (REPO / "scripts"))
+# insert in reverse so the first entry ends up first in the search path
+for _path in reversed((str(SCRIPTS_DIR), str(REPO / "scripts"), str(REPO))):
+    sys.path.insert(0, _path)
 
 import compare_blend_replay as cbr  # noqa: E402
 import featnorm_decision as fd  # noqa: E402
 import rung_candidate_compare as rc  # noqa: E402
 
-def _block_interval_new(values) -> dict:
-    """Whole-series 5-day moving-block bootstrap (the corrected caliber)."""
+def _block_interval_new(values, *, draws: int = DRAWS) -> dict:
+    """Corrected caliber: delegates to the single source implementation in compare_blend_replay."""
     vals = np.asarray(values, dtype=float)
     vals = vals[np.isfinite(vals)]
-    n = vals.size
+    n = int(vals.size)
+    interval = cbr.block_interval(vals, block=BLOCK, draws=draws, seed=BOOT_SEED)
     if n < 2:
-        return {"days": int(n), "n_blocks": None, "resampled_length": None,
-                "mean": None, "ci_low": None, "ci_high": None}
-    n_blocks = math.ceil(n / BLOCK)
-    rng = np.random.default_rng(BOOT_SEED)
-    starts = rng.integers(0, n, size=(DRAWS, n_blocks))
-    index = (starts[:, :, None] + np.arange(BLOCK)[None, None, :]) % n
-    means = vals[index.reshape(DRAWS, -1)].mean(axis=1)
+        return {"days": n, "n_blocks": None, "resampled_length": None,
+                "mean": interval["mean"], "ci_low": interval["ci_low"],
+                "ci_high": interval["ci_high"], "iid_standard_error": None}
+    n_blocks = int(math.ceil(n / BLOCK))
     return {
-        "days": int(n),
-        "n_blocks": int(n_blocks),
+        "days": n,
+        "n_blocks": n_blocks,
         "resampled_length": int(n_blocks * BLOCK),
-        "mean": float(vals.mean()),
-        "ci_low": float(np.quantile(means, 0.025)),
-        "ci_high": float(np.quantile(means, 0.975)),
+        "mean": interval["mean"],
+        "ci_low": interval["ci_low"],
+        "ci_high": interval["ci_high"],
         "iid_standard_error": float(vals.std(ddof=1) / math.sqrt(n)),
     }
 
 
 def _calibers(values) -> tuple[dict, dict]:
     vals = np.asarray(values, dtype=float)
-    old = cbr.block_interval(vals, block=BLOCK, draws=DRAWS, seed=BOOT_SEED)
+    old = cbr.archived_single_block_interval(vals, block=BLOCK, draws=DRAWS, seed=BOOT_SEED)
     old = {k: old[k] for k in ("days", "mean", "ci_low", "ci_high")}
-    return old, new_block_interval(vals)
+    return old, _block_interval_new(vals)
 
 
 def _excludes_zero(interval: dict) -> bool | None:
@@ -143,11 +146,16 @@ def _row(row_id: str, label: str, series, archived: dict, *, extra: dict | None 
 
 
 def _rung_results() -> dict:
+    cache = HERE / "arm_daily.pkl"
+    if cache.exists():
+        print(f"[cache] reusing arm daily series from {cache}", flush=True)
+        return pickle.loads(cache.read_bytes())
     wanted = ["441d-2.64", "441-6seed", "rung-6", "927d-1.32"]
     out = {}
     for name in wanted:
         print(f"[arm] {name}", flush=True)
         out[name] = rc.run_candidate(name, rc.CANDIDATES[name])
+    cache.write_bytes(pickle.dumps({name: result for name, result in out.items()}))
     return out
 
 
@@ -184,6 +192,50 @@ def _window_check(per_window: dict[str, pd.Series], archived_windows: dict) -> d
         check[str(window)] = {"recomputed": recomputed, "archived": archived,
                               "gap": abs(recomputed - archived)}
     return check
+
+
+def _ar1(phi: float, n: int, rng, sigma: float = 0.01):
+    values = np.empty(n)
+    values[0] = rng.normal(0.0, sigma)
+    root = sigma * math.sqrt(1.0 - phi * phi)
+    for index in range(1, n):
+        values[index] = phi * values[index - 1] + rng.normal(0.0, root)
+    return values
+
+
+def _caliber_validation(reps: int = 120, days: int = 104) -> dict:
+    """Synthetic check: a correct mean interval must widen with persistence, a single-block one
+    stays roughly sqrt(days / block) times too wide at every persistence level."""
+    rng = np.random.default_rng(12345)
+    rows = []
+    baseline = None
+    for phi in (0.0, 0.3, 0.6, 0.9):
+        new_widths, old_widths = [], []
+        for _ in range(reps):
+            values = _ar1(phi, days, rng)
+            new = _block_interval_new(values, draws=VALIDATION_DRAWS)
+            old = cbr.archived_single_block_interval(values, block=BLOCK,
+                                                      draws=VALIDATION_DRAWS, seed=BOOT_SEED)
+            new_widths.append(new["ci_high"] - new["ci_low"])
+            old_widths.append(old["ci_high"] - old["ci_low"])
+        new_mean = float(np.mean(new_widths))
+        old_mean = float(np.mean(old_widths))
+        if baseline is None:
+            baseline = new_mean
+        theory = math.sqrt(1.0 + 2.0 * sum((1 - k / BLOCK) * phi ** k for k in range(1, BLOCK)))
+        rows.append({
+            "ar1_phi": phi,
+            "mean_new_width": new_mean,
+            "mean_old_width": old_mean,
+            "new_width_ratio_vs_phi0": new_mean / baseline,
+            "theory_block_inflation": theory,
+            "old_over_new_width": old_mean / new_mean,
+            "sqrt_days_over_block": math.sqrt(days / BLOCK),
+        })
+    return {"n_days": days, "replications": reps, "block_days": BLOCK,
+            "draws": VALIDATION_DRAWS, "bootstrap_seed": BOOT_SEED,
+            "series": "AR(1) daily values, stationary sd 0.01",
+            "rows": rows}
 
 
 def _archived_json(name: str) -> dict:
@@ -253,7 +305,7 @@ def main() -> int:
             "kind": "data-scaling extension decision (per-seed delta then seed mean)",
             "windows": ext_check,
             "max_window_gap": max(w["gap"] for w in ext_check.values()),
-            "archived_positive_windows": extension["positive_windows"],
+            "archived_positive_windows": extension["points"]["data-1.32"]["positive_windows"],
         },
     ))
 
@@ -296,6 +348,7 @@ def main() -> int:
             "data_scaling_extension": str(ARCHIVED / "927d-extension-decision.json"),
             "sealed": str(ARCHIVED / "sealed_result.json"),
         },
+        "validation": _caliber_validation(),
         "rows": rows,
         "summary": {
             "rows": len(rows),

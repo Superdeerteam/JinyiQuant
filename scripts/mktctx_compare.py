@@ -6,7 +6,9 @@ constant portfolios, single_side_rate 0.0 so turnover stays the eval-v2 ``U / 2`
 project causal EWMA (alpha=0.9111677303420447) applied to each arm's cross-sectionally
 z-scored scores, daily rank_ic pooled across trading days, and paired candidate-minus-control
 daily differences with the 5-day moving-block bootstrap of
-``scripts.compare_blend_replay.block_interval`` (random start + wrap-around, 20000 draws).
+``scripts.compare_blend_replay.block_interval`` (ceil(n / 5) random-start wrap-around blocks,
+20000 draws).  The retired single-block caliber is printed side by side and recorded as
+``archived_ci_*`` for continuity only; every decision uses the corrected interval.
 
 Pairing is per (seed, trading day): each arm is a replay version with a seed, so the
 difference is only taken within one seed and one trading day, then pooled across seeds and
@@ -20,7 +22,7 @@ Entry points
       archived runs (the three 441d@2.64 seed runs of the A arm) can be re-checked.
     * ``--self-test``: exercises the same code path on synthetic data with a known paired
       difference, an identical-arms control, and AR(1) paired differences whose block
-      interval must widen relative to the iid interval.
+      interval must widen relative to the iid interval and match the block-inflation theory.
 
 Usage
     python scripts/mktctx_compare.py --plan configs/mktctx_replay_20261028_plan.json \\
@@ -50,7 +52,8 @@ for _path in (REPO / "src", REPO / "scripts"):
 
 from jinyiquant.config import EvaluationConfig  # noqa: E402
 from jinyiquant.evaluation import EVALUATION_VERSION, evaluate  # noqa: E402
-from compare_blend_replay import block_interval  # noqa: E402
+from compare_blend_replay import (  # noqa: E402
+    archived_single_block_interval, block_interval)
 from verify_turnover_change import causal_ewma  # noqa: E402
 
 ALPHA = 0.9111677303420447
@@ -128,13 +131,28 @@ def _number(value) -> float | None:
 
 
 def interval_summary(values, *, block: int, draws: int, seed: int) -> dict:
-    """5-day moving-block bootstrap through the project's ``block_interval``."""
+    """5-day moving-block bootstrap through ``compare_blend_replay.block_interval``.
+
+    The corrected interval leads; the retired single-block interval is kept as ``archived_ci_*``
+    so a reader can see why historical readings were conservative.
+    """
     data = np.asarray(values, dtype=float)
+    data = data[np.isfinite(data)]
     interval = block_interval(data, block=block, draws=draws, seed=seed)
+    retired = archived_single_block_interval(data, block=block, draws=draws, seed=seed)
     return {"days": int(interval["days"]) if interval["days"] is not None else 0,
             "mean": _number(interval["mean"]),
             "ci_low": _number(interval["ci_low"]),
-            "ci_high": _number(interval["ci_high"])}
+            "ci_high": _number(interval["ci_high"]),
+            "archived_ci_low": _number(retired["ci_low"]),
+            "archived_ci_high": _number(retired["ci_high"])}
+
+
+def _excludes_zero(row: dict, *, prefix: str = "") -> bool | None:
+    low, high = row.get(f"{prefix}ci_low"), row.get(f"{prefix}ci_high")
+    if low is None or high is None:
+        return None
+    return bool(low > 0.0 or high < 0.0)
 
 
 def _seed_key(seed: str):
@@ -174,6 +192,8 @@ def pair_stats(series: dict, windows: list[str], candidate: str, control: str,
         row = {"seeds": common, **interval_summary(window_delta, block=block, draws=draws,
                                                    seed=seed)}
         row["positive"] = bool(row["mean"] is not None and row["mean"] > 0)
+        row["excludes_zero"] = _excludes_zero(row)
+        row["archived_excludes_zero"] = _excludes_zero(row, prefix="archived_")
         per_window[window] = row
         if len(window_delta):
             pooled.append(window_delta)
@@ -189,6 +209,8 @@ def pair_stats(series: dict, windows: list[str], candidate: str, control: str,
 
     pooled_values = np.concatenate(pooled) if pooled else np.array([], dtype=float)
     summary = interval_summary(pooled_values, block=block, draws=draws, seed=seed)
+    summary["excludes_zero"] = _excludes_zero(summary)
+    summary["archived_excludes_zero"] = _excludes_zero(summary, prefix="archived_")
     summary["windows"] = len(per_window)
     summary["positive_windows"] = sum(1 for row in per_window.values() if row["positive"])
     summary["positive_window_names"] = [w for w, row in per_window.items() if row["positive"]]
@@ -331,21 +353,30 @@ def reference_check(series: dict, windows: list[str], arm: str, *,
             "ok": bool(diff_ic <= tolerance and diff_to <= tolerance)}
 
 
+def _interval_cells(row: dict) -> str:
+    if row["mean"] is None:
+        return f"{'-':>11}{'-':>11}{'-':>11}"
+    return (f"{row['mean']:>+11.5f}{row['ci_low']:>+12.5f}{row['ci_high']:>+12.5f}")
+
+
 def print_pair_table(name: str, result: dict) -> None:
     print(f"\n{name}  (candidate minus control, daily rank_ic, smoothed)")
-    print(f"{'window':<12}{'days':>6}{'mean':>11}{'ci_low':>11}{'ci_high':>11}  positive")
+    print(f"{'window':<12}{'days':>6}{'mean':>11}{'new_ci_low':>12}{'new_ci_high':>12}"
+          f"{'old_ci_low':>12}{'old_ci_high':>12}  positive  new!=0  old!=0")
     for window, row in result["per_window"].items():
-        mean, low, high = row["mean"], row["ci_low"], row["ci_high"]
-        if mean is None:
+        if row["mean"] is None:
             print(f"{window:<12}{row['days']:>6}{'-':>11}")
             continue
-        print(f"{window:<12}{row['days']:>6}{mean:>+11.5f}{low:>+11.5f}{high:>+11.5f}"
-              f"  {'yes' if row['positive'] else 'no'}")
+        print(f"{window:<12}{row['days']:>6}{_interval_cells(row)}"
+              f"{row['archived_ci_low']:>+12.5f}{row['archived_ci_high']:>+12.5f}"
+              f"  {'yes' if row['positive'] else 'no ':>8}"
+              f"  {str(row['excludes_zero']):>6}  {str(row['archived_excludes_zero']):>6}")
     pooled = result["pooled"]
     if pooled["mean"] is not None:
-        print(f"{'pooled':<12}{pooled['days']:>6}{pooled['mean']:>+11.5f}"
-              f"{pooled['ci_low']:>+11.5f}{pooled['ci_high']:>+11.5f}  "
-              f"{pooled['positive_windows']}/{pooled['windows']} windows")
+        print(f"{'pooled':<12}{pooled['days']:>6}{_interval_cells(pooled)}"
+              f"{pooled['archived_ci_low']:>+12.5f}{pooled['archived_ci_high']:>+12.5f}"
+              f"  {pooled['positive_windows']}/{pooled['windows']:<7}"
+              f"  {str(pooled['excludes_zero']):>6}  {str(pooled['archived_excludes_zero']):>6}")
 
 
 # --------------------------------------------------------------------------------------- #
@@ -433,13 +464,22 @@ def run_self_test(out_path: str | Path | None = None, *, draws: int = 2000,
         se = float(delta.std(ddof=1) / np.sqrt(len(delta)))
         half = 0.5 * (pooled["ci_high"] - pooled["ci_low"])
         ratio = half / (1.96 * se) if se > 0 else None
-        check("known_delta_ci_width_documented",
-              ratio is not None and 1.0 <= ratio <= 8.0,
+        check("known_delta_ci_matches_iid_width",
+              ratio is not None and 0.7 <= ratio <= 1.6,
               {"mean": pooled["mean"], "ci": [pooled["ci_low"], pooled["ci_high"]],
                "iid_standard_error": se, "half_width_over_iid_half": ratio,
-               "note": "block_interval draws one 5-day block mean per replicate, so the "
-                       "interval is conservative (wider) relative to an iid interval on the "
-                       "pooled daily mean; the project uses it as the frozen convention"})
+               "note": "the corrected whole-series block interval must sit close to the iid "
+                       "interval of the pooled daily mean for a serially uncorrelated delta"})
+        archived_half = 0.5 * (pooled["archived_ci_high"] - pooled["archived_ci_low"])
+        archived_ratio = archived_half / (1.96 * se) if se > 0 else None
+        sqrt_blocks = float(np.sqrt(len(delta) / BLOCK_DAYS))
+        check("retired_caliber_is_sqrt_blocks_too_wide",
+              archived_ratio is not None
+              and abs(archived_ratio / sqrt_blocks - 1.0) <= 0.35,
+              {"archived_half_width_over_iid_half": archived_ratio,
+               "sqrt_days_over_block": sqrt_blocks,
+               "note": "the pre-2026-10-28 single-block interval is sqrt(n / block) too wide; "
+                       "it stays visible side by side and never feeds a verdict"})
 
     # 2. identical arms must pair to exactly zero (no smoothing leakage, no key drift).
     null_series, _ = _synthetic_case(seed=29, windows=("w1", "w2"), days=24,
@@ -492,6 +532,8 @@ def run_self_test(out_path: str | Path | None = None, *, draws: int = 2000,
         factor = 1.0 + 2.0 * sum((BLOCK_DAYS - lag) / BLOCK_DAYS * phi ** lag
                                  for lag in range(1, BLOCK_DAYS))
         row["width_ratio"] = row["mean_width"] / base_width if base_width else None
+        # _ar1 draws innovation innovations with sd sigma, so the stationary sd is
+        # sigma / sqrt(1 - phi^2); the block-mean spread carries both terms.
         row["theory_ratio"] = float(np.sqrt(factor / (1.0 - phi ** 2)))
     check("block_ci_width_tracks_persistence",
           all(abs(dependence[str(phi)]["width_ratio"]
@@ -613,8 +655,18 @@ def main(argv: list[str] | None = None) -> int:
             "bootstrap": {"method": "scripts/compare_blend_replay.block_interval",
                           "block_days": block, "draws": draws,
                           "seed": bootstrap_seed,
-                          "resampling": "random start + wrap-around over the pooled daily "
-                                        "vector ordered window -> seed -> day"},
+                          "resampling": "ceil(n / block) random-start wrap-around blocks over "
+                                        "the pooled daily vector ordered window -> seed -> day, "
+                                        "concatenated to ceil(n / block) * block days and "
+                                        "averaged per replicate (corrected 2026-10-28)",
+                          "corrected_at_utc": "2026-10-28",
+                          "archived_secondary": {
+                              "method": "scripts/compare_blend_replay."
+                                        "archived_single_block_interval",
+                              "resampling": "one 5-day block mean per replicate",
+                              "role": "side-by-side reproduction of the retired interval, never "
+                                      "used for a decision"}},
+            "decision_metric": "rank_ic paired difference with the corrected interval",
         },
         "windows": windows,
         "sources": ({arm: {seed: spec for seed, spec in seeds.items()}

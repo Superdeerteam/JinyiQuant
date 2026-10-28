@@ -1,0 +1,197 @@
+{
+ "schema_version": 1,
+ "experiment_id": "mktctx-t4-20261028",
+ "frozen_at_utc": "2026-10-28T11:29:11Z",
+ "author": "replay-owner",
+ "question": "On the frozen 441-day / 2.64 candidate trunk, does a zero-initialised multiplicative market-context head (arm C) improve the cross-sectional relative ranking over a parameter-matched scalar head on the same 80-dim representation (arm B)?",
+ "hypothesis": "Same-timestamp cross-sectional information (mean / std / coverage of the pooled 80-dim stock representation) adds ranking information that a single stock's own representation and a scalar residual head cannot express, because the label is itself a same-timestamp cross-sectional z-score.",
+ "plan": {
+  "config": "configs/mktctx_replay_20261028_plan.json",
+  "config_sha256": "9506eb4325067dd0629c0cf48665b340926e4472c7afcc1fd860dcbe5e517aab",
+  "compare_script": "scripts/mktctx_compare.py",
+  "compare_script_sha256": "fd17c4e10518b87e3ca000e3c372e7110e77d975a73e056a6fadd874f9b255f9",
+  "caliber_module": "scripts/compare_blend_replay.py",
+  "caliber_module_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+  "replay_pairs": [
+   [
+    "c-s11",
+    "b-s11"
+   ],
+   [
+    "c-s11",
+    "a-s11"
+   ],
+   [
+    "b-s11",
+    "a-s11"
+   ]
+  ],
+  "arm_versions": {
+   "a-s11": {
+    "arm": "A",
+    "seed": 11,
+    "weights": "/root/weights/sealed/cand/cand_s11_264.json"
+   },
+   "a-s29": {
+    "arm": "A",
+    "seed": 29,
+    "weights": "/root/weights/sealed/cand/cand_s29_264.json"
+   },
+   "a-s47": {
+    "arm": "A",
+    "seed": 47,
+    "weights": "/root/weights/sealed/cand/cand_s47_264.json"
+   },
+   "b-s11": {
+    "arm": "B",
+    "seed": 11,
+    "weights": "/root/runs/mktctx-head-20261028/weights/b-s11.json"
+   },
+   "c-s11": {
+    "arm": "C",
+    "seed": 11,
+    "weights": "/root/runs/mktctx-head-20261028/weights/c-s11.json"
+   }
+  }
+ },
+ "arms": {
+  "A": {
+   "role": "reference only (frozen trunk, seeds 11/29/47)",
+   "versions": [
+    "a-s11",
+    "a-s29",
+    "a-s47"
+   ]
+  },
+  "B": {
+   "role": "control",
+   "versions": [
+    "b-s11"
+   ],
+   "definition": "one new scalar residual head on the 80-dim representation (parameter budget matched to C)"
+  },
+  "C": {
+   "role": "candidate",
+   "versions": [
+    "c-s11"
+   ],
+   "definition": "ds = w^T (P h * G(m_t)), w zero-initialised, so step 0 equals the frozen prediction"
+  }
+ },
+ "primary_pair": {
+  "candidate": "C",
+  "control": "B",
+  "contrast": "C - B",
+  "metric": "rank_ic",
+  "why": "The claim under test is that same-timestamp market context adds information beyond a parameter-matched scalar head; C - A and B - A are reported as context only."
+ },
+ "windows": {
+  "names": [
+   "nov2023",
+   "jan2024",
+   "feb2024",
+   "mar2024",
+   "apr2024",
+   "may2024",
+   "jun2024",
+   "jul2024",
+   "aug2024",
+   "sep2024"
+  ],
+  "trading_days": 203,
+  "sealed_interval": [
+   "2024-10-08",
+   "2025-01-01"
+  ],
+  "sealed_read": false,
+  "caliber": "ten development months 2023-11 .. 2024-09 from configs/mktctx_replay_20261028_plan.json; all windows end before the sealed start; no window was used for training or selection"
+ },
+ "estimator": {
+  "evaluation_version": "eval-v2",
+  "quantile": 0.2,
+  "periods_per_year": 252,
+  "min_cross_section": 3,
+  "constant_portfolios": "undefined",
+  "single_side_rate": 0.0,
+  "smoothing": {
+   "operator": "causal_ewma",
+   "alpha": 0.9111677303420447,
+   "note": "same operator the published 441d@2.64 candidate uses"
+  },
+  "pairing": "candidate daily rank_ic minus control daily rank_ic, paired within (window, trading day) and pooled across the ten windows (203 trading days); per-methyl-seed pairing when more than one seed exists",
+  "pooling_order": "window -> seed -> trading day"
+ },
+ "uncertainty": {
+  "primary": {
+   "method": "whole-series 5-day moving-block bootstrap: ceil(n / 5) random-start wrap-around blocks concatenated to ceil(n / 5) * 5 days and averaged per replicate",
+   "implementation": "scripts/compare_blend_replay.py::block_interval (corrected 2026-10-28)",
+   "block_days": 5,
+   "draws": 20000,
+   "seed": 20261028,
+   "interval": "95% percentile interval"
+  },
+  "secondary": {
+   "method": "retired single-block caliber (compare_blend_replay.archived_single_block_interval)",
+   "role": "reported side by side, never used as a gate",
+   "known_bias": "one 5-day block mean per replicate; half width sqrt(n / 5) too wide, i.e. about 6.4x at 203 trading days"
+  }
+ },
+ "thresholds": {
+  "min_improvement": 0.003,
+  "ci_must_exclude_zero": true,
+  "min_positive_windows": 7,
+  "windows_total": 10,
+  "note": "unchanged from the pre-declared team criterion: point estimate >= +0.003, corrected moving-block CI excludes zero, and at least 7 of 10 windows positive"
+ },
+ "decision_rule": {
+  "adopt": "all three: pooled C - B point estimate >= +0.003, corrected 95% CI excludes zero, >= 7/10 windows positive",
+  "otherwise": "record the null result, stop, and report; no threshold change and no re-running the same windows with a different seed",
+  "escalation": "only after adopt: ask the captain to authorise extra seeds; the primary screen is seed 11"
+ },
+ "secondary_metrics": {
+  "C_minus_A": "descriptive, same pairing and both calibers; never the claim",
+  "B_minus_A": "descriptive, same pairing and both calibers",
+  "turnover_delta": {
+   "rule": "report C - B and C - A turnover (eval-v2, U / 2)",
+   "degradation_cap": 0.0318,
+   "role": "a degradation beyond the cap blocks adoption even if rank_ic passes"
+  },
+  "long_short_daily_mean": "report for each arm and the paired difference",
+  "ic_ir": "report for each arm; descriptive"
+ },
+ "reference_gate": {
+  "arm": "A (equal-weight blend of a-s11/a-s29/a-s47)",
+  "windows": [
+   "nov2023",
+   "jan2024",
+   "mar2024",
+   "apr2024",
+   "jun2024"
+  ],
+  "expected_rank_ic": 0.078845,
+  "expected_turnover": 1.0996,
+  "tolerance": 0.0005,
+  "stop_rule": "if the A arm does not reproduce on the five original windows, stop and report; do not continue burning replay time and do not adjust the caliber"
+ },
+ "host": {
+  "required": "ZBzdgJ / hz-4 (port 27794) /root/repo_featnorm only; hz-t3 has stale trunk code",
+  "code_sha256_crlf_disk_bytes": {
+   "scripts/market_context.py": "52c62202821c161782d80dd555ee0847faf5733c994c8e4c958a24cb637f0a59",
+   "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
+   "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",
+   "modified_tlob/model.py": "615d506222b79860eed47eec1cbd14b5dce046de840c83b06f1255a54b30f742"
+  },
+  "sealed_data_rule": "never read /root/data 202410 / 202411 / 202412"
+ },
+ "ordering": {
+  "registered_before_any_c_minus_b_score": true,
+  "note": "at registration time no C-B, C-A or B-A rank_ic has been computed; the arm C and B weights are still training, and no replay of those versions exists"
+ },
+ "no_threshold_change": true,
+ "scope_limits": [
+  "the screen is seed 11 only; multi-seed confirmation needs a separate captain authorisation",
+  "C - A and B - A are context, never the claim; the claim is the C - B increment",
+  "the corrected interval is the gate; the retired caliber is shown side by side only",
+  "no window at or after 2024-10-08 is read, and no window is used for training or selection"
+ ]
+}
