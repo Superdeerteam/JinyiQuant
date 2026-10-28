@@ -1,0 +1,13 @@
+{"path": "package-flat.zip", "role": "submitted artifact", "sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38", "size": 10236143}
+{"path": "flat/inference.ipynb", "role": "zip member (entry)", "sha256": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178", "size": 940}
+{"path": "flat/jinyiquant_flat.py", "role": "zip member (code)", "sha256": "82e9e68d3fc78788301759df8d77c784bac7f243ed18bd4e305266429f9bcc01", "size": 54364}
+{"path": "flat/modified_tlob_flat.py", "role": "zip member (code)", "sha256": "c04ffc08a2eacb5591ed14b691a161aac188404023e3ec2735fa5167853af147", "size": 111454}
+{"path": "flat/modified_tlob_weights.json", "role": "weights (kept inside package-flat.zip only)", "sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34", "size": 23799122}
+{"path": "flat/provenance.json", "role": "zip member (config/metadata)", "sha256": "f3bf64418c9c7bbd15e49e84f0c2dc7d3d5edefa37b6b6c60b39326fc1877273", "size": 7753}
+{"path": "flat/requirements.txt", "role": "zip member (requirements)", "sha256": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327", "size": 550}
+{"path": "flat/submission_config.json", "role": "zip member (config/metadata)", "sha256": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa", "size": 1000}
+{"path": "evidence/build.json", "role": "verification evidence", "sha256": "2659c4dfd54f585b2c0bbd5abaebc295df1cd76f62ebf1cf4e7ed3b3312cd8a9", "size": 7416, "source": "runs/promotion-submission-20261028/build.json"}
+{"path": "evidence/evidence-index.json", "role": "verification evidence", "sha256": "494c92ca6fe659c42482ba44a1b6800208fa574d0e5e0fdd2ba6584b48c3e7d9", "size": 8506, "source": "runs/promotion-submission-20261028/evidence-index.json"}
+{"path": "evidence/flat-check.log", "role": "verification evidence", "sha256": "986a1e741afbe0db55dd04e3f2c4264ec19c812dd1e8902c9c28c09f430c7ba8", "size": 1685, "source": "runs/promotion-submission-20261028/flat-check.log"}
+{"path": "evidence/gate-decision-resource.json", "role": "verification evidence", "sha256": "a0abec6179167ca4cbf462e4d04e7f7630b70ef5d7dd97b0dc1bedff969f174c", "size": 1143, "source": "runs/promotion-submission-20261028/gate-cand_441d_2p64_3seed_ewma_match-resource/decision.json"}
+{"path": "evidence/resource-evidence.json", "role": "verification evidence", "sha256": "0f940a37ab948b58f6a5f449ef2321800d8deff5f738aec205cb635591a70e41", "size": 8436, "source": "runs/promotion-submission-20261028/resource-evidence.json"}
