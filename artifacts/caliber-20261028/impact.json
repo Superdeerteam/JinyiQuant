@@ -1,0 +1,2031 @@
+{
+ "schema_version": "caliber-impact/1",
+ "generated_at_utc": "2026-10-28T11:48:20.416456+00:00",
+ "purpose": "re-judge every registered/archived verdict under the corrected 5-day moving-block bootstrap, side by side with the caliber it was archived under",
+ "caliber": {
+  "archived_bug": "compare_blend_replay.block_interval drew one 5-day block per replicate and averaged only that block, inflating the interval by about sqrt(n/5)",
+  "corrected": "ceil(n/5) contiguous blocks per replicate with wrap-around, averaged over n_blocks*5 values",
+  "block_days": 5,
+  "identification_rule": "each archived interval is matched bit-for-bit against both estimators to decide whether that judgment actually carried the debt",
+  "same_params_rule": "the corrected interval reuses the archived draws/seed so only the block count moves",
+  "canonical": {
+   "draws": 20000,
+   "seed": 20261028,
+   "note": "same canonical setting as runs/mbb-caliber-20261028/recompute.json"
+  },
+  "reference_inflation_at_n104": 4.5607
+ },
+ "red_lines_honored": [
+  "no registered threshold changed",
+  "no historical verdict file written",
+  "no sealed-month raw data read; the sealed row is rebuilt from the archived paired_daily only",
+  "no commit"
+ ],
+ "summary": {
+  "judgments": 13,
+  "recorded_verdict_flips": 0,
+  "interval_flips": 2,
+  "caliber_debt_rows": 5,
+  "already_correct_rows": 8,
+  "rows": [
+   {
+    "id": "dose-132d-240d@1.32",
+    "family": "dose",
+    "n": 104,
+    "point": 0.0029626989589071648,
+    "archived_ci": [
+     0.0007281720137682863,
+     0.004995193903886868
+    ],
+    "corrected_ci": [
+     0.0007281720137682863,
+     0.004995193903886868
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "dose-240d-441d@1.32",
+    "family": "dose",
+    "n": 104,
+    "point": 0.002613748495798631,
+    "archived_ci": [
+     0.001018106557370088,
+     0.004123358787857175
+    ],
+    "corrected_ci": [
+     0.001018106557370088,
+     0.004123358787857175
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "dose-132d-441d@1.32",
+    "family": "dose",
+    "n": 104,
+    "point": 0.005576447454705795,
+    "archived_ci": [
+     0.0029487893545920934,
+     0.008186977321765666
+    ],
+    "corrected_ci": [
+     0.0029487893545920934,
+     0.008186977321765666
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "dose-132d-240d@2.64",
+    "family": "dose",
+    "n": 104,
+    "point": 0.0037053128551499184,
+    "archived_ci": [
+     0.001584397047658964,
+     0.006069410203989516
+    ],
+    "corrected_ci": [
+     0.001584397047658964,
+     0.006069410203989516
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "dose-240d-441d@2.64",
+    "family": "dose",
+    "n": 104,
+    "point": 0.0031423630035971573,
+    "archived_ci": [
+     0.0015021001736491221,
+     0.004686162702896693
+    ],
+    "corrected_ci": [
+     0.0015021001736491221,
+     0.004686162702896693
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "dose-132d-441d@2.64",
+    "family": "dose",
+    "n": 104,
+    "point": 0.006847675858747077,
+    "archived_ci": [
+     0.004260292794689877,
+     0.009444177701185068
+    ],
+    "corrected_ci": [
+     0.004260292794689877,
+     0.009444177701185068
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "c1-132-vs-60",
+    "family": "c1",
+    "n": 104,
+    "point": 0.0014097292993828963,
+    "archived_ci": [
+     -0.0018798268712745894,
+     0.004710146015327748
+    ],
+    "corrected_ci": [
+     -0.0018798268712745894,
+     0.004710146015327748
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": false,
+    "corrected_rule_passes": false
+   },
+   {
+    "id": "ext-927-264-vs-132",
+    "family": "extension",
+    "n": 104,
+    "point": -0.0004585906488369238,
+    "archived_ci": [
+     -0.008210577673376714,
+     0.006774976491160574
+    ],
+    "corrected_ci": [
+     -0.0019198897078661619,
+     0.001039900659777121
+    ],
+    "caliber_debt": true,
+    "interval_flip": false,
+    "verdict_flip": false,
+    "corrected_rule_passes": false
+   },
+   {
+    "id": "gate-promotion-441d-2p64",
+    "family": "promotion",
+    "n": 104,
+    "point": 0.008235609120890754,
+    "archived_ci": [
+     0.005234086005151287,
+     0.009942125220239689
+    ],
+    "corrected_ci": [
+     0.005234086005151287,
+     0.00994212522023969
+    ],
+    "caliber_debt": false,
+    "interval_flip": false,
+    "verdict_flip": false,
+    "corrected_rule_passes": true
+   },
+   {
+    "id": "featnorm-data-1.32",
+    "family": "feature-norm",
+    "n": 104,
+    "point": 0.0016687064608059492,
+    "archived_ci": [
+     -0.0038219691874997997,
+     0.008003176163878994
+    ],
+    "corrected_ci": [
+     0.00023015398545573224,
+     0.003111657329136436
+    ],
+    "caliber_debt": true,
+    "interval_flip": true,
+    "verdict_flip": false,
+    "corrected_rule_passes": false
+   },
+   {
+    "id": "featnorm-data-2.64",
+    "family": "feature-norm",
+    "n": 104,
+    "point": -7.01932686091963e-05,
+    "archived_ci": [
+     -0.005465998653822474,
+     0.0055176952263133305
+    ],
+    "corrected_ci": [
+     -0.0012402470184204404,
+     0.00111886494456477
+    ],
+    "caliber_debt": true,
+    "interval_flip": false,
+    "verdict_flip": false,
+    "corrected_rule_passes": false
+   },
+   {
+    "id": "featnorm-ext-data-1.32",
+    "family": "feature-norm",
+    "n": 104,
+    "point": -9.361591216103115e-06,
+    "archived_ci": [
+     -0.005874557118318639,
+     0.005038804198078447
+    ],
+    "corrected_ci": [
+     -0.0012115619515343983,
+     0.0011706500322269523
+    ],
+    "caliber_debt": true,
+    "interval_flip": false,
+    "verdict_flip": false,
+    "corrected_rule_passes": false
+   },
+   {
+    "id": "sealed-final-20261028",
+    "family": "sealed",
+    "n": 61,
+    "point": 0.010288349839634827,
+    "archived_ci": [
+     -0.007918712631987792,
+     0.026488894481527487
+    ],
+    "corrected_ci": [
+     0.005088633240293155,
+     0.015252830394260678
+    ],
+    "caliber_debt": true,
+    "interval_flip": true,
+    "verdict_flip": null,
+    "corrected_rule_passes": true
+   }
+  ]
+ },
+ "provenance": {
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/apr2024/s11-132/daily.csv": "7550ce24208e89c94d0ebc036e9456e7544220bb01aac6bcf89e4d245b028758",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/apr2024/s29-132/daily.csv": "5fa2193ae7234f82a7319350fca9bf5c776b054a2dfbfd8cd3170766abc4ec93",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/apr2024/s47-132/daily.csv": "32d139ab24cdc1b4b81e463d0b8318729b0ccb448a30cd3762885ceabb6ece7b",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jan2024/s11-132/daily.csv": "f40635ceff9b89c9bd925823d3ccac2dd718644f69caf4e4d45de9597231ba87",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jan2024/s29-132/daily.csv": "62ab26654ea887f81b57f70df1b3b9a96adab8648cc8223c80166e94fb3d3141",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jan2024/s47-132/daily.csv": "9b047f04cf60c149d28516556c8b9743779c91d6c200a55802a6c39570bae46c",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jun2024/s11-132/daily.csv": "ac3fc1a76da9ce838274b46ce608848f68640432caee8b9be00f3688083654b1",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jun2024/s29-132/daily.csv": "6d4cd70c3d1cb3cfebb7956c32a9e1f2fb2e84cac23db242cc0d0d37af781cdb",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/jun2024/s47-132/daily.csv": "c36c9d259db71e31600905453b26f772ca29dcf6761895a4485a859597fba5a2",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/mar2024/s11-132/daily.csv": "5cccbd517969f856968e1dac45aeb25bd16094011065c5d53dc569099a8ba872",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/mar2024/s29-132/daily.csv": "65206bb76ab4c0f18d3ec29279aae15ad08a3941fde0dd279f2a9a15a3b424dd",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/mar2024/s47-132/daily.csv": "fbcb5eae04eab23f2d069bda76fb68e82ede735540829d3bfdb960b82393264d",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/nov2023/s11-132/daily.csv": "9dbc0d9c373204c9e5bd09daa8cc2f373f381649a8cc1cc4732eb8e25507cbbb",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/nov2023/s29-132/daily.csv": "8c98ac915c7b7ad116362c8d6d3b1159d9b91f2ff3c8d5dc516a6b716661ae6d",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchA/20261028T073610.848937Z_f89d015d6ae2/windows/nov2023/s47-132/daily.csv": "4810dbf59afdf09517ec79cef80e3a25365898dbe838ee6bc091fa943bcf14e0",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/apr2024/s11-264/daily.csv": "ee48d51ef4f878081a8bec2103d2177d46b48c5f101ec7ce4ed740f8efbca4cd",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/apr2024/s29-264/daily.csv": "fc0df3b43e76726b74dab1e68f42a530ca221d073d135d770450d4e435efc9d6",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/apr2024/s47-264/daily.csv": "9d75c572ca570e6798ac1d1c920dcdcffd13e78e871babb6c6699e0364e4b19b",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jan2024/s11-264/daily.csv": "7b268017c520249415a9baf455bce6853cbebea628c8b0a7d54abd8a7b2f7072",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jan2024/s29-264/daily.csv": "566386593cc2fa4591e76b741bc7258c4f5eb6d10069eb000ecd60c203f94189",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jan2024/s47-264/daily.csv": "d9321deb60a6fcd37fcf33e311fc8f8e094cee5a90c7884b9aebebce7a21fb3d",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jun2024/s11-264/daily.csv": "f9ee81dc1cf3862b1426f38abba58ed229e7a944d5a73c4507d60b92144712f4",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jun2024/s29-264/daily.csv": "a17dd7d713b059aa469b8b130ca846647a5a9a8205c239069c5eb948aa829acd",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/jun2024/s47-264/daily.csv": "7227ebc8184b487c772e2979b9f46ab053666019c51439c43b1d272a986e2dba",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/mar2024/s11-264/daily.csv": "6f6d497ce4d8492851ee26b5f8db8b466bb8c9e628fcdfe28d69bd90d0d4fd61",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/mar2024/s29-264/daily.csv": "7b484c514b9e170ea8714701b31f64876c7754923d5aa822c109dfe3d86594e7",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/mar2024/s47-264/daily.csv": "01e687b1d2caa7301c81e49a52cb7d64f1d0dd22292474962b1e6bdec31ed983",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/nov2023/s11-264/daily.csv": "c20489b5c74939e60f6fdf37af93107e042faa4e607f768fe512dbf755570ef4",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/nov2023/s29-264/daily.csv": "5f476c83d09ad74741da5cf7d98ccaa9dbd2164e43b1c2e3d140d77c1af6df3a",
+  "runs/caliber-impact-20261028/src/series/927d-replay-20261028-batchB/20261028T082014.218918Z_881f3c9bc12f/windows/nov2023/s47-264/daily.csv": "893f317f49472ed20185e9bfd9664a36d422dc190f4ace95e2dac9ee1b1afbbe",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/c-s53-132/daily.csv": "5585bf4114b32c97888ef07cb10c75d8df7001740bc25457944d50eefbbeada3",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/c-s59-132/daily.csv": "2aa7f654e2c8046b61d4b73e70f83c266ad19de3c0ef906449efc71ca0b0cf38",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/c-s61-132/daily.csv": "bbefbde19e74aa4bc9e759b667b45a34735551d1e7cfd4b69977a31b2fa07044",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/p-s53-132/daily.csv": "9059a37750e39894fda46943812c77a6f5db4290169823433a6f0bee84c1dc82",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/p-s59-132/daily.csv": "541c44a21640328d44c07862a20c36bbae4bea2362a2e45bdf503d810055ffdf",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/apr2024/p-s61-132/daily.csv": "08d5a23b6dc8f2b0c9dac9b53579bf143070cb56bd9b48c1a2d1603b4d20ccb1",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/c-s53-132/daily.csv": "e63af21b602c6db0f7b37d3806b5ca5dcaccbb367a7d3e36f97431e38b372290",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/c-s59-132/daily.csv": "385204f321bfdbb6caabc0193771177a2e39ecd8a7e3eefcda4f45d785910dd7",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/c-s61-132/daily.csv": "887d4c8503bc50804c60a0fd9f61132ad8cb501b4ed1d5498f44ba64a2387c55",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/p-s53-132/daily.csv": "c71c1cc59a64b35674c4efcdf2a6d77d80112e1d15eb89d093543198c968be01",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/p-s59-132/daily.csv": "afbef8891bb6e2d9a5407bb4e9eb505a7bb837eda90563665b17c43cf0833168",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jan2024/p-s61-132/daily.csv": "5c5a3ad91349367020c07b3f9a069b6aef409a3f462d105fafd7d08a74dc023e",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/c-s53-132/daily.csv": "58403aaf4ca07c780fb3b76e1e061bab4d23dbda60c8e8832081077ffa417002",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/c-s59-132/daily.csv": "3133cba7d2b4148cc443bcc8545d7de1a38567eb992d75d8bcab5f87ff97be84",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/c-s61-132/daily.csv": "46a4042607f48e630d77c1d1a167ca3353d14506be9911b89cef5fff51a76720",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/p-s53-132/daily.csv": "a0b8377fa6ebd7ccd88f00ec388079bc50e779b94a4adf3d3fdaf5a722db51a2",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/p-s59-132/daily.csv": "32abc8919994acae41d5af47ef0fabca46820d76b77e243daf776eaf4842532b",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/jun2024/p-s61-132/daily.csv": "494037fb2cbaabbf3db6f9bd6ee8f80010a7024cc6a93fc5d3c7b66d334aa890",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/c-s53-132/daily.csv": "9f66f8ab6f7e147bd7ba0eb9f0c78a2b03d67b6bf6758318ff31a8ba81454837",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/c-s59-132/daily.csv": "c25123de7fce801bd38983728eec43c705d074ec58914d297dcca96af1556551",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/c-s61-132/daily.csv": "8220485a77b0c4edc170c30fc881a75627a77446cc88afa6a7a43e4746a0b4cc",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/p-s53-132/daily.csv": "2fc98dff0957318abdd7e6447da6ff1b7940b8fcf12269efb78890a3b74bee5c",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/p-s59-132/daily.csv": "301d4a5f7c5bab517be3e4df05e3de699096c56b2b810c926f9d8257023a2605",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/mar2024/p-s61-132/daily.csv": "677d8fe6c289f5a27368a0dd854d94a6f7835a75e66dfefe334dbce095ff8298",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/c-s53-132/daily.csv": "1dd3c444a2aad3c9a5d761144bdfbe2c89e1580dc2777a0bf564b75ed7049bd9",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/c-s59-132/daily.csv": "91557af31015c476d5227a9cafbf9b432be92712928ec742b1fbb81b4e0a292f",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/c-s61-132/daily.csv": "6be2fc11adcf4cd6f08a516fd32e9fda8778a0ef1d7cf1889d09d5275b7d5fe0",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/p-s53-132/daily.csv": "629c7e15de31fcc5dbd40c08617d9a483c4152d8d00b46c8561ce33361d299b6",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/p-s59-132/daily.csv": "e4a65eca3b392737b72000d4ce1870d0f5ed71cd5a6d7daa13ecbab5a5ec39f0",
+  "runs/caliber-impact-20261028/src/series/featnorm-ext-replay-20261028/20261028T075924.920238Z_86aab1d89424/windows/nov2023/p-s61-132/daily.csv": "dc70d4e7d48104a9c5547d82f2639a7c2afec73203afc0d61b21157d72dd4635",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s11-132/daily.csv": "0e4ec8e08302895ff0fc4dbfa6496b3f0b647ea926c931b656e3520621a76eca",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s11-264/daily.csv": "a9e74d9adcb508c8aff7dc4f6419aa1aad3764dcc46a6b87ba9145f3e3a5e7d8",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s29-132/daily.csv": "18473c17cd3a83ebba91313e0172fde8f11f496fd279236a12784c913219c23c",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s29-264/daily.csv": "6a23d37a31e3b24de51fca27398ef51f5ba7ef83b96abc326ac752742cb1b4cd",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s47-132/daily.csv": "f71efb1277143c3a448e451d8b121e4170689ae81d17df1047cfa669218d0b54",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/c-s47-264/daily.csv": "ddf8e1c4e36cb31c278a5daeee8586cfca0eff690de8842848c6099661f7cf33",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s11-132/daily.csv": "24505fb0ffff5f6ee0eba4d3fe705e28579351d8f79612b4407e116fa5c3da43",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s11-264/daily.csv": "25dc26c9bbb49347c12ceb6fef53a4673c9646979c47ba5e19fa4605974cd8f1",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s29-132/daily.csv": "8c57a7ecb488aa83c545cded4940f520427f484ed2b70cf4399fe1d2b71c6094",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s29-264/daily.csv": "28c834db211771cb6eb7d03459f73885b7a98b564d2b3b5cb618fe563cc2109a",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s47-132/daily.csv": "ed1e76b6fcbbe990f7102fd1e6272a035f16342591208f37f39c804437fdeda1",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/apr2024/p-s47-264/daily.csv": "7c05882c28e729f64cfc59636f1ecebe687c0844449efc8ba5a4a6198f9b2bf3",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s11-132/daily.csv": "56976bc286ba71e757f702d797fe4b2237b18f3d448b0db988735c16baf40a80",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s11-264/daily.csv": "20c6c0648376ef79132879c8a2a2f8596d66d8349340813ad161b03ede8881f4",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s29-132/daily.csv": "08e8204b7037e2613ab0e701f58f443a0ee71c47176cb384effcef73c206bff9",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s29-264/daily.csv": "d30ae48409e9c4d66f5625c61157f67c5db16dc2971fb31ed845efb9d1dc526e",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s47-132/daily.csv": "2d3dee8221fc881cb6f841179378a8c704f87c1827d1d2c50ce79189e9265d2b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/c-s47-264/daily.csv": "40aa3a71ab833d9ac5a17f4bfc16276577d2a5fe3bba6130f699ac2ecc03a01b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s11-132/daily.csv": "44e213c61d1819827296dbe054c018d567bc4002078c60aa23c0a6e917185326",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s11-264/daily.csv": "d910044ed19aaadd4a021a8012ae7e914aa1937dce10e0b81e0b1dd4cde42622",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s29-132/daily.csv": "35401daae8ab86b4e904fe59f911692fb839886da91c859b85aa6b69e87e109e",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s29-264/daily.csv": "628dc0c8751ac2f04a6b7d981dbd7cd1d89c318ccf3df51b5b07023f7a1f5877",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s47-132/daily.csv": "c13d37b6acaa55dcd0eb27b09417376346e4dd0d8c0a2359a1523d48871aedb1",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jan2024/p-s47-264/daily.csv": "9b92051a4894fe28b9aa5a019135bcd60994d200f6f99af5b32a4e6fb2877696",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s11-132/daily.csv": "d0dc327bb6b0ad2922f88f40e537d8dce9032d08ee01784ae081faab7e2e4675",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s11-264/daily.csv": "69ac2c741935ea9042ac38146ad27a08da96c8cacc24a12f77ec41c8da8c0070",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s29-132/daily.csv": "15a31ebc826dbf50d57d5391c9a0151586c78d1c7cc609ecf1048753e3b43dfc",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s29-264/daily.csv": "868f02065f654aa94aab9aff887fa688807d16b9959f97a1a017c6f4089c1870",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s47-132/daily.csv": "ae967779f0578bac5c552241f668590954f407a6523656ba06e9ba60a330cefa",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/c-s47-264/daily.csv": "ede796b3e071a3c646abd9dad5775eb39718e58f7378e7a0ea6973f8a6524b7a",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s11-132/daily.csv": "97a78d8433dda712a730d4d85a9d538571ed344d730fdc9b1f8dd39cae670124",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s11-264/daily.csv": "c4a23e3cef8178025691dfcc07537ab70048507ec837f6ebfc686732210554e9",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s29-132/daily.csv": "b6bd88fea23fa3bb2400ee617b5c7a29dd958233fe019f6a08c3fdf1236d14d0",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s29-264/daily.csv": "60d9e90e440c9c47ea1000a3c0ef53c996f6d5872760746cf64806208c8abcbf",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s47-132/daily.csv": "9fbe032acc31ad1c90a5c68f4e0d3fd3f348e194c144e8a166093b156f190621",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/jun2024/p-s47-264/daily.csv": "4c4ea784c1f53394e6412c4946aa439bc7191cf220e8f562308a0a30d6bf4e92",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s11-132/daily.csv": "dba00c467791dee932a6daf69bad958969e2e2797afd62f3b92c47c340ddf464",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s11-264/daily.csv": "c3802bc1d618d5d7eeb6703f8472de25ef6415c60a9a4063b0303308d14769b7",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s29-132/daily.csv": "e8333f8fe8bb6e00c63f927765b6244a86794cff770a413feb07cd0f12a9e510",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s29-264/daily.csv": "6ef95bd485d6a0ea61d5dcc5afa3332ea3ba1db1929b5646902c1cb6e4d0825e",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s47-132/daily.csv": "7681c1550a379e665a0828561aa8df4cb7639f45ebf003454c67da9e84faa291",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/c-s47-264/daily.csv": "4752252075bb010d36880ba687ed833324d4531f060fafb2e9d87e95ad88d7e7",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s11-132/daily.csv": "c0c1923c3a536e050dd2abd72ee50ae38cef4457a82ef734932adeb0ec482b3b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s11-264/daily.csv": "c6ddb6dd2d8d0d2da9dc264eaca8e6fb5fab80cb44545411e447108538d2a383",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s29-132/daily.csv": "c93b901abff1ec5645da00afe00ec02479a97e0a750d323d6bc6c3db5b63a3d3",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s29-264/daily.csv": "744f38af383cebb6fbb14ff70e2a42bc78f9c4587553fd9116467e61d92e573d",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s47-132/daily.csv": "cbba4129699f91fc33e55e8ac538fbe068d02b89b4156593d0044ca0e38bd86b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/mar2024/p-s47-264/daily.csv": "6c72f7bdb25e0db01366a7db2b6b38d5873effa744f90346577eba6626108178",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s11-132/daily.csv": "fac304d702ed077bdce7d7ebd626b796e87a986e2dc1e7fd945281d174045362",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s11-264/daily.csv": "5a03ea351425f8103c41a88c6b9db7383bde3aca36ee9141d4e9a9bca13ee2ce",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s29-132/daily.csv": "1407e0bdbfee1e2f8c451af7b7b3ba488ed2759a7cb353350412077b81d1545d",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s29-264/daily.csv": "f67a995276809f9dc09b2fa439a11383e925206b146e4dc19367e6ba3978f3de",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s47-132/daily.csv": "70678539e5a653dfc1ac18d6e4a6e63e68ed10f3d0105e020653225a8dcd3a3a",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/c-s47-264/daily.csv": "e58c91987bc19861bf2832212273065ac21f0febbd4c2f47f313bd4a5e7c735d",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s11-132/daily.csv": "4abf96ea27cf5bfd3061ad0d398e86cb2cee8781e5134ce8e5e647c3cb7ed68b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s11-264/daily.csv": "6490a2d54e048bd34f7e0b1479d6309ba93b8849152e01442eb4d9f85ed1ccab",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s29-132/daily.csv": "0aac30fb54f69e5520800f8eed9501414eb26184691e3fa6fced69ff7449f55d",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s29-264/daily.csv": "0f62301ab9b99a644ad6097858737b760a96ce37e3642572070312896d316c8b",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s47-132/daily.csv": "84d5b25a88b0de1eaa0e2af959476700afbe9496857c74b163ff75a89d3d9f32",
+  "runs/caliber-impact-20261028/src/series/featnorm-replay-20261028/20261028T071015.646405Z_8dd7831f6bdb/windows/nov2023/p-s47-264/daily.csv": "f860e8b9eff8a1a134fedfd8a0d43a9264d918e67d75ba1ef6ab43024626bcca",
+  "runs/promotion-candidate-ewma-match-20261028/objects/cand_441d_2p64_3seed_ewma_match/daily_0bp.csv": "7aebcaad512385163566de16346b34269b8def54baff14786d4d46dcf3deeb99",
+  "runs/turnover-stability-20261027/20261027T070343Z_606ce5deaa8b/objects/reference_nine_blend/daily_0bp.csv": "bfae8e6bf92a39f7799bd55a0216db00c672d41e01bc45c72c24d0155ec479bc",
+  "runs/sealed-final-20261028/sealed_result.json": "8a115497422f0816fa39f46a227cb302b0d11f69ffaf6826800a09736e3412fe",
+  "runs/dose-replay-20261027/metrics.json": "4817d017b09cfa46d819528db002aef3b9892ae828c855096fc42590cd0b36bb",
+  "runs/data-probe-replay-20261027/metrics.json": "49d96d3dc4d8c13a85f98579f88b7d2552860c4a52f9cda98d9070d142a4c2c5",
+  "runs/mbb-caliber-20261028/src/featnorm-decision.json": "688868c9bb8ba976620001b348b3dd9819455f143c6219a0612e23968f240b7e",
+  "runs/mbb-caliber-20261028/src/decision_ext.json": "042bc3ba0f03a51aeed37e1bcd7543bd1125f9ca79545bbbb6dee4db2a98f48f",
+  "runs/mbb-caliber-20261028/src/927d-extension-decision.json": "fe4dbd6ca73e33729f59d8b9bf43d63af904c0f951c423a09c5c8bb53c3f0b1a",
+  "runs/promotion-candidate-ewma-match-20261028/gate-cand_441d_2p64_3seed_ewma_match/gate.json": "781ae0dd0ef0c94f07a437983091b65fe51648d3b50d0d91e6109126c9c2f9c3",
+  "runs/promotion-candidate-ewma-match-20261028/gate-cand_441d_2p64_3seed_ewma_match/decision.json": "81d9d1269583459f0da7e5274df7b8b89140f8d8f2575b0693b3cdab947aafd4"
+ },
+ "validations": [
+  {
+   "check": "dose 132d@1.32: per-seed 104-day mean",
+   "values": {
+    "11": 0.06583482357274,
+    "29": 0.064702274305876,
+    "47": 0.06942575059971
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "dose 240d@1.32: per-seed 104-day mean",
+   "values": {
+    "11": 0.068767636294167,
+    "29": 0.070393383795664,
+    "47": 0.069689925265217
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "dose 441d@1.32: per-seed 104-day mean",
+   "values": {
+    "11": 0.07185606239797,
+    "29": 0.074176133221384,
+    "47": 0.07065999522309
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "dose 132d@2.64: per-seed 104-day mean",
+   "values": {
+    "11": 0.064829404999852,
+    "29": 0.068118949567591,
+    "47": 0.069235200156103
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "dose 240d@2.64: per-seed 104-day mean",
+   "values": {
+    "11": 0.071660097102902,
+    "29": 0.070647006062209,
+    "47": 0.070992390123885
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "dose 441d@2.64: per-seed 104-day mean",
+   "values": {
+    "11": 0.075330093946555,
+    "29": 0.071892111528196,
+    "47": 0.075504376825037
+   },
+   "days": {
+    "11": 104,
+    "29": 104,
+    "47": 104
+   }
+  },
+  {
+   "check": "C1 60d anchor daily series located",
+   "path": [
+    "runs/training-trajectory-replay-20261027/20261027T134230.458586Z_457f754f746d/report/daily_all.csv"
+   ],
+   "days": 104,
+   "mean": 0.06442509427335708
+  },
+  {
+   "check": "C1 132d@1.32 minus 60d@1.32, seed 11 (104 days)",
+   "point": 0.0014097292993828963,
+   "days": 104,
+   "window_means": {
+    "nov2023": 0.003569564499949988,
+    "jan2024": -0.0009813798118260644,
+    "mar2024": -0.0006899705231982434,
+    "apr2024": 0.0052374772060173914,
+    "jun2024": -3.096732295209497e-05
+   },
+   "positive_windows": 2
+  },
+  {
+   "check": "927d extension (2.64 - 1.32) per-window means",
+   "archived": {
+    "nov2023": -0.00023261124602721927,
+    "jan2024": -0.0021052841543474244,
+    "mar2024": 0.0006431338819767494,
+    "apr2024": -0.001981499702265102,
+    "jun2024": 0.0015718133606838108
+   },
+   "recomputed": {
+    "nov2023": -0.00023261124602721927,
+    "jan2024": -0.0021052841543474244,
+    "mar2024": 0.0006431338819767494,
+    "apr2024": -0.001981499702265102,
+    "jun2024": 0.0015718133606838108
+   }
+  },
+  {
+   "check": "promotion gate interval reproduced with its own per-period block estimator",
+   "archived": {
+    "confidence": 0.95,
+    "high": 0.009942125220239689,
+    "low": 0.005234086005151287
+   },
+   "reproduced": [
+    0.005234086005151287,
+    0.00994212522023969
+   ],
+   "single_block_counterfactual": [
+    0.0032299990629227676,
+    0.012867930021318467
+   ]
+  },
+  {
+   "check": "featnorm data-1.32 per-window means",
+   "archived": {
+    "nov2023": 0.0025320557045246973,
+    "jan2024": -0.0007342371730670546,
+    "mar2024": 0.0031081604843846825,
+    "apr2024": 0.0033203238604782095,
+    "jun2024": 0.00012187457105831884
+   },
+   "recomputed": {
+    "nov2023": 0.0025320557045246973,
+    "jan2024": -0.0007342371730670546,
+    "mar2024": 0.0031081604843846825,
+    "apr2024": 0.0033203238604782095,
+    "jun2024": 0.00012187457105831884
+   }
+  },
+  {
+   "check": "featnorm data-2.64 per-window means",
+   "archived": {
+    "nov2023": 0.0007107020129293925,
+    "jan2024": 0.0006833716845962096,
+    "mar2024": 0.0008218582082679182,
+    "apr2024": -0.0010791454687055862,
+    "jun2024": -0.0017708333831807483
+   },
+   "recomputed": {
+    "nov2023": 0.0007107020129293925,
+    "jan2024": 0.0006833716845962096,
+    "mar2024": 0.0008218582082679182,
+    "apr2024": -0.0010791454687055862,
+    "jun2024": -0.0017708333831807483
+   }
+  },
+  {
+   "check": "featnorm extension seeds 53/59/61 data-1.32 per-window means",
+   "archived": {
+    "nov2023": -0.00114686575821246,
+    "jan2024": 0.0022305468812972348,
+    "mar2024": -0.0016425370985512725,
+    "apr2024": -8.488291454924187e-05,
+    "jun2024": 0.0005987551140116741
+   },
+   "recomputed": {
+    "nov2023": -0.00114686575821246,
+    "jan2024": 0.0022305468812972348,
+    "mar2024": -0.0016425370985512725,
+    "apr2024": -8.488291454924187e-05,
+    "jun2024": 0.0005987551140116741
+   }
+  },
+  {
+   "check": "sealed window paired delta (61 days, rebuilt only from archived paired_daily)",
+   "point": 0.010288349839634827,
+   "days": 61,
+   "positive_days": 47,
+   "positive_fraction": 0.770492
+  },
+  {
+   "check": "canonical 20000/20261028 corrected intervals reproduce recompute.json bit-for-bit",
+   "rows": [
+    {
+     "id": "featnorm-data-1.32",
+     "recompute_id": "feature-norm data-1.32 candidate - control",
+     "mine": [
+      0.00023015398545573224,
+      0.003111657329136436
+     ],
+     "theirs": [
+      0.00023015398545573224,
+      0.003111657329136436
+     ],
+     "identical": true
+    },
+    {
+     "id": "featnorm-data-2.64",
+     "recompute_id": "feature-norm data-2.64 candidate - control",
+     "mine": [
+      -0.0012402470184204404,
+      0.00111886494456477
+     ],
+     "theirs": [
+      -0.0012402470184204404,
+      0.00111886494456477
+     ],
+     "identical": true
+    },
+    {
+     "id": "ext-927-264-vs-132",
+     "recompute_id": "927d 2.64 - 1.32",
+     "mine": [
+      -0.0019198897078661619,
+      0.001039900659777121
+     ],
+     "theirs": [
+      -0.0019198897078661619,
+      0.001039900659777121
+     ],
+     "identical": true
+    },
+    {
+     "id": "sealed-final-20261028",
+     "recompute_id": "sealed candidate - reference nine",
+     "mine": [
+      0.005241982559420832,
+      0.015268076803618663
+     ],
+     "theirs": [
+      0.005241982559420832,
+      0.015268076803618663
+     ],
+     "identical": true
+    }
+   ],
+   "note": "recompute.json's verdict_flips flag means 'the interval stopped straddling zero', which is the same quantity as my interval_flips for the overlapping rows; it is not a registered verdict flip",
+   "interval_flag_comparison": [
+    {
+     "id": "featnorm-data-1.32",
+     "recompute_interval_flag": true,
+     "my_interval_flip": true
+    },
+    {
+     "id": "featnorm-data-2.64",
+     "recompute_interval_flag": false,
+     "my_interval_flip": false
+    },
+    {
+     "id": "ext-927-264-vs-132",
+     "recompute_interval_flag": false,
+     "my_interval_flip": false
+    },
+    {
+     "id": "sealed-final-20261028",
+     "recompute_interval_flag": true,
+     "my_interval_flip": true
+    }
+   ]
+  }
+ ],
+ "judgments": [
+  {
+   "id": "dose-132d-240d@1.32",
+   "family": "dose",
+   "comparison": "132d-t3 -> 240d paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.0029626989589071648,
+   "archive": {
+    "ci_low": 0.0007281720137682863,
+    "ci_high": 0.004995193903886868,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.0029626989589071648,
+    "ci_low": 0.0007281720137682863,
+    "ci_high": 0.004995193903886868,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.0029626989589071648,
+    "ci_low": 0.0007782011259195656,
+    "ci_high": 0.005010421589767149,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.0029626989589071648,
+    "ci_low": -0.007837098628658525,
+    "ci_high": 0.011233162496850056,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "first step of the registered monotone ladder",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.002133510945059, positive_days 68",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.4692,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "dose-240d-441d@1.32",
+   "family": "dose",
+   "comparison": "240d -> 441d paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.002613748495798631,
+   "archive": {
+    "ci_low": 0.001018106557370088,
+    "ci_high": 0.004123358787857175,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.002613748495798631,
+    "ci_low": 0.001018106557370088,
+    "ci_high": 0.004123358787857175,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.002613748495798631,
+    "ci_low": 0.0010062426664669629,
+    "ci_high": 0.004154137313645376,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.002613748495798631,
+    "ci_low": -0.004922760375279695,
+    "ci_high": 0.009001713912875731,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data stops paying' when the 450-vs-240 paired difference is negative or its interval straddles zero, while 240-vs-132 is positive",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "second step; the flattening rule would fire if this interval straddled zero",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.001552626115244, positive_days 66",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "more data still pays: the flattening rule is not triggered"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "more data still pays: the flattening rule is not triggered"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.4842,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "dose-132d-441d@1.32",
+   "family": "dose",
+   "comparison": "132d-t3 -> 441d paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.005576447454705795,
+   "archive": {
+    "ci_low": 0.0029487893545920934,
+    "ci_high": 0.008186977321765666,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.005576447454705795,
+    "ci_low": 0.0029487893545920934,
+    "ci_high": 0.008186977321765666,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.005576447454705795,
+    "ci_low": 0.002924307922881024,
+    "ci_high": 0.008187546171036526,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.005576447454705795,
+    "ci_low": -0.0071212365691543005,
+    "ci_high": 0.01790423223184494,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "registered 450-vs-132 leg, the only leg the monotone rule formally gates",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.002619093983587, positive_days 76",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.7775,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "dose-132d-240d@2.64",
+   "family": "dose",
+   "comparison": "132d-t3 -> 240d paired daily rank_ic (secondary point 2.64)",
+   "n_days": 104,
+   "point_estimate": 0.0037053128551499184,
+   "archive": {
+    "ci_low": 0.001584397047658964,
+    "ci_high": 0.006069410203989516,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.0037053128551499184,
+    "ci_low": 0.001584397047658964,
+    "ci_high": 0.006069410203989516,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.0037053128551499184,
+    "ci_low": 0.0015703120701940573,
+    "ci_high": 0.00598763635768111,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.0037053128551499184,
+    "ci_low": -0.005589240843281398,
+    "ci_high": 0.016356176742068008,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "first step of the registered monotone ladder",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.002242506578165, positive_days 67",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.8931,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "dose-240d-441d@2.64",
+   "family": "dose",
+   "comparison": "240d -> 441d paired daily rank_ic (secondary point 2.64)",
+   "n_days": 104,
+   "point_estimate": 0.0031423630035971573,
+   "archive": {
+    "ci_low": 0.0015021001736491221,
+    "ci_high": 0.004686162702896693,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.0031423630035971573,
+    "ci_low": 0.0015021001736491221,
+    "ci_high": 0.004686162702896693,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.0031423630035971573,
+    "ci_low": 0.0015044970072863855,
+    "ci_high": 0.004734430016621784,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.0031423630035971573,
+    "ci_low": -0.004819939026582085,
+    "ci_high": 0.010367168073704478,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data stops paying' when the 450-vs-240 paired difference is negative or its interval straddles zero, while 240-vs-132 is positive",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "second step; the flattening rule would fire if this interval straddled zero",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.001592031264624, positive_days 68",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "more data still pays: the flattening rule is not triggered"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "more data still pays: the flattening rule is not triggered"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.7697,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "dose-132d-441d@2.64",
+   "family": "dose",
+   "comparison": "132d-t3 -> 441d paired daily rank_ic (secondary point 2.64)",
+   "n_days": 104,
+   "point_estimate": 0.006847675858747077,
+   "archive": {
+    "ci_low": 0.004260292794689877,
+    "ci_high": 0.009444177701185068,
+    "source": "runs/dose-replay-20261027/metrics.json -> paired_daily_rung_deltas",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.006847675858747077,
+    "ci_low": 0.004260292794689877,
+    "ci_high": 0.009444177701185068,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.006847675858747077,
+    "ci_low": 0.004232699231213646,
+    "ci_high": 0.009486164416616504,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.006847675858747077,
+    "ci_low": -0.00447692892068092,
+    "ci_high": 0.019032542525769698,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "declare 'more data pays' only when the seed-mean RankIC rises across at least three consecutive rungs and the 450-vs-132 paired difference has a 5-day block bootstrap interval whose lower bound exceeds zero",
+    "interval_quote": "the registered 5-day block interval, 4000 bootstrap draws, paired by trading day",
+    "falsification_quote": "if the 132-to-240 and 240-to-450 paired differences both straddle zero, the data-quantity hypothesis is reported as rejected at this resolution, and the next lever is feature and label information content, not more days",
+    "source": "configs/b4_data_scaling_prereg_20261027.json -> declared_reading",
+    "role": "registered 450-vs-132 leg, the only leg the monotone rule formally gates",
+    "scope_note": "the registered monotone/flattening wording triggers on the 450-vs-132 and 450-vs-240 legs; the individual rung-to-rung increments are read here as the same test applied to the step, which is what the archived metrics report calls a 'step separates from zero' reading",
+    "threshold": 0.0
+   },
+   "archived_verdict": {
+    "text": "archived combined block interval excludes zero = True",
+    "basis": "half_width 0.002591942453248, positive_days 71",
+    "source": "runs/dose-replay-20261027/metrics.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "interval_lower_bound_gt_0": true,
+     "point_estimate_positive": true
+    },
+    "text": "step separates from zero"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "interval",
+   "sensitivity_note": "gated by the block interval only, so caliber-sensitive in principle; the archive already used the corrected estimator",
+   "half_width_ratio_inflated_over_corrected": 4.5351,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "c1-132-vs-60",
+   "family": "c1",
+   "comparison": "132d@1.32 - 60d@1.32, seed 11, paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.0014097292993828963,
+   "archive": {
+    "ci_low": -0.0018798268712745894,
+    "ci_high": 0.004710146015327748,
+    "source": "runs/data-probe-replay-20261027/metrics.json -> c1_escalation_test.main_seed11.delta",
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "ceil_blocks_correct_truncated",
+    "n_blocks": 21,
+    "caliber_debt": false,
+    "seed_matches": [
+     20261027
+    ],
+    "seed_ambiguous": false
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.0014097292993828963,
+    "ci_low": -0.0018798268712745894,
+    "ci_high": 0.004710146015327748,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.0014097292993828963,
+    "ci_low": -0.0018533702977995884,
+    "ci_high": 0.004656162849265882,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct_truncated"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.0014097292993828963,
+    "ci_low": -0.016772817563514918,
+    "ci_high": 0.01485856977873696,
+    "draws": 4000,
+    "seed": 20261027,
+    "n_blocks": 1,
+    "estimator": "single_block_inflated"
+   },
+   "registered_rule": {
+    "quote": "escalation_state_name=still_improving; conditions={\"point_estimate_at_least\": 0.0017, \"interval_lower_bound_strictly_greater_than_zero\": true, \"declared_periods\": 5, \"required_positive_periods\": 4}; interval={\"method\": \"moving consecutive trading-day blocks inside each declared period; blocks never cross a period gap\", \"block_days\": 5, \"bootstrap_samples\": 4000, \"confidence\": 0.95, \"seed\": 20261027}; binding: C1 is the ONLY escalation criterion and it is read on the primary seed 11 only. C2 (132d@2.64 versus 60d@2.64) and C3 (132d@2.64 versus 132d@1.32) are reported side by side and never take part in the escalation decision.",
+    "source": "configs/b4_data_probe_prereg_20261027.json -> design.escalation_rule (rule_document configs/b4_budget_decision_prereg_v2_20261027.json)",
+    "threshold": 0.0017,
+    "required_positive_windows": 4,
+    "windows_total": 5,
+    "threshold_derivation": "{\"threshold_basis\": \"configs/b4_promotion_prereg_20261027.json\", \"threshold_basis_sha256\": \"04ac4b10a063bdb844e39a8687ed47074005d8a7593d5ae0c0cb17d3fdd1a18c\", \"min_improvement\": 0.0034, \"grid\": 0.0001, \"rule\": \"round_up(min_improvement / 2) on the primary grid\", \"value\": 0.0017, \"is_not_a_promotion_threshold\": true, \"why_the_interval_is_load_bearing\": \"0.0017 alone sits below the measured noise: the registered placebo scale is 0.003305 and the measured seed-dispersion medians are 0.00241-0.00312, so a point estimate at the floor is not distinguishable from noise without the interval condition\"}",
+    "read_on": "primary seed 11 only"
+   },
+   "archived_verdict": {
+    "text": "C1 not escalated: 132d did not beat 60d by the registered margin",
+    "basis": "{\"delta_ge_0.0017\": false, \"ci_low_gt_0\": false, \"positive_windows_ge_4_of_5\": false, \"all_pass\": false, \"threshold\": 0.0017, \"positive_window_count\": 2, \"required_positive_windows\": 4}",
+    "source": "runs/data-probe-replay-20261027/metrics.json -> c1_escalation_test.criterion"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "delta_ge_0.0017": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4_of_5": false,
+     "positive_windows": 2
+    },
+    "text": "stay at 132d"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": false,
+    "criteria": {
+     "delta_ge_0.0017": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4_of_5": false,
+     "positive_windows": 2
+    },
+    "text": "stay at 132d"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "threshold+interval+windows",
+   "sensitivity_note": "passes only if the point estimate clears 0.0017 AND the interval clears zero AND 4/5 windows are positive; the point leg fails by a wide margin, so caliber cannot rescue it",
+   "half_width_ratio_inflated_over_corrected": 4.7999,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": false,
+   "interval_flips": false
+  },
+  {
+   "id": "ext-927-264-vs-132",
+   "family": "extension",
+   "comparison": "927d 2.64 - 927d 1.32, three seeds, paired daily rank_ic (5 windows / 104 days)",
+   "n_days": 104,
+   "point_estimate": -0.0004585906488369238,
+   "archive": {
+    "ci_low": -0.008210577673376714,
+    "ci_high": 0.006774976491160574,
+    "source": "runs/mbb-caliber-20261028/src/927d-extension-decision.json -> points.data-1.32.pooled",
+    "draws": 20000,
+    "seed": 20261028,
+    "estimator": "single_block_inflated",
+    "n_blocks": 1,
+    "caliber_debt": true,
+    "seed_matches": [
+     20261028,
+     20261027,
+     20261026
+    ],
+    "seed_ambiguous": true
+   },
+   "corrected": {
+    "n": 104,
+    "mean": -0.0004585906488369238,
+    "ci_low": -0.0019198897078661619,
+    "ci_high": 0.001039900659777121,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": -0.0004585906488369238,
+    "ci_low": -0.0019198897078661619,
+    "ci_high": 0.001039900659777121,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "counterfactual_inflated": null,
+   "registered_rule": {
+    "quote": "927 日轨迹是否从 2.64 续到 3.96，当且仅当 927 日的种子配对 (2.64 − 1.32) RankIC 差值为正、且其 5 交易日移动块 bootstrap 95% 区间不含零时触发；否则停在 2.64，不续训。",
+    "source": "configs/b4_scaling_extension_prereg_20261028.json -> extension_rule",
+    "threshold": 0.0,
+    "trigger": "delta > 0 AND 95% interval excludes zero, else stop at 2.64"
+   },
+   "archived_verdict": {
+    "text": "stop at 2.64 (registered verdict 'stop')",
+    "basis": "data-1.32 is the registered primary point",
+    "source": "runs/mbb-caliber-20261028/src/927d-extension-decision.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_gt_0": false,
+     "interval_excludes_zero": false,
+     "positive_windows": 2
+    },
+    "text": "stop at 2.64"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_gt_0": false,
+     "interval_excludes_zero": false,
+     "positive_windows": 2
+    },
+    "text": "stop at 2.64"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "interval+sign",
+   "sensitivity_note": "needs a positive point estimate; the point estimate is negative, so a narrower interval cannot make this a continuation",
+   "half_width_ratio_inflated_over_corrected": 5.063,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": false,
+   "interval_flips": false
+  },
+  {
+   "id": "gate-promotion-441d-2p64",
+   "family": "promotion",
+   "comparison": "candidate 441d@2.64 3-seed ewma-match - archived nine-blend, paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.008235609120890754,
+   "archive": {
+    "ci_low": 0.005234086005151287,
+    "ci_high": 0.009942125220239689,
+    "draws": 4000,
+    "seed": 20261027,
+    "estimator": "gate_period_blocks_correct",
+    "caliber_debt": false,
+    "source": "runs/promotion-candidate-ewma-match-20261028/gate-.../gate.json"
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.008235609120890754,
+    "day_weighted_mean": 0.008157716455920781,
+    "ci_low": 0.005234086005151287,
+    "ci_high": 0.00994212522023969,
+    "draws": 4000,
+    "seed": 20261027,
+    "days_per_period": [
+     22,
+     22,
+     21,
+     20,
+     19
+    ],
+    "period_means": [
+     0.006380586568479071,
+     0.005167274021310951,
+     0.013315890103477798,
+     0.004744282954814086,
+     0.011570011956371862
+    ],
+    "weighting": "improvement = equal weight per declared period (matches gate.json); bootstrap replicates pool block sums across periods (day-weighted, matches turnover_gate_readout.block_interval)",
+    "estimator": "gate_period_blocks_correct"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.008235609120890754,
+    "day_weighted_mean": 0.008157716455920781,
+    "ci_low": 0.0052059459044531175,
+    "ci_high": 0.009939385555299725,
+    "draws": 20000,
+    "seed": 20261028,
+    "days_per_period": [
+     22,
+     22,
+     21,
+     20,
+     19
+    ],
+    "period_means": [
+     0.006380586568479071,
+     0.005167274021310951,
+     0.013315890103477798,
+     0.004744282954814086,
+     0.011570011956371862
+    ],
+    "weighting": "improvement = equal weight per declared period (matches gate.json); bootstrap replicates pool block sums across periods (day-weighted, matches turnover_gate_readout.block_interval)",
+    "estimator": "gate_period_blocks_correct"
+   },
+   "counterfactual_inflated": {
+    "n": 104,
+    "mean": 0.008235609120890754,
+    "day_weighted_mean": 0.008157716455920781,
+    "ci_low": 0.0032299990629227676,
+    "ci_high": 0.012867930021318467,
+    "draws": 4000,
+    "seed": 20261027,
+    "days_per_period": [
+     22,
+     22,
+     21,
+     20,
+     19
+    ],
+    "period_means": [
+     0.006380586568479071,
+     0.005167274021310951,
+     0.013315890103477798,
+     0.004744282954814086,
+     0.011570011956371862
+    ],
+    "weighting": "improvement = equal weight per declared period (matches gate.json); bootstrap replicates pool block sums across periods (day-weighted, matches turnover_gate_readout.block_interval)",
+    "estimator": "gate_period_blocks_single_inflated"
+   },
+   "registered_rule": {
+    "quote": "{\"economic\": \"net return at the 5bp stress rate may regress by no more than net5_limit\", \"not_gated\": [\"stress stability (official definition unavailable)\", \"official cross-submission rank composite (not reproducible locally)\", \"wall time (no platform limit has been declared; reported only)\"], \"practical\": \"the observed paired improvement must be at least min_improvement\", \"repeat\": \"at least ceil(0.75 x declared periods) periods must show a positive paired effect\", \"resource\": \"measured peak host RSS across all subprocesses must stay at or below the pre-registered 24 GiB platform line with 15% headroom\", \"secondary\": \"no secondary metric may regress by more than its measured limit\", \"statistical\": \"the 5-day consecutive-block 95% interval of the paired daily difference must exclude zero (lower bound > 0)\"}",
+    "source": "configs/b4_promotion_prereg_20261027.json -> decision_rule",
+    "threshold": 0.0034,
+    "required_positive_windows": 4,
+    "windows_total": 5
+   },
+   "archived_verdict": {
+    "text": "gate engine_status accept, failed_gates [], but the overall decision is inconclusive ('证据不足') because the resource artifact kind could not be classified",
+    "basis": "improvement 0.008235609120891 >= min_improvement 0.0034; lower bound 0.005234086005151 > 0; 5/5 periods positive",
+    "source": "runs/promotion-candidate-ewma-match-20261028/gate-.../decision.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": true,
+    "criteria": {
+     "practical": true,
+     "statistical": true,
+     "repeat": true
+    },
+    "text": "all statistical legs pass"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "practical": true,
+     "statistical": true,
+     "repeat": true
+    },
+    "text": "all statistical legs pass"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "threshold+windows+interval",
+   "sensitivity_note": "insensitive: min_improvement 0.0034 and the gate's per-period block estimator were already correct",
+   "half_width_ratio_inflated_over_corrected": 2.0471,
+   "archived_interval_excludes_zero": true,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": false
+  },
+  {
+   "id": "featnorm-data-1.32",
+   "family": "feature-norm",
+   "comparison": "feature-norm candidate - control at data-1.32, three seeds, paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": 0.0016687064608059492,
+   "archive": {
+    "ci_low": -0.0038219691874997997,
+    "ci_high": 0.008003176163878994,
+    "source": "runs/mbb-caliber-20261028/src/featnorm-decision.json -> points.data-1.32.pooled",
+    "draws": 20000,
+    "seed": 20261028,
+    "estimator": "single_block_inflated",
+    "n_blocks": 1,
+    "caliber_debt": true,
+    "seed_matches": [
+     20261028,
+     20261027,
+     20261026
+    ],
+    "seed_ambiguous": true
+   },
+   "corrected": {
+    "n": 104,
+    "mean": 0.0016687064608059492,
+    "ci_low": 0.00023015398545573224,
+    "ci_high": 0.003111657329136436,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": 0.0016687064608059492,
+    "ci_low": 0.00023015398545573224,
+    "ci_high": 0.003111657329136436,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "counterfactual_inflated": null,
+   "registered_rule": {
+    "quote": "当且仅当三种子配对平均 RankIC 改善 >= 0.003、其 95% 区间下界 > 0、且 5 个窗口中至少 4 个为正时，判定特征归一化值得进入配方；否则判定不通过并停止该线。",
+    "source": "configs/b4_feature_norm_prereg_20261028.json -> decision_rule_zh / thresholds",
+    "threshold": 0.003,
+    "required_positive_windows": 4,
+    "windows_total": 5
+   },
+   "archived_verdict": {
+    "text": "stop (data-1.32): registered decision passed=false",
+    "basis": "{\"improvement\": false, \"interval_excludes_zero\": false, \"positive_windows\": true}",
+    "source": "runs/mbb-caliber-20261028/src/featnorm-decision.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4": true,
+     "positive_windows": 4
+    },
+    "text": "stop"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": true,
+     "positive_windows_ge_4": true,
+     "positive_windows": 4
+    },
+    "text": "stop"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "threshold+interval+windows",
+   "sensitivity_note": "passes only if the point estimate clears 0.003; the interval leg is caliber-sensitive, the threshold leg is not",
+   "half_width_ratio_inflated_over_corrected": 4.1038,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": true
+  },
+  {
+   "id": "featnorm-data-2.64",
+   "family": "feature-norm",
+   "comparison": "feature-norm candidate - control at data-2.64, three seeds, paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": -7.01932686091963e-05,
+   "archive": {
+    "ci_low": -0.005465998653822474,
+    "ci_high": 0.0055176952263133305,
+    "source": "runs/mbb-caliber-20261028/src/featnorm-decision.json -> points.data-2.64.pooled",
+    "draws": 20000,
+    "seed": 20261028,
+    "estimator": "single_block_inflated",
+    "n_blocks": 1,
+    "caliber_debt": true,
+    "seed_matches": [
+     20261028,
+     20261027,
+     20261026
+    ],
+    "seed_ambiguous": true
+   },
+   "corrected": {
+    "n": 104,
+    "mean": -7.01932686091963e-05,
+    "ci_low": -0.0012402470184204404,
+    "ci_high": 0.00111886494456477,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": -7.01932686091963e-05,
+    "ci_low": -0.0012402470184204404,
+    "ci_high": 0.00111886494456477,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "counterfactual_inflated": null,
+   "registered_rule": {
+    "quote": "当且仅当三种子配对平均 RankIC 改善 >= 0.003、其 95% 区间下界 > 0、且 5 个窗口中至少 4 个为正时，判定特征归一化值得进入配方；否则判定不通过并停止该线。",
+    "source": "configs/b4_feature_norm_prereg_20261028.json -> decision_rule_zh / thresholds",
+    "threshold": 0.003,
+    "required_positive_windows": 4,
+    "windows_total": 5
+   },
+   "archived_verdict": {
+    "text": "stop (data-2.64): registered decision passed=false",
+    "basis": "{\"improvement\": false, \"interval_excludes_zero\": false, \"positive_windows\": false}",
+    "source": "runs/mbb-caliber-20261028/src/featnorm-decision.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4": false,
+     "positive_windows": 3
+    },
+    "text": "stop"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4": false,
+     "positive_windows": 3
+    },
+    "text": "stop"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "threshold+interval+windows",
+   "sensitivity_note": "passes only if the point estimate clears 0.003; the interval leg is caliber-sensitive, the threshold leg is not",
+   "half_width_ratio_inflated_over_corrected": 4.6559,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": false,
+   "interval_flips": false
+  },
+  {
+   "id": "featnorm-ext-data-1.32",
+   "family": "feature-norm",
+   "comparison": "feature-norm extension seeds 53/59/61 candidate - control at data-1.32, paired daily rank_ic",
+   "n_days": 104,
+   "point_estimate": -9.361591216103115e-06,
+   "archive": {
+    "ci_low": -0.005874557118318639,
+    "ci_high": 0.005038804198078447,
+    "source": "runs/mbb-caliber-20261028/src/decision_ext.json -> points.data-1.32.pooled",
+    "draws": 20000,
+    "seed": 20261028,
+    "estimator": "single_block_inflated",
+    "n_blocks": 1,
+    "caliber_debt": true,
+    "seed_matches": [
+     20261028,
+     20261027,
+     20261026
+    ],
+    "seed_ambiguous": true
+   },
+   "corrected": {
+    "n": 104,
+    "mean": -9.361591216103115e-06,
+    "ci_low": -0.0012115619515343983,
+    "ci_high": 0.0011706500322269523,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "canonical": {
+    "n": 104,
+    "mean": -9.361591216103115e-06,
+    "ci_low": -0.0012115619515343983,
+    "ci_high": 0.0011706500322269523,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 21,
+    "estimator": "ceil_blocks_correct"
+   },
+   "counterfactual_inflated": null,
+   "registered_rule": {
+    "quote": "unchanged from the registered prereg; these seeds are a declared replication, reported separately, and do not replace the registered three-seed test",
+    "source": "configs/b4_feature_norm_extension_20261028.registration.json",
+    "threshold": 0.003,
+    "required_positive_windows": 4,
+    "windows_total": 5,
+    "declared_replication": "seeds 53/59/61 replicate the registered test and never replace it"
+   },
+   "archived_verdict": {
+    "text": "stop (extension batch): the declared replication failed the same registered rule",
+    "basis": "{\"improvement\": false, \"interval_excludes_zero\": false, \"positive_windows\": false}",
+    "source": "runs/mbb-caliber-20261028/src/decision_ext.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4": false,
+     "positive_windows": 2
+    },
+    "text": "stop"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.003": false,
+     "ci_low_gt_0": false,
+     "positive_windows_ge_4": false,
+     "positive_windows": 2
+    },
+    "text": "stop"
+   },
+   "verdict_recorded": true,
+   "verdict_flip": false,
+   "gate_type": "threshold+interval+windows",
+   "sensitivity_note": "the point estimate is -9.4e-06, so the 0.003 threshold leg fails by 0.003 regardless of caliber",
+   "half_width_ratio_inflated_over_corrected": 4.5812,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": false,
+   "interval_flips": false
+  },
+  {
+   "id": "sealed-final-20261028",
+   "family": "sealed",
+   "comparison": "sealed-window candidate - reference nine-blend, paired daily rank_ic (2024-10-08..2025-01-01)",
+   "n_days": 61,
+   "point_estimate": 0.010288349839634827,
+   "archive": {
+    "ci_low": -0.007918712631987792,
+    "ci_high": 0.026488894481527487,
+    "source": "runs/sealed-final-20261028/sealed_result.json -> paired_candidate_minus_reference",
+    "draws": 20000,
+    "seed": 20261026,
+    "estimator": "single_block_inflated",
+    "n_blocks": 1,
+    "caliber_debt": true,
+    "seed_matches": [
+     20261026,
+     20261027,
+     20261028
+    ],
+    "seed_ambiguous": true
+   },
+   "corrected": {
+    "n": 61,
+    "mean": 0.010288349839634827,
+    "ci_low": 0.005088633240293155,
+    "ci_high": 0.015252830394260678,
+    "draws": 20000,
+    "seed": 20261026,
+    "n_blocks": 13,
+    "estimator": "ceil_blocks_correct"
+   },
+   "canonical": {
+    "n": 61,
+    "mean": 0.010288349839634827,
+    "ci_low": 0.005241982559420832,
+    "ci_high": 0.015268076803618663,
+    "draws": 20000,
+    "seed": 20261028,
+    "n_blocks": 13,
+    "estimator": "ceil_blocks_correct"
+   },
+   "counterfactual_inflated": null,
+   "registered_rule": {
+    "quote": "{\"baseline_primary_level\": 0.070687271, \"estimator\": \"min_improvement = round_up(primary_grid, max(placebo_max_abs_primary_difference, relative_floor * baseline_primary_level)); secondary_limit[m] = round_up(grid[m], placebo_max_abs_difference[m])\", \"grids\": {\"net5\": 1e-07, \"primary\": 0.0001, \"secondary\": {\"ic_ir\": 0.001, \"ic_mean\": 0.0001, \"long_short_return_mean\": 1e-07, \"long_short_sharpe\": 0.01, \"min_daily_long_short_return\": 1e-07, \"turnover_mean\": 0.0001}}, \"min_improvement\": 0.0034, \"net5_limit\": 5.62e-05, \"net5_placebo_scale\": 5.61662e-05, \"placebo_max_abs_primary_difference\": 0.0033049913, \"primary_metric\": \"rank_ic_mean\", \"relative_floor\": 0.02, \"relative_floor_value\": 0.0014137454, \"secondary_limits\": {\"ic_ir\": 0.101, \"ic_mean\": 0.0023, \"long_short_return_mean\": 2.28e-05, \"long_short_sharpe\": 1.63, \"min_daily_long_short_return\": 0.0002637, \"turnover_mean\": 0.0318}, \"secondary_placebo_scales\": {\"ic_ir\": 0.1000941129, \"ic_mean\": 0.0022226118, \"long_short_return_mean\": 2.27948e-05, \"long_short_sharpe\": 1.6286144739, \"min_daily_long_short_return\": 0.0002636811, \"turnover_mean\": 0.0317682534}, \"source\": \"runs/b4-volatility-20261027/20261027T064907Z_a79926d3e455/volatility.json\"}",
+    "source": "configs/b4_sealed_final_prereg_template_20261027.json -> derived_thresholds",
+    "threshold": 0.0034,
+    "positive_fraction_required": 0.75,
+    "interval_rule": "the accept template requires the 5-day block interval to exclude zero"
+   },
+   "archived_verdict": {
+    "text": "no sealed verdict artifact exists: runs/sealed-final-20261028/sealed_result.json records only the paired measurement, whose interval straddles zero",
+    "basis": "mean_delta 0.010288349839635, interval [-0.007918712631988, 0.026488894481527], 47/61 positive days",
+    "source": "runs/sealed-final-20261028/sealed_result.json"
+   },
+   "rule_outcome_archived_caliber": {
+    "passed": false,
+    "criteria": {
+     "improvement_ge_0.0034": true,
+     "ci_low_gt_0": false,
+     "positive_fraction_ge_0.75": true,
+     "positive_days": 47
+    },
+    "text": "statistical leg fails"
+   },
+   "rule_outcome_corrected_caliber": {
+    "passed": true,
+    "criteria": {
+     "improvement_ge_0.0034": true,
+     "ci_low_gt_0": true,
+     "positive_fraction_ge_0.75": true,
+     "positive_days": 47
+    },
+    "text": "statistical legs pass"
+   },
+   "verdict_recorded": false,
+   "verdict_flip": null,
+   "gate_type": "threshold+interval+positive-fraction",
+   "sensitivity_note": "the interval leg is caliber-sensitive; the 0.0034 threshold and 47/61 positive-fraction legs are not",
+   "half_width_ratio_inflated_over_corrected": 3.3852,
+   "archived_interval_excludes_zero": false,
+   "corrected_interval_excludes_zero": true,
+   "interval_flips": true
+  }
+ ],
+ "answers": {
+  "a_verdict_flips": {
+   "recorded_verdict_flips": 0,
+   "rows": [],
+   "interval_only_changes": 2,
+   "interval_only_rows": [
+    {
+     "id": "featnorm-data-1.32",
+     "before": "stop",
+     "after": "stop",
+     "still_blocked_by": [
+      "improvement_ge_0.003"
+     ]
+    },
+    {
+     "id": "sealed-final-20261028",
+     "before": "statistical leg fails",
+     "after": "statistical legs pass",
+     "still_blocked_by": []
+    }
+   ],
+   "statement": "No recorded accept/stop verdict flips. Every change is interval-level only, and in each case a point-estimate threshold or a negative point estimate still decides the registered rule. The sealed window carries no verdict artifact at all, so its statistical leg flips from 'straddles zero' to 'strictly positive' without overturning a recorded decision."
+  },
+  "b_masked_significance": {
+   "count": 2,
+   "rows": [
+    {
+     "id": "featnorm-data-1.32",
+     "point_estimate": 0.0016687064608059492,
+     "archive": [
+      -0.0038219691874997997,
+      0.008003176163878994
+     ],
+     "corrected": [
+      0.00023015398545573224,
+      0.003111657329136436
+     ],
+     "half_width_ratio_inflated_over_corrected": 4.1038,
+     "still_blocked_by": [
+      "improvement_ge_0.003"
+     ]
+    },
+    {
+     "id": "sealed-final-20261028",
+     "point_estimate": 0.010288349839634827,
+     "archive": [
+      -0.007918712631987792,
+      0.026488894481527487
+     ],
+     "corrected": [
+      0.005088633240293155,
+      0.015252830394260678
+     ],
+     "half_width_ratio_inflated_over_corrected": 3.3852,
+     "still_blocked_by": []
+    }
+   ],
+   "statement": "Yes: these comparisons were reported as indistinguishable from zero only because the archived interval was ~4.5x too wide. Under the corrected caliber the same point estimate is strictly positive with a lower bound above zero. The registered rule still says stop where a 0.003 threshold or the sign of the estimate blocks it, but the evidence is no longer 'no effect'."
+  },
+  "c_threshold_gated": {
+   "count": 5,
+   "threshold_or_sign_decided": [
+    {
+     "id": "c1-132-vs-60",
+     "gate_type": "threshold+interval+windows",
+     "decided_by": [
+      "delta_ge_0.0017",
+      "positive_windows_ge_4_of_5"
+     ],
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "interval_flipped": false,
+     "note": "passes only if the point estimate clears 0.0017 AND the interval clears zero AND 4/5 windows are positive; the point leg fails by a wide margin, so caliber cannot rescue it"
+    },
+    {
+     "id": "ext-927-264-vs-132",
+     "gate_type": "interval+sign",
+     "decided_by": [
+      "improvement_gt_0"
+     ],
+     "archived_estimator": "single_block_inflated",
+     "interval_flipped": false,
+     "note": "needs a positive point estimate; the point estimate is negative, so a narrower interval cannot make this a continuation"
+    },
+    {
+     "id": "featnorm-data-1.32",
+     "gate_type": "threshold+interval+windows",
+     "decided_by": [
+      "improvement_ge_0.003"
+     ],
+     "archived_estimator": "single_block_inflated",
+     "interval_flipped": true,
+     "note": "passes only if the point estimate clears 0.003; the interval leg is caliber-sensitive, the threshold leg is not"
+    },
+    {
+     "id": "featnorm-data-2.64",
+     "gate_type": "threshold+interval+windows",
+     "decided_by": [
+      "improvement_ge_0.003",
+      "positive_windows_ge_4"
+     ],
+     "archived_estimator": "single_block_inflated",
+     "interval_flipped": false,
+     "note": "passes only if the point estimate clears 0.003; the interval leg is caliber-sensitive, the threshold leg is not"
+    },
+    {
+     "id": "featnorm-ext-data-1.32",
+     "gate_type": "threshold+interval+windows",
+     "decided_by": [
+      "improvement_ge_0.003",
+      "positive_windows_ge_4"
+     ],
+     "archived_estimator": "single_block_inflated",
+     "interval_flipped": false,
+     "note": "the point estimate is -9.4e-06, so the 0.003 threshold leg fails by 0.003 regardless of caliber"
+    }
+   ],
+   "already_correct_estimator": [
+    {
+     "id": "dose-132d-240d@1.32",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "dose-240d-441d@1.32",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "dose-132d-441d@1.32",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "dose-132d-240d@2.64",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "dose-240d-441d@2.64",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "dose-132d-441d@2.64",
+     "archived_estimator": "ceil_blocks_correct_truncated",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    },
+    {
+     "id": "gate-promotion-441d-2p64",
+     "archived_estimator": "gate_period_blocks_correct",
+     "note": "bit-for-bit reproduction shows this judgment never carried the inflated caliber"
+    }
+   ],
+   "residual_interval_sensitivity": [
+    {
+     "id": "featnorm-data-1.32",
+     "archive": [
+      -0.0038219691874997997,
+      0.008003176163878994
+     ],
+     "corrected": [
+      0.00023015398545573224,
+      0.003111657329136436
+     ],
+     "effect": "the interval stops straddling zero; the registered rule still fails on a point-estimate threshold"
+    },
+    {
+     "id": "sealed-final-20261028",
+     "archive": [
+      -0.007918712631987792,
+      0.026488894481527487
+     ],
+     "corrected": [
+      0.005088633240293155,
+      0.015252830394260678
+     ],
+     "effect": "the statistical leg passes under the corrected caliber and fails under the archived one"
+    }
+   ],
+   "statement": "Five judgments are decided by a threshold or a sign, not by interval width, so the caliber fix cannot move them: C1 fails the point leg 0.0014 < 0.0017; the 927 extension needs a positive delta and its delta is -0.00046; feature norm at 1.32 (+0.00167), 2.64 (-0.00007) and the extension batch (-0.00001) all fail the 0.003 point floor. A further seven judgments never carried the bug at all, because their builders already resampled ceil(n/5) blocks or period blocks (the six dose-curve rows and the promotion gate, plus C1 which is listed above because its point leg already decides it): for those the archived interval is reproduced bit-for-bit. Only two rows keep a live interval question: the sealed-window measurement, whose statistical leg flips from straddling zero to strictly positive (and which has no verdict artifact to flip), and feature norm at 1.32, whose interval flips positive but still cannot clear the 0.003 threshold."
+  }
+ },
+ "multiplicity": "The 8 candidate comparisons in runs/mbb-caliber-20261028/recompute.json plus the 13 archived judgments re-judged here (six judgment families: dose, C1, 927 extension, promotion gate, feature norm, sealed) are 21 paired comparisons selected on the same five development windows and the same 104 trading days, all of them after seeing the scores, with no multiplicity correction. The intervals that change are still increments of +0.0009 to +0.0016 in RankIC at most, i.e. 1.1%-2.0% of the 0.0788 candidate level: a caliber correction, not a new effect. Read the corrections as 'the same estimate was always positive', not as 'a new finding survived a stricter family-wise bar'.",
+ "conclusion": "The caliber bug is real but local. It never touched the dose-curve builder, the C1 builder or the promotion gate, which had their own correct ceil(n/5) estimators (the dose builder even documents the single-block bug). It did inflate the rung-compare, featnorm, 927-extension and sealed intervals by ~4.5x. Correcting them turns several 'not distinguishable from zero' readings into strictly positive ones, but no registered accept/stop verdict changes, because every one of those verdicts is decided by a point-estimate threshold (0.003 / 0.0034) or by a negative point estimate."
+}

@@ -75,6 +75,7 @@ node_modules/
 !artifacts/submission-*/package-flat.zip
 !artifacts/submission-*/MANIFEST.jsonl
 !artifacts/mktctx-20261028/MANIFEST.jsonl
+!artifacts/caliber-20261028/MANIFEST.jsonl
 !artifacts/submission-*/evidence/*.log
 *.rar
 *.7z

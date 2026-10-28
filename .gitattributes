@@ -14,3 +14,5 @@ configs/data_probe_132d_20261027_seed47_plan.json -text
 scripts/training_memory_preflight.py -text
 # Submission artifacts are byte-exact copies of reviewed package members.
 artifacts/submission-20261028/** -text
+# Caliber review artifacts: MANIFEST pins the exact bytes, so no normalisation.
+artifacts/caliber-20261028/** -text
