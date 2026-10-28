@@ -1,0 +1,4 @@
+{"path": "answers.json", "size": 63010, "sha256": "7a7541d504bc5b9cce01cfcaefbd4ee97a2bee7916968b097b8f0afa882c9846", "committed": true}
+{"path": "frontier.csv", "size": 74027, "sha256": "0f86670bdedb66f140145ac611321f65f96ed8ee16e40e0f4ee91f58bf765e00", "committed": true}
+{"path": "frontier.json", "size": 244351, "sha256": "3df15373381d150d93a0304a25001855f7c7366b0c275f3f923efc5c156136d4", "committed": true}
+{"path": "registration.json", "size": 13186, "sha256": "beb574969e02d99610da2abacd953fdb8b6acd20e8aff502d6cfdce8cdfba5ce", "committed": true}

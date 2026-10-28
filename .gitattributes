@@ -17,3 +17,4 @@ artifacts/submission-20261028/** -text
 # Caliber review artifacts: MANIFEST pins the exact bytes, so no normalisation.
 artifacts/caliber-20261028/** -text
 artifacts/mktctx-20261028/** -text
+artifacts/alpha-frontier-20261028/** -text

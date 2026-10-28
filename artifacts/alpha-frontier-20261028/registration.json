@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "kind": "result_registration",
+  "experiment_id": "alpha-frontier-20261028",
+  "run_id": "20261028T094510.478542Z_9f9487c6b4c6",
+  "source_run_dir": "/root/runs/alpha-frontier-20261028/20261028T094510.478542Z_9f9487c6b4c6",
+  "registered_at_utc": "2026-10-28T12:28:19Z",
+  "registered_by": "captain",
+  "requested_by_user": "m02543",
+  "scope_zh": "在 10 个开发窗（203 个交易日）上对三种子等权 blend 扫描 EWMA alpha，绘制 (换手, RankIC) 前沿，回答三问：前沿是否逐窗平移、固定绝对换手目标的 IC 代价、现任换手在 10 窗的漂移。",
+  "gate": {
+    "passed": true,
+    "windows": [
+      "nov2023",
+      "jan2024",
+      "mar2024",
+      "apr2024",
+      "jun2024"
+    ],
+    "days": 104,
+    "tolerance": 0.0005,
+    "caliber_reconciliation": {
+      "archived_daily": {
+        "current_choice": "/root/runs/archived-441/daily_0bp_ewma_match.csv",
+        "identity_unsmoothed": "/root/runs/archived-441/daily_0bp_blend.csv"
+      },
+      "levels": {
+        "current_choice": {
+          "days": 104,
+          "rank_ic_archived": 0.07884498746583302,
+          "rank_ic_mine": 0.07884500026703209,
+          "rank_ic_max_abs_daily_gap": 1.2155394597535008e-06,
+          "turnover_archived": 1.10217770761024,
+          "turnover_mine": 1.099551972883452,
+          "turnover_offset": 0.0026257347267879985,
+          "differing_days": 4,
+          "differing_dates": [
+            "2024-01-02",
+            "2024-03-01",
+            "2024-04-01",
+            "2024-06-03"
+          ],
+          "differing_turnover_sum": 0.27307641158595186,
+          "max_differing_days_allowed": 4,
+          "ic_pipeline_identical": true,
+          "only_boundary_days_differ": true
+        },
+        "identity_unsmoothed": {
+          "days": 104,
+          "rank_ic_archived": 0.07889677596781888,
+          "rank_ic_mine": 0.07889673843694901,
+          "rank_ic_max_abs_daily_gap": 1.6995016994536538e-06,
+          "turnover_archived": 1.1691036231508778,
+          "turnover_mine": 1.1668299505629665,
+          "turnover_offset": 0.002273672587911265,
+          "differing_days": 4,
+          "differing_dates": [
+            "2024-01-02",
+            "2024-03-01",
+            "2024-04-01",
+            "2024-06-03"
+          ],
+          "differing_turnover_sum": 0.23646194914277152,
+          "max_differing_days_allowed": 4,
+          "ic_pipeline_identical": true,
+          "only_boundary_days_differ": true
+        }
+      },
+      "single_offset": 0.0026257347267879985,
+      "note": "archive = one continuous object; this replay restarts the book per window, so only the window-boundary rebalances can differ",
+      "passed": true
+    }
+  },
+  "answers": {
+    "q1_frontier_shift": {
+      "verdict": "regime effect present",
+      "rank_ic_at_fixed_turnover_by_window": {
+        "nov2023": {
+          "1.00": 0.09691747458096357,
+          "1.05": 0.09750724657480295,
+          "1.10": 0.09783720860468252,
+          "1.15": 0.09798534842909928
+        },
+        "jan2024": {
+          "1.00": 0.06043937302447144,
+          "1.05": 0.06096002855937829,
+          "1.10": 0.061338624088136916,
+          "1.15": 0.061571550411805884
+        },
+        "feb2024": {
+          "1.00": 0.03125485303198053,
+          "1.05": 0.031228494053105606,
+          "1.10": 0.031184108440018326,
+          "1.15": 0.03104700247768993
+        },
+        "mar2024": {
+          "1.00": 0.09450656106791999,
+          "1.05": 0.09564830175124114,
+          "1.10": 0.09642637990786997,
+          "1.15": 0.09677913660658495
+        },
+        "apr2024": {
+          "1.00": 0.0751716334386738,
+          "1.05": 0.07603677411693022,
+          "1.10": 0.07653219570519566,
+          "1.15": 0.07673980538772299
+        },
+        "may2024": {
+          "1.00": 0.09356640510198075,
+          "1.05": 0.09438311599247529,
+          "1.10": 0.09495613604827743,
+          "1.15": 0.09523177942781731
+        },
+        "jun2024": {
+          "1.00": 0.06064674442447722,
+          "1.05": 0.060398154400287764,
+          "1.10": 0.059899978021729916,
+          "1.15": null
+        },
+        "jul2024": {
+          "1.00": 0.07238802634776843,
+          "1.05": 0.07211644242793039,
+          "1.10": 0.07166912126727876,
+          "1.15": 0.07108626789537587
+        },
+        "aug2024": {
+          "1.00": 0.0729533928374121,
+          "1.05": 0.07328253789543307,
+          "1.10": 0.07333631376475079,
+          "1.15": 0.07316681550842712
+        },
+        "sep2024": {
+          "1.00": 0.0492679211121589,
+          "1.05": 0.04972685992915212,
+          "1.10": 0.049965055070250224,
+          "1.15": 0.05012424429312388
+        }
+      },
+      "across_window_spread_at_fixed_turnover": {
+        "1.00": {
+          "n_windows": 10,
+          "mean": 0.07071123849678067,
+          "min": 0.03125485303198053,
+          "max": 0.09691747458096357,
+          "sd": 0.021151580709922308,
+          "range": 0.06566262154898304,
+          "by_window": {
+            "nov2023": 0.09691747458096357,
+            "jan2024": 0.06043937302447144,
+            "feb2024": 0.03125485303198053,
+            "mar2024": 0.09450656106791999,
+            "apr2024": 0.0751716334386738,
+            "may2024": 0.09356640510198075,
+            "jun2024": 0.06064674442447722,
+            "jul2024": 0.07238802634776843,
+            "aug2024": 0.0729533928374121,
+            "sep2024": 0.0492679211121589
+          }
+        },
+        "1.05": {
+          "n_windows": 10,
+          "mean": 0.07112879557007368,
+          "min": 0.031228494053105606,
+          "max": 0.09750724657480295,
+          "sd": 0.021437563028937064,
+          "range": 0.06627875252169735,
+          "by_window": {
+            "nov2023": 0.09750724657480295,
+            "jan2024": 0.06096002855937829,
+            "feb2024": 0.031228494053105606,
+            "mar2024": 0.09564830175124114,
+            "apr2024": 0.07603677411693022,
+            "may2024": 0.09438311599247529,
+            "jun2024": 0.060398154400287764,
+            "jul2024": 0.07211644242793039,
+            "aug2024": 0.07328253789543307,
+            "sep2024": 0.04972685992915212
+          }
+        },
+        "1.10": {
+          "n_windows": 10,
+          "mean": 0.07131451209181905,
+          "min": 0.031184108440018326,
+          "max": 0.09783720860468252,
+          "sd": 0.021655078728545822,
+          "range": 0.06665310016466419,
+          "by_window": {
+            "nov2023": 0.09783720860468252,
+            "jan2024": 0.061338624088136916,
+            "feb2024": 0.031184108440018326,
+            "mar2024": 0.09642637990786997,
+            "apr2024": 0.07653219570519566,
+            "may2024": 0.09495613604827743,
+            "jun2024": 0.059899978021729916,
+            "jul2024": 0.07166912126727876,
+            "aug2024": 0.07333631376475079,
+            "sep2024": 0.049965055070250224
+          }
+        },
+        "1.15": {
+          "n_windows": 9,
+          "mean": 0.0726368833819608,
+          "min": 0.03104700247768993,
+          "max": 0.09798534842909928,
+          "sd": 0.022678239321754744,
+          "range": 0.06693834595140935,
+          "by_window": {
+            "nov2023": 0.09798534842909928,
+            "jan2024": 0.061571550411805884,
+            "feb2024": 0.03104700247768993,
+            "mar2024": 0.09677913660658495,
+            "apr2024": 0.07673980538772299,
+            "may2024": 0.09523177942781731,
+            "jun2024": null,
+            "jul2024": 0.07108626789537587,
+            "aug2024": 0.07316681550842712,
+            "sep2024": 0.05012424429312388
+          }
+        }
+      },
+      "level_removed_residual_spread_at_fixed_turnover": {
+        "1.00": {
+          "n_windows": 9,
+          "sd": 0.0005819061626056842,
+          "range": 0.00190659562866409
+        },
+        "1.05": {
+          "n_windows": 9,
+          "sd": 0.00015169419490741357,
+          "range": 0.0004932710255048933
+        },
+        "1.10": {
+          "n_windows": 9,
+          "sd": 0.00022306936214082194,
+          "range": 0.0007321282917755606
+        },
+        "1.15": {
+          "n_windows": 9,
+          "sd": 0.0005086283928574609,
+          "range": 0.0016677383623934366
+        }
+      },
+      "materiality_threshold_range": 0.005,
+      "max_across_window_range": 0.06693834595140935,
+      "incumbent_operating_turnover_displacement_rank_ic": 0.007326270425409587,
+      "interpretation_zh": "两个量必须分开读：rank_ic_at_fixed_turnover 是各窗水平（难度不同，0.031-0.098），level_removed_residual_spread 才是前沿形状差。形状在换手 1.05 处 sd 0.00015、极差 0.0005，远低于 0.005 的实质性阈值 -> 前沿不随窗变形，alpha 标定可跨窗迁移。"
+    },
+    "q2_fixed_turnover_target_cost": {
+      "verdict": "every tested fixed turnover target is cheap (pooled RankIC loss below 0.001) and should replace matching the incumbent's turnover",
+      "cheap": {
+        "1.05": true,
+        "1.00": true
+      },
+      "cheap_targets": [
+        1.05,
+        1.0
+      ],
+      "materiality_threshold_loss": 0.001,
+      "targets": {
+        "1.05": {
+          "alpha_star": 0.8400696817766867,
+          "alpha_star_range": [
+            0.8122017113349597,
+            0.8660936020655113
+          ],
+          "alpha_star_sd": 0.02008208065449857,
+          "pooled_rank_ic_at_target_alpha": 0.07259589662424598,
+          "pooled_rank_ic_at_current_alpha": 0.07279429561260302,
+          "pooled_delta": -0.0001983989883570375,
+          "ci": [
+            -0.0017203357492134002,
+            0.0013915113424763537
+          ]
+        },
+        "1.00": {
+          "alpha_star": 0.7723422875269441,
+          "alpha_star_range": [
+            0.7449917430840588,
+            0.7970709002580773
+          ],
+          "alpha_star_sd": 0.019540114191901627,
+          "pooled_rank_ic_at_target_alpha": 0.07216518323297921,
+          "pooled_rank_ic_at_current_alpha": 0.07279429561260302,
+          "pooled_delta": -0.0006291123796238057,
+          "ci": [
+            -0.003765297947662477,
+            0.0024661779661779614
+          ]
+        }
+      }
+    },
+    "q3_incumbent_turnover_drift": {
+      "verdict": "the incumbent's turnover was a moving target, not a stable one",
+      "incumbent_at_alpha_zero_unsmoothed": {
+        "mean": 1.1063736621811227,
+        "sd": 0.023150250484700218,
+        "min": 1.0726626932599814,
+        "max": 1.1405845672518775,
+        "range": 0.06792187399189609
+      },
+      "candidate_at_current_alpha": {
+        "mean": 1.1027770546949225,
+        "sd": 0.015472592956817013,
+        "min": 1.0817121230672027,
+        "max": 1.124172311610694,
+        "range": 0.04246018854349143
+      },
+      "incumbent_relative_sd": 0.020924441060049682,
+      "materiality_threshold_sd": 0.02,
+      "alpha_zero_note": "alpha = 0 here is the unsmoothed incumbent blend, the quantity the candidate alpha was matched to; the alpha=0.0 hold-first operator row is reported separately in per_window_hold_first"
+    }
+  },
+  "operational_decision": {
+    "current_verified_package": {
+      "package_zip_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+      "alpha": 0.9111677303420447,
+      "action": "unchanged",
+      "reason_zh": "候选换手在开发窗与封存窗都稳（1.0996 / 1.1092），漂移的是现任（1.1020 -> 1.0282）；单独为改 alpha 口径而重打包是拿 -0.0002 IC 换稳健性，不值得多一次打包与门禁复算。"
+    },
+    "next_repack": {
+      "rule": "fixed_absolute_turnover_target",
+      "target_turnover": 1.05,
+      "alpha": 0.8400696817766867,
+      "expected_pooled_rank_ic_delta": -0.0001983989883570375,
+      "expected_ci": [
+        -0.0017203357492134002,
+        0.0013915113424763537
+      ],
+      "reason_zh": "任何因别的改进而重打包时，顺手把 alpha 换成固定目标 1.05 对应的 0.840，使换手不再依赖会漂移的参照物；此项须在重打包时重新做换手匹配的证据记录。"
+    }
+  },
+  "caveats_zh": [
+    "10 个开发窗共 203 天已被十几个候选反复使用，本扫描未做多重性校正；这些天数此后对 alpha 相关问题不再是新鲜留出。",
+    "jun2024 与 sep2024 在 configs/dev10_window_roles_20261028.json 中冻结为确认窗，但本扫描把二者当作第 9、10 个窗读过 -> 它们不能再用于 alpha 方向的确认判定。",
+    "本登记只记录 alpha（后处理平滑强度）的标定结论；不改任何已注册阈值或判定，也不代表模型改进。"
+  ],
+  "artifacts": [
+    "answers.json",
+    "frontier.json",
+    "frontier.csv"
+  ],
+  "png_note_zh": "frontier.png（308,468 B）留在 runs/ 未入库，可由 frontier.json 重绘。"
+}

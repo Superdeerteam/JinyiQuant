@@ -94,3 +94,7 @@ node_modules/
 
 tmp/
 .agent-teams/
+
+# Registered artifact CSVs are small, pinned by MANIFEST.sha256 and needed for reproducibility.
+!artifacts/alpha-frontier-20261028/*.csv
+!artifacts/alpha-frontier-20261028/MANIFEST.jsonl
