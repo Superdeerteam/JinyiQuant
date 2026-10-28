@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "experiment_id": "screen10-ofi-441d-20261028",
+  "kind": "candidate_vs_control_training_arm",
+  "status": "registered",
+  "author": "captain",
+  "frozen_at_utc": "2026-10-28T13:42:25.708597+00:00",
+  "question_zh": "在已注册的 441 日 MLPLOB v3 CSZ 配方、1.32 预算点、同三种子下，把 12 列原始盘口扩成 18 列（追加 6 个由 1 分钟快照因果推导的盘口变化/订单流不平衡通道），能否在 8 个筛查窗上稳定超过**同宽度但派生通道恒零**的对照臂？",
+  "hypothesis_zh": "1 分钟快照只能给出 OFI 的代理量，真正的信息在于盘口变化的方向与幅度而非绝对价位；若这些派生通道携带增量信息，则 ofi 臂应稳定优于 zero6 臂（同宽度、同参数量、同预算），并且 zero6 臂应约等于 12 列基线（宽度本身无效应）。",
+  "factor": {
+    "changed": "data.feature_set",
+    "from": "raw",
+    "to": "raw_plus_ofi",
+    "control": "raw_plus_zero6",
+    "definition": {
+      "channels": [
+        "ofi_l1",
+        "depth_imbalance_l1",
+        "microprice_dev",
+        "spread_bps",
+        "mid_ret_1m",
+        "depth_slope"
+      ],
+      "width": "12 -> 18 columns, both arms identical width and parameter count (362,081 -> 362,333)",
+      "mask": "a row whose best bid or best ask is <=0 or non-finite zeroes the six derived channels and their observed bits; the raw twelve columns are untouched",
+      "bounds": {
+        "ofi_l1": [
+          -1,
+          1
+        ],
+        "depth_imbalance_l1": [
+          -1,
+          1
+        ],
+        "microprice_dev": [
+          -1,
+          1
+        ],
+        "spread_bps": [
+          0,
+          200
+        ],
+        "mid_ret_1m": [
+          -0.05,
+          0.05
+        ],
+        "depth_slope": [
+          0,
+          50
+        ]
+      },
+      "causality": "computed from bars at or before the prediction timestamp only; lookback windows never read future rows"
+    },
+    "default_path_unchanged": {
+      "claim": "feature_set=raw is bit-identical to the registered 441-day path",
+      "evidence": {
+        "x_sha256": "7e94f5a389b6fbb1831f93e1858b28752e2f43e58ae95c6058e1b4b2aa9767f1",
+        "observed_sha256": "ce67189d22f6431b9891a60e3b79cb5cfdfd1b811461f56e281f9f3a2cc417a1",
+        "history_dates_sha256": "b9f857ab1408438a600259ba7a38dd255aef375dd598e3ce04b7e7b39ae4c89b",
+        "slice": "2023-04-14..2023-04-21, 47952 keys, shape (47952,128,12)",
+        "three_way": "unedited repo_featnorm / repo_ofi reverted / repo_ofi patched all agree",
+        "recipe_snapshot_digest_unchanged": "c26c8fad0b85d3fff24d03b0432f2370b4f25c959482b718dbc3b5209ca50856"
+      }
+    }
+  },
+  "arms": {
+    "candidate": "raw_plus_ofi (6 real derived channels)",
+    "control": "raw_plus_zero6 (same width, the 6 channels are constant zero)",
+    "why_the_control_matters": "ofi-vs-baseline would confound the six channels with the extra width and the extra input-layer parameters; zero6 absorbs both."
+  },
+  "rung": {
+    "train_window": [
+      "2022-01-04",
+      "2023-11-01"
+    ],
+    "declared_trading_days": 441,
+    "usable_rows": 3521680,
+    "budget_points_steps": {
+      "scored_1.32": 145269,
+      "anchor_1.33": 146370
+    },
+    "scored_point": "ofi-1.32 / zero6-1.32",
+    "anchor_point_role": "driver_requires_two_points_only",
+    "anchor_never_compared": true
+  },
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "recipes": {
+    "ofi_seed11": {
+      "path": "configs/screen10_ofi_441d_csz_seed11.json",
+      "sha256": "4d53f524c3819a67c8cf60c31624487b3f8148d8f6468ae5837043b58d9c345c"
+    },
+    "ofi_seed29": {
+      "path": "configs/screen10_ofi_441d_csz_seed29.json",
+      "sha256": "ccbe660a53e41637e59c00cd25a7c635935a7f471cc755dbc75a09b04cb720f8"
+    },
+    "ofi_seed47": {
+      "path": "configs/screen10_ofi_441d_csz_seed47.json",
+      "sha256": "751cda95a405b1183e3d522c6822c26ab75d5356257939a26e4ff3e16b7b09f3"
+    },
+    "zero6_seed11": {
+      "path": "configs/screen10_zero6_441d_csz_seed11.json",
+      "sha256": "b8913a612c6fae140bf72c961290b01139f1417af124c5079dd483dd21af0f5e"
+    },
+    "zero6_seed29": {
+      "path": "configs/screen10_zero6_441d_csz_seed29.json",
+      "sha256": "8283690f2cee2dc6b7afffa8d216f582af5b65e64dbc556abdddee524a3c2ecc"
+    },
+    "zero6_seed47": {
+      "path": "configs/screen10_zero6_441d_csz_seed47.json",
+      "sha256": "027caedd0e4feccedde09612a7b8678014337ee7af51f461e005369c4be81d55"
+    }
+  },
+  "plans": {
+    "ofi_seed11": {
+      "path": "configs/screen10_ofi_seed11_scoredfirst_plan.json",
+      "sha256": "7e2e096b2be320c4f2fb4f1241fc4586306e350cf75bd97c499c579f4a4e8109"
+    },
+    "ofi_seed29": {
+      "path": "configs/screen10_ofi_seed29_scoredfirst_plan.json",
+      "sha256": "f430461d0163311b6a8d7b72747d1687d3e5efcda8a2e6b2c3d214dc9c680332"
+    },
+    "ofi_seed47": {
+      "path": "configs/screen10_ofi_seed47_scoredfirst_plan.json",
+      "sha256": "37c72a3a2e9589aff3825bc4eddfc45082c1e6a47928edf7ace34c090e019b0d"
+    },
+    "zero6_seed11": {
+      "path": "configs/screen10_zero6_seed11_scoredfirst_plan.json",
+      "sha256": "ee57050be271489ae05c12f5ee4140c7733de4345f109a30d3199f89bdfb9c03"
+    },
+    "zero6_seed29": {
+      "path": "configs/screen10_zero6_seed29_scoredfirst_plan.json",
+      "sha256": "769ebeab329a64c2fa854a19b9fa4d280d6af01082077f845747f09c820c2aa4"
+    },
+    "zero6_seed47": {
+      "path": "configs/screen10_zero6_seed47_scoredfirst_plan.json",
+      "sha256": "d6bc4d2cfd417f1c46264dbeae414351e14da8de1f1437ec50e71ce7c39c4956"
+    }
+  },
+  "code": {
+    "src/jinyiquant/data.py": "d764e09fe8a89d74",
+    "src/jinyiquant/config.py": "c4910c6e1df5df10",
+    "src/jinyiquant/protocol.py": "0cf091cb2b678363",
+    "src/jinyiquant/pool.py": "41309bd7894260aa",
+    "modified_tlob/schema.py": "0e1499037c301e7c",
+    "modified_tlob/adapter.py": "e9858e305fd6a06d",
+    "tests/test_feature_set.py": "940d339daae78fbd"
+  },
+  "code_repo": "/root/repo_ofi (patched copy of repo_featnorm; uncommitted, HEAD f7d8f13)",
+  "primary": {
+    "metric": "rank_ic",
+    "comparison": "raw_plus_ofi minus raw_plus_zero6",
+    "pairing": "candidate minus control within (seed, window, trading day), then mean over the three seeds",
+    "windows": "screen8 = nov2023,jan2024,feb2024,mar2024,apr2024,may2024,jul2024,aug2024 (165 trading days)",
+    "estimator": "5-trading-day moving block bootstrap with ceil(n/5) blocks, 20000 draws, seed 20261028 (scripts/compare_blend_replay.py, sha 0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1); older single-block estimator never gates",
+    "evaluation": "eval-v2: quantile 0.2, periods_per_year 252, min_cross_section 3, consistent portfolios undefined, single_side_rate 0.0, return_sections True"
+  },
+  "secondary": {
+    "ofi_minus_baseline": "0.075639 / 1.1288 (configs/screen10_screening_addendum_20261028.json), same pairing and estimator",
+    "zero6_minus_baseline": "width control; expected near zero, reported not gated",
+    "turnover_degradation_max": 0.0318,
+    "report": [
+      "long_short_mean",
+      "ic_ir",
+      "per-seed sign of ofi minus zero6",
+      "masked row fraction and per-channel stats after masking/clipping"
+    ]
+  },
+  "thresholds": {
+    "min_improvement": 0.002,
+    "ci_must_exclude_zero": true,
+    "min_positive_windows": 7,
+    "windows_total": 8,
+    "why_0.002_zh": "这是机制检验（同宽度两臂只差六个通道的内容），配对后 165 天 × 3 种子的标准误约 0.0009–0.0014，0.002 约等于 1.5–2 个标准误；比提交候选的 0.003 低，因为它不需要跨过换手与打包门槛。即便通过，也只构成“值得进晋升流程”的必要条件，不构成提交候选——封存窗已经花掉。",
+    "no_threshold_change": true
+  },
+  "decision_rule_zh": "score_pass 当且仅当 ofi−zero6 的池化配对均值 ≥ +0.002、修正口径 95% 区间不含零、8 个筛查窗中至少 7 个为正。任一不满足则关闭该路线（不再增加配置、不扩种子），并把结论写进决定登记。通过则由队长决定是否把它推进到“候选级”流程（需要重新做换手匹配、晋升门与打包，且只能用开发窗）。",
+  "what_would_falsify": [
+    "ofi 与 zero6 的差值落在零附近或为负",
+    "zero6 明显优于 12 列基线（说明宽度/参数量本身就是效应，特征内容不是）",
+    "差值只在少数窗口为正、或换手大幅退化超过 0.0318"
+  ],
+  "cost": {
+    "runs": "6 (3 seeds x 2 arms), 145405 steps each with the 1.33 anchor",
+    "host": "hz-4 (24 cores / 172 GB, 3x RTX 3090): cold streaming pool about 18 min, then about 55-60 min of training at 21-24 ms/step",
+    "replay": "6 versions x 8 screening windows on a replay host, about 25-30 min"
+  },
+  "ordering": {
+    "registered_before_any_ofi_or_zero6_score": true,
+    "screening_authority": {
+      "path": "configs/dev10_window_roles_20261028.json",
+      "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4"
+    },
+    "screening_addendum": {
+      "path": "configs/screen10_screening_addendum_20261028.json",
+      "sha256": "4e1f69e46856245bd3981c4a45b755396e55771d092fa97b327c7c407fdf88d3"
+    }
+  },
+  "confirmations_reserved": {
+    "windows": [
+      "jun2024",
+      "sep2024"
+    ],
+    "days": 38,
+    "reads": "at most one per route, released by the captain only",
+    "note": "a ten-window or 203-day pooled number anywhere counts as spending the confirmation budget"
+  },
+  "scope_limits_zh": [
+    "掩码与裁剪口径是我裁定的（单侧 0 价也掩码、固定常量裁剪），与题面“mid<=0 才置 0”的措辞不同；raw 12 列逐位未动",
+    "派生通道由 1 分钟快照推导，最多是 OFI 的代理量，不是真实逐笔订单流",
+    "只测 1.32 一个预算点；2.64 及更长的训练量不在本轮",
+    "注册时不锁定训练机；实际用 hz-4，代码与配方路径与本机一致"
+  ]
+}
