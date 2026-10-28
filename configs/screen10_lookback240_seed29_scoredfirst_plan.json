@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "experiment_id": "screen10-lookback240-441d-seed29",
+  "created_at_utc": "2026-10-28T12:43:31.276919+00:00",
+  "status": "final_shape_awaiting_registration",
+  "registration": {
+    "path": "configs/screen10_prereg_20261028.json",
+    "role": "single-factor arm lookback240 on the 441-day rung, seed 29",
+    "status": "covered by the screen10 pre-registration; not separately registered",
+    "note": "a draft may not escalate, replace the incumbent or be reported as a candidate until the paired ten-window test passes"
+  },
+  "question_zh": "在 441 天 rung（2022-01-04..2023-10-31）的 1.32 个有效 epoch 预算下，只改 data.lookback 是否让十个开发窗（203 个交易日）的池化 RankIC 相对441 日同种子基线出现超过门槛的配对提升。",
+  "hypothesis": "With the 441-day CSZ rung fixed, a 240-bar input window (60 quarters per scale, 600 total dimensions instead of 320) improves the out-of-sample cross-sectional RankIC of the 1.32-point checkpoint on the ten development windows, relative to the same rung's 128-bar three-seed blend, by more than the pre-registered floor on a paired trading-day basis. Seed 29.",
+  "factor": {
+    "changed": "data.lookback",
+    "to": "240",
+    "rung": "441d",
+    "rung_train_window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "declared_trading_days": 441,
+    "validation_unchanged": [
+      "2023-11-01T00:00:00",
+      "2023-11-15T00:00:00"
+    ],
+    "train_end_exclusive": "2023-11-01T00:00:00",
+    "note": "a single recipe field moves off the 441-day rung; the training window, the seeds, the sampler cost and every other setting stay fixed"
+  },
+  "environment_only_changes": {
+    "data.bars_path": "host data root",
+    "data.labels_path": "host data root",
+    "data.instruments_path": "host data root",
+    "data.instrument_map_path": "host data root",
+    "data.cache_dir": "host cache root",
+    "output_root": "host run root",
+    "note": "path-only changes required by the training host: data and cache live on the container-local disk, run artifacts under /mnt/work (network disk that survives a container restart)"
+  },
+  "recipe_config": "configs/screen10_lookback240_441d_csz_seed29.json",
+  "recipe_sha256": "70eeb223e4f21cc38db082c4eb5c0a6b36dba1d63bd21117e3e641a04648190e",
+  "recipe_frozen_baseline": {
+    "path": "configs/scaling_441d_csz_seed29.json",
+    "sha256": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b"
+  },
+  "recipe_frozen": [
+    "model.kind",
+    "model.hidden_dim",
+    "model.num_layers",
+    "data.feature_columns",
+    "data.sample_times",
+    "data.label_horizon_minutes",
+    "data.outside_universe_labels",
+    "model.target_centering",
+    "model.target_scaling",
+    "model.time_loss_weighting",
+    "model.batch_size",
+    "model.learning_rate",
+    "evaluation_split",
+    "evaluation",
+    "acceptance"
+  ],
+  "budget_only_overrides": {
+    "model.max_steps": "cleared; the registered budget point governs the budget",
+    "model.epochs": "kept as the upper bound (must exceed the last budget point)",
+    "data.splits.train.start": "unchanged from the 441-day rung (2022-01-04); this arm moves no window",
+    "note": "any other deviation from the arm recipe must fail the run guard"
+  },
+  "budget_points": [
+    {
+      "name": "screen10-1.32",
+      "effective_epochs": 1.32,
+      "role": "registered anchor magnitude (C1 left side)"
+    },
+    {
+      "name": "screen10-stepup-1.33",
+      "effective_epochs": 1.33,
+      "role": "throw-away step-up point (+1,100 optimizer steps): exists only because validate_budget_points demands two strictly increasing points; never scored, never exported for comparison"
+    }
+  ],
+  "one_continuous_trajectory": true,
+  "lr_schedule": "constant",
+  "exposure": {
+    "min_coverage": 1.0,
+    "effective_epochs_atol": 0.001,
+    "track_exposure": true,
+    "reconcile": "samples_seen == steps * batch_size; unique/usable coverage >= min_coverage; realised effective epochs within atol of the declared point",
+    "min_coverage_note": "shuffle feeds every usable row once per epoch, so coverage is 1.0 from the scored point on; the rung's contract is untouched."
+  },
+  "resume": {
+    "state": [
+      "network",
+      "optimizer",
+      "torch_rng",
+      "numpy_rng",
+      "python_rng",
+      "sampler_generator",
+      "sampler_position",
+      "exposure_counters"
+    ],
+    "repro_tolerance": {
+      "atol": 1e-06,
+      "rtol": 1e-05
+    },
+    "fail_closed": "pool, recipe, fitted transforms and sampler batch order must reproduce the checkpoint exactly",
+    "note": "the two budget points are checkpoints of one uninterrupted trajectory, not two runs"
+  },
+  "derived_reference": {
+    "estimate_not_budget": true,
+    "trading_days": 441,
+    "usable_samples_estimate": 3522173,
+    "batch_size": 32,
+    "steps_expected": {
+      "1.32": 145269,
+      "1.33": 146370
+    },
+    "calibration": "level-1 measured 1054256 usable samples over 132 trading days, scaled linearly by trading days; the driver re-derives both from the pool actually built",
+    "deviation_tolerance": {
+      "relative": 0.05,
+      "applies_to": [
+        "usable_samples",
+        "steps"
+      ],
+      "rule": "a realised value beyond +/-5% stops the run and reports; the estimate is not edited afterwards"
+    },
+    "usable_samples_measured": 3521680,
+    "steps_expected_rule": "steps = round(effective_epochs * usable_rows / batch_size); run_training_trajectory derives the budget from the pool it measured at prepare_training time, never from the plan static estimate",
+    "steps_evidence": {
+      "hz-t3": "prepare_training on the real 441-day pool returned usable_samples=3521680 (/root/logs/smoke-screen10-2point-rankhinge-s11.json)",
+      "hz-4": "archived 441d rung run budget.json: usable_samples=3521680, point scaling-1.32 steps=145269 (20261027T191119.061322Z_2303ea6816b5)",
+      "parent_static_estimate": 3522173,
+      "gap_rows": 493,
+      "why_it_matters": "both machines measure the same 3521680 rows, so both derive 145269 at 1.32 and 146370 at 1.33; comparability rests on effective epochs, not on the plan stale estimate"
+    }
+  },
+  "cloud": {
+    "host": "hz-4.matpool.com:26197 (24 cores / 172 GB / 2x RTX 3090 24GB)",
+    "concurrency": {
+      "processes": 3,
+      "gpus": 2,
+      "one_process_per_gpu": false,
+      "sharing": "packed by the memory pre-flight, not by a fixed map",
+      "threads_per_process": 4,
+      "seed_gpu_map": {
+        "11": 0,
+        "29": 1,
+        "47": 0
+      }
+    },
+    "checkpoint_dir": "trajectory/",
+    "artifacts_to_retrieve": [
+      "manifest.json",
+      "trajectory.json",
+      "exposure.json",
+      "events.jsonl",
+      "trajectory/training_state.pt",
+      "trajectory/training_state.json",
+      "budget_points/*.json",
+      "budget_points/*.parquet"
+    ]
+  },
+  "evaluation_scope": {
+    "cloud": "validation split 2023-11-01..2023-11-15 = 10 trading days, process diagnostic only",
+    "formal": "the five declared research windows produced locally by replaying exported per-budget-point weights; a cloud validation score is never the delivery evidence",
+    "sealed_final": "never read"
+  },
+  "single_factor_arm": {
+    "arm": "lookback240",
+    "recipe_changes": {
+      "data.lookback": 240
+    },
+    "forced_by_validation": {},
+    "inherited_from_rung": {
+      "recipe_config": "configs/scaling_441d_csz_seed29.json",
+      "recipe_sha256": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
+      "budget.max_train_samples": 500000,
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "scored_point": 1.32
+    },
+    "prior_evidence": {
+      "source": "scripts/candidate_triage.py:452, modified_tlob/grouped_ranking_20261025.json",
+      "facts": [
+        "a 256-bar lookback was exercised inside the Patch 256 (dual_patch) family, not on mlplob",
+        "no recorded mlplob arm has moved the window off 128 bars"
+      ],
+      "confound": "the bar projection cache is content-addressed by source/columns/date range only, so the 441-day cache is reusable unchanged: the window width changes nothing else"
+    },
+    "driver_anchor": {
+      "name": "screen10-1.32 first, screen10-stepup-1.33 second",
+      "scored_point_effective_epochs": 1.32,
+      "stepup_point_effective_epochs": 1.33,
+      "why": "a 0.66 anchor can reach at most steps*batch/usable = 0.6600 coverage, so reconcile_exposure rejects a [0.66, 1.32] trajectory right after the anchor; putting 1.32 first keeps both points >= 1 epoch (coverage reaches 1.0) and leaves the scored point's full exposure guarantee intact for +1,100 steps instead of +72,634",
+      "score_never_read": true,
+      "not_a_comparison": true,
+      "equivalence_claim": "the 1.32 checkpoint is one continuous trajectory with the same seed, sampler order and total step count; the step-up point runs after it and its weights are never replayed"
+    }
+  },
+  "approved_by": "captain 2026-10-28, option 1: scored-first [1.32, 1.33], R1 min_coverage 0.99, R2 min_coverage 1.0",
+  "scored_point": "screen10-1.32",
+  "anchor_point_role": "driver_requires_two_points_only",
+  "non_scored_points": [
+    "screen10-stepup-1.33"
+  ],
+  "exported_for_comparison": [
+    "modified_tlob_weights-screen10-1.32.json"
+  ],
+  "non_scored_point_exclusion": "the 1.33 checkpoint, its predictions and its metrics are never compared; every replay reads only the 1.32 weights",
+  "driver_compatibility": {
+    "executable_as_written": true,
+    "rule": "validate_budget_points: two points, strictly increasing effective epochs",
+    "scored_point": "screen10-1.32 (exported, replayed and compared)",
+    "stepup_point": "screen10-stepup-1.33 (second checkpoint, never scored)",
+    "step_rule": "steps = round(effective_epochs * usable_samples / batch_size), re-derived by the driver"
+  }
+}
