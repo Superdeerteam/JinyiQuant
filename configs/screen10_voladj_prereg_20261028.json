@@ -1,0 +1,384 @@
+{
+  "schema": "screen10-prereg/1",
+  "experiment_id": "screen10-voladj-441d",
+  "status": "registered",
+  "registered_before_any_candidate_score": true,
+  "no_threshold_change": true,
+  "created_utc": "2026-10-28T12:46:52.698768+00:00",
+  "rung": {
+    "name": "441d",
+    "window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "trading_days": 441,
+    "point": 1.32,
+    "seeds": [
+      11,
+      29,
+      47
+    ]
+  },
+  "arms": {
+    "V1": {
+      "arm": "voladj",
+      "hypothesis": "With the 441-day CSZ rung fixed, dividing the 30-minute forward VWAP return by the realized volatility of the same prediction window (a Sharpe-style risk adjustment, applied before the timestamp cross-sectional z-score) improves the out-of-sample cross-sectional RankIC of the 1.32-point checkpoint on the development windows, relative to the same rung's three-seed baseline, by more than the pre-registered floor on a paired (window, trading day) basis, and improves it in at least seven of the ten windows.",
+      "single_change": {
+        "data.label_vol_adjustment": "realized_vol"
+      },
+      "forced_companion": {},
+      "rung": "441d",
+      "point": 1.32,
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "recipes": {
+        "seed11": {
+          "path": "/root/repo_vol/configs/screen10_voladj_441d_csz_seed11.json",
+          "sha256": "676c6ddbf2e30155a96fac6c2ae2a49ade40cbc6d6708609c5bbcd8e66a1956f"
+        },
+        "seed29": {
+          "path": "/root/repo_vol/configs/screen10_voladj_441d_csz_seed29.json",
+          "sha256": "9b435ca2cd85904f92445bcc36333ea33305e53d8046c7aa1f78dd07a29e0f53"
+        },
+        "seed47": {
+          "path": "/root/repo_vol/configs/screen10_voladj_441d_csz_seed47.json",
+          "sha256": "c4fd74132ef124e876ac3c3733b8d443b93c4712f1b6d84b7c8050f2b9021d73"
+        }
+      },
+      "plans_scoredfirst": {
+        "seed11": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed11_scoredfirst_plan.json",
+          "sha256": "0e6ef0317dd3812dc1a063cd7bbb5183a6665c90bdb3eccf0937c552940970ed"
+        },
+        "seed29": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed29_scoredfirst_plan.json",
+          "sha256": "752ea39fa2ae3af813f2ad9e52763bab118806721d866938b495a7ef0491378e"
+        },
+        "seed47": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed47_scoredfirst_plan.json",
+          "sha256": "77afaf9a6e623b505b9145b97b265b69723216a1a7ae7d104048471d1e45adec"
+        }
+      },
+      "budget": "inherited from the 441-day rung 1.32 point (max_train_samples=500000, component E)",
+      "replay_after_training": "screening pass: the eight screening windows, three seeds, equal 1/3 blend, same caliber; the two confirmation windows are replayed only after the captain's sign-off"
+    }
+  },
+  "baseline": {
+    "label": "control 3-seed equal blend at 1.32, same ten windows",
+    "run_dir": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599",
+    "rank_ic_pooled": 0.0712873790998522,
+    "days": 203,
+    "corrected_block_ci": {
+      "days": 203,
+      "mean": 0.07128737909985215,
+      "ci_low": 0.06402044956432916,
+      "ci_high": 0.07857101818943638,
+      "blocks_per_draw": 41,
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "estimator": "scripts/compare_blend_replay.py::block_interval (wrap-around blocks)",
+      "estimator_source_sha256": "fd76ce2e230b86beea1381a3a142420e7fbc21d9a74389265faf9d744a944392"
+    },
+    "per_window_rank_ic": {
+      "nov2023": 0.09826159026783486,
+      "jan2024": 0.059576399731923385,
+      "feb2024": 0.033195099255683716,
+      "mar2024": 0.09125336552377969,
+      "apr2024": 0.07428943287811683,
+      "may2024": 0.09297134501289889,
+      "jun2024": 0.05749752459079196,
+      "jul2024": 0.07317721339619614,
+      "aug2024": 0.07115436655236049,
+      "sep2024": 0.04729023763846739
+    }
+  },
+  "development_windows": {
+    "names": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jun2024",
+      "jul2024",
+      "aug2024",
+      "sep2024"
+    ],
+    "roles_authority": "configs/dev10_window_roles_20261028.json",
+    "roles_authority_note": "the captain's 2026-10-28 review declares jun2024/sep2024 the frozen confirmation windows; the file was not present in the repo copy at draft time, so the registration step must re-check it before those two windows are read",
+    "screening_names": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jul2024",
+      "aug2024"
+    ],
+    "screening_trading_days": 165,
+    "confirmation_names": [
+      "jun2024",
+      "sep2024"
+    ],
+    "confirmation_rule": "read only with the captain's explicit release; never by the screening pass",
+    "all_before_sealed_window": true
+  },
+  "caliber": {
+    "evaluation_version": "eval-v2 (local re-implementation; metrics.json evaluation_version)",
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined",
+    "single_side_rate": 0.0,
+    "blend": "equal 1/3 mean of the three seed scores after inner merge on (date, instrument)",
+    "aggregation": "pooled by trading day over the windows actually read"
+  },
+  "primary_criterion": {
+    "metric": "rank_ic",
+    "estimator": "paired by (window, trading day): candidate minus control baseline, pooled over all days read; the candidate blend and the control blend are formed from the same seeds and the same calendar, so every day is paired by construction",
+    "min_improvement": 0.003,
+    "interval": {
+      "method": "corrected 5-day moving-block bootstrap of the pooled mean daily paired difference",
+      "blocks_per_draw": "ceil(n/5)",
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "interval": "percentiles 2.5 / 97.5",
+      "reference_implementation": "scripts/compare_blend_replay.py::block_interval (wrap-around blocks)",
+      "not_the_estimator": "scripts/verify_b_release.py:97-99 block_indices draws starts from [0, n-block] without wrapping -- a different interval, not used here",
+      "pinned_estimator_source_sha256": "fd76ce2e230b86beea1381a3a142420e7fbc21d9a74389265faf9d744a944392",
+      "screening_interval": {
+        "days": 165,
+        "blocks_per_draw": 33,
+        "note": "the screening read uses n = 165 trading days -> 33 blocks; the registered ten-window test uses n = 203 -> 41 blocks; the same estimator function"
+      }
+    },
+    "accept": {
+      "pooled_improvement_at_least": 0.003,
+      "ci_excludes_zero": true,
+      "positive_windows_at_least": 7,
+      "positive_windows_of": 10,
+      "note": "the registered gate is evaluated on all ten windows after the two confirmation windows are released; the screening pass reports the same statistics on the eight screening windows (165 days) as a pre-filter only, and does not change the thresholds"
+    },
+    "secondary_reported_not_gating": [
+      "turnover",
+      "long_short_return",
+      "ic",
+      "per-window spread"
+    ]
+  },
+  "plan_shape": {
+    "decided_by_user": {
+      "budget_points": [
+        {
+          "name": "screen10-1.32",
+          "effective_epochs": 1.32
+        },
+        {
+          "name": "screen10-stepup-1.33",
+          "effective_epochs": 1.33
+        }
+      ],
+      "scored_point": 1.32,
+      "scored_point_name": "screen10-1.32",
+      "anchor_point_role": "driver_requires_two_points_only",
+      "one_continuous_trajectory": true,
+      "files": {
+        "seed11": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed11_scoredfirst_plan.json",
+          "sha256": "0e6ef0317dd3812dc1a063cd7bbb5183a6665c90bdb3eccf0937c552940970ed"
+        },
+        "seed29": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed29_scoredfirst_plan.json",
+          "sha256": "752ea39fa2ae3af813f2ad9e52763bab118806721d866938b495a7ef0491378e"
+        },
+        "seed47": {
+          "path": "/root/repo_vol/configs/screen10_voladj_seed47_scoredfirst_plan.json",
+          "sha256": "77afaf9a6e623b505b9145b97b265b69723216a1a7ae7d104048471d1e45adec"
+        }
+      },
+      "runnable_as_written": true,
+      "why": "validate_budget_points demands two strictly increasing points; 1.32 first keeps the full exposure guarantee and the 1.33 point is never scored"
+    },
+    "driver_anchor": {
+      "rule": "the scored point is the ten-window replay of the 1.32 weights; the second budget point is driver bookkeeping and is never scored or replayed",
+      "intervention": "kill the trajectory once the 1.32 point is exported (the recorded user preference), or let the negligible step-up point finish"
+    }
+  },
+  "exposure_contract": {
+    "min_coverage": 1.0,
+    "effective_epochs_atol": 0.001,
+    "rule": "run_training_trajectory reconciles every budget point: steps exact; |realised effective epochs - declared| <= atol; unique/usable coverage >= min_coverage; and when coverage >= 1.0 every training day must be fully covered",
+    "why_unchanged": "this arm keeps the rung's shuffle sampler, which feeds every usable row once per epoch, so coverage reaches 1.0 from the first >=1-epoch point on. The 0.99 floor in the captain's R1 plan comes from timestamp_grouped truncating group tails to a multiple of batch_size (21,904 of 3,521,680 rows); that does not apply here, so min_coverage stays at the rung's 1.0 -- the only arm-level guard that moves is none",
+    "steps": {
+      "rule": "steps = round(effective_epochs * usable_rows / batch_size), derived at run start",
+      "hz-t3_measured": {
+        "1.32": 145269,
+        "1.33": 146370
+      },
+      "hz-4_measured": {
+        "1.32": 145290,
+        "1.33": 146390
+      },
+      "note": "a 21-step difference at the same measured usable_samples is under investigation; the driver prints the realised value at run start and the plan pins no count"
+    }
+  },
+  "factor": {
+    "changed": "data.label_vol_adjustment",
+    "from": "none",
+    "to": "realized_vol",
+    "default_path_unchanged": "label_vol_adjustment='none' (including the omitted key) leaves the label, data_sha256, window matrix, 5-step loss and checkpoint bit-identical to the current behaviour",
+    "definition": {
+      "target": "the official 30-minute forward VWAP return y (labels parquet column vwap_return)",
+      "sigma": "sigma = std of the 1-minute VWAP log returns of the sample's own forward window, ddof=0: vwap_m = bar amount / bar volume; r_k = log(vwap_m / vwap_{m-1}) on consecutive trading-clock minutes; the window of a sample at t is the trading-clock minutes t+1..t+30 (11:30 continues at 13:01 because the lunch break is not a return; the 09:30 sample has 29 such minutes because the first regular bar of the day is 09:31); a return exists only when both minutes traded",
+      "min_returns": 3,
+      "floor": 0.0001,
+      "formula": "y_adj = y / max(sigma, 1e-4)",
+      "order": "official forward return -> divide by sigma -> timestamp cross-sectional z-score -> training-segment RMS match (model.target_centering=timestamp_zscore_train_rms_matched then model.target_scaling=train_std); the z-score is cross-sectional, so it must run after the volatility normalisation",
+      "thin_window_fallback": "fewer than 3 finite returns in the window (suspension or an extremely thin minute): use the same timestamp's cross-sectional median sigma, so the label row set never shrinks; on the development data this affects 0.02-0.13% of rows, whose true volatility is lower than the median, so their adjusted labels are slightly smaller than a full-window divisor would give",
+      "inference_unchanged": "the score path never reads the transform: the model still emits one (n,) score with the same key order, shape and _score chunking, so the submission path is unchanged",
+      "code": "src/jinyiquant/data.py (realized_window_vol, apply_label_vol_adjustment), tests/test_label_vol.py"
+    },
+    "row_set_invariant": "same window, same seed: the valid-label row count and the row set (sorted by (date, instrument)) are identical to 'none'; the code asserts that every finite label row has a finite divisor",
+    "known_direction": "the thin-window fallback affects 0.02-0.13% of rows whose true volatility is below the timestamp median, so their adjusted labels are slightly smaller than a full-window divisor would give; the direction is known and recorded before scoring"
+  },
+  "arm_identity": {
+    "rule": "in realized_vol mode metadata.data_sha256 is UNCHANGED (the bar files and their digests do not depend on the label transform), so an arm is identified by recipe_sha256 plus metadata.label_vol_adjustment only",
+    "cannot_use": "no comparison or replay script may use data_sha256 to decide whether two arms read the same data; two arms with equal data_sha256 may differ in labels",
+    "discriminator": [
+      "recipe_sha256",
+      "metadata.label_vol_adjustment"
+    ],
+    "enforced_by": "protocol.fair_data_pair accepts metadata.label_vol_adjustment as a factor-derived field and rejects any other data-identity difference"
+  },
+  "scored_point": "screen10-1.32",
+  "anchor_point_role": "driver_requires_two_points_only",
+  "non_scored_points": [
+    "screen10-stepup-1.33"
+  ],
+  "smoke_evidence": {
+    "status": "passed",
+    "window": "2022-01-04..2022-02-01 (20 trading days, 151,616 targets)",
+    "device": "cuda",
+    "steps": 40,
+    "loss_first_last": [
+      7.203696821893599,
+      5.060141546939789
+    ],
+    "loss_finite": true,
+    "gradients_finite_and_nonzero": true,
+    "roundtrip_max_abs_diff": 0.0,
+    "row_sets_identical_vs_none": true,
+    "sigma_hat": {
+      "min": 0.0001,
+      "p50": 0.0011531926942335974,
+      "max": 0.03
+    },
+    "vol_fallback_rows": 238,
+    "vol_floor_rows": 1061,
+    "default_path_bit_identity": {
+      "bars_sha256": "20d6868fce6a397e",
+      "window_sha256": "402065d2ced9775c",
+      "labels_sha256": "9d8a048671fccade",
+      "target_bytes_sha256": "35b8b547fc5f9cfb",
+      "target_keys_sha256": "af9850cd51a738ed",
+      "data_sha256": "924c01e4...",
+      "five_step_loss": [
+        2.73575e-05,
+        1.65602e-05,
+        1.32061e-05,
+        1.42275e-05,
+        1.06108e-05
+      ],
+      "checkpoint_bytes_identical": true
+    },
+    "row_set_real_data": {
+      "months": [
+        "202201",
+        "202203",
+        "202311"
+      ],
+      "finite_label_rows": [
+        151616,
+        183808,
+        175784
+      ],
+      "missing_after_fallback": [
+        0,
+        0,
+        0
+      ],
+      "row_set_identical": true
+    },
+    "existing_tests": {
+      "command": "/root/py312 -m pytest tests/ -q -k \"not einops\"",
+      "result": "53 failed / 779 passed / 7 skipped -- the same 53 failures on a pristine repo_featnorm copy, so pre-existing and not a regression"
+    },
+    "new_tests": {
+      "file": "tests/test_label_vol.py",
+      "count": 12,
+      "status": "passed"
+    }
+  },
+  "known_limitations": [
+    "RankIC is not scale-invariant per timestamp when the divisor varies within the timestamp, so a gain may reflect the cross-sectional weight the divisor imposes rather than a better conditional mean; the report must state both readings",
+    "the thin-window fallback rescales 0.02-0.13% of rows by the timestamp median instead of their own volatility, so the direction of that subset's label error is known (slightly too small) but not corrected",
+    "the [1.32, 1.33] plan cannot be stopped exactly at the scored point without killing the process; the extra point costs ~1,100 steps (~2-4 min) and is never scored",
+    "the first run of each seed pays one extra bar read (~4-5 min) for the volatility windows; the registered cache_dir is reused and the frozen-h cache is never touched",
+    "data_sha256 does not distinguish the two arms; identity relies on recipe_sha256 and metadata.label_vol_adjustment"
+  ],
+  "next_steps_after_user_review": [
+    "re-check configs/dev10_window_roles_20261028.json and register the thresholds unchanged",
+    "train the three seeds as a scored-first [1.32, 1.33] trajectory each, after R1/R2 on the queue",
+    "replay the 1.32 weights on the eight screening windows, form the 1/3 blend and compute the paired (window, day) differences against the control baseline",
+    "release the two confirmation windows only after the screening result is reported"
+  ],
+  "registration": {
+    "registered_at_utc": "2026-10-28T12:49:43Z",
+    "registered_by": "captain",
+    "git_head": "a0878c1540f309888de2c05df6b5d1adf700c319",
+    "registered_before_any_candidate_score": true,
+    "decided_scope": "three seeds x scored point 1.32 on the 441-day rung; the 1.33 step-up point exists only to satisfy the trajectory driver and is never compared",
+    "plan_sha256": {
+      "seed11": {
+        "path": "configs/screen10_voladj_seed11_scoredfirst_plan.json",
+        "sha256": "0e6ef0317dd3812dc1a063cd7bbb5183a6665c90bdb3eccf0937c552940970ed"
+      },
+      "seed29": {
+        "path": "configs/screen10_voladj_seed29_scoredfirst_plan.json",
+        "sha256": "752ea39fa2ae3af813f2ad9e52763bab118806721d866938b495a7ef0491378e"
+      },
+      "seed47": {
+        "path": "configs/screen10_voladj_seed47_scoredfirst_plan.json",
+        "sha256": "77afaf9a6e623b505b9145b97b265b69723216a1a7ae7d104048471d1e45adec"
+      }
+    },
+    "recipe_sha256": {
+      "seed11": {
+        "path": "configs/screen10_voladj_441d_csz_seed11.json",
+        "sha256": "676c6ddbf2e30155a96fac6c2ae2a49ade40cbc6d6708609c5bbcd8e66a1956f"
+      },
+      "seed29": {
+        "path": "configs/screen10_voladj_441d_csz_seed29.json",
+        "sha256": "9b435ca2cd85904f92445bcc36333ea33305e53d8046c7aa1f78dd07a29e0f53"
+      },
+      "seed47": {
+        "path": "configs/screen10_voladj_441d_csz_seed47.json",
+        "sha256": "c4fd74132ef124e876ac3c3733b8d443b93c4712f1b6d84b7c8050f2b9021d73"
+      }
+    },
+    "roles_authority": {
+      "path": "configs/dev10_window_roles_20261028.json",
+      "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4"
+    },
+    "window_policy": "screening reads the eight screening windows only (165 trading days); jun2024 and sep2024 are released for reading by the captain alone, and a direction released once may not be re-read",
+    "threshold_status": "unchanged from the draft floor: min_improvement 0.003, CI excluding zero, at least seven of ten windows positive",
+    "smoke_status": "passed (40 steps on real data, save/load/predict max_abs_diff 0.0, default path bit-identical)"
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "experiment_id": "screen10-voladj-441d-seed29",
+  "created_at_utc": "2026-10-28T12:46:52.696086+00:00",
+  "status": "final_shape_awaiting_registration",
+  "registration": {
+    "path": "/root/screen10_voladj_prereg_draft.json",
+    "role": "single-factor arm voladj on the 441-day rung, seed 29",
+    "status": "covered by the voladj pre-registration draft; not separately registered",
+    "note": "a draft may not escalate, replace the incumbent or be reported as a candidate until the paired development-window test passes"
+  },
+  "question_zh": "在 441 天 rung（2022-01-04..2023-10-31）的 1.32 个有效 epoch 预算下，只把训练标签从「30 分钟前向 VWAP 收益」改成「同一预测窗已实现波动率调整后的收益」（data.label_vol_adjustment = realized_vol）是否让开发窗（筛查 8 窗 / 165 个交易日，确认窗 2 个留待队长放行）的池化 RankIC 相对 441 日同种子的三种子基线出现超过门槛的配对提升。",
+  "hypothesis": "With the 441-day CSZ rung fixed, dividing the 30-minute forward VWAP return by the realized volatility of the same prediction window (a Sharpe-style risk adjustment, applied before the timestamp cross-sectional z-score) improves the out-of-sample cross-sectional RankIC of the 1.32-point checkpoint on the development windows, relative to the same rung's three-seed baseline, by more than the pre-registered floor on a paired (window, trading day) basis, and improves it in at least seven of the ten windows. Seed 29.",
+  "factor": {
+    "changed": "data.label_vol_adjustment",
+    "from": "none",
+    "to": "realized_vol",
+    "rung": "441d",
+    "rung_train_window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "declared_trading_days": 441,
+    "validation_unchanged": [
+      "2023-11-01T00:00:00",
+      "2023-11-15T00:00:00"
+    ],
+    "train_end_exclusive": "2023-11-01T00:00:00",
+    "definition": {
+      "target": "the official 30-minute forward VWAP return y (labels parquet column vwap_return)",
+      "sigma": "sigma = std of the 1-minute VWAP log returns of the sample's own forward window, ddof=0: vwap_m = bar amount / bar volume; r_k = log(vwap_m / vwap_{m-1}) on consecutive trading-clock minutes; the window of a sample at t is the trading-clock minutes t+1..t+30 (11:30 continues at 13:01 because the lunch break is not a return; the 09:30 sample has 29 such minutes because the first regular bar of the day is 09:31); a return exists only when both minutes traded",
+      "min_returns": 3,
+      "floor": 0.0001,
+      "formula": "y_adj = y / max(sigma, 1e-4)",
+      "order": "official forward return -> divide by sigma -> timestamp cross-sectional z-score -> training-segment RMS match (model.target_centering=timestamp_zscore_train_rms_matched then model.target_scaling=train_std); the z-score is cross-sectional, so it must run after the volatility normalisation",
+      "thin_window_fallback": "fewer than 3 finite returns in the window (suspension or an extremely thin minute): use the same timestamp's cross-sectional median sigma, so the label row set never shrinks; on the development data this affects 0.02-0.13% of rows, whose true volatility is lower than the median, so their adjusted labels are slightly smaller than a full-window divisor would give",
+      "inference_unchanged": "the score path never reads the transform: the model still emits one (n,) score with the same key order, shape and _score chunking, so the submission path is unchanged",
+      "code": "src/jinyiquant/data.py (realized_window_vol, apply_label_vol_adjustment), tests/test_label_vol.py"
+    },
+    "note": "a single recipe field moves off the 441-day rung; the training window, the seeds, the sampler cost and every other setting stay fixed"
+  },
+  "environment_only_changes": {
+    "data.bars_path": "host data root",
+    "data.labels_path": "host data root",
+    "data.instruments_path": "host data root",
+    "data.instrument_map_path": "host data root",
+    "data.cache_dir": "host cache root",
+    "output_root": "host run root",
+    "note": "path-only changes required by the training host: data and cache live on the container-local disk, run artifacts under /mnt/work (network disk that survives a container restart)"
+  },
+  "recipe_config": "configs/screen10_voladj_441d_csz_seed29.json",
+  "recipe_sha256": "9b435ca2cd85904f92445bcc36333ea33305e53d8046c7aa1f78dd07a29e0f53",
+  "recipe_frozen_baseline": {
+    "path": "configs/scaling_441d_csz_seed29.json",
+    "sha256": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b"
+  },
+  "recipe_frozen": [
+    "model.kind",
+    "model.hidden_dim",
+    "model.num_layers",
+    "data.feature_columns",
+    "data.lookback",
+    "data.sample_times",
+    "data.label_horizon_minutes",
+    "data.outside_universe_labels",
+    "model.target_centering",
+    "model.target_scaling",
+    "model.time_loss_weighting",
+    "model.batch_size",
+    "model.learning_rate",
+    "evaluation_split",
+    "evaluation",
+    "acceptance"
+  ],
+  "budget_only_overrides": {
+    "model.max_steps": "cleared; the registered budget point governs the budget",
+    "model.epochs": "kept as the upper bound (must exceed the last budget point)",
+    "data.splits.train.start": "unchanged from the 441-day rung; no window movement in this arm",
+    "note": "any other deviation from the arm recipe must fail the run guard"
+  },
+  "lr_schedule": "constant",
+  "exposure": {
+    "min_coverage": 1.0,
+    "effective_epochs_atol": 0.001,
+    "track_exposure": true,
+    "reconcile": "samples_seen == steps * batch_size; unique/usable coverage >= min_coverage; realised effective epochs within atol of the declared point",
+    "min_coverage_note": "kept at the rung's 1.0: this arm keeps the rung's shuffle sampler, which feeds every usable row once per epoch, so coverage reaches 1.0 from the first >=1-epoch point on and every training day is fully covered. The 0.99 floor in the captain's R1 plan comes from the timestamp_grouped sampler truncating group tails to a multiple of batch_size; that does not apply here, and the floor is lowered nowhere."
+  },
+  "resume": {
+    "state": [
+      "network",
+      "optimizer",
+      "torch_rng",
+      "numpy_rng",
+      "python_rng",
+      "sampler_generator",
+      "sampler_position",
+      "exposure_counters"
+    ],
+    "repro_tolerance": {
+      "atol": 1e-06,
+      "rtol": 1e-05
+    },
+    "fail_closed": "pool, recipe, fitted transforms and sampler batch order must reproduce the checkpoint exactly",
+    "note": "the two budget points are checkpoints of one uninterrupted trajectory, not two runs"
+  },
+  "cloud": {
+    "host": "hz-4.matpool.com:26197 (24 cores / 172 GB / 2x RTX 3090 24GB)",
+    "concurrency": {
+      "processes": 3,
+      "gpus": 2,
+      "one_process_per_gpu": false,
+      "sharing": "packed by the memory pre-flight, not by a fixed map",
+      "threads_per_process": 4,
+      "seed_gpu_map": {
+        "11": 0,
+        "29": 1,
+        "47": 0
+      }
+    },
+    "checkpoint_dir": "trajectory/",
+    "artifacts_to_retrieve": [
+      "manifest.json",
+      "trajectory.json",
+      "exposure.json",
+      "events.jsonl",
+      "trajectory/training_state.pt",
+      "trajectory/training_state.json",
+      "budget_points/*.json",
+      "budget_points/*.parquet"
+    ]
+  },
+  "evaluation_scope": {
+    "cloud": "validation split 2023-11-01..2023-11-15 = 10 trading days, process diagnostic only",
+    "formal": "the five declared research windows produced locally by replaying exported per-budget-point weights; a cloud validation score is never the delivery evidence",
+    "sealed_final": "never read"
+  },
+  "single_factor_arm": {
+    "arm": "voladj",
+    "recipe_changes": {
+      "data.label_vol_adjustment": "realized_vol"
+    },
+    "forced_by_validation": {},
+    "inherited_from_rung": {
+      "recipe_config": "configs/scaling_441d_csz_seed29.json",
+      "recipe_sha256": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
+      "budget.max_train_samples": 500000,
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "scored_point": 1.32
+    },
+    "prior_evidence": {
+      "source": "src/jinyiquant/data.py realized_window_vol/apply_label_vol_adjustment, tests/test_label_vol.py",
+      "facts": [
+        "the label row set is invariant: on 202201/202203/202311 the loader's finite-label rows are 151616/183808/175784 with and without the factor and every row keeps a divisor",
+        "the divisor floor (1e-4) binds on 1061/1177/608 rows, and 238/19/41 rows whose window has fewer than three returns take the timestamp's cross-sectional median sigma instead",
+        "sigma percentiles on the loader's rows: p05/p50/p95 = 0.00051/0.00115/0.00315 (202201), 0.00057/0.00122/0.00316 (202203), 0.00041/0.00079/0.00208 (202311); the adjusted label's absolute median is ~1.8-2.0 versus ~0.0021-0.0024 raw, and its absolute p99 is ~7.7-8.4",
+        "the default path is byte-identical (labels, data_sha256, bar matrix, 5-step loss and checkpoint) between the absent key and the explicit 'none'"
+      ],
+      "confound": "the divisor rescales the label per row, so a RankIC gain can come from a better cross-sectional weight (risk normalisation) rather than from a better conditional mean; the primary metric is RankIC, which is scale-invariant per timestamp only if the divisor is constant within the timestamp. It is not, so the two readings are both consistent with the same metric move and the report must say so."
+    },
+    "driver_anchor": {
+      "name": "screen10-1.32 first, screen10-stepup-1.33 second",
+      "scored_point_effective_epochs": 1.32,
+      "stepup_point_effective_epochs": 1.33,
+      "why": "validate_budget_points refuses a plan with fewer than two strictly increasing points; putting 1.32 first keeps the scored point's full exposure guarantee and adds only ~1,100 optimizer steps for the throw-away point instead of a sub-epoch anchor that reconcile_exposure would reject",
+      "score_never_read": true,
+      "not_a_comparison": true
+    }
+  },
+  "budget_points": [
+    {
+      "name": "screen10-1.32",
+      "effective_epochs": 1.32,
+      "role": "registered anchor magnitude (C1 left side)"
+    },
+    {
+      "name": "screen10-stepup-1.33",
+      "effective_epochs": 1.33,
+      "role": "throw-away step-up point (~+1,100 optimizer steps): exists only because validate_budget_points demands two strictly increasing points; never scored, never exported for comparison"
+    }
+  ],
+  "one_continuous_trajectory": true,
+  "derived_reference": {
+    "estimate_not_budget": true,
+    "trading_days": 441,
+    "batch_size": 32,
+    "steps_expected": null,
+    "steps_derivation": "steps = round(effective_epochs * usable_rows / batch_size); usable_rows is measured by prepare_training when the run starts, printed in the run's start event before the first optimizer step, and the driver derives every budget point from that pool -- this plan pins no step count",
+    "steps_measured_reference": {
+      "hz-t3": {
+        "usable_samples": 3521680,
+        "1.32": 145269,
+        "1.33": 146370
+      },
+      "hz-4": {
+        "usable_samples": 3521680,
+        "1.32": 145290,
+        "1.33": 146390
+      },
+      "note": "same measured usable_samples on both hosts but a 21-step difference at the 1.32 point; the source is under investigation by the captain's line, so no fixed count is written here -- the driver re-derives at run start"
+    },
+    "usable_samples_estimate": 3522173,
+    "calibration": "level-1 measured 1054256 usable samples over 132 trading days, scaled linearly by trading days; 493-row gap against the 441-day pool",
+    "deviation_tolerance": {
+      "relative": 0.05,
+      "applies_to": [
+        "usable_samples",
+        "steps"
+      ],
+      "rule": "a realised value beyond +/-5% stops the run and reports; the estimate is not edited afterwards"
+    }
+  },
+  "driver_compatibility": {
+    "executable_as_written": true,
+    "rule": "validate_budget_points: two points, strictly increasing effective epochs",
+    "scored_point": "screen10-1.32 (exported, replayed and compared)",
+    "stepup_point": "screen10-stepup-1.33 (second checkpoint, never scored)",
+    "step_rule": "steps = round(effective_epochs * usable_samples / batch_size), re-derived by the driver from the pool prepare_training measured and printed at run start"
+  },
+  "approved_by": "captain 2026-10-28, option 1: scored-first [1.32, 1.33]; min_coverage stays 1.0 for this arm (shuffle sampler, no group truncation)",
+  "scored_point": "screen10-1.32",
+  "anchor_point_role": "driver_requires_two_points_only",
+  "non_scored_points": [
+    "screen10-stepup-1.33"
+  ],
+  "exported_for_comparison": [
+    "modified_tlob_weights-screen10-1.32.json"
+  ],
+  "non_scored_point_exclusion": "the 1.33 checkpoint, its predictions and its metrics are never compared; every replay reads only the 1.32 weights",
+  "checkpoint_naming": {
+    "rule": "scripts/run_training_trajectory.py:186 names each point's weights after the budget-point name",
+    "scored": "modified_tlob_weights-screen10-1.32.json",
+    "stepup": "modified_tlob_weights-screen10-stepup-1.33.json",
+    "no_overwrite": true
+  }
+}
