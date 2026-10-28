@@ -459,7 +459,10 @@
       }
     },
     "provenance_open_items": [
-      "hz-t3 derives 145269 steps and hz-4 145290 for the same 1.32 point; the arm runs on hz-t3 and the number is re-derived at run start and recorded in budget.json"
+      "hz-t3 derives 145269 steps and hz-4 145290 for the same 1.32 point; the arm runs on hz-t3 and the number is re-derived at run start and recorded in budget.json",
+      "the plans' derived_reference.steps_expected still shows the pre-registration estimate (145290 for the 1.32 point, no entry for the 1.33 step-up); it is documentation only, derive_budget_steps at run start is authoritative and printed 145269 / 146370",
+      "the registration file lives in the local repository (configs/, git commit c55aa96) and is not copied onto the training machines; the training driver verifies the recipe sha and the budget-point shape, not the registration file",
+      "generator output is not registrable: scripts/screen10_mh_configs.py re-derives the 441-day recipe and therefore restores the ladder identity on every run; the registered bytes are the post-repair ones, and the six files are read-only (chmod 444) on hz-t3"
     ],
     "host_note": "the plans' cloud.host text still names hz-4 (template inheritance); the arm actually runs on hz-t3 in /root/repo_mh, the same cosmetic deviation as the 600-day extension"
   },
