@@ -1,0 +1,531 @@
+{
+  "schema_version": "fusion-increment-registration/1",
+  "experiment_id": "fusion-increment-gate-20261028",
+  "kind": "protocol_registration",
+  "status": "registered",
+  "author": "evaluator",
+  "registered_at_utc": "2026-10-28T13:58:08Z",
+  "gate_script": {
+    "path": "scripts/fusion_increment_gate.py",
+    "modes": [
+      "audit",
+      "screen",
+      "confirm",
+      "single",
+      "self-test"
+    ],
+    "usage": [
+      "python scripts/fusion_increment_gate.py --mode audit",
+      "python scripts/fusion_increment_gate.py --mode audit --plan <route_plan.json>",
+      "python scripts/fusion_increment_gate.py --mode screen --plan <route_plan.json>",
+      "python scripts/fusion_increment_gate.py --mode single --plan <route_plan.json>",
+      "python scripts/fusion_increment_gate.py --mode confirm --plan <route_plan.json> --release <release.json>",
+      "python scripts/fusion_increment_gate.py --self-test",
+      "python scripts/fusion_increment_gate.py --mode screen --plan <route_plan.json>  # 读数含净收益(5bp)与换手标注"
+    ],
+    "note_zh": "audit 不读任何预测；screen/confirm/single/self-test 会在读之前校验注册文件与代码常量两侧一致、estimator sha、窗口角色 sha，任何一处被改过都直接 abort。"
+  },
+  "gate_script_sha256": "67b49de410d5eb4911959c0483353aba7fac682e815883a83638d2be2adcfa15",
+  "purpose_zh": "在十条新信息路线（R6+R8 盘口特征树、R11 邻居领先滞后、R12 跨日同时段、R13 归一化统计量旁路、R14 自监督预训练、R15 个股状态专家、R16 分位数头、R17 MiniRocket、R18 SAM）任何候选分数产生之前，把'融合增量'的判定口径、权重拟合块、区间估计、读数纪律与旁证清单一次性冻结，使后续每一条读数都只能按同一把尺子解释。",
+  "question_zh": "把某条新路线的预测以单一权重并入已冻结主干之后，主干在后继开发块上是否真的变好（样本外融合增量），而不是'与主干相关性低'、也不是'单模本身好看'。",
+  "applies_to_routes": [
+    "R6+R8",
+    "R11",
+    "R12",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R17",
+    "R18"
+  ],
+  "does_not_rewrite_zh": "R5 的既有结论只证明'从现有 14 个模型按时点选择'无效，R10 只证明'改善量在各组同为正向'；本文件不把它们当成'时间条件方向'或'分组一致性'的上界，也不改写它们的 verdict。",
+  "lineage": {
+    "window_roles_authority": {
+      "path": "configs/dev10_window_roles_20261028.json",
+      "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4",
+      "frozen_at_utc": "2026-10-28T12:12:00Z",
+      "note_zh": "8 筛查窗 / 2 确认窗、日数、+0.003 与 7/8 都来自该文件；本注册文件只是把同一套角色协议落到十条新路线上。"
+    },
+    "screening_addendum": {
+      "path": "configs/screen10_screening_addendum_20261028.json",
+      "note_zh": "screen10 臂已经 pin 过同一个 block_interval 实现与同一组 bootstrap 参数（block=5, draws=20000, seed=20261028）；本文件沿用同一 estimator，不再另立口径。"
+    },
+    "replay_plan": {
+      "path": "configs/dev10_replay_20261028_plan.json",
+      "sha256": "d6c465bdd5e9d43b9f4676b650f11881f0cbaa4df55d40a9b58191dc6a4431a5",
+      "note_zh": "十个窗口的 start/end 与窗口内日数取自该回放计划；主干的三个种子（r441_s11/r441_s29/r441_s47）同样是它声明的 rung 版本。"
+    }
+  },
+  "fusion_increment_definition": {
+    "trunk": {
+      "label": "441d@1.32 three-seed MLPLOB blend（128x12 原始盘口）",
+      "members": [
+        "r441_s11",
+        "r441_s29",
+        "r441_s47"
+      ],
+      "weights": "equal",
+      "source_plan": "configs/dev10_replay_20261028_plan.json"
+    },
+    "candidate": {
+      "label": "该路线唯一的主要配置",
+      "members": "由路线计划 candidate.members 声明",
+      "weights": "equal within the route",
+      "rule_zh": "每条路线只开一个主要配置；不允许在看完读数之后换配置再来一次，换配置等于开新方向、重新登记。"
+    },
+    "score_space": "每个臂先把成员原始分数等权平均，再做按 timestamp 的 cross-sectional z-score + 因果 EWMA（每日重置），即 scripts/mktctx_compare.py::daily_scores 的 house 口径；融合发生在平滑后的标准化空间。",
+    "ewma_alpha": 0.9111677303420447,
+    "fused": "fused(w) = (1 - w) * trunk_smoothed + w * candidate_smoothed",
+    "endpoints": {
+      "w_0": "逐位复现主干口径（--self-test 断言 fused(0) 与主干向量 bit-identical，日度 rank_ic 相同）",
+      "w_1": "逐位复现候选口径（单模读数即由此得到）",
+      "why_zh": "端点不变性保证'增量'只是两条已知读数的插值，而不引入第三套未知的预处理。"
+    },
+    "weight_fit": {
+      "window": "nov2023",
+      "start": "2023-11-01",
+      "end": "2023-11-14",
+      "trading_days": 10,
+      "grid": [
+        0.0,
+        0.05,
+        0.1,
+        0.15,
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "max_weight": 0.5,
+      "criterion": "maximize the mean of the weight-fit block's daily rank_ic of fused(w)",
+      "tie_break": "smallest w within 1e-9 of the maximum（对主干扰动最小的那个）",
+      "freeze": "w 拟合一次即冻结，写进每条读数的 weight 字段与账本 headline；任何 screen/confirm 读数之后重新拟合都属违规（confirm 会在账本里比对 w，不一致直接 abort）。",
+      "status_zh": "这 10 天是本地开发数据里最早的一块，也是 V3 验证 fortnight 本身，早已被模型选择花掉，不承担任何干净留出角色；把权重拟合放在这里，8 个筛查窗与 2 个确认窗就全部位于拟合之后。",
+      "cost_zh": "代价是 165 个筛查日里有 10 天（6.1%）参与过拟合，因此另设 post_freeze_guard：只用严格晚于拟合块的 155 天再要求一次均值 > 0。该 guard 只收紧、不放宽。",
+      "upper_bound_rationale_zh": "w>0.5 等于'用新路线替换主干'，那是另一个问题（相当于重新选主干），不在本闸门范围内。"
+    },
+    "increment": "Delta = 每日 rank_ic(fused) - 每日 rank_ic(trunk)，在 (window, trading day) 内配对；种子在 blend 内部，不作为独立天数，因此配对单位只有交易日。",
+    "single_model_rule": "arm_kind=single_model（裸模型、没有并入主干）只报描述性读数，闸门拒绝给它 verdict；'单模很好'不构成融合增量。"
+  },
+  "estimator": {
+    "implementation": "scripts/compare_blend_replay.py::block_interval",
+    "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+    "blocks": "每个 replicate 抽 ceil(n/5) 个随机起点，各取 5 个连续值（模 n 环绕）拼接求均值",
+    "block_days": 5,
+    "draws": 20000,
+    "seed": 20261028,
+    "interval": "2.5% / 97.5% 分位数",
+    "paid_series": "每个交易日一个值（blend 层的日配对差）；不把同日多只股票当独立证据，也不把多个种子当独立天数",
+    "retired_estimator": "archived_single_block_interval：只并列报出（archived_ci_low/high），用于解释历史读数为何偏保守，永不门控",
+    "bootstrap_unit_note_zh": "按 (window, trading day) 配对后，把 8 个筛查窗的日差按注册顺序首尾拼成一条 165 天序列再做块 bootstrap；块可能跨越月份边界，这与 scripts/mktctx_compare.py::pair_stats 的既有口径一致，记录在案。",
+    "bias_note_zh": "块 bootstrap 只处理'日内横截面高度相关'这一层不确定性；它不处理'十窗被反复筛选'这一层，后者只能靠确认窗与门槛纪律。"
+  },
+  "window_roles": {
+    "authority": {
+      "path": "configs/dev10_window_roles_20261028.json",
+      "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4"
+    },
+    "replay_plan": {
+      "path": "configs/dev10_replay_20261028_plan.json",
+      "sha256": "d6c465bdd5e9d43b9f4676b650f11881f0cbaa4df55d40a9b58191dc6a4431a5"
+    },
+    "windows": [
+      {
+        "name": "nov2023",
+        "start": "2023-11-01T00:00:00",
+        "end": "2023-12-01T00:00:00",
+        "trading_days": 22,
+        "role": "screen"
+      },
+      {
+        "name": "jan2024",
+        "start": "2024-01-01T00:00:00",
+        "end": "2024-02-01T00:00:00",
+        "trading_days": 22,
+        "role": "screen"
+      },
+      {
+        "name": "feb2024",
+        "start": "2024-02-01T00:00:00",
+        "end": "2024-03-01T00:00:00",
+        "trading_days": 15,
+        "role": "screen"
+      },
+      {
+        "name": "mar2024",
+        "start": "2024-03-01T00:00:00",
+        "end": "2024-04-01T00:00:00",
+        "trading_days": 21,
+        "role": "screen"
+      },
+      {
+        "name": "apr2024",
+        "start": "2024-04-01T00:00:00",
+        "end": "2024-05-01T00:00:00",
+        "trading_days": 20,
+        "role": "screen"
+      },
+      {
+        "name": "may2024",
+        "start": "2024-05-01T00:00:00",
+        "end": "2024-06-01T00:00:00",
+        "trading_days": 20,
+        "role": "screen"
+      },
+      {
+        "name": "jun2024",
+        "start": "2024-06-01T00:00:00",
+        "end": "2024-07-01T00:00:00",
+        "trading_days": 19,
+        "role": "confirmation"
+      },
+      {
+        "name": "jul2024",
+        "start": "2024-07-01T00:00:00",
+        "end": "2024-08-01T00:00:00",
+        "trading_days": 23,
+        "role": "screen"
+      },
+      {
+        "name": "aug2024",
+        "start": "2024-08-01T00:00:00",
+        "end": "2024-09-01T00:00:00",
+        "trading_days": 22,
+        "role": "screen"
+      },
+      {
+        "name": "sep2024",
+        "start": "2024-09-01T00:00:00",
+        "end": "2024-10-01T00:00:00",
+        "trading_days": 19,
+        "role": "confirmation"
+      }
+    ],
+    "screen": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jul2024",
+      "aug2024"
+    ],
+    "confirmation": [
+      "jun2024",
+      "sep2024"
+    ],
+    "screen_days": 165,
+    "confirmation_days": 38,
+    "total_days": 203,
+    "post_freeze_days": 155,
+    "note_zh": "nov2023 是筛查窗，但 2023-11-01..2023-11-14 同时是权重拟合块；post_freeze_days = 165 - 10。"
+  },
+  "reading_discipline": {
+    "screen": {
+      "windows": 8,
+      "days": 165,
+      "repeatable": true,
+      "ledger": "runs/fusion-gate/read_ledger.jsonl（append-only，每次读一条：read_id/utc/route/mode/plan_sha256/registration_sha256/gate_sha256/windows/headline）",
+      "note_zh": "筛查可以反复看，但每次看都进账本并写入冻结的 w 与当次 headline，所以'看了几次、每次看到什么'本身是公开事实，不允许只引用最好的一次。"
+    },
+    "confirmation": {
+      "windows": [
+        "jun2024",
+        "sep2024"
+      ],
+      "days": 38,
+      "read_budget_per_direction": 1,
+      "unlock": "只有该方向 screen 读数 decision.verdict == clears_fusion_gate 才解锁",
+      "release": "需要队长放行文件 {\"route\": <route>, \"released_by\": \"captain\", \"screening_read_id\": <screen read_id>}；缺放行文件、放行文件的 screening_read_id 不在账本里、或该 route 账本里已有 confirm 记录，都会拒绝",
+      "weight_freeze": "确认读会用账本里筛查时的 w；若重算出来的 w 与账本不一致，直接 abort（说明有人在读数之后动过拟合）",
+      "criterion": "池化配对均值 > 0 且 >= 21/38 个交易日为正",
+      "criterion_zh": "否决线不是晋升线：38 天无法建立显著性，只用来否掉筛查期侥幸通过的方向。"
+    },
+    "ten_window_read": {
+      "allowed_only_as": "final_report",
+      "consequence_zh": "一旦报告里给出十窗/203 天的池化数，jun2024/sep2024 即被花掉；之后的新方向只能靠 8 窗 + 更高门槛。闸门因此在 screen/confirm 模式下拒绝输出十窗池化数。"
+    },
+    "no_confirmation_reuse_for_tuning": true,
+    "no_refit_after_read": true,
+    "no_seed_selection_after_reads": true
+  },
+  "mandatory_side_reports": {
+    "long_short_daily_mean": {
+      "required": true,
+      "caliber": "eval-v2 日度 long_short_return，主干/候选/融合三方的水平值与融合-主干的日配对差及其块区间",
+      "policy_zh": "描述性：rank_ic 增量为正而多空为负时必须上报队长，但它不重算闸门结论。"
+    },
+    "turnover": {
+      "required": true,
+      "caliber": "eval-v2 turnover = U/2 的日度均值，主干/候选/融合三方水平值与日配对差；越低越好",
+      "policy_zh": "只报不门控；通过但换手明显上升的路线，由队长在决定是否投入扩种子时权衡。"
+    },
+    "net_return_5bp": {
+      "required": true,
+      "caliber": "直读 eval-v2 sections 的 net_return（single_side_rate = 5e-4，house 固定 5bp 压力场景，对应 b4 注册文件的 stress_single_side_rate_bp=5.0）；日度聚合是等时间戳均值且未定义时点跳过、不零填，因此 net5 与 gross 的日度差不一定等于 5e-4 × 日度 U，禁止用 long_short_return - 5e-4*U 反推；报主干/候选/融合三水平日度均值 + 配对差与区间，并报 days_defined / days_undefined（无前一组合的交易日成本未定义，配对时剔除而不是补零）",
+      "policy_zh": "只报不门控：晋升阶段的 net5_limit = 5.62e-05 才是门；但缺 net5 的读数算不完整，因此同样不允许 clears。",
+      "blocking": "缺 net5 ⇒ side_reports.complete = false ⇒ verdict = blocked_missing_cost_report"
+    },
+    "inference_cost": {
+      "required": true,
+      "source": "该路线推理时写出的 inference_cost.json（total_seconds / shared_preprocessing_seconds / chunks[].per_seed_seconds / resources.gpu_peak_memory_mb / platform_verified）",
+      "reported_as": "候选每秒每交易日 = total_seconds / days_covered，另附峰值显存与 platform_verified 标记；融合臂的边际成本就是候选自己的前向（主干已经付过钱）+ 一次线性组合",
+      "blocking": "缺成本报告 → side_reports.complete = false → 不许 clears_fusion_gate，verdict 记为 blocked_missing_cost_report"
+    },
+    "note_zh": "四条旁证必须同时出现，缺一条就是读数不完整而不是“零成本”；换手与 net5 都只报不门控，gate 只用它们判“读数是否完整”。"
+  },
+  "decision": {
+    "metric": "rank_ic",
+    "min_improvement": 0.003,
+    "ci_must_exclude_zero": true,
+    "min_positive_windows": 7,
+    "windows_total": 8,
+    "positive_rule": "每个窗口按它自己的交易日算池化配对均值，> 0 记为正",
+    "post_freeze_guard": {
+      "days": 155,
+      "condition": "只保留严格晚于 2023-11-14 的交易日，池化配对均值 > 0",
+      "rationale_zh": "只收紧不放松：它只能在 165 天读数已经通过之后再否掉一个方向（例如增量全部来自拟合块本身）。"
+    },
+    "confirmation": {
+      "days": 38,
+      "min_positive_days": 21,
+      "criterion_zh": "池化配对均值 > 0 且 >= 21/38 个交易日为正"
+    },
+    "unlocks": "通过只解锁'下一轮扩种子'（多点种子、更多窗口、更严的复验），不解锁提交或晋升；晋升还要看多空、换手、成本与官方流程。",
+    "verdicts": {
+      "clears_fusion_gate": "全部条件满足：可以进入下一轮扩种子",
+      "no_allocation": "权重拟合块把 w 选成 0：这条路线的信息在主干之外没有可分配份额",
+      "below_threshold": "池化均值低于 +0.003",
+      "interval_includes_zero": "修正后的块区间含 0",
+      "positive_windows_below_7": "为正的筛查窗少于 7/8",
+      "post_freeze_mean_not_positive": "冻结后的 155 天均值不为正：增量来自拟合块本身",
+      "blocked_missing_cost_report": "推理成本没报，读数不完整",
+      "descriptive_only": "单模或未并入主干的读数：只报描述，不给 verdict"
+    },
+    "single_model": "arm_kind=single_model 一律 descriptive_only；单模的好看与否不进入本闸门。",
+    "threshold_change": "禁止。门槛同时写在本文件与 scripts/fusion_increment_gate.py 的常量里，两侧不一致脚本直接 abort。"
+  },
+  "selection_bias_acknowledgment": {
+    "ten_window_reuse_zh": "十个开发窗在本日之前已经被十几个候选反复使用（见 configs/screen10_screening_addendum_20261028.json 与 artifacts/decisions-20261028）：165 个筛查日不是新鲜样本，+0.003 与 7/8 是'值得花确认额度'的最低证据，不是效应量的无偏估计。",
+    "multiplicity": "十条路线（R6+R8/R11..R18）将在同一批筛查日上依次读数，本闸门不做多重性校正；按 Bonferroni 直觉，'十条里挑最好的一条 +0.003' 与'一条路线真的 +0.003'并不等价。因此单条通过只能支持扩种子，不能支持'已证明有超额'。",
+    "mitigations": [
+      "权重只在最早开发块拟合一次并冻结（不在任何读数之后重拟合）",
+      "确认窗每方向只读一次，且必须持队长放行文件",
+      "每次读（含筛查）都进 append-only 账本，冻结的 w 与 headline 一起留痕",
+      "post_freeze_guard：155 天真值条件只收紧不放宽",
+      "门槛写死在代码与注册文件两侧，任一侧被改都 abort",
+      "确认窗读数不得回流用于调参或挑配置"
+    ],
+    "residual_risk_zh": "即使全部通过，结论也只能是'这条路线值得扩种子'。若最终仍要拿十窗数字说服人，必须同时承认十窗已被反复筛选，确认窗额度已花掉。"
+  },
+  "known_limitations_zh": [
+    "样本外只到 2024-09 为止的本地开发数据；203 天全部是开发数据，官方评价口径未知，本地指标只是近似。",
+    "单条路线的候选配置只开一个，因此'这条路线'的结论有配置依赖；换配置必须重新登记、重新读，不能复用本次读数。",
+    "融合只考虑凸组合到主干（w<=0.5）；非线性堆叠、特征拼接、重训主干都不在本闸门范围内。",
+    "rank_ic 是主判据；如果某条路线只改善多空或换手而不改善 rank_ic，本闸门会把它判成没有融合增量，这正是注册口径。",
+    "bootstrap 的块长度固定 5 日；若真实自相关结构更长，区间会偏窄（这是既有 house 口径，不在本文件改动范围）。"
+  ],
+  "red_lines": {
+    "no_score_before_registration": true,
+    "no_threshold_change": true,
+    "no_refit_after_read": true,
+    "no_confirmation_tuning": true,
+    "no_seed_selection_after_reads": true,
+    "no_manual_metric_edits": true,
+    "no_plan_pin_drift": true,
+    "enforcement_zh": "脚本在每次读数前校验：注册文件里 pin 的 windows roles sha256、replay plan sha256、block_interval sha256、闸门脚本自身 sha256，以及注册阈值与代码常量是否两侧一致；任何一处不一致直接 abort，且账本里记下本次读数使用的 registration_sha256/gate_sha256。"
+  },
+  "route_plan_schema": {
+    "schema_version": "fusion-route-plan/1",
+    "why_zh": "每条路线只写一个计划文件（唯一主要配置），闸门只认这个文件；计划必须 pin 当前注册文件的 sha256，注册文件一改，旧计划就作废（脚本会拒绝运行）。",
+    "template": {
+      "schema_version": "fusion-route-plan/1",
+      "experiment_id": "r18-minirocket-fusion-20261028",
+      "route": "R18",
+      "arm_kind": "fused",
+      "registration": {
+        "path": "configs/fusion_increment_registration_20261028.json",
+        "sha256": "<本文件的 sha256>"
+      },
+      "incumbent": {
+        "label": "441d@1.32 three-seed MLPLOB trunk",
+        "run_dir": "/root/runs/dev10-replay-20261028/<run-id>",
+        "members": [
+          {
+            "seed": "11",
+            "version": "r441_s11"
+          },
+          {
+            "seed": "29",
+            "version": "r441_s29"
+          },
+          {
+            "seed": "47",
+            "version": "r441_s47"
+          }
+        ],
+        "cost": {
+          "paths": [
+            "/root/runs/dev10-replay-20261028/<run-id>/inference/trunk/inference_cost.json"
+          ],
+          "label": "trunk"
+        }
+      },
+      "candidate": {
+        "label": "R18 MiniRocket（唯一主要配置）",
+        "run_dir": "/root/runs/r18-minirocket-20261028/<run-id>",
+        "members": [
+          {
+            "seed": "11",
+            "version": "mr_s11"
+          }
+        ],
+        "cost": {
+          "paths": [
+            "/root/runs/r18-minirocket-20261028/<run-id>/inference/<window>/inference_cost.json"
+          ],
+          "days_covered": null,
+          "label": "R18"
+        }
+      }
+    },
+    "fields": {
+      "arm_kind": "fused = 并入主干；single_model = 裸模型，只出描述",
+      "incumbent.run_dir": "含 windows/<window>/{keys,targets}.parquet 与 windows/<window>/<version>/predictions.parquet 的回放目录",
+      "candidate.members": "该路线主要配置的成员；一个成员就写一个",
+      "cost.paths": "该路线推理写出的 inference_cost.json；多个窗口就列多个，脚本会累加",
+      "cost.days_covered": "可选；不给就从 chunks[].dates 推"
+    }
+  },
+  "evidence_of_no_score_at_registration": {
+    "statement": "本文件落盘时，仓库里没有任何 R6/R8/R11..R18 的候选预测、读数或部分读数；runs/fusion-gate/read_ledger.jsonl 不存在。",
+    "checks_zh": [
+      "闸门脚本 --mode audit 不读任何预测（audit.reads_any_prediction == false），注册前只跑 self-test（合成数据）与 audit",
+      "self-test 的数据全部由 np.random.default_rng 合成，写在临时目录，不读取 runs/ 下任何真实预测",
+      "本次登记之前没有对任何候选调用过 --mode screen/confirm/single",
+      "amendments 与 net5/annotation 的加入发生在账本仍为空（reads_total=0）时，因此不构成“看过分数再改口径”；此后任何口径改动都必须新开 _v2 注册文件。"
+    ],
+    "note_zh": "审计方法：read_ledger.jsonl 的首条记录应出现在本文件注册之后；若首条记录早于 registered_at_utc，说明'先读后注册'。"
+  },
+  "reporting_contract_zh": {
+    "每份读数必须包含": [
+      "冻结的 w 与拟合块轮廓（11 个网格点的 rank_ic）",
+      "8 窗逐窗 delta 均值 + 池化均值与修正区间（并列 archived 区间）",
+      "为正的窗数与窗名",
+      "post-freeze 155 天均值",
+      "多空日均、换手、推理成本三项旁证",
+      "verdict 与 fail_reasons",
+      "选择偏差声明"
+    ],
+    "禁止": [
+      "只报池化均值不报区间",
+      "只报最好的一次筛查读数",
+      "用确认窗结果回头调阈值/配置",
+      "把单模好看的读数说成融合增量"
+    ]
+  },
+  "annotations": {
+    "turnover_attention": {
+      "field": "decision.annotations.turnover_attention",
+      "trigger": "融合臂相对主干的日度 Δturnover 池化配对均值 > +0.0318",
+      "turnover_attention_threshold": 0.0318,
+      "provenance_zh": "0.0318 是 441 候选晋升时用过的 turnover_mean 退化线（b4 晋升注册文件的 secondary_limits.turnover_mean）；本注册文件只把它搬来做标注阈值，不在筛选层门控。",
+      "effect_zh": "不改变 verdict / fail_reasons / clears；只写进结果、账本 headline 与 side_reports.annotations，让晋升阶段一定看到。",
+      "does_not_gate": true
+    },
+    "note_zh": "annotations 只做标注、不参与 verdict 计算；本条 amendment 只改读数口径（net5 直读、未定义日剔除并计数），判定阈值、筛查窗名单、estimator（ceil(n/5) 块 bootstrap、20000 draws、seed 20261028）与拟合块日期一个都没动。"
+  },
+  "amendments": [
+    {
+      "utc": "2026-10-28T14:20:00Z",
+      "author": "evaluator",
+      "kind": "protocol_extension_before_first_read",
+      "reason_zh": "队长 2026-10-28 决定：换手在筛选层只报不门控（换手已在晋升门被门控过，筛选层再加一道会重复惩罚），但必须在 verdict 里留下 attention 标注；成本旁证除 turnover 外必须同报 net5（5bp 净收益）。",
+      "changes_zh": [
+        "mandatory_side_reports 增加 net_return_5bp（eval-v2 net_return @ single_side_rate=5e-4），缺它同样视为读数不完整；",
+        "新增 annotations.turnover_attention：Δturnover 池化均值 > +0.0318 时置 true，只标注、不改变 verdict；",
+        "gate_script_sha256 更新到包含上述两项的脚本（判定阈值、窗口、estimator、种子一个都没动）；decide_screen 增加 side_complete 入参，使“缺 net5”也落到 blocked_missing_cost_report。"
+      ],
+      "thresholds_unchanged": true,
+      "reads_on_record_at_amendment": 0,
+      "gate_script_sha256_before": "76df6adb34d9af69b38f5e3d7749dd4e34e3454cfe749722a73bbf075ee05252",
+      "gate_script_sha256_after": "3f849e020015fd0aed405b94f242c2345b97c107bba44317dea0fccad186b17f"
+    },
+    {
+      "utc": "2026-10-28T14:45:00Z",
+      "author": "evaluator",
+      "kind": "caliber_correction_before_first_read",
+      "reason_zh": "自测抓到我自己的 net5 口径错误：我原来用 long_short_return - 5e-4*U 反推 5bp 净收益。eval-v2 的日度聚合是“等时间戳均值、逐列跳过 NaN”，而 net_return/cost 只在 change 有定义的时间戳上存在（首日没有前序组合、标签重叠、常数组合时点都不计），gross 的时间戳覆盖更宽，两者相减会系统性偏（synthetic 22 天窗口实测最大偏差 0.872，且首日净收益为 NaN）。改为直接用 single_side_rate=5e-4 调 evaluate 并从 sections 直读 net_return；eval-v2 里成本只进 cost/net_return 两列，其余列逐位不变，所以一次 5e-4 的 evaluate 同时给出 gross 与 net5。",
+      "changes_zh": [
+        "daily_metrics 改为 evaluation_config(5e-4) + 直读 daily['net_return']，删除 total_abs_weight_change 反推路径；",
+        "read_windows 对每个指标先取 isfinite(配对差) 掩码再跑块 bootstrap，per_window 报 days/days_defined/days_undefined，pooled 只收有定义的交易日（成本未定义的日不补零），pooled 另带 days_defined/days_undefined；",
+        "self-test 三条新检查：net5 = net0 - cost5（逐日恒等式，<1e-12）、0bp 与 5bp 的 rank_ic/turnover/long_short_return 逐位相同（证明单次 5e-4 evaluate 给出 gross）、net5 未定义日计数闭合到 165 且 rank_ic 无未定义日；",
+        "net_return_5bp 旁证块补 days_defined/days_undefined；注册文件 caliber 文字改为“直读 net_return、禁止反推”。"
+      ],
+      "thresholds_unchanged": true,
+      "reads_on_record_at_amendment": 0,
+      "gate_script_sha256_before": "3f849e020015fd0aed405b94f242c2345b97c107bba44317dea0fccad186b17f",
+      "gate_script_sha256_after": "67b49de410d5eb4911959c0483353aba7fac682e815883a83638d2be2adcfa15"
+    },
+    {
+      "utc": "2026-10-28T15:05:00Z",
+      "author": "evaluator",
+      "kind": "route_registration_added_before_first_r12_read",
+      "reason_zh": "captain 指派 R12 作为第二条 screen 路线。闸门需要在注册文件里有显式的路线登记块（候选零参数、w 由拟合冻结、预期 profile 与反证条件、成本文件、数据来源），且不得改动任何既有字段、判定阈值或窗口名单。",
+      "changes_zh": [
+        "新增 route_registrations[0]（route=R12）：候选 r12_tilt 构造、零参数声明、w_source=gate_fit、expected_fit_weight=0.20 与偏差说明、refutation、成本文件、数据来源、四条 notes。",
+        "amendments 追加本条：记录本次改动前的文件 sha256；改动后的 sha256 记录在 R12 plan 的 registration.sha256 与 read_ledger 的 R12 行（自引用无法写进文件本身）。"
+      ],
+      "thresholds_unchanged": true,
+      "reads_on_record_at_amendment": {
+        "R6+R8_screen": 1,
+        "R12_screen": 0
+      },
+      "registration_sha256_before": "b602302135718d74a45a50c772bc7f10808d565ce7aae78bd1a3a39ed0b30a2e",
+      "registration_sha256_after_note_zh": "R6+R8 的 plan（pin b6023021…）与冻结包中 registration 资产是 14:46/14:53 时刻的快照，在该时点有效、不回填；R12 的 plan pin 改动后的新 sha，两者各自可复跑。"
+    }
+  ],
+  "route_registrations": [
+    {
+      "route": "R12",
+      "title_zh": "跨日同一时段记忆：只在 14:30 截面倾斜的零参数融合",
+      "registered_at_utc": "2026-10-28T15:05:00Z",
+      "registered_by": "evaluator",
+      "authority_zh": "captain 2026-10-28 决定：R12 作为 runs/fusion-gate 的第二条 screen 路线。w 仍由闸门在 nov2023 拟合块（2023-11-01..2023-11-14，10 个交易日）拟合后冻结，不继承 memory-owner 的 0.20。",
+      "plan": "runs/fusion-gate/plans/r12-screen-20261028.json",
+      "candidate": {
+        "label": "R12 跨日同时段 14:30 倾斜（唯一主要配置）",
+        "version": "r12_tilt",
+        "arm_kind": "fused",
+        "construction_zh": "候选 = 主干三种子等权 blend 的原始分数 + 仅 14:30 截面叠加零参数复合信号（mem_ret_mean5/tstat5/hit5/mean20/tstat20/hit20，tilt_mean≈+5.0e-4）。14:30 之外与主干逐位相同（evaluator 独立复核 8 窗 off_slot_changed_rows=0，off_slot_max_abs_delta=0），因此不动任何非 14:30 截面。不训练参数，也不自带融合权重。",
+        "w_source": "gate_fit：nov2023 内 2023-11-01..2023-11-14 共 10 个交易日、按 (window, trading day) 配对，在网格 0.00..0.50 上最大化该块 rank_ic 均值后冻结；不继承 owner 的 0.20。",
+        "zero_parameter": true
+      },
+      "expectation_before_read": {
+        "expected_fit_weight": 0.2,
+        "note_zh": "captain 预期拟合权重应接近 0.20。evaluator 在读分数前做了两项独立复核：①14:30 之外候选与主干逐位相同（8 窗 0 行改变，max|Δ|=0.0），故 w 只作用于 14:30 行；②14:30 截面的主干原始分横截面标准差中位数约 1.7e-4~2.1e-4，tilt 幅度 5.0e-4 约为该截面 2.7 倍标准差，平滑后 14:30 的 |Δz| 均值约 1.0、与主干在该截面的 Spearman 秩相关仅 0.02~0.11 —— 即候选在 14:30 实质是'用记忆复合信号重排该截面'，而不是轻微倾斜。因此 w 的拟合面未必平坦：w 的解释是'14:30 截面上记忆排序的权重'，拟合到上界 0.5 属于可能结果，读数后须按此口径解释。",
+        "expected_profile_shape_zh": "14:30 只占每日 8 个截面的 1/8，日度 Δrank_ic 近似 = w × (14:30 截面 IC 增益) / 8；若该截面 IC 增益约 0.021~0.031（memory-owner verify_confined），则 w=1 的量级上限约 0.0026~0.0039，w=0.2 约 0.0005~0.0008（与 owner probe 的 +0.0024 存在口径差异，需在报告里说明 probe 空间 vs eval-v2 空间）。",
+        "refutation_zh": "8 窗池化 Δrank_ic < +0.003，或修正后 CI 含零，或正窗 <7/8，或 post-freeze 155 天均值不为正，或缺失成本/旁证读数 —— 任一成立即判 no_allocation/below_threshold/interval_includes_zero/positive_windows_below_7/post_freeze_mean_not_positive/blocked_missing_cost_report，不进入下一轮。"
+      },
+      "cost": {
+        "paths": [
+          "runs/r12-slot1430-tilt-20261028/20261028T1430Z_r12tilt/inference/inference_cost.json"
+        ],
+        "days_covered": 165,
+        "note_zh": "tilt 构造零参数、无训练成本，推理只在 14:30 截面加一次复合信号；成本按 inference_cost.json 的 total_seconds/交易日 报。"
+      },
+      "data_source_zh": "候选 run：runs/r12-slot1430-tilt-20261028/20261028T1430Z_r12tilt（version r12_tilt）；对齐视图：runs/fusion-gate/aligned-r12-tilt-20261028（scripts/fusion_aligned_view.py 生成，仅 8 个筛查窗，未触碰 jun2024/sep2024）；incumbent：本地回放 runs/dev10-replay-20261028/20261028T094439.842764Z_0854d2d5ca3d 的 r441_s11/r441_s29/r441_s47。",
+      "notes_zh": [
+        "零参数：复合信号只由 6 个既定记忆特征等权构成，tilt 幅度固定 5.0e-4，候选侧不拟合任何东西。",
+        "w 是闸门唯一拟合参数，且拟合后冻结；确认窗（jun2024/sep2024）未读、不在本路线登记范围。",
+        "候选是'主干 + 14:30 倾斜'，因此端点 w=0 精确复现主干、w=1 精确复现候选，融合定义与注册文件一致。",
+        "若读数显示 Δturnover 在 w<=0.5 时仅约 0.002~0.004 量级，则该路线在换手经济上显著优于树模型路线（R6+R8 的 Δturnover=+0.0326）。"
+      ]
+    }
+  ]
+}

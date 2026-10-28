@@ -1,0 +1,121 @@
+{
+ "schema_version": "fusion-route-plan/1",
+ "experiment_id": "r12-slot1430-tilt-fusion-20261028",
+ "route": "R12-slot1430-tilt",
+ "arm_kind": "fused",
+ "registration": {
+  "path": "configs\\fusion_increment_registration_20261028.json",
+  "sha256": "9619c3e4740518571372e086d0c98cfff10b51685640168416d879e41f89567c"
+ },
+ "incumbent": {
+  "label": "441d@1.32 three-seed MLPLOB trunk",
+  "run_dir": "runs/fusion-gate/aligned-r12-tilt-20261028",
+  "source_run_dir": "runs/dev10-replay-20261028/20261028T094439.842764Z_0854d2d5ca3d",
+  "note_zh": "回放原目录的 keys.parquet 是无标签键的超集（216/192/16/112/88/200/272/248 行），闸门 read_window 会直接 abort；这里用 scripts/fusion_aligned_view.py 产出的对齐视图（与 R6+R8 的 screen 计划同一套视图口径）。",
+  "members": [
+   {
+    "seed": "11",
+    "version": "r441_s11"
+   },
+   {
+    "seed": "29",
+    "version": "r441_s29"
+   },
+   {
+    "seed": "47",
+    "version": "r441_s47"
+   }
+  ],
+  "cost": {
+   "paths": [
+    "/root/runs/dev10-replay-20261028/20261028T094439.842764Z_0854d2d5ca3d/inference/trunk/inference_cost.json"
+   ],
+   "label": "trunk",
+   "note_zh": "本地回放目录里没有 inference/ 产线成本文件；缺失只会让旁证写成 unavailable，不参与判决（判决只看候选成本）。"
+  }
+ },
+ "candidate": {
+  "label": "R12 跨日同一时段记忆：仅 14:30 的 per-slot 倾斜（零参数）",
+  "run_dir": "runs/fusion-gate/aligned-r12-tilt-20261028",
+  "source_run_dir": "runs/r12-slot1430-tilt-20261028/20261028T1430Z_r12tilt",
+  "members": [
+   {
+    "seed": "none",
+    "version": "r12_tilt"
+   }
+  ],
+  "declaration": {
+   "kind": "zero_parameter_tilt",
+   "fitted_parameters": 0,
+   "w_source": "gate_fitted_on_fit_block",
+   "w_source_note_zh": "倾斜构造本身零参数（成员等权百分位排名，无拟合）；w 由闸门在 nov2023 的 2023-11-01..2023-11-14 十天权重网格上拟合后冻结。0.20 只是本脚本旁证用的固定先验，不是拟合结果，也不进入正式读数。",
+   "per_slot_definition": {
+    "14:30": "mem_ret_family6 的截面百分位排名（成员等权，无拟合）",
+    "其它7个时点": "主干等权 blend 原样透传（等价于该时点融合权重 0）"
+   },
+   "information_source": "过去 5/20 个交易日的同时段已实现收益摘要，严格只用 t 之前已完成的交易日",
+   "why_single_slot_zh": "其余 7 个时点的单变量 IC 与混合增量 CI 全部跨 0；只有 14:30 通过 CI 与 8/8 窗判据"
+  },
+  "cost": {
+   "paths": [
+    "runs/r12-slot1430-tilt-20261028/20261028T1430Z_r12tilt/inference/inference_cost.json"
+   ],
+   "days_covered": null,
+   "label": "R12-slot1430-tilt"
+  }
+ },
+ "cost_report": {
+  "total_seconds_per_trading_day": 0.14392065108291105,
+  "peak_rss_mb": 797.375,
+  "platform_verified": false,
+  "measurement": "cpu_wall_clock_local",
+  "breakdown_seconds_per_day": {
+   "ingest_bars": 0.11105110000062268,
+   "memory_features": 0.01786652380958133,
+   "score_and_fuse": 0.01500302727270702,
+   "total": 0.14392065108291105
+  },
+  "caliber_zh": "只算候选自己的边际成本：1 天新 bar 进 buffer + 20 日窗口统计 + 8 时点打分；主干前向不计（已付过钱）。平台未验证。",
+  "extra_history_zh": "family6 用到 20 个过去交易日，平台现有 history_days=10 个自然日（≈7 个交易日）不足以覆盖，需要提到 ≈35 个自然日才能算 mem_*_20；主干 128 分钟窗口不受影响。"
+ },
+ "expected_effect": {
+  "caliber": "probe-space（无 z-score/EWMA，w=0.20）14:30 单时点混合增量",
+  "slot_delta": "+0.019135 CI [0.009467,0.028946] 8/8 窗",
+  "pooled_delta": "+0.002392 CI [+0.001183,+0.003618]（= 单时点增量 / 8）",
+  "house_side_evidence_w0.20": "+0.003366 CI [+0.003076,+0.003652]",
+  "caveat_zh": "两条口径都在 0.0034 晋升线之下（house 0.003366 < 0.0034，probe 0.002392 更小），所以这只是一次正式读数，不构成改进声明；正式 w 由 evaluator 在拟合块上定，读数以闸门为准。"
+ },
+ "red_lines_acknowledgment": {
+  "read_only_past_days": true,
+  "no_sealed_window": true,
+  "no_confirmation_window": true,
+  "no_training": true,
+  "no_weight_fit_here": true
+ },
+ "paths_note_zh": "两臂 run_dir 都是仓库相对路径 runs/fusion-gate/aligned-r12-tilt-20261028（对齐视图，与 R6+R8 的 screen 计划同一口径）；候选自己的产物镜像在 source_run_dir。远端若挂载点不同，只需保证该相对路径可解析，不要改路径字符串（读数开始后视为 plan pin）。",
+ "platform_requirement": {
+  "status_zh": "未在平台实测（本地镜像离线复演，仅证数据可达与查询形状）",
+  "need_zh": "逐股逐日 8 个采样时点 × 30 根 1m bar × 20 个已完成交易日 = 4800 根/股；1000 只股票的一次冷启动约 4.8M 行 bar。",
+  "why_existing_channel_is_not_enough_zh": "平台现有 HistoryRecovery 的行号窗口是 lookback=128 根 bar（约 2 小时），只够主干 128×12 的输入；R12 需要跨 20 个交易日的固定时钟切片，形状不同，不能靠这条通道补齐。",
+  "recommended_route_zh": "优先走配置而不是代码：把权重 JSON 的 preprocessing.history_days 由 10 提到 约 40 个自然日（≈28 个交易日），现有的逐日 bar 循环本身就会把这些 bar 取上来，R12 只需在内存里保留每日 8 个时点的摘要（每股票每日 8 个数），不需要新查询通道。",
+  "alternative_route_zh": "若不愿为多出的 30 天付主干 128 根窗口的取数量：新增一条有界查询通道，按 (date >= lower AND date < warm_start) + 逐股分块（instrument_batch_size=50，与 HistoryRecovery 同款分块）取固定时钟切片，20 次/日。",
+  "query_shape_zh": "SELECT date, instrument, <6 列> FROM bar1m WHERE date >= TIMESTAMP lower AND date < TIMESTAMP warm_start AND instrument IN (batch)，按 (date,instrument) 排序后落 20×8×30 的环形缓冲。",
+  "cost_estimate_zh": "计算：本地实测 143.9 ms/交易日（接入 111.1 + 窗口统计 17.9 + 打分 15.0，CPU、镜像数据）；常驻内存：20 日 × 8 时点 × 1000 股 ≈ 1.6e5 个数 ≈ 1.3 MB（相对 797 MB 的实测峰值可忽略）；取数：冷启动约 4.8M 行（route A 下为 40 自然日 ≈ 9.6M 行量级），本地 parquet 读 5.5M 行/6 列约 1.1 s，DAI 网络延迟未标定——这一项未在平台实测。",
+  "does_not_change_zh": "本说明不改 modified_tlob/submission.py，不改打包配置；只有闸门读数通过且团队决定采用 R12 之后才动打包代码。"
+ },
+ "delivery_fallback_zh": {
+  "version": "r12_tilt_n5",
+  "composite": [
+   "mem_ret_mean5",
+   "mem_ret_tstat5",
+   "mem_ret_hit5"
+  ],
+  "kind_zh": "交付工程变体，不是独立候选、不进账本、不走闸门",
+  "why_zh": "只用 N=5 成员，平台现有 history_days=10（≈7 个交易日）即可算，零平台改动即可上线；但它低于闸门线，因此不作为候选读数。",
+  "measured_house_w0.20": "+0.002851 CI [+0.002569,+0.003128]，8/8 窗，155/165 天为正",
+  "measured_probe_pooled": "+0.002246（8/8 窗）",
+  "retained_share_zh": "保留主版本（house +0.003366）约 85% 的增量；换手 +0.001906。",
+  "same_sample_note_zh": "与主版本在同一批 165 天筛查窗上量出，两者不是独立证据。"
+ },
+ "platform_note_zh": "候选在 14:30 之外的 7 个时点与主干逐位相同，闸门 fused(w) 在这些时点就是 trunk，所以 w 等价于 14:30 的单时点权重；平台 submission 对 8 个 sample_times 都要求出分，此构造天然满足。history_days 在权重 JSON 的 preprocessing 里可改，且 submission_config 的 history_policy.max_backfill_days=366 允许回补一年，N=20 成员不需改主干约定；兜底版见 variants.n5（只用 N=5 成员，现有 10 天窗口即可算）。"
+}

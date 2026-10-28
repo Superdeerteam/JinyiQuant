@@ -1,0 +1,415 @@
+{
+  "schema_version": "fusion-round2-prereg-draft/1",
+  "experiment_id": "fusion-round2-prereg-20261028",
+  "kind": "round_preregistration_draft",
+  "status": "draft_not_registered",
+  "author": "evaluator",
+  "drafted_at_utc": "2026-10-28T15:22:00Z",
+  "parent_registration": {
+    "path": "configs/fusion_increment_registration_20261028.json",
+    "sha256": "9619c3e4740518571372e086d0c98cfff10b51685640168416d879e41f89567c",
+    "note_zh": "块 1/块 2 的读数仍然走主闸门：阈值（+0.003 / CI 不含零 / ≥7/8 窗 / post-freeze 155 天 > 0）、估计量（block_interval，5 日块，20000 draws，seed 20261028）、窗口名单与拟合块都取自该文件，本文件一个字节也没改它们。本文件只登记块级的目标、候选构造、选择规则与验收条；它自己不是阈值来源。"
+  },
+  "gate_script": {
+    "path": "scripts/fusion_increment_gate.py",
+    "sha256": "67b49de410d5eb4911959c0483353aba7fac682e815883a83638d2be2adcfa15",
+    "note_zh": "本轮不需要修改闸门：块 1 是候选构造 + 一次标准 screen 读数，块 2 的额外验收条由独立的只读后处理器执行，不改闸门输出。"
+  },
+  "state_at_drafting": {
+    "ledger_path": "runs/fusion-gate/read_ledger.jsonl",
+    "screening_reads_on_record": 2,
+    "reads": [
+      {
+        "read_id": "screen-R6+R8-68e4535ee7",
+        "route": "R6+R8",
+        "utc": "2026-10-28T14:46:15Z",
+        "verdict": "clears_fusion_gate",
+        "weight": 0.5,
+        "pooled_delta_rank_ic": 0.01157987683312182,
+        "pooled_delta_turnover": 0.03261119433642856
+      },
+      {
+        "read_id": "screen-R12-4b839b9d16",
+        "route": "R12",
+        "utc": "2026-10-28T15:03:54Z",
+        "verdict": "clears_fusion_gate",
+        "weight": 0.5,
+        "pooled_delta_rank_ic": 0.00762959,
+        "pooled_delta_turnover": 0.02514353
+      }
+    ],
+    "confirmation_reads_on_record": 0,
+    "note_zh": "起草时账本只有这两条筛查读数；jun2024/sep2024 从未打开（confirmation 读数为 0）。本文件是在这两条读数已经存在的前提下起草的，所以块 1/2 的假设不可避免地受它们影响——这一点写进 selection_pressure，不假装本轮是盲的。"
+  },
+  "purpose_zh": "在 R6+R8（树）与 R12（14:30 倾斜）两条已经读过筛查窗的增量之外，预先登记第二轮要判定的东西：(1) 树能不能通过同一套 causal_ewma 把换手降回可辩护的区间而不损失增量；(2) 树那条 +0.0116 的增量在换 seed、砍特征、换训练年限三种扰动下还在不在；(3) 组合臂暂时不登记。本文件的作用是让这三种判定在任何一轮读数发生之前把规则写死，避免看到数字再改口径。",
+  "shared_terms": {
+    "baseline": {
+      "label": "dev10 主干：r441_s11 / r441_s29 / r441_s47 等权 blend，causal_ewma alpha=0.9111677303420447",
+      "turnover_mean_165d": 1.058551,
+      "rank_ic_mean_165d": 0.0755
+    },
+    "estimator": {
+      "implementation": "scripts/compare_blend_replay.py::block_interval",
+      "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "unit": "每个交易日一个配对值；(window, trading day) 配对；同日多只股票不算独立证据",
+      "note_zh": "与主注册完全一致，不改。"
+    },
+    "windows": {
+      "screen": [
+        "nov2023",
+        "jan2024",
+        "feb2024",
+        "mar2024",
+        "apr2024",
+        "may2024",
+        "jul2024",
+        "aug2024"
+      ],
+      "screen_days": 165,
+      "confirmation": [
+        "jun2024",
+        "sep2024"
+      ],
+      "confirmation_days": 38,
+      "confirmation_read_budget_per_direction": 1
+    },
+    "fit_block": {
+      "window": "nov2023",
+      "start": "2023-11-01",
+      "end": "2023-11-14",
+      "trading_days": 10,
+      "note_zh": "与主注册同一个拟合块（V3 验证 fortnight）。它本身也是筛查窗 nov2023 的前 10 天，所以拟合块上的选择天然偏乐观；筛查窗读数是 out-of-fit，但整批 165 天已被反复使用（见 selection_pressure）。"
+    },
+    "weight_fit": {
+      "grid": [
+        0.0,
+        0.05,
+        0.1,
+        0.15,
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5
+      ],
+      "objective": "拟合块 Δrank_ic 均值最大",
+      "tie_break": "1e-9 内取最小 w",
+      "freeze": "选定后冻结，筛查窗读数不得重拟合"
+    },
+    "reporting_required": [
+      "rank_ic（主指标，池化 + 逐窗 + post-freeze 155 天）",
+      "turnover（U/2，池化 Δ 与逐窗 Δ；> +0.0318 时 turnover_attention 标注）",
+      "net5（net_return，single_side_rate=5e-4，直读不反推，含未定义日计数）",
+      "多空日均（long_short_return 的配对 Δ）",
+      "推理成本（inference_cost.json：s/交易日、GPU 峰值、platform_verified）",
+      "arm 水平值（trunk / candidate / fused 三者的 rank_ic 与 turnover 均值）"
+    ]
+  },
+  "blocks": [
+    {
+      "id": "block_1_tree_turnover_smoothing",
+      "title_zh": "给树降换手：对树分数施加同一个 causal_ewma，α 只在拟合块上选",
+      "status": "draft",
+      "motivation_zh": "树单模 turnover 1.2580（owner/captain 报数；经闸门 0.9112 平滑后重算为 1.183178），主干因为本身就是 EWMA 平滑过的只有 1.058551。R6+R8 融合在 w=0.5 时 Δturnover +0.032611 已经越过 b4 晋升门的 0.0318 线（turnover_attention=true）。目标是让树的换手回到可辩护区间，同时不让 Δrank_ic 掉下 +0.003。",
+      "candidate_construction": {
+        "operator": "causal_ewma",
+        "operator_implementation": "scripts/verify_turnover_change.py::causal_ewma（先按 timestamp 做 cross-sectional z，再按时间逐行 EWMA 且每交易日重置 state）",
+        "applied_to": "树的原始 score（成员等权平均后、闸门平滑之前）",
+        "alpha_grid": [
+          1.0,
+          0.97,
+          0.95,
+          0.93,
+          0.9111677303420447,
+          0.89,
+          0.85
+        ],
+        "alpha_1_note_zh": "α=1.00 表示不再额外平滑：候选退化为现有的 R6+R8 树臂（闸门随后只施加协议自己的 0.9112 平滑）。它是'确认平滑没有帮助'的对照行，不是真正的降换手方案。",
+        "composition_note_zh": "闸门的 smoothed_arm_score 对两个臂一视同仁，会在候选上再施加一次 α=0.9112 的 EWMA，所以实际是两次级联平滑（候选先平滑一次，闸门再平滑一次）。本文件不声称它等效于某个单一 α；选择表会把每个 α' 的实测 Δturnover 与 Δrank_ic 全列出，让人看实际强度。",
+        "output_artifact": "runs/fusion-gate/r6r8-smoothing-<alpha_tag>/<version>/predictions.parquet + runs/fusion-gate/r6r8-smoothing-selection.json",
+        "new_script": {
+          "path": "scripts/r6r8_turnover_smoothing.py",
+          "sha256": "TO_BE_PINNED_AT_REGISTRATION",
+          "duty_zh": "只读拟合块（2023-11-01..2023-11-14，10 个交易日）的树预测与主干预测，构造 7 个 α' 的候选臂、算选择表、写出被选中 α' 的候选 predictions；硬拒任何非拟合块日期，绝不读筛查窗或确认窗。"
+        }
+      },
+      "selection_rule": {
+        "fit_block_only": true,
+        "nested_weight_fit": "对每个 α'，用主协议的 w 拟合（网格 0..0.5 步长 0.05、最大化拟合块 Δrank_ic、1e-9 取最小 w）得到 w*(α')，再算拟合块上的 Δrank_ic(fused) 与 Δturnover(fused)",
+        "constraint": "拟合块 Δturnover(fused(w*(α'))) ≤ +0.0318（b4 的 turnover 退化线）；只在拟合块上量，绝不用筛查窗",
+        "objective": "在满足约束的 α' 中取拟合块 Δrank_ic(fused(w*(α'))) 最大者",
+        "fallback": "若 7 个 α' 全不满足约束：取 |Δturnover_fit − 0.0318| 最小的 α'，读数里标 turnover_constraint_unattainable=true，该块降级为描述性证据（不得作为晋升候选）",
+        "tie_break": "目标值差 ≤1e-9 时取更大的 α'（更少额外平滑、更接近现有树臂）；仍并列取 w* 更小者",
+        "freeze": "选定 (α', w*) 后冻结；筛查窗读数不得重拟合、不得重选 α'",
+        "report_all_rows": "选择表必须列出全部 7 行的 (α', w*, Δrank_ic_fit, Δturnover_fit)，不许只报被选中的那一行"
+      },
+      "read_protocol": {
+        "reads": 1,
+        "mode": "screen",
+        "windows": "8 个筛查窗（165 交易日）",
+        "verdict_source": "主闸门的标准判定（0.003 / CI 不含零 / ≥7/8 窗 / post-freeze 155 天 > 0 / 侧栏完整）",
+        "extra_block_criterion": "筛查池化 Δturnover ≤ +0.0318 且被选中的 α' < 1.0（否则等于没有降换手，见 F5/F6）",
+        "cost_zh": "平滑是事后变换，不新增推理计算；成本沿用树的 inference_cost.json（0.99648 s/交易日，platform_verified=false），并显式标注'平滑零额外推理'",
+        "confirmation_read": false
+      },
+      "acceptance": {
+        "promotion_candidate_eligible": "四项主闸门判据全过 且 筛查池化 Δturnover ≤ +0.0318 且 α' < 1.0",
+        "descriptive_only": "α' = 1.0（额外平滑没赢）或 turnover_constraint_unattainable=true 时，只报描述"
+      },
+      "fail_conditions": [
+        "F1 筛查池化 Δrank_ic < +0.003：降换手的代价超过了增量，块失败",
+        "F2 池化 95% CI 含零",
+        "F3 少于 7/8 个筛查窗为正",
+        "F4 post-freeze 155 天池化 ≤ 0",
+        "F5 筛查池化 Δturnover > +0.0318：平滑没有把换手降到目标区间，块失败（即使 IC 还好）",
+        "F6 选中的 α' = 1.0：不存在比'不再平滑'更好的 α'，结论是'这条降换手方案不成立'",
+        "F7 侧栏缺任一项（多空/换手/net5/成本）"
+      ],
+      "protocol_refs": {
+        "thresholds": {
+          "metric": "rank_ic",
+          "min_improvement": 0.003,
+          "ci_must_exclude_zero": true,
+          "min_positive_windows": 7,
+          "windows_total": 8,
+          "post_freeze_days": 155,
+          "source_zh": "configs/fusion_increment_registration_20261028.json::decision（未改）"
+        },
+        "estimator": {
+          "implementation": "scripts/compare_blend_replay.py::block_interval",
+          "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+          "block_days": 5,
+          "draws": 20000,
+          "seed": 20261028
+        },
+        "windows": {
+          "screen": [
+            "nov2023",
+            "jan2024",
+            "feb2024",
+            "mar2024",
+            "apr2024",
+            "may2024",
+            "jul2024",
+            "aug2024"
+          ],
+          "screen_days": 165,
+          "confirmation": [
+            "jun2024",
+            "sep2024"
+          ],
+          "confirmation_read_budget_per_direction": 1
+        },
+        "fit_block": {
+          "window": "nov2023",
+          "start": "2023-11-01",
+          "end": "2023-11-14",
+          "trading_days": 10
+        }
+      }
+    },
+    {
+      "id": "block_2_stability",
+      "title_zh": "稳定性三条：LightGBM 三 seed、特征 top-20/30/46、441 天 vs 927 天",
+      "status": "draft",
+      "why_zh": "树那条 +0.0116（8/8 窗、CI 不含零）是单配置读数，而 165 天已经被反复使用。换 seed、砍特征、延长训练年限是三条最便宜、最可能把'幸运配置'和'真实结构'分开的扰动；三条都过才值得进入扩种子/组合阶段。",
+      "items": [
+        {
+          "id": "2a_seeds",
+          "candidates": "同一配置、三个 LightGBM 训练 seed 的树（seed 值以 owner 的 manifest 为准，plan 里逐个记版本名）",
+          "reads": 3,
+          "bar": "每个 seed 单独跑一次标准 screen：筛查池化 Δrank_ic ≥ +0.003 且池化 CI 下界 > 0 且 ≥6/8 个筛查窗为正",
+          "borderline_rule": "若某 seed 过 6/8 但被主闸门的 7/8 否掉，记 stability_borderline=true，且该 seed 不得用来支撑树臂晋升",
+          "cost_zh": "≈3 × 472 s 训练 + 三次推理（实际以 owner 记录为准）"
+        },
+        {
+          "id": "2b_features",
+          "candidates": "按 LightGBM gain 排序的 top-20 / top-30 / top-46 特征子集（顺序与列名取自 owner 的 r6r8 report）；46 = 现有全部特征",
+          "reads": 3,
+          "bar": "top-20 必须仍 ≥+0.003 且 ≥6/8 窗为正；top-30 与 top-46 为描述性",
+          "hypothesis_zh": "如果增量主要来自少数几个盘口特征，砍到 top-20 不该把它打掉；如果打掉了，说明增量依赖尾部特征、更脆，扩种子的价值要重估",
+          "cost_zh": "≈3 × 472 s 重训 + 推理"
+        },
+        {
+          "id": "2c_years",
+          "candidates": "927 天训练窗（2021-06-01..2023-10-31，终端严格早于评估窗）vs 441 天版（即已读的 screen-R6+R8）",
+          "reads": 1,
+          "bar": "927 版筛查池化 Δrank_ic ≥ (441 版池化 Δrank_ic − 0.001) 且 ≥6/8 窗为正",
+          "confound_zh": "报告必须写：927 版树的训练数据比主干（441 天）多 441 天、比 441 版树多 486 天。这条只检验'训练长度改变后增量是否还在'，不能把差异归因于路线本身，也不能说成'树用更多数据所以更好'。",
+          "cost_zh": "≈1 次 927 天重训（数据量约 2 倍）",
+          "label_note_zh": "927 是 captain 定义的标签（2021-06-01..2023-10-31），该区间的实际交易日数由 owner 的 manifest 记录并在报告里同时写出；441/927 两个数字都不要当成已验证的交易日计数。",
+          "baseline_number_zh": "对照值用已读的 441 版筛查池化 Δrank_ic = +0.01157987683312182（ledger screen-R6+R8-68e4535ee7），不重算、不重读。"
+        }
+      ],
+      "post_processing": {
+        "path": "scripts/fusion_stability_report.py",
+        "sha256": "TO_BE_PINNED_AT_REGISTRATION",
+        "duty_zh": "只读主闸门产出的每份 read JSON（每个候选一行），按本块声明的 bar 输出 stability 判定（pass/fail/borderline + 缺哪条），不改主闸门的 verdict，也不重算任何数字",
+        "note_zh": "块 2 的 6/8 比主闸门的 7/8 松，两者冲突时以主闸门为记录值、以 borderline 标注，不允许用松标准声称'通过'。"
+      },
+      "acceptance": "2a 三个 seed 全过各自 bar 且 2b top-20 过 且 2c 过 且无 borderline 被用来支撑晋升",
+      "fail_conditions": [
+        "F1 任一 seed 未达 +0.003 或 CI 含零",
+        "F2 top-20 子集未达 +0.003 或 <6/8 窗",
+        "F3 927 版低于 441 版池化值 − 0.001，或 <6/8 窗",
+        "F4 出现 stability_borderline 且被当作通过使用（流程违规，读数作废）"
+      ],
+      "protocol_refs": {
+        "thresholds": {
+          "metric": "rank_ic",
+          "min_improvement": 0.003,
+          "ci_must_exclude_zero": true,
+          "min_positive_windows": 7,
+          "windows_total": 8,
+          "post_freeze_days": 155,
+          "source_zh": "configs/fusion_increment_registration_20261028.json::decision（未改）"
+        },
+        "estimator": {
+          "implementation": "scripts/compare_blend_replay.py::block_interval",
+          "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+          "block_days": 5,
+          "draws": 20000,
+          "seed": 20261028
+        },
+        "windows": {
+          "screen": [
+            "nov2023",
+            "jan2024",
+            "feb2024",
+            "mar2024",
+            "apr2024",
+            "may2024",
+            "jul2024",
+            "aug2024"
+          ],
+          "screen_days": 165,
+          "confirmation": [
+            "jun2024",
+            "sep2024"
+          ],
+          "confirmation_read_budget_per_direction": 1
+        },
+        "fit_block": {
+          "window": "nov2023",
+          "start": "2023-11-01",
+          "end": "2023-11-14",
+          "trading_days": 10
+        },
+        "block_level_bars": {
+          "2a_seeds": "每个 seed：池化 Δrank_ic ≥ +0.003、CI 下界 > 0、≥6/8 窗为正",
+          "2b_features": "top-20：池化 Δrank_ic ≥ +0.003、≥6/8 窗为正；top-30/top-46 描述性",
+          "2c_years": "927 版池化 Δrank_ic ≥ (441 版池化值 − 0.001)、≥6/8 窗为正",
+          "note_zh": "6/8 比主闸门的 7/8 松；冲突时以主闸门为记录值、以 borderline 标注，不允许用松标准声称通过。"
+        }
+      }
+    },
+    {
+      "id": "block_3_combination",
+      "title_zh": "组合臂（R12 倾斜 + 树叠加）：本轮不登记",
+      "status": "deferred_not_registered",
+      "content_if_ever_zh": "两参数叠加：candidate = w_tree × 树平滑臂 + w_tilt × 14:30 倾斜臂 + 其余主干权重；两个 w 都在同一个拟合块上拟合、冻结后读一次筛查窗",
+      "why_not_now_zh": [
+        "R6+R8 的审计（auditor / t11）还没有结论；在审计出结果前把两条已读增量叠起来，会同时放大审计风险和选择压力",
+        "R12 的确认窗读数还没放行，组合臂的经济性没法用干净证据评估",
+        "块 1 的换手问题未定：如果树的换手经济不成立，叠加臂的换手只会更差",
+        "每次读都落在同一批 165 天上；先看块 1/2 的结果，再决定这两次读值不值得花"
+      ],
+      "preconditions_to_register": [
+        "auditor 的 R6+R8 审计报告（要求结论明确，不要求通过）",
+        "块 1 的筛查读数与块 2 的稳定性结论都已落盘",
+        "captain 明确放行"
+      ],
+      "planned_reads_if_ever": 1,
+      "note_zh": "本块不消耗任何读额度，本轮不注册、不跑。",
+      "protocol_refs": {
+        "thresholds": {
+          "metric": "rank_ic",
+          "min_improvement": 0.003,
+          "ci_must_exclude_zero": true,
+          "min_positive_windows": 7,
+          "windows_total": 8,
+          "post_freeze_days": 155,
+          "source_zh": "configs/fusion_increment_registration_20261028.json::decision（未改）"
+        },
+        "estimator": {
+          "implementation": "scripts/compare_blend_replay.py::block_interval",
+          "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+          "block_days": 5,
+          "draws": 20000,
+          "seed": 20261028
+        },
+        "windows": {
+          "screen": [
+            "nov2023",
+            "jan2024",
+            "feb2024",
+            "mar2024",
+            "apr2024",
+            "may2024",
+            "jul2024",
+            "aug2024"
+          ],
+          "screen_days": 165,
+          "confirmation": [
+            "jun2024",
+            "sep2024"
+          ],
+          "confirmation_read_budget_per_direction": 1
+        },
+        "fit_block": {
+          "window": "nov2023",
+          "start": "2023-11-01",
+          "end": "2023-11-14",
+          "trading_days": 10
+        }
+      }
+    }
+  ],
+  "new_screening_reads_planned": {
+    "block_1": 1,
+    "block_2": 7,
+    "block_3": 0,
+    "total_round2_screening_reads": 8,
+    "confirmation_reads": 0,
+    "reads_on_record_before_round2": 2,
+    "cumulative_screening_reads_if_all_run": 10,
+    "note_zh": "账本现有 2 条筛查读数，本文件最多再加 8 条，累计 10 条；这就是选择压力的量级，final report 必须把它写出来。"
+  },
+  "selection_pressure": {
+    "windows_reuse_zh": "同一批 165 天（8 个筛查窗）已经被 R5、R10 以及 R6+R8、R12 反复使用；本轮再加 8 条读数。所有' clears' 都来自同一块非新鲜样本。",
+    "two_dimensional_selection_zh": "块 1 的 7 点 α' 网格 × 11 点 w 网格是二维选择：被选中那一行的 Δ 是'选择后的条件估计'，天然偏乐观；所以要求把 7 行全列出，让人看到选择把数字挪了多少。",
+    "multiplicity_zh": "按 Bonferroni 直觉，'十条路线里挑最好的 +0.003' 与'一条路线真的 +0.003' 不等价；本轮读数不做事后多重性修正（主注册也是这么写的），但报告必须显式承认。",
+    "fresh_evidence_zh": "jun2024/sep2024 每个方向只允许读一次，是唯一称得上干净的证据；本轮不动它。",
+    "informed_drafting_zh": "本文件是在 R6+R8 与 R12 两条读数已经存在之后起草的，所以'树的换手'与'稳定性'这两个假设本身就被那两条读数提示过——这一点不掩饰。"
+  },
+  "global_fail_conditions": [
+    "任一 pin（主注册 / 闸门 / 本文件 / 两个新脚本）与磁盘不符",
+    "同一 candidate 的筛查读数超过本文件声明的次数",
+    "缺侧栏（多空 / 换手 / net5 / 推理成本）",
+    "未经 captain release 就打开 jun2024/sep2024",
+    "事后修改本文件里的任何阈值、选择规则或 fail 条件（只能通过新的 amendment 追加，不能就地改）"
+  ],
+  "what_this_is_not_zh": [
+    "不是已注册协议：status=draft_not_registered，未经 captain 审阅不能跑任何读数",
+    "不放行任何确认窗",
+    "不改主注册的任何阈值、估计量、窗口名单或拟合块",
+    "不对已有读数做重新解释；R6+R8 与 R12 的结论仍以各自的 ledger 行为准"
+  ],
+  "lifecycle_zh": "captain 审阅 → 同意后把本文件 status 改为 registered、补 registered_at_utc 与 approved_by，并 pin 两个新脚本的 sha → owner 出候选预测 → 按块顺序跑（块 1 先，块 2 后）→ 每次读数写 runs/fusion-gate/read_ledger.jsonl（带本文件 sha、脚本 sha、candidate 与 w/α'）→ 出 block report → 才轮到块 3 的取舍。",
+  "approval": {
+    "status": "awaiting_captain_review",
+    "review_checklist_zh": [
+      "块 1 的选择规则是否可执行：7×11 嵌套拟合、约束只在拟合块上量、fallback 与 tie-break 是否可接受",
+      "块 2 的 6/8 与主闸门 7/8 的 border 关系是否认可（borderline 不得用于晋升）",
+      "块 2c 的混杂声明是否够（927 天比主干多 441 天训练数据）",
+      "块 3 推迟是否同意",
+      "8 条新增筛查读的选择压力声明是否够"
+    ],
+    "if_approved_zh": "把 status 改为 registered 并回填两个新脚本的 sha；未批准前本文件不得被任何 plan 引用。"
+  }
+}
