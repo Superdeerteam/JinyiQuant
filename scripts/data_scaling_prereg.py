@@ -75,6 +75,24 @@ COMPONENTS = [
                  "allows one process at a time, so the three seeds run in sequence."),
     },
     {
+        "id": "G",
+        "label": "240d-lotB",
+        "train_window": ["2022-11-04", "2023-10-31"],
+        "declared_trading_days": 240,
+        "seeds": [53, 59, 61],
+        "points": ["1.32", "2.64"],
+        "role": "seed-lot replicate at 240 trading days (second seed lot beside 11/29/47)",
+    },
+    {
+        "id": "H",
+        "label": "60d-lotB",
+        "train_window": ["2023-08-01", "2023-10-31"],
+        "declared_trading_days": 60,
+        "seeds": [53, 59, 61],
+        "points": ["1.32", "2.64"],
+        "role": "seed-lot replicate at 60 trading days, giving a seed-matched 60d-to-132d step in the same lot",
+    },
+    {
         "id": "F",
         "label": "927d",
         "train_window": ["2020-01-02", "2023-10-31"],
@@ -241,6 +259,12 @@ def build_prereg(artifacts: dict) -> dict:
             "rung_F": ("runs on the streaming pool (src/jinyiquant/pool.py). The streaming and materialised "
                        "pools were proven bitwise equal on 111,888 real keys over 50 batches, with three "
                        "mutations caught, so rung F stays numerically comparable to D and E"),
+        "seed_lot_replicates": {
+            "purpose": ("repeat a fixed data volume with a different seed lot, so seed-lot variance can be "
+                        "separated from the dose effect: tonight a seed-lot change moved the 132-day level by "
+                        "0.0035, which is the same size as one doubling of training data"),
+            "components": ["G", "H"],
+        },
             "why": "a materialised 927-day pool is 175 GB; the streaming pool projects to 12.8 GB",
         },
         "known_deviation": {

@@ -20,6 +20,13 @@
  },
  "implementation_note": {
   "rung_F": "runs on the streaming pool (src/jinyiquant/pool.py). The streaming and materialised pools were proven bitwise equal on 111,888 real keys over 50 batches, with three mutations caught, so rung F stays numerically comparable to D and E",
+  "seed_lot_replicates": {
+   "purpose": "repeat a fixed data volume with a different seed lot, so seed-lot variance can be separated from the dose effect: tonight a seed-lot change moved the 132-day level by 0.0035, which is the same size as one doubling of training data",
+   "components": [
+    "G",
+    "H"
+   ]
+  },
   "why": "a materialised 927-day pool is 175 GB; the streaming pool projects to 12.8 GB"
  },
  "known_deviation": {
@@ -80,6 +87,54 @@
     "configs/scaling_441d_seed11_2point_plan.json",
     "configs/scaling_441d_seed29_2point_plan.json",
     "configs/scaling_441d_seed47_2point_plan.json"
+   ]
+  },
+  {
+   "id": "G",
+   "label": "240d-lotB",
+   "train_window": [
+    "2022-11-04",
+    "2023-10-31"
+   ],
+   "declared_trading_days": 240,
+   "seeds": [
+    53,
+    59,
+    61
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "seed-lot replicate at 240 trading days (second seed lot beside 11/29/47)",
+   "plans": [
+    "configs/scaling_240d-lotB_seed53_2point_plan.json",
+    "configs/scaling_240d-lotB_seed59_2point_plan.json",
+    "configs/scaling_240d-lotB_seed61_2point_plan.json"
+   ]
+  },
+  {
+   "id": "H",
+   "label": "60d-lotB",
+   "train_window": [
+    "2023-08-01",
+    "2023-10-31"
+   ],
+   "declared_trading_days": 60,
+   "seeds": [
+    53,
+    59,
+    61
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "seed-lot replicate at 60 trading days, giving a seed-matched 60d-to-132d step in the same lot",
+   "plans": [
+    "configs/scaling_60d-lotB_seed53_2point_plan.json",
+    "configs/scaling_60d-lotB_seed59_2point_plan.json",
+    "configs/scaling_60d-lotB_seed61_2point_plan.json"
    ]
   },
   {
@@ -176,12 +231,32 @@
     "configs/scaling_441d_seed47_2point_plan.json"
    ]
   },
-  "F": {
+  "G": {
    "recipes": [
-    "configs/scaling_927d_csz_seed11.json",
-    "configs/scaling_927d_csz_seed29.json",
-    "configs/scaling_927d_csz_seed47.json"
+    "configs/scaling_240d-lotB_csz_seed53.json",
+    "configs/scaling_240d-lotB_csz_seed59.json",
+    "configs/scaling_240d-lotB_csz_seed61.json"
    ],
+   "plans": [
+    "configs/scaling_240d-lotB_seed53_2point_plan.json",
+    "configs/scaling_240d-lotB_seed59_2point_plan.json",
+    "configs/scaling_240d-lotB_seed61_2point_plan.json"
+   ]
+  },
+  "H": {
+   "recipes": [
+    "configs/scaling_60d-lotB_csz_seed53.json",
+    "configs/scaling_60d-lotB_csz_seed59.json",
+    "configs/scaling_60d-lotB_csz_seed61.json"
+   ],
+   "plans": [
+    "configs/scaling_60d-lotB_seed53_2point_plan.json",
+    "configs/scaling_60d-lotB_seed59_2point_plan.json",
+    "configs/scaling_60d-lotB_seed61_2point_plan.json"
+   ]
+  },
+  "F": {
+   "recipes": [],
    "plans": [
     "configs/scaling_927d_seed11_2point_plan.json",
     "configs/scaling_927d_seed29_2point_plan.json",

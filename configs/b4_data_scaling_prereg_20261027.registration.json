@@ -1,9 +1,9 @@
 {
  "schema_version": 1,
  "prereg_path": "configs/b4_data_scaling_prereg_20261027.json",
- "prereg_sha256": "f49994cca60036766de3f1c6396f3d90f4529a58684619e2a3679e160d348644",
- "registered_at": "2026-10-27T19:11:34.959635+00:00",
- "git_head": "955cc4fd876a60c16a96ff08aa65438898c832eb",
+ "prereg_sha256": "38296145e26f9ee4953d84b2740994cdc4746325a3e9f90c84af38735614a1af",
+ "registered_at": "2026-10-28T01:36:28.603982+00:00",
+ "git_head": "3af97706727652193aa0f44d0a548f1dd05dddad",
  "plan_sha256": {
   "configs/scaling_240d_seed11_2point_plan.json": "32082d49eb6a62407262c4e49a12cbe7ae932d32570b83033930442d77fe266b",
   "configs/scaling_240d_seed29_2point_plan.json": "bcdb3edd07201697be9d903a3fa4bc308534a1436f2225581e4ec68b1c10215a",
@@ -11,6 +11,12 @@
   "configs/scaling_441d_seed11_2point_plan.json": "511350cae45f1af432edb1c5fd7d746bad91cdeb3229de58cea729d398a1d752",
   "configs/scaling_441d_seed29_2point_plan.json": "d11961c12ccc3274b577f7b8ed4fc668c2aa8d1ded185f79f7365107fe417c35",
   "configs/scaling_441d_seed47_2point_plan.json": "a540243c17c7bfd973521450e7a801d1a9658893674ba411ec127dac553a18d8",
+  "configs/scaling_240d-lotB_seed53_2point_plan.json": "7239e51a5597eaeb67f222deb25ff2ae79a85d9b17ad47d1d368a1d62cedb22d",
+  "configs/scaling_240d-lotB_seed59_2point_plan.json": "2823667f8bc08829f4f28319eb0e47e6be553e1f81ae336573442498bcdc6354",
+  "configs/scaling_240d-lotB_seed61_2point_plan.json": "925777e7657c312f0f3d163c3bb24595db2af0787ea394b024d9a2913bb3c5b3",
+  "configs/scaling_60d-lotB_seed53_2point_plan.json": "3332e4038c0b457221eed0f1235ebca3b23b4a00b194bef58ad28c6e719d38be",
+  "configs/scaling_60d-lotB_seed59_2point_plan.json": "2bffaed29d8f49f8a7c6c23b69dc4335b6343804dad52c9a920012b48067c5da",
+  "configs/scaling_60d-lotB_seed61_2point_plan.json": "7c811f73e658203da5dd838e97217e64ad4b8e68eca1b9ef2a95449db8aa0a50",
   "configs/scaling_927d_seed11_2point_plan.json": "20826d6714b57f848da8ed2ff8fc911d9e2ab06c5cff9016027de2c25e7613e8",
   "configs/scaling_927d_seed29_2point_plan.json": "aa5a0e812e799992f908c8df12c16a49137c70c501078aa41c775505d3b82a79",
   "configs/scaling_927d_seed47_2point_plan.json": "e8d1663b3cebdd72b532e4f248dc438006a57be42ffb075f8d8e25391e11afc5"
@@ -22,6 +28,12 @@
   "configs/scaling_441d_csz_seed11.json": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
   "configs/scaling_441d_csz_seed29.json": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
   "configs/scaling_441d_csz_seed47.json": "50699d51b426a7d8ea540aeb5afff1c6154cc8a5df4c86dd4a88140931d42280",
+  "configs/scaling_240d-lotB_csz_seed53.json": "6915a521174bce63fb4f9af9a5adb597aed7ec48be974a303e17a085a446a961",
+  "configs/scaling_240d-lotB_csz_seed59.json": "81fe5c055792f9cf36c119afd8e945bcc4095c1a7f1f79afd42ca2ddcb6fb2da",
+  "configs/scaling_240d-lotB_csz_seed61.json": "bb814eaeb7509091bc4890bc22a7d55835eafbc09be173bfcd59773874c53960",
+  "configs/scaling_60d-lotB_csz_seed53.json": "d3a05941e4e299626ad041fb7d504be50e3d4b65d91ea6d69ccb4dd18a3155f7",
+  "configs/scaling_60d-lotB_csz_seed59.json": "2436e9fdc0758fbafd8f34d2b0ad0717478d1343f342e035b17e4bae5024b97a",
+  "configs/scaling_60d-lotB_csz_seed61.json": "699b49fc201a159c0595ce4be913ff8fcded6d44b00b2059d15ced552d23ee26",
   "configs/scaling_927d_csz_seed11.json": "a6199b5cc1981b92d95bad1a4346ef0f71b6a312a4229004a7de818a3c41098e",
   "configs/scaling_927d_csz_seed29.json": "5abac3ee8c374ccd4b39160437daac8c42d2894a5427b8b7011493007eb02e11",
   "configs/scaling_927d_csz_seed47.json": "4fcd865cbfd5df85f3e561b17220423f09702e39327f4bc7c092548536afbef4"
@@ -30,8 +42,8 @@
   "registered_before_any_scaling_process": true
  },
  "supersedes": {
-  "archived_as": "configs/b4_data_scaling_prereg_20261027.registration.superseded_20261027T183310Z.json",
-  "registered_at": "2026-10-27T18:33:10.228221+00:00",
-  "sha256": "75b396f56d57d65345a8d9a38d4a5a7719919f535042ff92d7a74d6bdf66fd68"
+  "archived_as": "configs/b4_data_scaling_prereg_20261027.registration.superseded_20261027T191134Z.json",
+  "registered_at": "2026-10-27T19:11:34.959635+00:00",
+  "sha256": "f49994cca60036766de3f1c6396f3d90f4529a58684619e2a3679e160d348644"
  }
 }
