@@ -71,6 +71,8 @@ node_modules/
 *.bz2
 *.xz
 *.zip
+# The reviewed competition submission package is a binary deliverable, not scratch output.
+!artifacts/submission-*/package-flat.zip
 *.rar
 *.7z
 *.zst
