@@ -90,6 +90,30 @@
    ]
   },
   {
+   "id": "I",
+   "label": "441d-lotB",
+   "train_window": [
+    "2022-01-04",
+    "2023-10-31"
+   ],
+   "declared_trading_days": 441,
+   "seeds": [
+    53,
+    59,
+    61
+   ],
+   "effective_epoch_points": [
+    1.32,
+    2.64
+   ],
+   "role": "seed-lot replicate at 441 trading days, the rung that carries the promotion candidate: the candidate is the 441-day 2.64 blend, so a second seed lot is the cheapest way to check that the candidate's level is not a single-lot accident",
+   "plans": [
+    "configs/scaling_441d-lotB_seed53_2point_plan.json",
+    "configs/scaling_441d-lotB_seed59_2point_plan.json",
+    "configs/scaling_441d-lotB_seed61_2point_plan.json"
+   ]
+  },
+  {
    "id": "G",
    "label": "240d-lotB",
    "train_window": [
@@ -231,12 +255,20 @@
     "configs/scaling_441d_seed47_2point_plan.json"
    ]
   },
-  "G": {
+  "I": {
    "recipes": [
-    "configs/scaling_240d-lotB_csz_seed53.json",
-    "configs/scaling_240d-lotB_csz_seed59.json",
-    "configs/scaling_240d-lotB_csz_seed61.json"
+    "configs/scaling_441d-lotB_csz_seed53.json",
+    "configs/scaling_441d-lotB_csz_seed59.json",
+    "configs/scaling_441d-lotB_csz_seed61.json"
    ],
+   "plans": [
+    "configs/scaling_441d-lotB_seed53_2point_plan.json",
+    "configs/scaling_441d-lotB_seed59_2point_plan.json",
+    "configs/scaling_441d-lotB_seed61_2point_plan.json"
+   ]
+  },
+  "G": {
+   "recipes": [],
    "plans": [
     "configs/scaling_240d-lotB_seed53_2point_plan.json",
     "configs/scaling_240d-lotB_seed59_2point_plan.json",
@@ -244,11 +276,7 @@
    ]
   },
   "H": {
-   "recipes": [
-    "configs/scaling_60d-lotB_csz_seed53.json",
-    "configs/scaling_60d-lotB_csz_seed59.json",
-    "configs/scaling_60d-lotB_csz_seed61.json"
-   ],
+   "recipes": [],
    "plans": [
     "configs/scaling_60d-lotB_seed53_2point_plan.json",
     "configs/scaling_60d-lotB_seed59_2point_plan.json",

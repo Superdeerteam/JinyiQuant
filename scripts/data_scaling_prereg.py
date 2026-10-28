@@ -75,6 +75,17 @@ COMPONENTS = [
                  "allows one process at a time, so the three seeds run in sequence."),
     },
     {
+        "id": "I",
+        "label": "441d-lotB",
+        "train_window": ["2022-01-04", "2023-10-31"],
+        "declared_trading_days": 441,
+        "seeds": [53, 59, 61],
+        "points": ["1.32", "2.64"],
+        "role": ("seed-lot replicate at 441 trading days, the rung that carries the promotion candidate: the "
+                 "candidate is the 441-day 2.64 blend, so a second seed lot is the cheapest way to check that "
+                 "the candidate's level is not a single-lot accident"),
+    },
+    {
         "id": "G",
         "label": "240d-lotB",
         "train_window": ["2022-11-04", "2023-10-31"],
