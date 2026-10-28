@@ -23,7 +23,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import pickle
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -324,7 +327,63 @@ def build_arms(plan: dict) -> dict[str, list[str]]:
     return arms
 
 
-def run(analysis_id: str, skip_nine: bool) -> dict:
+# ------------------------------------------------------------ per-window evaluation
+# One development month is independent of every other month, so the window loop is a
+# picklable job: workers load sigma/exposure once (initializer) and reuse them for the
+# five arms of their window.
+_WORKER: dict[str, object] = {"sigma": None, "exposure": None}
+
+
+def _init_worker() -> None:
+    _WORKER["sigma"] = load_sigma([month for month in pd.period_range("2023-08", "2024-09", freq="M")
+                                   .strftime("%Y-%m")])
+    _WORKER["exposure"] = load_exposure({"_path": str(PLAN)})
+
+
+def evaluate_window(job: tuple[Path, dict, dict[str, list[str]]]) -> dict:
+    replay_run, window, arms = job
+    name = window["name"]
+    instruments = set(pd.read_parquet(replay_run / "windows" / name / "keys.parquet").instrument.unique())
+    cond = stress_conditions(pd.Timestamp(window["start"]), pd.Timestamp(window["end"]), instruments)
+    all_members = [member for members in arms.values() for member in members]
+    keys, targets, frames = load_window(replay_run, name, all_members)
+    coverage = {"keys": int(len(keys)), "targets": int(len(targets)),
+                "members": {member: int(len(frames[member])) for member in all_members},
+                "ratio": float(len(targets) / len(keys))}
+    metrics_out: dict[str, dict[str, dict[str, dict]]] = {}
+    raw_out: dict[str, dict[str, pd.DataFrame]] = {}
+    stress_out: dict[str, dict[str, dict[str, dict]]] = {}
+    daily_rows: list[pd.DataFrame] = []
+    sigma = _WORKER["sigma"]
+    exposure = _WORKER["exposure"]
+    for arm, members in arms.items():
+        scores = arm_scores(frames, {member: 1.0 / len(members) for member in members})
+        metrics_out[arm] = {}
+        for variant, frame in variants_of(scores, sigma).items():
+            metrics_out[arm][variant] = {}
+            for neutral in (False, True):
+                track = "neutralized" if neutral else "gross"
+                metrics, daily = evaluate_variant(frame, targets, exposure, neutralized=neutral)
+                daily_metrics = summarize(daily, neutralized=neutral)
+                if neutral:
+                    stress_out.setdefault(arm, {}).setdefault(variant, {})[name] = stress_buckets(daily, cond)
+                else:
+                    raw_out.setdefault(arm, {})[variant] = daily
+                daily_metrics["stress_rank_ic"] = None
+                metrics.update(daily_metrics)
+                metrics_out[arm][variant][track] = metrics
+                part = daily.copy()
+                part["window"] = name
+                part["arm"] = arm
+                part["variant"] = variant
+                part["track"] = track
+                daily_rows.append(part)
+    return {"window": name, "days": int(len(cond)),
+            "stress_days": int(cond.vol_ratio.notna().sum()), "coverage": coverage,
+            "metrics": metrics_out, "raw": raw_out, "stress": stress_out, "daily": daily_rows}
+
+
+def run(analysis_id: str, skip_nine: bool, workers: int) -> dict:
     replay_run = latest_run()
     replay_plan = json.loads((replay_run / "plan.json").read_text(encoding="utf-8"))
     windows = window_list(replay_plan)
@@ -361,44 +420,45 @@ def run(analysis_id: str, skip_nine: bool) -> dict:
     daily_rows: list[pd.DataFrame] = []
     raw_by_arm: dict[str, dict[str, pd.DataFrame]] = {}
     stress_by_arm: dict[str, dict[str, dict[str, dict]]] = {}
-    for window in windows:
-        name = window["name"]
-        cond = stress_conditions(pd.Timestamp(window["start"]), pd.Timestamp(window["end"]),
-                                 set(pd.read_parquet(replay_run / "windows" / name / "keys.parquet")
-                                     .instrument.unique()))
-        results["per_window"][name] = {"days": int(len(cond))}
-        all_members = [member for members in arms.values() for member in members]
-        keys, targets, frames = load_window(replay_run, name, all_members)
-        coverage = {"keys": int(len(keys)), "targets": int(len(targets)),
-                    "members": {member: int(len(frames[member])) for member in all_members},
-                    "ratio": float(len(targets) / len(keys))}
-        results["per_window"][name]["coverage"] = coverage
-        results["per_window"][name]["stress_days"] = int(cond.vol_ratio.notna().sum())
-        for arm, members in arms.items():
-            scores = arm_scores(frames, {member: 1.0 / len(members) for member in members})
-            variants = variants_of(scores, sigma)
-            raw_by_arm.setdefault(arm, {})
-            for variant, frame in variants.items():
-                for neutral in (False, True):
-                    metrics, daily = evaluate_variant(frame, targets, exposure, neutralized=neutral)
-                    daily_metrics = summarize(daily, neutralized=neutral)
-                    if neutral:
-                        buckets = stress_buckets(daily, cond)
-                        stress_by_arm.setdefault(arm, {}).setdefault(variant, {})[name] = buckets
-                        daily_metrics["stress_rank_ic"] = None
-                    else:
-                        raw_by_arm[arm][variant] = daily
-                        daily_metrics["stress_rank_ic"] = None
-                    metrics.update(daily_metrics)
-                    results["metrics"].setdefault(arm, {}).setdefault(variant, {})[
-                        "neutralized" if neutral else "gross"] = metrics
-                    part = daily.copy()
-                    part["window"] = name
-                    part["arm"] = arm
-                    part["variant"] = variant
-                    part["track"] = "neutralized" if neutral else "gross"
-                    daily_rows.append(part)
-            print(f"[eval] {name} {arm:<12} done", flush=True)
+    # Per-window checkpoints keep a crash from discarding finished months.
+    partial_dir = OUT_ROOT / "partial"
+    partial_dir.mkdir(parents=True, exist_ok=True)
+    jobs = [(replay_run, window, arms) for window in windows]
+    outputs = []
+    pending = []
+    for job in jobs:
+        cached = partial_dir / f"{job[1]['name']}.pkl"
+        if cached.exists():
+            outputs.append(pickle.loads(cached.read_bytes()))
+            print(f"[resume] {job[1]['name']} from checkpoint", flush=True)
+        else:
+            pending.append(job)
+    if pending:
+        if workers > 1:
+            with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker) as pool:
+                fresh = list(pool.map(evaluate_window, pending))
+        else:
+            _WORKER["sigma"], _WORKER["exposure"] = sigma, exposure
+            fresh = [evaluate_window(job) for job in pending]
+        for output in fresh:
+            (partial_dir / f"{output['window']}.pkl").write_bytes(pickle.dumps(output))
+            outputs.append(output)
+    for output in outputs:
+        name = output["window"]
+        results["per_window"][name] = {"days": output["days"], "stress_days": output["stress_days"],
+                                       "coverage": output["coverage"]}
+        for arm, by_variant in output["metrics"].items():
+            for variant, by_track in by_variant.items():
+                for track, metrics in by_track.items():
+                    results["metrics"].setdefault(arm, {}).setdefault(variant, {})[track] = metrics
+        for arm, by_variant in output["raw"].items():
+            for variant, frame in by_variant.items():
+                raw_by_arm.setdefault(arm, {})[variant] = frame
+        for arm, by_variant in output["stress"].items():
+            for variant, per_window in by_variant.items():
+                stress_by_arm.setdefault(arm, {}).setdefault(variant, {}).update(per_window)
+        daily_rows.extend(output["daily"])
+        print(f"[eval] {name} done", flush=True)
 
     # ------------------------------------------------------------ pooled aggregates
     daily = pd.concat(daily_rows, ignore_index=True)
@@ -462,26 +522,27 @@ def run(analysis_id: str, skip_nine: bool) -> dict:
                     month_of(merged.date).to_numpy(), block=BLOCK_DAYS, draws=DRAWS, seed=SEED,
                     confidence=CONFIDENCE)
                 results["deltas"].setdefault(arm, {}).setdefault(variant, {})[track] = delta
-                if track == "gross":
-                    passed = (delta["long_short_return"]["low"] is not None
-                              and delta["long_short_return"]["low"] > 0
-                              and delta["rank_ic"]["mean"] is not None
-                              and delta["rank_ic"]["mean"] >= GATE_RANK_IC
-                              and delta["turnover"]["mean"] is not None
-                              and delta["turnover"]["mean"] <= GATE_TURNOVER)
-                    results["gates"].setdefault(arm, {})[variant] = {
-                        "pass": bool(passed),
-                        "rule": {"long_short_return_ci_low_gt_0": delta["long_short_return"]["low"],
-                                 "rank_ic_point_ge_minus_0.002": delta["rank_ic"]["mean"],
-                                 "turnover_point_le_plus_0.10": delta["turnover"]["mean"]},
-                        "primary_track": "gross",
-                        "sharpe_delta_interval": delta["long_short_sharpe"],
-                        "neutralized_gate": {
-                            "long_short_return_ci_low_gt_0": results["deltas"][arm][variant]["neutralized"]["long_short_return"]["low"],
-                            "rank_ic_point_ge_minus_0.002": results["deltas"][arm][variant]["neutralized"]["rank_ic"]["mean"],
-                            "turnover_point_le_plus_0.10": results["deltas"][arm][variant]["neutralized"]["turnover"]["mean"],
-                        },
-                    }
+            gross = results["deltas"][arm][variant]["gross"]
+            neutralized = results["deltas"][arm][variant]["neutralized"]
+            passed = (gross["long_short_return"]["low"] is not None
+                      and gross["long_short_return"]["low"] > 0
+                      and gross["rank_ic"]["mean"] is not None
+                      and gross["rank_ic"]["mean"] >= GATE_RANK_IC
+                      and gross["turnover"]["mean"] is not None
+                      and gross["turnover"]["mean"] <= GATE_TURNOVER)
+            results["gates"].setdefault(arm, {})[variant] = {
+                "pass": bool(passed),
+                "rule": {"long_short_return_ci_low_gt_0": gross["long_short_return"]["low"],
+                         "rank_ic_point_ge_minus_0.002": gross["rank_ic"]["mean"],
+                         "turnover_point_le_plus_0.10": gross["turnover"]["mean"]},
+                "primary_track": "gross",
+                "sharpe_delta_interval": gross["long_short_sharpe"],
+                "neutralized_gate": {
+                    "long_short_return_ci_low_gt_0": neutralized["long_short_return"]["low"],
+                    "rank_ic_point_ge_minus_0.002": neutralized["rank_ic"]["mean"],
+                    "turnover_point_le_plus_0.10": neutralized["turnover"]["mean"],
+                },
+            }
 
     # ------------------------------------------------------------------- null checks
     n1 = {}
@@ -588,8 +649,8 @@ def run(analysis_id: str, skip_nine: bool) -> dict:
             scores = arm_scores(frames, {member: 1.0 / len(NINE_MEMBERS) for member in NINE_MEMBERS})
             for variant, frame in variants_of(scores, sigma).items():
                 for neutral in (False, True):
-                    _, daily = evaluate_variant(frame, targets, exposure, neutralized=neutral)
-                    part = daily.copy()
+                    _, nine_frame = evaluate_variant(frame, targets, exposure, neutralized=neutral)
+                    part = nine_frame.copy()
                     part["window"] = name
                     part["variant"] = variant
                     part["track"] = "neutralized" if neutral else "gross"
@@ -634,6 +695,9 @@ def run(analysis_id: str, skip_nine: bool) -> dict:
                                  "variants": nine, "confirmation": confirmations}
 
     # ---------------------------------------------------------------------- persist
+    missing = {"window", "arm", "variant", "track"} - set(daily.columns)
+    if missing:
+        raise RuntimeError(f"pooled daily frame lost declared columns: {sorted(missing)}")
     out_dir = OUT_ROOT / analysis_id
     out_dir.mkdir(parents=True, exist_ok=True)
     columns = [column for column in ("date", "window", "arm", "variant", "track", *DAILY_COLUMNS[1:])
@@ -643,6 +707,8 @@ def run(analysis_id: str, skip_nine: bool) -> dict:
     (out_dir / "results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n",
                                           encoding="utf-8")
     results["_out_dir"] = str(out_dir.relative_to(ROOT)).replace("\\", "/")
+    for cached in partial_dir.glob("*.pkl"):
+        cached.unlink()
     return results
 
 
@@ -651,6 +717,8 @@ def main() -> int:
     parser.add_argument("--run", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--skip-nine", action="store_true", help="skip the archived nine-blend confirmation")
+    parser.add_argument("--workers", type=int, default=min(3, os.cpu_count() or 1),
+                        help="parallel window workers (1 = serial)")
     args = parser.parse_args()
     global RUN_ROOT
     if args.run is not None:
@@ -660,7 +728,7 @@ def main() -> int:
     global OUT_ROOT
     if args.out is not None:
         OUT_ROOT = args.out.resolve().parent
-    results = run(analysis_id, skip_nine=args.skip_nine)
+    results = run(analysis_id, skip_nine=args.skip_nine, workers=max(1, args.workers))
     checks = results["null_checks"]
     print(f"[null] N1={checks['N1_rank_selection_invariance']['pass']} "
           f"N2={checks['N2_five_month_reproduction']['pass']} "

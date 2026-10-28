@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "experiment_id": "r18-sam-probe-20261028",
+  "output_root": "/mnt/work/r18/runs",
+  "total_wall_seconds": 21600,
+  "runs": [
+    {
+      "name": "r18-sam",
+      "config": "r18_sam_441d_seed11.json"
+    }
+  ]
+}

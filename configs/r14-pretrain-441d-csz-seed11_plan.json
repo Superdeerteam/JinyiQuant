@@ -1,0 +1,95 @@
+{
+  "acceptance": {
+    "comparison": "candidate - control, paired by (window, trading day)",
+    "paired_rank_ic_min_improvement": 0.003,
+    "paired_rank_ic_positive_windows": "7/8",
+    "screen_windows": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jul2024",
+      "aug2024"
+    ]
+  },
+  "budget_match": {
+    "control_steps": 145269,
+    "finetune_steps": 130742,
+    "note": "supervised exposure is 1.187997 epoch; the point name marks the control budget point it matches",
+    "pretrain_steps": 14527,
+    "rule": "pretrain_steps = round(share * control_steps); finetune_steps = control_steps - pretrain_steps, so the arm trains exactly the control's total optimizer steps and samples",
+    "share": 0.1,
+    "total_steps": 145269
+  },
+  "budget_points": [
+    {
+      "effective_epochs": 1.187997,
+      "name": "r14-eq132-local"
+    }
+  ],
+  "compute": {
+    "finetune_wall_seconds_estimate": 2800,
+    "pretrain_wall_seconds_estimate": 900
+  },
+  "control": {
+    "budget_point": "scaling-1.32",
+    "experiment_id": "scaling-441d-seed11",
+    "path": ".tmp_r14/ctlroot_win/scaling-441d-seed11"
+  },
+  "experiment_id": "r14-pretrain-441d-csz-seed11",
+  "exposure": {
+    "effective_epochs_atol": 0.005,
+    "min_coverage": 1.0
+  },
+  "hypothesis": "R14: the 31 five-minute columns a day that the supervised recipe never samples carry order-book shape information; reconstructing a masked contiguous span of a 128-bar window that ends at one of those columns transfers a better initialisation for the labelled fine-tune than the same fine-tune from a fresh trunk, at an identical total training budget.",
+  "lr_schedule": "constant",
+  "pretrain": {
+    "batch_size": 32,
+    "instruments_per_slot": 10,
+    "learning_rate": 0.001,
+    "mask_length": 32,
+    "minutes": [
+      "09:35",
+      "09:40",
+      "09:45",
+      "09:50",
+      "09:55",
+      "10:05",
+      "10:10",
+      "10:15",
+      "10:20",
+      "10:25",
+      "10:35",
+      "10:40",
+      "10:45",
+      "10:50",
+      "10:55",
+      "13:00",
+      "13:05",
+      "13:10",
+      "13:15",
+      "13:20",
+      "13:25",
+      "13:35",
+      "13:40",
+      "13:45",
+      "13:50",
+      "13:55",
+      "14:05",
+      "14:10",
+      "14:15",
+      "14:20",
+      "14:25"
+    ],
+    "seed": 11,
+    "steps": 14527
+  },
+  "recipe_config": "configs/r14-pretrain-441d-csz-seed11.json",
+  "recipe_sha256": "1fabd6d17c683a974bb3803d697c0dd18313c87212c113610c1dc88dc9483c17",
+  "schema_version": "r14-pretrain-plan/1",
+  "seeds": [
+    11
+  ]
+}

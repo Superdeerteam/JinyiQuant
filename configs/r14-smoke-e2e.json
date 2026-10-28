@@ -1,0 +1,133 @@
+{
+ "acceptance": {
+  "min_coverage": 0.99,
+  "repro_atol": 1e-06,
+  "repro_rtol": 1e-05
+ },
+ "budget": {
+  "max_rss_mb": 48000.0,
+  "max_train_samples": 500000,
+  "wall_seconds": 9000.0
+ },
+ "data": {
+  "allowed_end": "2025-01-01T00:00:00",
+  "allowed_start": "2020-01-01T00:00:00",
+  "bars_path": "D:/进益资本杯/数据/cpt_jyc_2026_e2e_bar1m",
+  "cache_dir": "D:/进益资本杯/.tmp_r14/cache_e2e",
+  "feature_columns": [
+   "ask_price1",
+   "ask_volume1",
+   "bid_price1",
+   "bid_volume1",
+   "ask_price2",
+   "ask_volume2",
+   "bid_price2",
+   "bid_volume2",
+   "ask_price3",
+   "ask_volume3",
+   "bid_price3",
+   "bid_volume3"
+  ],
+  "history_days": 10,
+  "instrument_map_path": "D:/进益资本杯/数据/cpt_jyc_2026_stock_bar1m_instrument_mapping.csv",
+  "instruments_path": "D:/进益资本杯/数据/cpt_jyc_2026_instruments(1).parquet",
+  "label_horizon_minutes": 30,
+  "labels_path": "D:/进益资本杯/数据/cpt_jyc_2026_vwap",
+  "lookback": 128,
+  "max_ffill_steps": 5,
+  "min_history": 1,
+  "missing_policy": "ffill",
+  "missing_sentinel": -1.0,
+  "monthly_sampling": null,
+  "outside_universe_labels": "exclude",
+  "price_scale": 100.0,
+  "sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "source": "official_local_download_with_explicit_mapping",
+  "training_sample_times": [
+   "09:30",
+   "10:00",
+   "10:30",
+   "11:00",
+   "11:30",
+   "13:30",
+   "14:00",
+   "14:30"
+  ],
+  "version": "cpt_jyc_2026"
+ },
+ "evaluation": {
+  "constant_portfolios": "undefined",
+  "min_cross_section": 3,
+  "periods_per_year": 252,
+  "quantile": 0.2,
+  "single_side_rate": null
+ },
+ "evaluation_split": "validation",
+ "experiment_id": "r14-smoke-e2e",
+ "final_access": {
+  "max_views": 1,
+  "purpose": ""
+ },
+ "hypothesis": "local CPU smoke: pretrain transfer + budget-matched fine-tune path",
+ "logging": {
+  "learning_curve_every_steps": 1500,
+  "learning_curves": false,
+  "resource_interval_seconds": 5.0
+ },
+ "model": {
+  "alpha": 1.0,
+  "batch_size": 32,
+  "book_representation": "raw",
+  "compile_mode": "eager",
+  "cpu_threads": 1,
+  "device": "cpu",
+  "epochs": 12,
+  "finite_check_every": 50,
+  "hidden_dim": 40,
+  "is_sin_emb": true,
+  "kind": "mlplob",
+  "learning_rate": 0.0001,
+  "log_every_steps": 100,
+  "lr_schedule": "constant",
+  "max_steps": null,
+  "num_heads": 1,
+  "num_layers": 3,
+  "patch_counts": [
+   4,
+   16
+  ],
+  "ranking_loss": "none",
+  "ranking_loss_weight": 0.0,
+  "sampling": "shuffle",
+  "target_centering": "timestamp_zscore_train_rms_matched",
+  "target_scaling": "train_std",
+  "time_loss_weighting": "none",
+  "trade_features": "zero"
+ },
+ "output_root": "D:/进益资本杯/.tmp_r14/e2e",
+ "schema_version": 1,
+ "seed": 11,
+ "splits": {
+  "train": {
+   "start": "2022-01-04T00:00:00",
+   "end": "2022-01-13T00:00:00"
+  },
+  "validation": {
+   "start": "2022-01-13T00:00:00",
+   "end": "2022-01-21T00:00:00"
+  },
+  "final": {
+   "start": "2024-10-08T00:00:00",
+   "end": "2025-01-01T00:00:00"
+  }
+ }
+}

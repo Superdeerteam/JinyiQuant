@@ -1,0 +1,743 @@
+{
+  "schema": "screen10-prereg-draft/1",
+  "experiment_id": "screen10-screening-20261028",
+  "status": "final_draft_awaiting_captain_registration",
+  "registered_before_any_candidate_score": true,
+  "no_threshold_change": true,
+  "created_utc": "2026-10-28T12:45:38.578270+00:00",
+  "rung": {
+    "name": "441d",
+    "window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "trading_days": 441,
+    "point": 1.32,
+    "seeds": [
+      11,
+      29,
+      47
+    ]
+  },
+  "arms": {
+    "R1": {
+      "arm": "rankhinge",
+      "hypothesis": "adding a timestamp-grouped pairwise hinge on top of the MSE objective makes the score more ordering-aware and lifts cross-sectional rank_ic at the same budget",
+      "single_change": {
+        "model.ranking_loss": "pairwise_hinge",
+        "model.ranking_loss_weight": 0.5
+      },
+      "forced_companion": {
+        "model.sampling": "timestamp_grouped"
+      },
+      "rung": "441d",
+      "point": 1.32,
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "recipes": {
+        "seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_441d_csz_seed11.json",
+          "sha256": "54fb50168dc1dd704156c5809a935aa87b314ec1e09f33c1ea56768126dfe580"
+        },
+        "seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_441d_csz_seed29.json",
+          "sha256": "e2c043731401f9b34bbaae220974bc998041cb87c55ebe5484101cded70fb4d5"
+        },
+        "seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_441d_csz_seed47.json",
+          "sha256": "48f7951d4e2954a97527235a79fd9fb3b926b099c7f264a5911ccda24d3a2c8b"
+        }
+      },
+      "plans_1point": {
+        "seed11": "/root/repo_featnorm/configs/screen10_rankhinge_seed11_1point_plan.json",
+        "seed29": "/root/repo_featnorm/configs/screen10_rankhinge_seed29_1point_plan.json",
+        "seed47": "/root/repo_featnorm/configs/screen10_rankhinge_seed47_1point_plan.json"
+      },
+      "budget": "inherited from the 441d rung 1.32 point (max_train_samples=500000, component E)",
+      "replay_after_training": "ten development windows, three seeds, equal 1/3 blend, same caliber"
+    },
+    "R2": {
+      "arm": "lookback240",
+      "hypothesis": "a 240-bar (about one trading day) input window carries more of the slow price-pressure signal than 128 bars at the same budget",
+      "single_change": {
+        "data.lookback": 240
+      },
+      "forced_companion": {},
+      "rung": "441d",
+      "point": 1.32,
+      "seeds": [
+        11,
+        29,
+        47
+      ],
+      "recipes": {
+        "seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_441d_csz_seed11.json",
+          "sha256": "729a9074432a14d119a05b0582b8fb4d03e11d2674fa1b8d0e6c5f9b11a007f9"
+        },
+        "seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_441d_csz_seed29.json",
+          "sha256": "70eeb223e4f21cc38db082c4eb5c0a6b36dba1d63bd21117e3e641a04648190e"
+        },
+        "seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_441d_csz_seed47.json",
+          "sha256": "d913f55ef280056decc8a01d78f2c245eacd093f8afaa95cb8a66b9e8d50a357"
+        }
+      },
+      "plans_1point": {
+        "seed11": "/root/repo_featnorm/configs/screen10_lookback240_seed11_1point_plan.json",
+        "seed29": "/root/repo_featnorm/configs/screen10_lookback240_seed29_1point_plan.json",
+        "seed47": "/root/repo_featnorm/configs/screen10_lookback240_seed47_1point_plan.json"
+      },
+      "budget": "inherited from the 441d rung 1.32 point (max_train_samples=500000, component E)",
+      "replay_after_training": "ten development windows, three seeds, equal 1/3 blend, same caliber"
+    }
+  },
+  "baseline": {
+    "label": "control 3-seed equal blend at 1.32, same ten windows",
+    "run_dir": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599",
+    "rank_ic_pooled": 0.0712873790998522,
+    "turnover_pooled": 1.1293460378543654,
+    "days": 203,
+    "corrected_block_ci": {
+      "days": 203,
+      "mean": 0.07128737909985215,
+      "ci_low": 0.06402044956432916,
+      "ci_high": 0.07857101818943638,
+      "blocks_per_draw": 41,
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "estimator": "scripts/compare_blend_replay.py::block_interval (wrap-around blocks)",
+      "estimator_source_sha256": "fd76ce2e230b86beea1381a3a142420e7fbc21d9a74389265faf9d744a944392"
+    },
+    "legacy_5day_mean_ci_caveat": {
+      "days": 203,
+      "mean": 0.0712873790998522,
+      "ci_low": 0.02142112365695705,
+      "ci_high": 0.1210079997650062
+    },
+    "per_window_rank_ic": {
+      "nov2023": 0.09826159026783486,
+      "jan2024": 0.059576399731923385,
+      "feb2024": 0.033195099255683716,
+      "mar2024": 0.09125336552377969,
+      "apr2024": 0.07428943287811683,
+      "may2024": 0.09297134501289889,
+      "jun2024": 0.05749752459079196,
+      "jul2024": 0.07317721339619614,
+      "aug2024": 0.07115436655236049,
+      "sep2024": 0.04729023763846739
+    }
+  },
+  "development_windows": {
+    "names": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jun2024",
+      "jul2024",
+      "aug2024",
+      "sep2024"
+    ],
+    "trading_days": 203,
+    "all_before_sealed_window": true
+  },
+  "caliber": {
+    "evaluation_version": "eval-v2 (local re-implementation; metrics.json evaluation_version)",
+    "quantile": 0.2,
+    "periods_per_year": 252,
+    "min_cross_section": 3,
+    "constant_portfolios": "undefined",
+    "single_side_rate": 0.0,
+    "blend": "equal 1/3 mean of the three seed scores after inner merge on (date, instrument)",
+    "aggregation": "pooled across the ten windows by trading day"
+  },
+  "primary_criterion": {
+    "metric": "rank_ic",
+    "estimator": "paired by (window, trading day): candidate minus control baseline, pooled over all days",
+    "min_improvement": 0.003,
+    "interval": {
+      "method": "corrected 5-day moving-block bootstrap of the pooled mean daily paired difference",
+      "blocks_per_draw": "ceil(n/5)",
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "interval": "percentiles 2.5 / 97.5",
+      "reference_implementation": "scripts/compare_blend_replay.py::block_interval (fixed 2026-10-28: ceil(n/block) wrap-around blocks via _resampled_means)",
+      "not_the_estimator": "scripts/verify_b_release.py:97-99 block_indices draws starts from [0, n-block] without wrapping -- a different interval, not used here",
+      "caveat": "archived 'the interval includes zero' readings produced by the pre-fix single-block drawing are sqrt(n/block) too wide (4.6x at n=104, 6.4x at n=203) and are not comparable with this one",
+      "pinned_estimator_source_sha256": "fd76ce2e230b86beea1381a3a142420e7fbc21d9a74389265faf9d744a944392"
+    },
+    "accept": {
+      "pooled_improvement_at_least": 0.003,
+      "ci_excludes_zero": true,
+      "positive_windows_at_least": 7,
+      "positive_windows_of": 10
+    },
+    "secondary_reported_not_gating": [
+      "turnover",
+      "long_short_return",
+      "ic",
+      "per-window spread"
+    ]
+  },
+  "plan_shape": {
+    "approved_shape": {
+      "budget_points": [
+        {
+          "name": "screen10-1.32",
+          "effective_epochs": 1.32,
+          "role": "scored"
+        },
+        {
+          "name": "screen10-stepup-1.33",
+          "effective_epochs": 1.33,
+          "role": "driver_requires_two_points_only"
+        }
+      ],
+      "scored_point": "screen10-1.32",
+      "anchor_point_role": "driver_requires_two_points_only",
+      "non_scored_points": [
+        "screen10-stepup-1.33"
+      ],
+      "exported_for_comparison": [
+        "modified_tlob_weights-screen10-1.32.json"
+      ],
+      "one_continuous_trajectory": true,
+      "approved_by": "captain 2026-10-28, option 1 (R1 floor 0.99, R2 floor 1.0)",
+      "files": {
+        "rankhinge/seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed11_scoredfirst_plan.json",
+          "sha256": "1007c15728e20a9f64ad9d08b108bc96dd331f7608d31f164f37e0f62cb2ad5c",
+          "status": "final_shape_awaiting_registration"
+        },
+        "rankhinge/seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed29_scoredfirst_plan.json",
+          "sha256": "a0f33169c2842df59e6c4f18b87d3a89dfb832dc8554785db71b1d7a1700a304",
+          "status": "final_shape_awaiting_registration"
+        },
+        "rankhinge/seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed47_scoredfirst_plan.json",
+          "sha256": "e80dead5f7c514c537d19bfcba1d850cbc153a11ddad5192dcb869eb3204c5f7",
+          "status": "final_shape_awaiting_registration"
+        },
+        "lookback240/seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed11_scoredfirst_plan.json",
+          "sha256": "ac5ef9d0993413fec363ec93d243ae5ff4abf8d124648189d1b953dcc0f745a1",
+          "status": "final_shape_awaiting_registration"
+        },
+        "lookback240/seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed29_scoredfirst_plan.json",
+          "sha256": "ac4f2aecc03298e60c88cec35497688f52d08ff8961c1c8a4b74f6b00cc4c2d4",
+          "status": "final_shape_awaiting_registration"
+        },
+        "lookback240/seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed47_scoredfirst_plan.json",
+          "sha256": "42c810a51029730ae0e4ef791e020735602607aeec88272e60470452bd5e7f1b",
+          "status": "final_shape_awaiting_registration"
+        }
+      }
+    },
+    "superseded_shape": {
+      "budget_points": [
+        {
+          "name": "screen10-0.66",
+          "effective_epochs": 0.66
+        },
+        {
+          "name": "screen10-1.32",
+          "effective_epochs": 1.32
+        }
+      ],
+      "runnable_as_written": false,
+      "why_not": "the 0.66 anchor tops out at 0.6599955 coverage, below any floor >= 0.66",
+      "files": {
+        "rankhinge/seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed11_2point_plan.json",
+          "sha256": "e711802a8c6418a51ab9ddc818abe681f29f454a94a71ba0d6fbd8c19bda7c6a"
+        },
+        "rankhinge/seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed29_2point_plan.json",
+          "sha256": "3b02146c6d2d8068a4cdaf0dd18427295c996f15795486b8840d0821ea84fd4e"
+        },
+        "rankhinge/seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_rankhinge_seed47_2point_plan.json",
+          "sha256": "19b30298dfae5ecde7c0ad89da5b0cf5d997654253a6af456c3f59780b0a7c4a"
+        },
+        "lookback240/seed11": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed11_2point_plan.json",
+          "sha256": "d9ca0ff561e75df629abe2b90709bf5e1aa130b00a37b684f964e374f3ba23c8"
+        },
+        "lookback240/seed29": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed29_2point_plan.json",
+          "sha256": "d10db1fd95c5793d493b04c431cf3970587433d611d5dcb709d47fbff3d4a426"
+        },
+        "lookback240/seed47": {
+          "path": "/root/repo_featnorm/configs/screen10_lookback240_seed47_2point_plan.json",
+          "sha256": "57860c728dffd42933cbeb68c090458e2b4834723447f1811b3fafcb7e4ed414"
+        }
+      }
+    },
+    "nothing_launched": true
+  },
+  "exposure_contract": {
+    "scored_point": "screen10-1.32",
+    "anchor_point_role": "driver_requires_two_points_only",
+    "points": {
+      "rankhinge": [
+        1.32,
+        1.33
+      ],
+      "lookback240": [
+        1.32,
+        1.33
+      ]
+    },
+    "min_coverage": {
+      "rankhinge": 0.99,
+      "lookback240": 1.0
+    },
+    "rung_contract": {
+      "min_coverage_original": 1.0,
+      "effective_epochs_atol": 0.001,
+      "rule": "run_training_trajectory reconciles every budget point: steps exact; |realised effective epochs - declared| <= atol; unique/usable coverage >= min_coverage; and when coverage >= 1.0 every training day must be fully covered",
+      "report_rule": "coverage = unique_rows/usable_rows, effective_epochs = samples_seen/usable_rows (jinyiquant/trajectory.py:exposure_report)"
+    },
+    "measured_pool": {
+      "usable_samples": 3521680,
+      "progress_usable_samples": 3499776,
+      "never_fed_rows": 21904,
+      "never_fed_fraction": 0.00622,
+      "coverage_ceiling_rankhinge": 0.993784,
+      "measured_on": [
+        "hz-t3",
+        "hz-4"
+      ],
+      "hz_t3_evidence": "/root/logs/smoke-screen10-2point-rankhinge-s11.json (prepare_training on the real 441-day window: usable_samples=3521680, progress.usable_samples=3499776, 2 training steps)",
+      "hz_4_evidence": "/mnt/work/runs/scaling-441d-seed11/20261027T191119.061322Z_2303ea6816b5/budget.json (usable_samples=3521680, point scaling-1.32 steps=145269) and exposure.json (coverage=1.0, effective_epochs=2.639994548056609, per_day 441 days 2022-01-04..2023-10-31)",
+      "rankhinge_cause": "modified_tlob/adapter.py truncates every timestamp group to a multiple of batch_size, so a fixed 21,904 of the 3,521,680 rows (0.622%) are never fed at any budget; the R1 coverage ceiling is 3499776/3521680 = 0.993784 and no budget raises it",
+      "rankhinge_floor": "R1 declares min_coverage 0.99 as the direct consequence of that truncation (the measured scored point sits near 0.9958, above the floor); the floor was not lowered to let the experiment run",
+      "lookback240_floor": "R2 keeps the rung's 1.0: shuffle feeds every usable row once per epoch, so coverage reaches exactly 1.0 at the scored point and every day is fully covered"
+    },
+    "steps_contract": {
+      "rule": "steps = round(effective_epochs * measured_usable / batch_size); run_training_trajectory re-derives this from the pool it measured at prepare_training time, never from the plan's static estimate",
+      "measured_usable": 3521680,
+      "plan_static_estimate": 3522173,
+      "estimate_error_rows": 493,
+      "steps_derived": {
+        "1.32": 145269,
+        "1.33": 146370
+      },
+      "hz_4_and_hz_t3_agree": true,
+      "why_both_machines_agree": "both measured 3,521,680 rows for the same 441-day window (60 monthly bar files 2020-01..2024-12, same instruments and fit mask), so both derive 145,269 at 1.32 and 146,370 at 1.33",
+      "note_on_plan_estimate": "the parent rung plan carries usable_samples_estimate=3522173 with steps_expected {1.32: 145290, 2.64: 290579}; that is a static estimate 493 rows above the measured pool and the driver never uses it, so no 21-step discrepancy can reach a run",
+      "comparability_basis": "the arms are compared on effective epochs (1.32) over the same ten windows; the exact step count is whatever each machine measures"
+    },
+    "anchor": {
+      "kind": "scored-first",
+      "extra_steps_vs_scored_point": 1101,
+      "why": "validate_budget_points demands two strictly increasing points; placing the scored 1.32 point first keeps coverage 1.0 at the scored point for R2 and a genuine 0.993784 ceiling for R1, and costs 1,101 extra steps instead of 72,634 (0.66 anchor) or 145,269 (registered 1.32/2.64 shape)",
+      "excluded_from_comparison": "the 1.33 checkpoint, its predictions and its metrics"
+    }
+  },
+  "smoke_evidence": {
+    "rankhinge": {
+      "arm": "rankhinge",
+      "seed": 11,
+      "recipe": "/root/repo_featnorm/configs/screen10_rankhinge_441d_csz_seed11.json",
+      "overrides": {
+        "splits.train": {
+          "start": "2023-10-25T00:00:00",
+          "end": "2023-11-01T00:00:00"
+        },
+        "data.cache_dir": "/root/cache/screen10-smoke",
+        "model.device": "cpu",
+        "model.epochs": 1,
+        "model.max_steps": null
+      },
+      "status": "passed",
+      "recipe_validated": true,
+      "recipe_contract": {
+        "lookback": 128,
+        "sampling": "timestamp_grouped",
+        "ranking_loss": "pairwise_hinge",
+        "ranking_loss_weight": 0.5,
+        "batch_size": 32,
+        "max_train_samples": 500000
+      },
+      "architecture": {
+        "kind": "mlplob",
+        "seq_size": 128,
+        "num_features": 12,
+        "hidden_dim": 40,
+        "parameters": 362081,
+        "total_dim": 320,
+        "total_dim_divisible": true
+      },
+      "batch": {
+        "x_shape": [
+          39960,
+          128,
+          12
+        ],
+        "keys": 39960,
+        "usable_samples": 39960,
+        "target_std": 0.003908450249582529,
+        "history_days_first": "2023-10-16"
+      },
+      "fit": {
+        "steps": 5,
+        "samples_seen": 160,
+        "usable_samples": 39680,
+        "loss": 9.667419972235078e-06,
+        "weighted_loss": 9.667419972235078e-06,
+        "objective_loss": 0.6501127779483795,
+        "ranking_loss": 0.03452393226325512,
+        "ranking_loss_weight": 0.5,
+        "ranking_loss_kind": "pairwise_hinge",
+        "sampling": "timestamp_grouped",
+        "optimizer": "Adam_MSE+0.5x_pairwise_hinge",
+        "stop_reason": "step_budget",
+        "target_scale": 0.0039084505108140525,
+        "epochs": 0.004004004004004004,
+        "loss_finite": true,
+        "samples_seen_matches_budget": true
+      },
+      "objective_decomposition": {
+        "mse_normalized": 0.6328508257865906,
+        "w*ranking_loss": 0.01726196613162756,
+        "sum": 0.6501127919182181,
+        "objective_loss": 0.6501127779483795,
+        "abs_error": 1.3969838619232178e-08,
+        "matches": true,
+        "note": "objective = mse_term + ranking_loss_weight*ranking_loss in normalized units"
+      },
+      "ranking_term_present": true,
+      "optimizer_label": "Adam_MSE+0.5x_pairwise_hinge",
+      "elapsed_seconds": 43.27
+    },
+    "lookback240": {
+      "arm": "lookback240",
+      "seed": 11,
+      "recipe": "/root/repo_featnorm/configs/screen10_lookback240_441d_csz_seed11.json",
+      "overrides": {
+        "splits.train": {
+          "start": "2023-10-25T00:00:00",
+          "end": "2023-11-01T00:00:00"
+        },
+        "data.cache_dir": "/root/cache/screen10-smoke",
+        "model.device": "cpu",
+        "model.epochs": 1,
+        "model.max_steps": null
+      },
+      "status": "passed",
+      "recipe_validated": true,
+      "recipe_contract": {
+        "lookback": 240,
+        "sampling": "shuffle",
+        "ranking_loss": "none",
+        "ranking_loss_weight": 0.0,
+        "batch_size": 32,
+        "max_train_samples": 500000
+      },
+      "architecture": {
+        "kind": "mlplob",
+        "seq_size": 240,
+        "num_features": 12,
+        "hidden_dim": 40,
+        "parameters": 1196691,
+        "total_dim": 600,
+        "total_dim_divisible": true
+      },
+      "batch": {
+        "x_shape": [
+          39960,
+          240,
+          12
+        ],
+        "keys": 39960,
+        "usable_samples": 39960,
+        "target_std": 0.003908450249582529,
+        "history_days_first": "2023-10-16"
+      },
+      "fit": {
+        "steps": 5,
+        "samples_seen": 160,
+        "usable_samples": 39960,
+        "loss": 2.656426780104128e-05,
+        "weighted_loss": 2.656426780104128e-05,
+        "objective_loss": 1.7389560878276824,
+        "ranking_loss": null,
+        "ranking_loss_weight": 0.0,
+        "ranking_loss_kind": "none",
+        "sampling": "shuffle",
+        "optimizer": "Adam_MSE",
+        "stop_reason": "step_budget",
+        "target_scale": 0.0039084505108140525,
+        "epochs": 0.004004004004004004,
+        "loss_finite": true,
+        "samples_seen_matches_budget": true
+      },
+      "ranking_term_present": false,
+      "elapsed_seconds": 43.66
+    }
+  },
+  "plan_smoke": {
+    "rankhinge_s11": {
+      "arm": "rankhinge",
+      "seed": 11,
+      "plan": "/root/repo_featnorm/configs/screen10_rankhinge_seed11_2point_plan.json",
+      "checks": {
+        "load_plan": {
+          "passed": true,
+          "detail": [
+            [
+              "screen10-0.66",
+              0.66
+            ],
+            [
+              "screen10-1.32",
+              1.32
+            ]
+          ]
+        },
+        "recipe_sha256": {
+          "passed": true,
+          "detail": {
+            "plan": "54fb50168dc1dd70",
+            "file": "54fb50168dc1dd70",
+            "bytes": 3487
+          }
+        },
+        "budget_only_overrides": {
+          "passed": true,
+          "detail": [
+            "model.max_steps",
+            "output_root"
+          ]
+        },
+        "steps[screen10-0.66]": {
+          "passed": true,
+          "detail": {
+            "steps": 72635,
+            "expected": [
+              72634,
+              72635
+            ],
+            "realised_effective_epochs": 0.660003,
+            "batches_per_epoch": 110053
+          }
+        },
+        "steps[screen10-1.32]": {
+          "passed": true,
+          "detail": {
+            "steps": 145269,
+            "expected": [
+              145269
+            ],
+            "realised_effective_epochs": 1.319997,
+            "batches_per_epoch": 110053
+          }
+        },
+        "steps_run": {
+          "passed": true,
+          "detail": 2
+        },
+        "stop_reason": {
+          "passed": true,
+          "detail": "step_budget"
+        },
+        "loss_finite": {
+          "passed": true,
+          "detail": [
+            "1.32773e-05",
+            "1.32773e-05",
+            "0.773271",
+            "0.752766",
+            "0.041011"
+          ]
+        },
+        "sampling_matches_recipe": {
+          "passed": true,
+          "detail": [
+            "timestamp_grouped",
+            "timestamp_grouped"
+          ]
+        },
+        "ranking_term_present": {
+          "passed": true,
+          "detail": {
+            "ranking_loss": 0.041011035442352295,
+            "weight": 0.5
+          }
+        },
+        "objective_identity": {
+          "passed": true,
+          "detail": {
+            "objective": 0.7732712924480438,
+            "mse_normalized": 0.7527657747268677,
+            "ranking": 0.041011035442352295,
+            "residual": 0.0
+          }
+        },
+        "optimizer_label": {
+          "passed": true,
+          "detail": "Adam_MSE+0.5x_pairwise_hinge"
+        }
+      },
+      "failures": [],
+      "budget_points": [
+        {
+          "name": "screen10-0.66",
+          "effective_epochs": 0.66
+        },
+        {
+          "name": "screen10-1.32",
+          "effective_epochs": 1.32
+        }
+      ],
+      "config_knobs": {
+        "ranking_loss": "pairwise_hinge",
+        "ranking_loss_weight": 0.5,
+        "sampling": "timestamp_grouped",
+        "lookback": 128,
+        "batch_size": 32,
+        "epochs": 12,
+        "max_steps": null,
+        "device": "cuda"
+      },
+      "usable_samples": 3521680,
+      "prepare_seconds": 813.5,
+      "train_keys": 3521680,
+      "budget": [
+        {
+          "name": "screen10-0.66",
+          "effective_epochs": 0.66,
+          "steps": 72635,
+          "segment_steps": 72635,
+          "realised_effective_epochs": 0.6600031803003112,
+          "batches_per_epoch": 110053
+        },
+        {
+          "name": "screen10-1.32",
+          "effective_epochs": 1.32,
+          "steps": 145269,
+          "segment_steps": 72634,
+          "realised_effective_epochs": 1.3199972740283046,
+          "batches_per_epoch": 110053
+        }
+      ],
+      "params": 362081,
+      "fit_seconds": 9.6,
+      "progress": {
+        "steps": 2,
+        "samples_seen": 64,
+        "objective_loss": 0.7732712924480438,
+        "weighted_loss": 1.3277276944492436e-05,
+        "optimization_loss": 0.7527657747268677,
+        "ranking_loss": 0.041011035442352295,
+        "ranking_loss_weight": 0.5,
+        "sampling": "timestamp_grouped",
+        "target_scale": 0.0041997609822677275,
+        "stop_reason": "step_budget",
+        "loss": 1.3277276944492436e-05,
+        "usable_samples": 3499776,
+        "mask_excluded": 0
+      },
+      "elapsed_seconds": 823.5,
+      "verdict": "pass"
+    }
+  },
+  "known_limitations": [
+    "R1 (timestamp_grouped) can never reach coverage 1.0: the sampler truncates every timestamp group to a multiple of batch_size, so a fixed 21,904 of the 3,521,680 rows (0.622%) are never fed at any budget. The R1 coverage ceiling is 0.993784 and its plan therefore declares min_coverage 0.99; R2 keeps 1.0. This is the only guard change in either arm and it was fixed before any candidate score exists",
+    "the 1.33 point exists only because the trajectory driver refuses fewer than two budget points; its checkpoint, predictions and metrics are excluded from every comparison, and all replays read modified_tlob_weights-screen10-1.32.json only",
+    "metrics.json of the control replay has undefined cost/net-return sections because the plan evaluation block carries no single_side_rate; rank_ic and turnover are unaffected",
+    "the R1 recipe also moves sampling to timestamp_grouped because config.py rejects a ranking loss without it, so R1 changes batch composition (and drops those 21,904 rows per epoch) as part of what the arm measures",
+    "R2 triples the temporal head width (total_dim 320 -> 600, parameters 362k -> 1.20M), so its 1.32-point budget is the same sample count as the rung, not the same wall-clock cost"
+  ],
+  "driver_anchor": {
+    "rule": "the scored point is the 10-window replay of the 1.32 weights; the 1.33 step-up point is driver bookkeeping and is never scored or replayed",
+    "intervention": "none required: the step-up costs 1,101 steps (about a minute at the rung's throughput), so the trajectory can simply finish; killing after the 1.32 export stays possible and is equally clean"
+  },
+  "checkpoints": {
+    "c132-s11": {
+      "path": "/root/weights/screen10/c132-s11.json",
+      "sha256": "f3466c6d207e6377c3b66e304a1acc026fe9d10963007373550a0e79848ee96a",
+      "bytes": 8344496
+    },
+    "c132-s29": {
+      "path": "/root/weights/screen10/c132-s29.json",
+      "sha256": "7860d5cd51c6efeae15bcf85b18c15f543595b225732cd66ca4a7a430f3ddb19",
+      "bytes": 8347332
+    },
+    "c132-s47": {
+      "path": "/root/weights/screen10/c132-s47.json",
+      "sha256": "532e05bf807ed9ce27b0375df0dac814d355c7a4b358a188e27435742c707b94",
+      "bytes": 8344176
+    }
+  },
+  "comparison_reference": {
+    "nov2023": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/nov2023/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/nov2023/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/nov2023/c132-s47/daily.csv"
+    },
+    "jan2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jan2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jan2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jan2024/c132-s47/daily.csv"
+    },
+    "feb2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/feb2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/feb2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/feb2024/c132-s47/daily.csv"
+    },
+    "mar2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/mar2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/mar2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/mar2024/c132-s47/daily.csv"
+    },
+    "apr2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/apr2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/apr2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/apr2024/c132-s47/daily.csv"
+    },
+    "may2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/may2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/may2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/may2024/c132-s47/daily.csv"
+    },
+    "jun2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jun2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jun2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jun2024/c132-s47/daily.csv"
+    },
+    "jul2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jul2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jul2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/jul2024/c132-s47/daily.csv"
+    },
+    "aug2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/aug2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/aug2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/aug2024/c132-s47/daily.csv"
+    },
+    "sep2024": {
+      "c132-s11": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/sep2024/c132-s11/daily.csv",
+      "c132-s29": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/sep2024/c132-s29/daily.csv",
+      "c132-s47": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599/windows/sep2024/c132-s47/daily.csv"
+    }
+  },
+  "next_steps_after_user_review": [
+    "register the thresholds unchanged, then train the six arm/seed runs",
+    "replay each trained checkpoint on the same ten windows and form the 1/3 blend",
+    "compute paired (window, day) differences against the control baseline and the block interval"
+  ]
+}
