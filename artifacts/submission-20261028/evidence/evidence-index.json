@@ -1,0 +1,191 @@
+{
+  "alpha_changed": false,
+  "candidate": {
+    "alpha": 0.9111677303420447,
+    "candidate_id": "cand_441d_2p64_3seed_ewma_match",
+    "object_id": "cand_441d_2p64_3seed_ewma_match",
+    "registration_id": "promotion-candidate-441d-2p64-3seed-ewma-match-20261028",
+    "registration_path": "runs/promotion-candidate-ewma-match-20261028/candidate.json",
+    "registration_sha256": "d70995e23a34a348f38f43d16b331c3ed5ab52d9616fd92aeb9a1d99b6bbb9c3"
+  },
+  "candidate_changed": false,
+  "configs_changed": false,
+  "data_environment_note": "the local monthly feather files were re-extracted after the B1 measurement and are now truncated (202311 holds only 2023-11-01 09:16-13:02, 202310 only Oct 9-10), so the measurement and the forward check reuse the hash-verified B1 fixture instead of re-projecting the source months",
+  "deliverable": {
+    "archive": "runs/promotion-submission-20261028/package-flat.zip",
+    "archive_bytes": 10236143,
+    "archive_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+    "files": {
+      "inference.ipynb": {
+        "bytes": 940,
+        "sha256": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178"
+      },
+      "jinyiquant_flat.py": {
+        "bytes": 54364,
+        "sha256": "82e9e68d3fc78788301759df8d77c784bac7f243ed18bd4e305266429f9bcc01"
+      },
+      "modified_tlob_flat.py": {
+        "bytes": 111454,
+        "sha256": "c04ffc08a2eacb5591ed14b691a161aac188404023e3ec2735fa5167853af147"
+      },
+      "modified_tlob_weights.json": {
+        "bytes": 23799122,
+        "sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+      },
+      "provenance.json": {
+        "bytes": 7753,
+        "sha256": "f3bf64418c9c7bbd15e49e84f0c2dc7d3d5edefa37b6b6c60b39326fc1877273"
+      },
+      "requirements.txt": {
+        "bytes": 550,
+        "sha256": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327"
+      },
+      "submission_config.json": {
+        "bytes": 1000,
+        "sha256": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa"
+      }
+    },
+    "flat_dir": "runs/promotion-submission-20261028/package-flat"
+  },
+  "experiment_id": "promotion-submission-20261028",
+  "gate": {
+    "action": "retain_candidate",
+    "confidence_interval": {
+      "confidence": 0.95,
+      "high": 0.009942125220239689,
+      "low": 0.005234086005151287
+    },
+    "decision_json_sha256": "a0abec6179167ca4cbf462e4d04e7f7630b70ef5d7dd97b0dc1bedff969f174c",
+    "engine_status": "accept",
+    "failed_gates": [],
+    "gate_json_sha256": "bb27849d096208d35efdb941c01e1a66f743f13a2d6897f9b472c316bb9b906f",
+    "improvement": 0.008235609120890754,
+    "missing_evidence": [],
+    "output_dir": "runs/promotion-submission-20261028/gate-cand_441d_2p64_3seed_ewma_match-resource",
+    "refused_attempt_note": "runs/promotion-submission-20261028/gate-cand_441d_2p64_3seed_ewma_match/ holds a refused invocation (exit 2, 'candidate does not declare its single controlled factor') because --change was missing; it is kept as an audit record and carries no verdict",
+    "resources": {
+      "artifact_kind": "inference_submission",
+      "gated": true,
+      "passed": true,
+      "peak_rss_mib": 852.77,
+      "promotion_peak_rss_mib": 20889.0,
+      "provided": true
+    },
+    "result": "保留",
+    "status": "accept"
+  },
+  "kind": "evidence_index",
+  "resource": {
+    "artifact_kind": "inference_submission",
+    "b1_comparison": {
+      "b1_bound_mib": 3654.74,
+      "b1_gpu": {
+        "device_peak_used_mb": 217.0,
+        "policy": "VRAM reported separately, never counted against the host-memory line",
+        "torch_peak_allocated_mb": 94.85009765625,
+        "torch_peak_reserved_mb": 112.0
+      },
+      "b1_host_peaks_mb": {
+        "W1_a": 894.91,
+        "W1_b": 896.15,
+        "W3": 991.39
+      },
+      "b1_overall_peak_mb": 991.39,
+      "b1_release_source": "runs/b-release-verify-20261027/20261027T143553Z_6996506f228f/results.json",
+      "b1_source": "runs/resource-inference-verify-20261027/20261027T120917Z_713a835c173a/results.json",
+      "delta_bound_mib": -1837.95,
+      "delta_overall_peak_mb": -97.2,
+      "note": "B1 measured the nine-member incumbent blend (103,111,128-byte checkpoint, nine torch member models); this package carries three 441-day checkpoints (23,799,122-byte blend) plus the causal EWMA state, so a lower peak is expected from the smaller model set",
+      "relative_overall_peak": 0.902,
+      "this_package_bound_mib": 1816.79,
+      "this_package_overall_peak_mb": 894.19
+    },
+    "device": {
+      "device_peak_used_mb": 199.0,
+      "gpu_name": "NVIDIA GeForce RTX 2060",
+      "measured": true,
+      "policy": "device-global VRAM includes the CUDA context and every process on the board; the notebook quota is host memory, so VRAM is reported on its own scale and is never counted against 24 GiB",
+      "torch_peak_allocated_mb": 74.98291015625,
+      "torch_peak_reserved_mb": 94.0
+    },
+    "evidence": "runs/promotion-submission-20261028/resource-evidence.json",
+    "full_range_bound_mib": 1816.79,
+    "host_peaks_by_run_mb": {
+      "W1_a": 862.25,
+      "W1_b": 816.09,
+      "W3": 894.19
+    },
+    "limit_mib": 24576.0,
+    "peak_rss_mb_recorded": 894.19,
+    "peak_rss_mib": 852.77,
+    "promotion_line_mib": 20889.0,
+    "verifier_run": "runs/promotion-submission-20261028/resource-inference/20261028T034705Z_a5ae35086fb7",
+    "verifier_verdict": "pass",
+    "wall_seconds": 150.09
+  },
+  "schema_version": 1,
+  "source_package": {
+    "files": 20,
+    "manifest_sha256": "0a77615e999f0ba6f4cfe70f403b4a535a9a3e5c13b2e73371a2debecc7c89a1",
+    "patched_modules": {
+      "modified_tlob/adapter.py": "894635068088510d8a2db259764b284a06c3d3b885971120efe93b06d33f764e",
+      "modified_tlob/submission.py": "36764cd608d723f6550d00956cd34b1d270d5be2afb87679f5523d9245aa4428"
+    },
+    "path": "runs/promotion-submission-20261028/package-src"
+  },
+  "task": "t19",
+  "thresholds_changed": false,
+  "training_runs": 0,
+  "verification": {
+    "flat_equals_source_on_synthetic_dai": {
+      "max_abs_prediction_difference": 0.0,
+      "no_original_package_imports": true,
+      "passed": true,
+      "requirements_satisfied": true,
+      "weights_byte_identical": true
+    },
+    "forward_check_on_real_bars": {
+      "all_values_bit_identical": false,
+      "compared_values": 8000,
+      "exact_equal_values": 0,
+      "matched_rows": 8000,
+      "max_abs_difference": 0.00010015122808160193,
+      "mean_abs_difference": 3.507540358443799e-06,
+      "missing_in_package": 0,
+      "missing_in_reference": 0,
+      "package_rows": 8000,
+      "reference": "archived dose-replay member scores -> equal-weight mean -> registered causal EWMA",
+      "reference_rows": 8000,
+      "report": "runs/promotion-submission-20261028/forward-check/report.json"
+    },
+    "forward_diagnostic": {
+      "input_construction_bit_identical": true,
+      "platform_vs_replay_construction_scores": {
+        "exact_equal": 8000,
+        "max_abs_difference": 0.0,
+        "mean_abs_difference": 0.0,
+        "nonzero": 0,
+        "rows": 8000
+      },
+      "reading": "the platform daily-streaming path and the replay construction build bit-identical windows and score them bit-identically; the only residual is the member float32 forward pass against the archived run (<=5e-8 per member score), which the cross-sectional standardization and the EWMA carry to <=1e-4 in the smoothed score",
+      "replay_construction_vs_archived": {
+        "exact_equal": 275,
+        "max_abs_difference": 4.912633256730402e-08,
+        "mean_abs_difference": 1.4874111914443455e-09,
+        "nonzero": 7725,
+        "rows": 8000
+      },
+      "report": "runs/promotion-submission-20261028/forward-diagnostic/report.json"
+    },
+    "score_identity_against_validated_object": {
+      "blend_reduction_bit_identical": true,
+      "checks": "20/20",
+      "daily_0bp_sha256": "7aebcaad512385163566de16346b34269b8def54baff14786d4d46dcf3deeb99",
+      "daily_5bp_sha256": "7a44007c1ab78137e3bc3ce4c9d68bcf295babefa544f2427ee59cbd42fdf53e",
+      "metrics_0bp_digest": null,
+      "report": "runs/promotion-submission-20261028/score-identity/report.json",
+      "streaming_smoothing_bit_identical": true,
+      "verdict": "pass"
+    }
+  }
+}

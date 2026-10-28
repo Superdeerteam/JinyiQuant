@@ -1,0 +1,170 @@
+{
+ "artifact_kind": "inference_submission",
+ "candidate": {
+  "alpha": 0.9111677303420447,
+  "candidate_id": "cand_441d_2p64_3seed_ewma_match",
+  "object_id": "cand_441d_2p64_3seed_ewma_match",
+  "registration_id": "promotion-candidate-441d-2p64-3seed-ewma-match-20261028",
+  "registration_path": "runs/promotion-candidate-ewma-match-20261028/candidate.json",
+  "registration_sha256": "d70995e23a34a348f38f43d16b331c3ed5ab52d9616fd92aeb9a1d99b6bbb9c3"
+ },
+ "contract": {
+  "device": "auto",
+  "history_policy": {
+   "instrument_batch_size": 50,
+   "max_backfill_days": 366,
+   "mode": "recover_then_mean"
+  },
+  "min_coverage": 0.99,
+  "platform_price_scale": 1,
+  "schema_version": 1,
+  "smoothing": {
+   "alpha": 0.9111677303420447,
+   "applied_at": "equal-weight blended score of each intraday section, before any cost scenario",
+   "candidate_registration": "runs/promotion-candidate-ewma-match-20261028/candidate.json",
+   "candidate_registration_sha256": "d70995e23a34a348f38f43d16b331c3ed5ab52d9616fd92aeb9a1d99b6bbb9c3",
+   "causality_rule": "future rows may not enter any value",
+   "function": "causal_ewma",
+   "id": "causal_ewma_turnover_matched",
+   "operator_source": "scripts/verify_turnover_change.py",
+   "operator_source_sha256": "7aaa434078ea7cbd8e4a1ac7d474e53be3e395ce591b3def66fe360145a69712",
+   "state_reset": "trading_day"
+  },
+  "wall_seconds": 10800,
+  "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+ },
+ "created_at_utc": "2026-10-28T03:42:15.018242+00:00",
+ "experiment_id": "promotion-submission-20261028",
+ "flat_build_stdout": "D:\\�����ʱ���\\runs\\promotion-submission-20261028\\package-flat",
+ "flat_check": {
+  "archive": "D:\\进益资本杯\\runs\\promotion-submission-20261028\\package-flat.zip",
+  "archive_bytes": 10236143,
+  "archive_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+  "files": [
+   "inference.ipynb",
+   "jinyiquant_flat.py",
+   "modified_tlob_flat.py",
+   "modified_tlob_weights.json",
+   "provenance.json",
+   "requirements.txt",
+   "submission_config.json"
+  ],
+  "max_abs_prediction_difference": 0.0,
+  "network": "blocked",
+  "notebook_executed": true,
+  "original_packages_imported": false,
+  "passed": true,
+  "platform_acceptance": "not_verified",
+  "prediction_rows": 256,
+  "requirements_satisfied": {
+   "annotated-types": "0.8.0",
+   "filelock": "3.32.3",
+   "fsspec": "2025.12.0",
+   "jinja2": "3.1.6",
+   "markupsafe": "3.0.3",
+   "mpmath": "1.3.0",
+   "networkx": "3.6.1",
+   "numpy": "2.2.6",
+   "pandas": "2.2.3",
+   "psutil": "7.1.0",
+   "pyarrow": "21.0.0",
+   "pydantic": "2.12.3",
+   "pydantic-core": "2.41.4",
+   "python-dateutil": "2.9.0.post0",
+   "pytz": "2026.5",
+   "six": "1.17.0",
+   "sympy": "1.13.1",
+   "torch": "2.5.0+cpu",
+   "typing-extensions": "4.16.0",
+   "typing-inspection": "0.4.4",
+   "tzdata": "2026.5"
+  },
+  "scenario": "normal",
+  "schema_version": 1,
+  "scope": "frozen_real_weights_synthetic_DAI_inputs",
+  "source_snapshot_verified": true,
+  "submission_config_byte_identical": true,
+  "upload_file_bytes": {
+   "inference.ipynb": 940,
+   "jinyiquant_flat.py": 54364,
+   "modified_tlob_flat.py": 111454,
+   "modified_tlob_weights.json": 23799122,
+   "provenance.json": 7753,
+   "requirements.txt": 550,
+   "submission_config.json": 1000
+  },
+  "upload_file_limit_bytes": 50000000,
+  "weight_values_identical": true,
+  "weights_byte_identical": true,
+  "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+ },
+ "flat_package": {
+  "archive": "runs/promotion-submission-20261028/package-flat.zip",
+  "archive_bytes": 10236143,
+  "archive_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+  "files": {
+   "inference.ipynb": {
+    "bytes": 940,
+    "sha256": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178"
+   },
+   "jinyiquant_flat.py": {
+    "bytes": 54364,
+    "sha256": "82e9e68d3fc78788301759df8d77c784bac7f243ed18bd4e305266429f9bcc01"
+   },
+   "modified_tlob_flat.py": {
+    "bytes": 111454,
+    "sha256": "c04ffc08a2eacb5591ed14b691a161aac188404023e3ec2735fa5167853af147"
+   },
+   "modified_tlob_weights.json": {
+    "bytes": 23799122,
+    "sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+   },
+   "provenance.json": {
+    "bytes": 7753,
+    "sha256": "f3bf64418c9c7bbd15e49e84f0c2dc7d3d5edefa37b6b6c60b39326fc1877273"
+   },
+   "requirements.txt": {
+    "bytes": 550,
+    "sha256": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327"
+   },
+   "submission_config.json": {
+    "bytes": 1000,
+    "sha256": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa"
+   }
+  },
+  "path": "runs/promotion-submission-20261028/package-flat"
+ },
+ "kind": "inference_submission_package",
+ "schema_version": 1,
+ "source_package": {
+  "base_hashes": {
+   "adapter.py": "a58947674f3abaedca603eee28fb604407d96ca185747853d713a92c3fceac4e",
+   "submission.py": "49b51fd3e29c727b5e5e9d64df64aa3160306ea32e506576fdc358a8a6419a94"
+  },
+  "files": {
+   "inference.ipynb": "21145e5ee605261bf2b8c0fe8ccf6e61f2a4359c5adb1ea7d23d2b3c16e44a90",
+   "jinyiquant/__init__.py": "50f23c2e208f53a0438ac612a5796c28891a7d8acf60f08514c2d954ea7391b9",
+   "jinyiquant/data.py": "92727e9f32df8e49f42141abae3c9025816212a51a677c3e25e8319e7a9eca44",
+   "jinyiquant/io.py": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+   "jinyiquant/tracking.py": "fc156afbcc0077a2f873a7d80c19ae3bc646689b40286bfcaf974a82ab657e08",
+   "jinyiquant/trajectory.py": "24142dea8306954750728bbb1474d9b27adbba4c2453b3e35c6fe2da40e258de",
+   "modified_tlob/LICENSE": "622476939f6aad03c8c80fcd25a131b7ebaecdf44f23e8ee5423d9494f34f5c3",
+   "modified_tlob/__init__.py": "617f795f4e681870dede15f186ae267f6dce9efa039671ad3bcaff4b1b5dfbe3",
+   "modified_tlob/adapter.py": "894635068088510d8a2db259764b284a06c3d3b885971120efe93b06d33f764e",
+   "modified_tlob/device.py": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+   "modified_tlob/model.py": "5b9782b7244f2d3c16e617ef86f804d360ad56694b0b151d96041ce0fd2cfe2a",
+   "modified_tlob/normalization.py": "ee0aeebf6acfbea30c6c6c498b4db857bd568e88b7bf7fefe2866a4933dcbbe7",
+   "modified_tlob/provenance.json": "c9593baf3195591e9ccd7abffe7810e7f7227b36456fa4bef8c67863be454032",
+   "modified_tlob/schema.py": "9f762a191799e9848a37f5cabf8b0289fa70735374b4cd89e1d2d8e217f3ba31",
+   "modified_tlob/submission.py": "36764cd608d723f6550d00956cd34b1d270d5be2afb87679f5523d9245aa4428",
+   "modified_tlob_weights.json": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34",
+   "provenance.json": "f940b4f7d03a6f89509bdf410dc5ca485a95825837a2cdf52c181c0fc90679c9",
+   "requirements-cpu.lock.txt": "5068647457539800871c96dc9d47df267fe5a7e482db86533b449c7af55507c8",
+   "submission_config.json": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa",
+   "training_config.json": "9eb8f50f780a9e8d15281b34128e959cad64eeecf8b3d1f23929fcb0c29fd8c8"
+  },
+  "manifest_sha256": "0a77615e999f0ba6f4cfe70f403b4a535a9a3e5c13b2e73371a2debecc7c89a1",
+  "path": "runs/promotion-submission-20261028/package-src",
+  "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+ }
+}

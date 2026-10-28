@@ -1,0 +1,873 @@
+"""Generated flat platform inference module: jinyiquant.
+"""
+from __future__ import annotations
+
+# Source: jinyiquant/io.py
+"""Stable, strict JSON and content fingerprints; no application dependencies."""
+import hashlib
+import json
+import os
+import re
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+def canonical_json(value) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False, separators=(',', ':'))
+
+def digest(value) -> str:
+    return hashlib.sha256(canonical_json(value).encode('utf-8')).hexdigest()
+
+def file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with Path(path).open('rb') as handle:
+        for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+def read_json(path: Path):
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+def write_json(path: Path, value) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + '.' + uuid.uuid4().hex + '.tmp')
+    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + '\n', encoding='utf-8')
+    os.replace(tmp, path)
+
+def redact(value):
+    """Exclude credential-like fields and redact common credentials inside errors."""
+    if isinstance(value, dict):
+        return {k: '[REDACTED]' if re.search('password|secret|token|credential|api.?key', k, re.I) else redact(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [redact(v) for v in value]
+    if isinstance(value, str):
+        value = re.sub('(?i)(["\']?(?:password|secret|token|api[_-]?key)["\']?\\s*:\\s*)(["\'])(.*?)\\2', '\\1"[REDACTED]"', value)
+        value = re.sub('(?i)(password|secret|token|api[_-]?key)([\\s:=]+)[^\\s,;]+', '\\1\\2[REDACTED]', value)
+        return re.sub('(https?://)[^/@\\s]+:[^/@\\s]+@', '\\1[REDACTED]@', value)
+    return value
+
+# Source: jinyiquant/data.py
+"""Versioned local data readers and label-window selection.
+
+All input timestamps are exchange-local, timezone-naive bar *end* timestamps.
+Instrument IDs are never inferred from security codes: an explicit map is required.
+This module owns the shared data contract (input schema, label clock, split boundaries)
+and the chronological guards that use it; ``modified_tlob.schema`` re-exports the schema
+part. Reading, window construction and label selection live here; the training entry
+stays in ``modified_tlob/train.py``.
+"""
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+import uuid
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.dataset as ds
+import pyarrow.ipc as ipc
+import pyarrow.parquet as pq
+CONTRACT_VERSION = 2
+KEYS = ['date', 'instrument']
+FORBIDDEN_FEATURES = frozenset({'target', 'vwap_return', 'label_end', 'end_price', 'vwap'})
+TRADE_COLUMNS = ('volume', 'amount', 'deal_number')
+LABEL_HORIZON_MINUTES = 30
+SEALED_START = pd.Timestamp('2024-10-08')
+SEALED_END = pd.Timestamp('2025-01-01')
+MAX_REPORTED_BOUNDARY_SAMPLES = 5
+
+def config_option(config, name: str, default=None):
+    """Read one option from a mapping or an attribute object (resolved configs)."""
+    return config.get(name, default) if isinstance(config, dict) else getattr(config, name, default)
+
+def lob_columns(levels: int=3) -> tuple[str, ...]:
+    """Explicit input order matching upstream ask-price/size, bid-price/size per level."""
+    if levels not in {3, 5}:
+        raise ValueError('Only three or five LOB levels are configured')
+    return tuple((f'{side}_{kind}{level}' for level in range(1, levels + 1) for side, kind in (('ask', 'price'), ('ask', 'volume'), ('bid', 'price'), ('bid', 'volume'))))
+
+def lob_trade_columns() -> tuple[str, ...]:
+    return lob_columns(3) + TRADE_COLUMNS
+
+def validate_input_schema(fields, book_representation='raw', trade_features='zero') -> int:
+    fields = tuple(fields)
+    if fields not in (lob_columns(3), lob_columns(5), lob_trade_columns()):
+        raise ValueError('Unexpected LOB field order')
+    if book_representation not in ('raw', 'relative_mid_bps') or trade_features not in ('zero', 'log1p'):
+        raise ValueError('Unsupported LOB input transformation')
+    if trade_features != 'zero' and fields != lob_trade_columns():
+        raise ValueError('Trade features require three LOB levels followed by volume, amount, deal_number')
+    return 12 if fields == lob_trade_columns() else len(fields)
+
+def timestamps(values, name: str) -> pd.Series:
+    """Exchange-local timezone-naive bar end timestamps with explicit failure messages."""
+    try:
+        result = pd.to_datetime(values, errors='raise')
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f'{name}: invalid timestamp') from exc
+    if result.isna().any():
+        raise ValueError(f'{name}: missing timestamp')
+    if isinstance(result.dtype, pd.DatetimeTZDtype):
+        raise ValueError(f'{name}: use timezone-naive Asia/Shanghai timestamps')
+    return result.astype('datetime64[ns]')
+
+def validate_keys(frame: pd.DataFrame, name: str='data') -> pd.DataFrame:
+    """Reject ambiguous joins instead of silently dropping duplicate source rows."""
+    if any((key not in frame for key in KEYS)):
+        raise ValueError(f'{name}: required columns are {KEYS}')
+    result = frame.copy()
+    result['date'] = timestamps(result['date'], f'{name}.date')
+    if result.empty:
+        return result.reset_index(drop=True)
+    instruments = result['instrument']
+    if instruments.isna().any() or not instruments.map(lambda x: isinstance(x, str)).all():
+        raise ValueError(f'{name}: instrument must contain nonempty strings')
+    if instruments.str.strip().eq('').any() or instruments.ne(instruments.str.strip()).any():
+        raise ValueError(f'{name}: empty or whitespace-padded instrument')
+    if result.duplicated(KEYS).any():
+        raise ValueError(f'{name}: duplicate (date, instrument) keys')
+    return result.sort_values(KEYS, kind='stable').reset_index(drop=True)
+
+def _minutes(dates: pd.Series) -> pd.Series:
+    stamps = pd.to_datetime(dates)
+    return stamps.dt.hour * 60 + stamps.dt.minute
+
+def required_label_end(dates: pd.Series, horizon_minutes: int=LABEL_HORIZON_MINUTES) -> pd.Series:
+    """Forward end of a label horizon; the 11:30 sample resumes after the lunch break."""
+    stamps = pd.to_datetime(dates)
+    required = stamps + pd.Timedelta(minutes=horizon_minutes)
+    lunch = _minutes(stamps).eq(690) & (horizon_minutes == LABEL_HORIZON_MINUTES)
+    required.loc[lunch] = stamps.loc[lunch] + pd.Timedelta(hours=2)
+    return required
+
+def known_session_horizon(dates: pd.Series, horizon_minutes: int=LABEL_HORIZON_MINUTES) -> pd.Series:
+    """Whether the horizon stays inside one continuous session; overnight windows are unknown."""
+    minute = _minutes(dates)
+    end_minute = minute + horizon_minutes
+    lunch = minute.eq(690) & (horizon_minutes == LABEL_HORIZON_MINUTES)
+    return (minute >= 570) & (end_minute <= 690) | (minute >= 780) & (end_minute <= 900) | lunch
+
+def boundary_samples(frame: pd.DataFrame, boundary) -> pd.DataFrame:
+    """Samples whose forward label window reaches the exclusive boundary."""
+    return frame.loc[frame['label_end'] >= pd.Timestamp(boundary)]
+
+def assert_label_windows_before(frame: pd.DataFrame, boundary, *, name: str='samples') -> None:
+    """Fail with the offending samples when a label window reaches the exclusive boundary."""
+    boundary = pd.Timestamp(boundary)
+    crossing = boundary_samples(frame, boundary)
+    if len(crossing):
+        columns = [column for column in ('date', 'instrument', 'label_end') if column in crossing]
+        detail = crossing.head(MAX_REPORTED_BOUNDARY_SAMPLES)[columns].to_dict('records')
+        raise ValueError(f'{name}: {len(crossing)} label windows reach the exclusive boundary {boundary}; boundary samples: {detail}')
+
+@dataclass(frozen=True)
+class FinalAccessClaim:
+    """Proof that one sealed final-check view was recorded in the audit index.
+
+    ``tracking.claim_final_access`` is the only sanctioned minting path: it inserts the
+    audit row and enforces ``final_access.max_views``. The type exists so the read path
+    cannot be opened by flipping a boolean; building one by hand is an explicit,
+    greppable act that leaves no audit row behind.
+    """
+    scope: str
+    run_id: str
+    granted_at: str
+    window: tuple[str, str]
+
+def validate_sealed_claim(config: Any, claim: Any) -> FinalAccessClaim:
+    """Reject a bare flag or a claim minted for a different final window."""
+    if not isinstance(claim, FinalAccessClaim):
+        raise TypeError('sealed_access must be a FinalAccessClaim recorded by tracking.claim_final_access; a bare flag cannot open the sealed interval')
+    expected = _sealed_claim_window(config)
+    if expected is not None and tuple(claim.window) != expected:
+        raise ValueError(f'sealed claim window {tuple(claim.window)} does not match the configured final split {expected}')
+    return claim
+
+def _sealed_claim_window(config: Any) -> tuple[str, str] | None:
+    """The configured final-split window, or None when the config declares none."""
+    splits = config_option(config, 'splits')
+    final = config_option(splits, 'final') if splits is not None else None
+    start = config_option(final, 'start') if final is not None else None
+    end = config_option(final, 'end') if final is not None else None
+    if start is None or end is None:
+        return None
+    return (pd.Timestamp(start).isoformat(), pd.Timestamp(end).isoformat())
+
+def assert_development_read(start, end, *, sealed_access: FinalAccessClaim | None=None) -> None:
+    """Refuse any read whose window could open the sealed final-check interval.
+
+    ``start``/``end`` are the effective file-read window; ``None`` means unbounded. The
+    sealed interval opens only for a ``FinalAccessClaim`` minted by
+    ``tracking.claim_final_access``, which records the one-time view in the audit index.
+    A bare boolean cannot be accepted: it would leave no audit record behind.
+    """
+    if sealed_access is not None:
+        if not isinstance(sealed_access, FinalAccessClaim):
+            raise TypeError('sealed_access must be a FinalAccessClaim recorded by tracking.claim_final_access; a bare flag cannot open the sealed interval')
+        return
+    lower = None if start is None else pd.Timestamp(start)
+    upper = None if end is None else pd.Timestamp(end)
+    if (lower is None or lower < SEALED_END) and (upper is None or upper > SEALED_START):
+        raise ValueError(f'Sealed final interval [{SEALED_START}, {SEALED_END}) cannot be read: requested window [{start}, {end}) overlaps it; development reads end before {SEALED_START}. Opening it requires the recorded one-time final_access claim (see runner.run), which phase A does not use')
+READER_FORMAT_VERSION = 1
+__all__ = ['Batch', 'DataBundle', 'DaySelection', 'build_batch', 'complete_trading_calendar', 'history_diagnostics', 'load_data', 'monthly_sampled_days', 'preprocess_bars', 'previous_trading_days', 'select_targets', 'validate_keys']
+
+@dataclass
+class DataBundle:
+    bars: pd.DataFrame
+    labels: pd.DataFrame
+    metadata: dict[str, Any]
+    instruments: pd.DataFrame | None = None
+    cache_events: list[dict[str, Any]] = field(default_factory=list)
+    data_events: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def universe(self) -> pd.DataFrame | None:
+        return self.instruments
+
+@dataclass
+class Batch:
+    keys: pd.DataFrame
+    x: np.ndarray
+    observed: np.ndarray
+    history_dates: np.ndarray
+    coverage: dict[str, Any]
+    history_feature_count: int | None = None
+
+    @property
+    def effective_rows(self):
+        """Optional auxiliary inputs cannot create usable primary-input history."""
+        return self.observed[..., :self.history_feature_count].any(axis=2)
+
+def _get(config: Any, name: str, default: Any=None) -> Any:
+    return config.get(name, default) if isinstance(config, dict) else getattr(config, name, default)
+
+def _time_filter(frame: pd.DataFrame, start: Any, end: Any) -> pd.DataFrame:
+    if 'date' not in frame:
+        return frame
+    frame = frame.copy()
+    frame['date'] = timestamps(frame['date'], 'date')
+    mask = pd.Series(True, index=frame.index)
+    if start is not None:
+        mask &= frame['date'] >= pd.Timestamp(start)
+    if end is not None:
+        mask &= frame['date'] < pd.Timestamp(end)
+    return frame.loc[mask].reset_index(drop=True)
+
+def _arrow_filter(schema: pa.Schema, start: Any, end: Any) -> ds.Expression | None:
+    expression = None
+    if 'date' in schema.names:
+        for value, operation in [(start, 'start'), (end, 'end')]:
+            if value is not None:
+                scalar = pa.scalar(pd.Timestamp(value), type=schema.field('date').type)
+                clause = ds.field('date') >= scalar if operation == 'start' else ds.field('date') < scalar
+                expression = clause if expression is None else expression & clause
+    return expression
+
+def _columns(available: list[str], requested: list[str]) -> list[str]:
+    return list(dict.fromkeys((column for column in requested if column in available)))
+
+def _read_file(path: Path, requested: list[str], start: Any, end: Any) -> pd.DataFrame:
+    suffix = path.suffix.lower()
+    if suffix == '.parquet':
+        dataset = ds.dataset(path, format='parquet')
+        return dataset.to_table(columns=_columns(dataset.schema.names, requested), filter=_arrow_filter(dataset.schema, start, end)).to_pandas()
+    if suffix in {'.feather', '.arrow'}:
+        parts = []
+        with pa.memory_map(str(path), 'r') as source:
+            reader = ipc.open_file(source)
+            columns = _columns(reader.schema.names, requested)
+            for index in range(reader.num_record_batches):
+                table = pa.Table.from_batches([reader.get_batch(index)]).select(columns)
+                if 'date' in columns:
+                    mask = None
+                    for value, operation in [(start, pc.greater_equal), (end, pc.less)]:
+                        if value is not None:
+                            scalar = pa.scalar(pd.Timestamp(value), type=table['date'].type)
+                            clause = operation(table['date'], scalar)
+                            mask = clause if mask is None else pc.and_(mask, clause)
+                    if mask is not None:
+                        table = table.filter(mask)
+                if table.num_rows:
+                    parts.append(table.to_pandas())
+        return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=columns)
+    if suffix == '.csv':
+        parts = []
+        for chunk in pd.read_csv(path, usecols=lambda c: c in requested, chunksize=100000, dtype={'instrument': 'string'}):
+            chunk = _time_filter(chunk, start, end)
+            if len(chunk):
+                parts.append(chunk)
+        return pd.concat(parts, ignore_index=True) if parts else pd.read_csv(path, nrows=0, usecols=lambda c: c in requested)
+    raise ValueError(f'Unsupported data file {path}; use parquet, feather/arrow, csv, or monthly label RAR')
+
+def _month_overlaps(name: str, start: Any, end: Any) -> bool:
+    match = re.search('(?<!\\d)(20\\d{2})[-_]?([01]\\d)(?!\\d)', Path(name).name)
+    if not match:
+        return True
+    month = pd.Timestamp(f'{match[1]}-{match[2]}-01')
+    next_month = month + pd.offsets.MonthBegin(1)
+    return (end is None or month < pd.Timestamp(end)) and (start is None or next_month > pd.Timestamp(start))
+
+def _read_rar(path: Path, requested: list[str], start: Any, end: Any) -> tuple[pd.DataFrame, list[str]]:
+    executable = shutil.which('tar')
+    if executable is None:
+        raise ValueError('RAR input requires libarchive tar; alternatively extract the required monthly parquet files')
+    listing = subprocess.run([executable, '-tf', str(path)], capture_output=True, check=True, text=True, encoding='utf-8')
+    members = [name for name in listing.stdout.splitlines() if name.endswith('.parquet') and _month_overlaps(name, start, end)]
+    if not members:
+        raise ValueError(f'No monthly parquet members overlap requested dates: {path}')
+    frames = []
+    for member in members:
+        payload = subprocess.run([executable, '-xOf', str(path), member], capture_output=True, check=True).stdout
+        source = pq.ParquetFile(pa.BufferReader(payload))
+        frame = source.read(columns=_columns(source.schema_arrow.names, requested)).to_pandas()
+        frames.append(_time_filter(frame, start, end))
+    return (pd.concat(frames, ignore_index=True), members)
+
+def _digest(path: Path) -> dict[str, Any]:
+    before = path.stat()
+    digest = hashlib.sha256()
+    with path.open('rb') as source:
+        for chunk in iter(lambda: source.read(4 * 1024 * 1024), b''):
+            digest.update(chunk)
+    after = path.stat()
+    if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+        raise ValueError(f'Data changed while fingerprinting: {path}')
+    return {'path': str(path.resolve()), 'sha256': digest.hexdigest(), 'bytes': after.st_size}
+
+def _cached_read(path: Path, requested: list[str], start: Any, end: Any, source_record: dict, source_state: tuple[int, int], cache_dir: Path | None, events: list[dict], selection: DaySelection | None=None) -> tuple[pd.DataFrame, dict]:
+    """Use a verified projection cache; never include runtime cache state in provenance."""
+    identity = {'reader_version': READER_FORMAT_VERSION, 'source_sha256': source_record['sha256'], 'format': path.suffix.lower(), 'columns': list(dict.fromkeys(requested)), 'start': None if start is None else str(pd.Timestamp(start)), 'end': None if end is None else str(pd.Timestamp(end)), 'pandas_version': pd.__version__, 'pyarrow_version': pa.__version__}
+    if selection is not None:
+        identity['selection'] = selection.identity()
+    cache_key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+    cache_file = None if cache_dir is None else cache_dir / f'{cache_key}.parquet'
+    cache_manifest = None if cache_dir is None else cache_dir / f'{cache_key}.json'
+    context = {'cache_key': cache_key, 'source': str(path.resolve()), 'role': None if cache_dir is None else cache_dir.name}
+    if cache_manifest is not None and (cache_manifest.exists() or cache_file.exists()):
+        try:
+            document = json.loads(cache_manifest.read_text(encoding='utf-8'))
+            if document['identity'] != identity:
+                raise ValueError('Cache identity does not match the requested source projection')
+            actual = _digest(cache_file)
+            if actual['sha256'] != document['parquet_sha256'] or actual['bytes'] != document['parquet_bytes']:
+                raise ValueError('Cache parquet checksum mismatch')
+            frame = pd.read_parquet(cache_file)
+            if len(frame) != document['rows'] or list(frame.columns) != document['columns']:
+                raise ValueError('Cache shape differs from its manifest')
+            if not set(frame.columns).issubset(requested):
+                raise ValueError('Cache contains unrequested columns')
+            if not isinstance(document['source_extra'], dict):
+                raise ValueError('Malformed cache source metadata')
+            events.append({'event': 'cache_hit', **context})
+            return (frame, document['source_extra'])
+        except Exception as exc:
+            events.append({'event': 'cache_invalid', **context, 'reason': f'{type(exc).__name__}: {exc}', 'recovery': 'rebuild_from_source'})
+    elif cache_dir is not None:
+        events.append({'event': 'cache_miss', **context})
+    if path.suffix.lower() == '.rar':
+        frame, members = _read_rar(path, requested, start, end)
+        extra = {'members': members}
+    else:
+        frame, extra = (_read_file(path, requested, start, end), {})
+    if selection is not None:
+        frame = frame.loc[selection.keep(frame['date'])].reset_index(drop=True)
+    if cache_dir is not None:
+        source_after = path.stat()
+        if source_state != (source_after.st_size, source_after.st_mtime_ns):
+            raise ValueError(f'Data changed during read; refusing to populate cache: {path}')
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        token = uuid.uuid4().hex
+        temporary = cache_dir / f'.{cache_key}.{token}.parquet.partial'
+        temporary_manifest = cache_dir / f'.{cache_key}.{token}.json.partial'
+        frame.to_parquet(temporary, index=False)
+        content_record = _digest(temporary)
+        document = {'identity': identity, 'parquet_sha256': content_record['sha256'], 'parquet_bytes': content_record['bytes'], 'rows': len(frame), 'columns': list(frame.columns), 'source_extra': extra}
+        temporary_manifest.write_text(json.dumps(document, sort_keys=True, allow_nan=False), encoding='utf-8')
+        temporary.replace(cache_file)
+        temporary_manifest.replace(cache_manifest)
+        events.append({'event': 'cache_written', **context})
+    return (frame, extra)
+
+def _read(path_value: Any, requested: list[str], start: Any, end: Any, cache_dir: Path | None=None, cache_events: list[dict] | None=None, selection: DaySelection | None=None, *, sealed_access: FinalAccessClaim | None=None) -> tuple[pd.DataFrame, list[dict]]:
+    if start is not None or end is not None:
+        assert_development_read(start, end, sealed_access=sealed_access)
+    path = Path(path_value)
+    if not path.exists():
+        raise FileNotFoundError(f'Data source does not exist: {path}')
+    if str(path).lower().endswith(('.tar.gz', '.tgz', '.tar')):
+        raise ValueError('Extract selected monthly feather files from the bar archive first; provide instrument_map_path for instrument_id. Full archive scans are not automatic.')
+    files = sorted((file for file in path.rglob('*') if file.is_file() and file.suffix.lower() in {'.parquet', '.feather', '.arrow', '.csv'} and (cache_dir is None or not file.resolve().is_relative_to(cache_dir.parent.resolve())) and _month_overlaps(file.name, start, end))) if path.is_dir() else [path]
+    if not files:
+        raise ValueError(f'No data files overlap requested dates: {path}')
+    frames, records = ([], [])
+    cache_events = [] if cache_events is None else cache_events
+    for file in files:
+        before = file.stat()
+        record = _digest(file)
+        frame, extra = _cached_read(file, requested, start, end, record, (before.st_size, before.st_mtime_ns), cache_dir, cache_events, selection)
+        record.update(extra)
+        after = file.stat()
+        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+            raise ValueError(f'Data changed during read: {file}')
+        frames.append(frame)
+        records.append(record)
+    return (pd.concat(frames, ignore_index=True), records)
+
+def _map_instruments(frame: pd.DataFrame, mapping: pd.DataFrame | None, name: str) -> pd.DataFrame:
+    if 'instrument' in frame:
+        if mapping is not None and 'instrument_id' in frame:
+            matched = frame.merge(mapping.rename(columns={'instrument': '_mapped_instrument'}), on='instrument_id', how='left', validate='many_to_one')
+            if matched['_mapped_instrument'].isna().any() or not matched['instrument'].eq(matched['_mapped_instrument']).all():
+                raise ValueError(f'{name}: instrument disagrees with explicit instrument_id map')
+        return frame
+    if 'instrument_id' not in frame:
+        raise ValueError(f'{name}: missing instrument or instrument_id')
+    if mapping is None:
+        raise ValueError(f'{name}: instrument_id requires an explicit instrument_map_path; never infer IDs')
+    mapped = frame.merge(mapping, on='instrument_id', how='left', validate='many_to_one', sort=False)
+    if mapped['instrument'].isna().any():
+        raise ValueError(f'{name}: unmapped instrument_id')
+    return mapped
+
+@dataclass(frozen=True)
+class DaySelection:
+    """Keep only the listed calendar days inside [start, end); other dates pass through."""
+    start: pd.Timestamp
+    end: pd.Timestamp
+    days: pd.DatetimeIndex
+
+    def keep(self, dates: pd.Series) -> pd.Series:
+        inside = (dates >= self.start) & (dates < self.end)
+        return ~inside | dates.dt.normalize().isin(self.days)
+
+    def identity(self) -> dict[str, Any]:
+        stamps = '\n'.join((day.strftime('%Y-%m-%d') for day in sorted(self.days)))
+        return {'start': str(self.start), 'end': str(self.end), 'days': len(self.days), 'days_sha256': hashlib.sha256(stamps.encode()).hexdigest()}
+
+def complete_trading_calendar(universe: pd.DataFrame, sample_times: Sequence[str]) -> pd.DatetimeIndex:
+    """Days whose independent universe grid contains every configured sampling time."""
+    grid = list(dict.fromkeys(sample_times))
+    stamps = timestamps(universe['date'], 'universe.date')
+    kept = stamps.loc[stamps.dt.strftime('%H:%M').isin(grid)]
+    counts = kept.groupby(kept.dt.normalize()).nunique()
+    return pd.DatetimeIndex(counts.index[counts == len(grid)].sort_values())
+
+def monthly_sampled_days(calendar: Any, start: Any, end: Any, days_per_month: int) -> tuple[pd.DatetimeIndex, list[dict]]:
+    """Centered stratified choice of complete trading days in every month of [start, end)."""
+    start, end = (pd.Timestamp(start), pd.Timestamp(end))
+    if start.day != 1 or end.day != 1 or start >= end:
+        raise ValueError('Monthly sampling requires month-aligned start < end')
+    if days_per_month < 1:
+        raise ValueError('days_per_month must be positive')
+    dates = pd.DatetimeIndex(sorted(set(pd.DatetimeIndex(pd.to_datetime(calendar)).normalize())))
+    selected, months = ([], [])
+    month = start
+    while month < end:
+        following = month + pd.offsets.MonthBegin(1)
+        available = dates[(dates >= month) & (dates < following)]
+        if len(available) < days_per_month:
+            raise ValueError(f'{month:%Y-%m} has {len(available)} complete trading days; {days_per_month} per month cannot be met')
+        indices = [(2 * i + 1) * len(available) // (2 * days_per_month) for i in range(days_per_month)]
+        chosen = available[indices]
+        selected.extend(chosen)
+        months.append({'month': f'{month:%Y-%m}', 'complete_trading_days': len(available), 'indices': indices, 'selected': [str(day.date()) for day in chosen]})
+        month = following
+    return (pd.DatetimeIndex(selected), months)
+
+def previous_trading_days(calendar: Any, days: Any) -> pd.DatetimeIndex:
+    """One independently registered trading day before each selected day, for bar history."""
+    dates = pd.DatetimeIndex(sorted(set(pd.DatetimeIndex(pd.to_datetime(calendar)).normalize())))
+    positions = dates.get_indexer(pd.DatetimeIndex(pd.to_datetime(days)).normalize())
+    if (positions <= 0).any():
+        raise ValueError('Every sampled day requires a preceding calendar trading day')
+    return pd.DatetimeIndex(sorted(set(dates[positions - 1])))
+
+def _sampling_fields(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    get = value.get if isinstance(value, dict) else lambda name: getattr(value, name)
+    fields = {'start': pd.Timestamp(get('start')), 'end': pd.Timestamp(get('end')), 'days_per_month': int(get('days_per_month'))}
+    if fields['start'].tzinfo or fields['end'].tzinfo:
+        raise ValueError('Monthly sampling requires timezone-naive timestamps')
+    if fields['days_per_month'] < 1:
+        raise ValueError('days_per_month must be positive')
+    return fields
+
+def load_data(config: Any, start: Any=None, end: Any=None, *, sealed_access: FinalAccessClaim | None=None) -> DataBundle:
+    """Read only selected dates/columns; bars include configured historical warm-up.
+
+    Label values are retained separately. No label-derived columns enter bars or
+    build_batch; inference can use the bars and universe without the label table.
+
+    With ``monthly_sampling`` the training interval keeps only evenly spaced
+    complete trading days (and one previous trading day of bar history, the
+    original 128-bar recipe's warm-up), one monthly source file at a time, cached
+    per projection.
+
+    The sealed final-check interval cannot be read: the effective window
+    ``[warm_start, end)`` must stay before ``SEALED_START`` unless the caller
+    has already recorded the one-time final access (never in phase A).
+    """
+    features = list(config_option(config, 'feature_columns'))
+    if FORBIDDEN_FEATURES.intersection(features):
+        raise ValueError('Future label columns cannot be input features')
+    allowed_start, allowed_end = (config_option(config, 'allowed_start'), config_option(config, 'allowed_end'))
+    start = start if start is not None else allowed_start
+    end = end if end is not None else allowed_end
+    if start is not None and allowed_start is not None and (pd.Timestamp(start) < pd.Timestamp(allowed_start)):
+        raise ValueError('Requested data starts before the allowed development interval')
+    if end is not None and allowed_end is not None and (pd.Timestamp(end) > pd.Timestamp(allowed_end)):
+        raise ValueError('Requested data ends after the allowed development interval')
+    sampling = _sampling_fields(config_option(config, 'monthly_sampling'))
+    if sampling is not None and (start is None or pd.Timestamp(start) != sampling['start']):
+        raise ValueError('Monthly sampling reads must start exactly at the sampling range')
+    history_days = config_option(config, 'history_days', 10)
+    warm_start = None if start is None else sampling['start'] if sampling is not None else pd.Timestamp(start) - pd.Timedelta(days=history_days)
+    if warm_start is not None and allowed_start is not None:
+        warm_start = max(warm_start, pd.Timestamp(allowed_start))
+    if end is None and config_option(config, 'labels_path'):
+        raise ValueError(f'Development reads with labels require an explicit end before the sealed interval [{SEALED_START}, {SEALED_END})')
+    if sealed_access is not None:
+        sealed_access = validate_sealed_claim(config, sealed_access)
+    if start is not None or end is not None:
+        assert_development_read(warm_start if warm_start is not None else start, end, sealed_access=sealed_access)
+    records = {}
+    cache_events = []
+    cache_root = config_option(config, 'cache_dir')
+
+    def read_role(role, path, columns, first, last, selection=None):
+        directory = None if cache_root is None else Path(cache_root) / role
+        if directory is not None and Path(path).is_dir() and Path(path).resolve().is_relative_to(Path(cache_root).resolve()):
+            raise ValueError('cache_dir must not be the same directory as, or an ancestor of, an input directory')
+        return _read(path, columns, first, last, directory, cache_events, selection, sealed_access=sealed_access)
+    mapping = None
+    map_path = config_option(config, 'instrument_map_path')
+    if map_path:
+        mapping, records['instrument_map'] = read_role('instrument_map', map_path, ['instrument_id', 'instrument'], None, None)
+        if set(mapping.columns) != {'instrument_id', 'instrument'} or mapping.isna().any().any():
+            raise ValueError('Instrument map must contain non-null instrument_id and instrument')
+        mapping = mapping.drop_duplicates().reset_index(drop=True)
+        if mapping['instrument_id'].duplicated().any() or mapping['instrument'].duplicated().any():
+            raise ValueError('Instrument map must be one-to-one')
+    instruments, rows_selection, bars_selection, sampling_audit = (None, None, None, None)
+    if sampling is not None:
+        if not config_option(config, 'instruments_path'):
+            raise ValueError('Monthly sampling requires the independent instruments calendar')
+        raw_universe, records['instruments'] = read_role('instruments', config_option(config, 'instruments_path'), KEYS, start, end)
+        universe = validate_keys(raw_universe, 'instruments')
+        calendar = complete_trading_calendar(universe, config_option(config, 'sample_times', []))
+        days, months = monthly_sampled_days(calendar, sampling['start'], sampling['end'], sampling['days_per_month'])
+        context = previous_trading_days(calendar, days)
+        history_end = max(sampling['start'], sampling['end'] - pd.Timedelta(days=history_days))
+        rows_selection = DaySelection(sampling['start'], sampling['end'], days)
+        bars_selection = DaySelection(sampling['start'], history_end, days.union(context))
+        instruments = universe.loc[rows_selection.keep(universe['date'])].reset_index(drop=True)
+        if instruments.empty:
+            raise ValueError('Monthly sampling selected no universe rows')
+        sampling_audit = {'start': str(sampling['start']), 'end': str(sampling['end']), 'days_per_month': sampling['days_per_month'], 'days': len(days), 'selected_days': [str(day.date()) for day in days], 'context_days': [str(day.date()) for day in context], 'history_end': str(history_end), 'months': months, 'calendar_source': 'independent instruments table', 'rule': 'centered stratified index floor((2i+1)n/(2k)) inside each calendar month', 'reader': 'one monthly source projection per cache entry'}
+    bars, records['bars'] = read_role('bars', config_option(config, 'bars_path'), ['date', 'instrument', 'instrument_id', *features], warm_start, end, bars_selection)
+    bars = preprocess_bars(_map_instruments(bars, mapping, 'bars'), config)
+    label_path = config_option(config, 'labels_path')
+    if label_path:
+        labels, records['labels'] = read_role('labels', label_path, [*KEYS, 'instrument_id', 'target', 'vwap_return', 'label_end'], start, end, rows_selection)
+        labels = validate_keys(_map_instruments(labels, mapping, 'labels'), 'labels')
+        if 'target' in labels and 'vwap_return' in labels:
+            if not np.allclose(labels['target'], labels['vwap_return'], equal_nan=True):
+                raise ValueError('Conflicting target and vwap_return columns')
+            labels = labels.drop(columns='vwap_return')
+        elif 'vwap_return' in labels:
+            labels = labels.rename(columns={'vwap_return': 'target'})
+        if 'target' not in labels:
+            raise ValueError('labels: missing target or vwap_return')
+        labels['target'] = pd.to_numeric(labels['target'], errors='raise')
+        if 'label_end' in labels:
+            labels['label_end'] = timestamps(labels['label_end'], 'labels.label_end')
+    else:
+        labels = pd.DataFrame(columns=[*KEYS, 'target'])
+    outside_policy = config_option(config, 'outside_universe_labels', 'exclude')
+    if outside_policy not in {'exclude', 'error'}:
+        raise ValueError('outside_universe_labels must be exclude or error')
+    alignment = {'policy': outside_policy, 'labels_input_rows': len(labels), 'outside_universe_label_rows': 0, 'outside_universe_label_instruments': 0, 'labels_retained_rows': len(labels)}
+    data_events = []
+    if config_option(config, 'instruments_path') and instruments is None:
+        instruments, records['instruments'] = read_role('instruments', config_option(config, 'instruments_path'), KEYS, start, end)
+        instruments = validate_keys(instruments, 'instruments')
+    if instruments is not None and len(labels):
+        invalid = labels.merge(instruments.assign(_member=True), on=KEYS, how='left', validate='one_to_one', sort=False)['_member'].isna()
+        if invalid.any():
+            if outside_policy == 'error':
+                raise ValueError('Label keys include securities outside the point-in-time universe')
+            alignment['outside_universe_label_rows'] = int(invalid.sum())
+            alignment['outside_universe_label_instruments'] = int(labels.loc[invalid, 'instrument'].nunique())
+            labels = labels.loc[~invalid].reset_index(drop=True)
+            alignment['labels_retained_rows'] = len(labels)
+            data_events.append({'event': 'outside_universe_labels_excluded', **alignment})
+    payload = json.dumps({'files': records, 'monthly_sampling': sampling_audit}, sort_keys=True, separators=(',', ':')).encode()
+    metadata = {'schema_version': 1, 'data_contract_version': CONTRACT_VERSION, 'source': config_option(config, 'source'), 'version': config_option(config, 'version'), 'data_sha256': hashlib.sha256(payload).hexdigest(), 'files': records, 'requested_start': None if start is None else str(pd.Timestamp(start)), 'requested_end': None if end is None else str(pd.Timestamp(end)), 'bars_start': None if warm_start is None else str(warm_start), 'bar_rows': len(bars), 'label_rows': len(labels), 'alignment': alignment, 'missing_targets': int((~np.isfinite(labels['target'].to_numpy(dtype=float))).sum()), 'feature_columns': features, 'price_scale': config_option(config, 'price_scale', 1.0), 'label_definition': 'provided target; end_price/future_vwap - 1 is inferred from the official vwap_return field description; original labels are used unchanged', 'timezone': 'Asia/Shanghai (naive)', 'history_days': history_days, 'monthly_sampling': sampling_audit}
+    return DataBundle(bars=bars, labels=labels, metadata=metadata, instruments=instruments, cache_events=cache_events, data_events=data_events)
+
+def preprocess_bars(bars: pd.DataFrame, config: Any) -> pd.DataFrame:
+    """Shared source-unit conversion and missing-value policy for local/platform inputs."""
+    features = list(config_option(config, 'feature_columns'))
+    bars = validate_keys(bars, 'bars')
+    for column in features:
+        if column not in bars:
+            raise ValueError(f'bars: missing feature {column}')
+        bars[column] = pd.to_numeric(bars[column], errors='raise').astype(np.float64)
+        sentinel = config_option(config, 'missing_sentinel')
+        if sentinel is not None:
+            bars[column] = bars[column].mask(bars[column].eq(sentinel))
+        bars[column] = bars[column].replace([np.inf, -np.inf], np.nan)
+        if tuple(features) == lob_trade_columns() and column in features[12:]:
+            bars[column] = bars[column].mask(bars[column] < 0)
+        if column in {'open', 'high', 'low', 'close', 'pre_close', 'amount'} or re.match('^(ask|bid)_price\\d+$', column):
+            bars[column] /= config_option(config, 'price_scale', 1.0)
+    bars = bars[[*KEYS, *features]]
+    return bars
+
+def select_targets(labels: pd.DataFrame, split: Any, horizon_minutes: int=30, *, sample_times: Sequence[str] | None=None, boundary: Any=None) -> pd.DataFrame:
+    """Purge labels whose future observation window leaves the selected split.
+
+    Explicit label_end is preferred. In its absence, 11:30 ends at 13:30 for
+    30-minute labels, following the provided eight-section sampling schedule.
+    This inferred trading clock is recorded; overnight windows are excluded.
+    Optional sampling times select a subset without changing existing rejection
+    counts, which describe all labels within the requested split.
+
+    ``boundary`` is the exclusive start of the next interval (validation.start for a
+    training selection). Every selected sample must have ``label_end < boundary``; a split
+    that reaches into the next interval fails with its boundary samples instead of
+    silently training on a window that overlaps it.
+    """
+    frame = validate_keys(labels, 'labels')
+    if 'target' not in frame:
+        if 'vwap_return' not in frame:
+            raise ValueError('labels: missing target')
+        frame = frame.rename(columns={'vwap_return': 'target'})
+    start, end = (pd.Timestamp(config_option(split, 'start')), pd.Timestamp(config_option(split, 'end')))
+    boundary = end if boundary is None else pd.Timestamp(boundary)
+    in_split = (frame['date'] >= start) & (frame['date'] < end)
+    frame = frame.loc[in_split].copy()
+    frame['target'] = pd.to_numeric(frame['target'], errors='raise')
+    finite = np.isfinite(frame['target'].to_numpy(dtype=float))
+    required_end = required_label_end(frame['date'], horizon_minutes)
+    if 'label_end' in frame:
+        frame['label_end'] = timestamps(frame['label_end'], 'label_end')
+        if (frame['label_end'] <= frame['date']).any():
+            raise ValueError('label_end must be later than prediction date')
+        if (frame['label_end'] < required_end).any():
+            raise ValueError('label_end is shorter than the required prediction horizon')
+        known_horizon = frame['label_end'].dt.normalize().eq(frame['date'].dt.normalize())
+    else:
+        frame['label_end'] = required_end
+        known_horizon = known_session_horizon(frame['date'], horizon_minutes)
+    if boundary < end:
+        assert_label_windows_before(frame, boundary, name='training split')
+        raise ValueError(f'Training split [{start}, {end}) reaches the exclusive boundary {boundary}')
+    approved_time = pd.Series(True, index=frame.index) if sample_times is None else frame['date'].dt.strftime('%H:%M').isin(sample_times)
+    valid = finite & known_horizon & (frame['label_end'] < end) & approved_time
+    selected = frame.loc[valid].reset_index(drop=True)
+    assert_label_windows_before(selected, boundary, name='selected training samples')
+    selected.attrs['selection'] = {'requested': len(frame), 'selected': len(selected), 'missing_labels': int((~finite).sum()), 'unknown_session_horizon': int((~known_horizon).sum()), 'boundary_purged': int((frame['label_end'] >= end).sum()), 'outside_sample_times': int((~approved_time).sum()), 'label_clock': 'explicit_label_end' if 'label_end' in labels else 'assumed_trading_clock_1130_to_1330'}
+    return selected
+
+def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
+    """Build fixed-size trailing windows without accepting or accessing labels."""
+    features = list(config_option(config, 'feature_columns'))
+    history_feature_count = 12 if tuple(features) == lob_trade_columns() else len(features)
+    if FORBIDDEN_FEATURES.intersection(features):
+        raise ValueError('Future label columns cannot be input features')
+    bars = validate_keys(bars, 'bars')
+    keys = validate_keys(keys[KEYS], 'sample keys')
+    if any((column not in bars for column in features)):
+        raise ValueError('Missing configured feature columns')
+    times = config_option(config, 'sample_times', [])
+    if times and (not keys['date'].dt.strftime('%H:%M').isin(times).all()):
+        raise ValueError('Sample keys contain an unapproved sampling time')
+    if not keys['date'].eq(keys['date'].dt.floor('min')).all():
+        raise ValueError('Sample timestamps must be precise whole minutes')
+    lookback, minimum = (int(config_option(config, 'lookback')), int(config_option(config, 'min_history', 1)))
+    if not 1 <= minimum <= lookback:
+        raise ValueError('min_history must be within [1, lookback]')
+    policy, limit = (config_option(config, 'missing_policy', 'zero'), int(config_option(config, 'max_ffill_steps', 0)))
+    if policy not in {'zero', 'ffill'} or limit < 0:
+        raise ValueError('Invalid missing-value policy')
+    x = np.zeros((len(keys), lookback, len(features)), dtype=np.float32)
+    observed = np.zeros_like(x, dtype=bool)
+    history_dates = np.full((len(keys), lookback), np.datetime64('NaT', 'ns'), dtype='datetime64[ns]')
+    groups = {}
+    for instrument, frame in bars.groupby('instrument', sort=False, observed=True):
+        frame = frame.sort_values('date')
+        values = frame[features].apply(pd.to_numeric, errors='raise').to_numpy(dtype=np.float32, copy=True)
+        values[~np.isfinite(values)] = np.nan
+        groups[instrument] = (frame['date'].to_numpy(dtype='datetime64[ns]'), values)
+    enough = np.zeros(len(keys), dtype=bool)
+    history_count = np.zeros(len(keys), dtype=np.int64)
+    for index, (date, instrument) in enumerate(keys.itertuples(index=False, name=None)):
+        if instrument not in groups:
+            continue
+        dates, values = groups[instrument]
+        stop = int(np.searchsorted(dates, date.to_datetime64(), side='right'))
+        begin = max(0, stop - lookback)
+        length = stop - begin
+        if not length:
+            continue
+        history_count[index] = length
+        window = values[begin:stop].copy()
+        observed[index, -length:] = np.isfinite(window)
+        enough[index] = int(np.isfinite(window[:, :history_feature_count]).any(axis=1).sum()) >= minimum
+        if policy == 'ffill' and limit:
+            window[:, :history_feature_count] = pd.DataFrame(window[:, :history_feature_count]).ffill(limit=limit).to_numpy(dtype=np.float32)
+        x[index, -length:] = np.nan_to_num(window, nan=0.0)
+        history_dates[index, -length:] = dates[begin:stop]
+    coverage_by_time = keys.assign(usable=enough).groupby('date', observed=True)['usable'].agg(['size', 'sum'])
+    sections = [{'date': str(date), 'expected': int(row['size']), 'usable': int(row['sum']), 'coverage': float(row['sum'] / row['size'])} for date, row in coverage_by_time.iterrows()]
+    coverage = {'expected_samples': len(keys), 'samples': len(keys), 'usable_samples': int(enough.sum()), 'insufficient_history': int((~enough).sum()), 'coverage': float(enough.mean()) if len(keys) else 0.0, 'min_section_coverage': min((row['coverage'] for row in sections), default=0.0), 'observed_fraction': float(observed.mean()) if observed.size else 0.0, 'history_min': int(history_count.min()) if len(keys) else 0, 'history_max': int(history_count.max()) if len(keys) else 0, 'by_section': sections}
+    batch = Batch(keys, x, observed, history_dates, coverage, history_feature_count)
+    quality = history_diagnostics(batch)
+    coverage['history_quality'] = {'definition': 'Observed means finite before filling; effective rows use primary history features; complete rows have all', 'history_features': features[:history_feature_count], 'age_unit': 'elapsed calendar minutes (includes lunch, overnight and holidays); null means no history', 'full_observed_window_samples': int(quality.full_observed_window.sum()), 'statistics': {column: {'min': _finite_stat(quality[column], 'min'), 'median': _finite_stat(quality[column], 'median'), 'max': _finite_stat(quality[column], 'max')} for column in ('effective_history_length', 'complete_history_length', 'missing_fraction', 'latest_effective_age_minutes', 'history_span_minutes')}}
+    return batch
+
+def _finite_stat(values, operation):
+    values = values.dropna()
+    if values.empty:
+        return None
+    value = getattr(values, operation)()
+    return float(value) if pd.notna(value) else None
+
+def history_diagnostics(batch: Batch) -> pd.DataFrame:
+    """Per-key source quality, measured before ffill/zero padding; never inferred from coverage."""
+    dates, observed = (batch.history_dates, batch.observed)
+    present = ~np.isnat(dates)
+    effective = batch.effective_rows
+    complete = observed.all(axis=2)
+    count = present.sum(axis=1)
+    cutoff = batch.keys.date.to_numpy(dtype='datetime64[ns]')
+    integer = dates.astype(np.int64)
+    last_effective = np.where(effective, integer, np.iinfo(np.int64).min).max(axis=1).astype('datetime64[ns]')
+    first = np.where(present, integer, np.iinfo(np.int64).max).min(axis=1).astype('datetime64[ns]')
+    last = dates[:, -1]
+    span = (last - first) / np.timedelta64(1, 'm')
+    span[count == 0] = np.nan
+    feature_count = observed.shape[2]
+    source_slots = count * feature_count
+    return batch.keys.assign(history_row_count=count, effective_history_length=effective.sum(axis=1), complete_history_length=complete.sum(axis=1), missing_fraction=1 - observed.mean(axis=(1, 2)), source_missing_fraction=1 - np.divide(observed.sum(axis=(1, 2)), source_slots, out=np.full(len(count), np.nan), where=source_slots > 0), latest_bar_age_minutes=(cutoff - last) / np.timedelta64(1, 'm'), latest_effective_age_minutes=(cutoff - last_effective) / np.timedelta64(1, 'm'), history_span_minutes=span, full_observed_window=complete.all(axis=1))
+
+# Source: jinyiquant/tracking.py
+"""Append-only event archives, source capture and transactional audit index."""
+import importlib.metadata
+import os
+import platform
+import sqlite3
+import subprocess
+import sys
+import threading
+import traceback
+import uuid
+import zipfile
+from pathlib import Path
+import psutil
+from jinyiquant_flat import FinalAccessClaim
+_MODULE = Path(__file__).resolve()
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+def new_run_dir(output_root: Path) -> Path:
+    name = utc_now().replace(':', '').replace('-', '').replace('+0000', 'Z') + '_' + uuid.uuid4().hex[:12]
+    path = output_root / name
+    path.mkdir(parents=True, exist_ok=False)
+    return path
+
+def resource_usage() -> dict:
+    torch = sys.modules.get('torch')
+    cuda = getattr(torch, 'cuda', None)
+    if cuda is not None and getattr(cuda, 'is_initialized', lambda: False)():
+        from modified_tlob_flat import device_resources
+        return device_resources(torch.device('cuda'))
+    p = psutil.Process()
+    return {'rss_mb': p.memory_info().rss / 2 ** 20, 'cpu_seconds': sum(p.cpu_times()[:2]), 'gpu_memory_mb': None, 'gpu_note': 'CPU reference implementation; GPU not used'}
+
+class Recorder:
+
+    def __init__(self, run_dir: Path, experiment_id: str):
+        self.run_dir = Path(run_dir)
+        self.experiment_id = experiment_id
+        self.run_id = self.run_dir.name
+        self._lock = threading.Lock()
+
+    def event(self, stage: str, event_type: str, *, level: str='INFO', **context):
+        value = {'schema_version': 1, 'timestamp_utc': utc_now(), 'level': level, 'stage': stage, 'event_type': event_type, 'run_id': self.run_id, 'experiment_id': self.experiment_id, 'context': redact(context)}
+        with self._lock, (self.run_dir / 'events.jsonl').open('a', encoding='utf-8') as f:
+            f.write(canonical_json(value) + '\n')
+            f.flush()
+
+    def failure(self, stage: str, exc: BaseException):
+        self.event(stage, 'interrupted' if isinstance(exc, KeyboardInterrupt) else 'failed', level='ERROR', exception_type=type(exc).__name__, reason=str(exc), traceback=''.join(traceback.format_exception(exc)), recovery_state='restart_as_new_run')
+
+def capture_source(run_dir):
+    names = ('jinyiquant_flat.py', 'modified_tlob_flat.py', 'inference.ipynb', 'requirements.txt', 'provenance.json', 'submission_config.json')
+    paths = [PROJECT_ROOT / name for name in names]
+    inventory = {p.name: file_sha256(p) for p in paths}
+    with zipfile.ZipFile(run_dir / 'source.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+        for path in paths:
+            archive.write(path, path.name)
+    provenance = read_json(PROJECT_ROOT / 'provenance.json')
+    return {'commit': provenance['flat_package']['source_commit'], 'working_tree_status': None, 'snapshot': 'source.zip', 'snapshot_sha256': file_sha256(run_dir / 'source.zip'), 'content_sha256': digest(inventory), 'files': inventory, 'layout': 'flat_files_with_optional_weight_shards'}
+
+def environment() -> dict:
+    return {'python': sys.version, 'executable': sys.executable, 'platform': platform.platform(), 'machine': platform.machine(), 'processor': platform.processor(), 'cpu_count': os.cpu_count(), 'total_memory_mb': psutil.virtual_memory().total / 2 ** 20, 'dependencies': {d.metadata['Name']: d.version for d in importlib.metadata.distributions()}, 'determinism': {'device': 'cpu', 'blas_threads': 1, 'note': 'Tolerance-based reproducibility; BLAS/platform rounding may vary'}}
+
+def artifacts(run_dir: Path) -> list[dict]:
+    return [{'path': p.relative_to(run_dir).as_posix(), 'bytes': p.stat().st_size, 'sha256': file_sha256(p)} for p in sorted(run_dir.rglob('*')) if p.is_file() and p.name != 'manifest.json' and (not p.name.endswith('.tmp'))]
+
+def audit_db(output_root: Path):
+    output_root.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(output_root / 'audit.sqlite3', timeout=30)
+    connection.execute('CREATE TABLE IF NOT EXISTS runs (run_id TEXT PRIMARY KEY, record TEXT NOT NULL)')
+    connection.execute('CREATE TABLE IF NOT EXISTS final_access (scope TEXT, run_id TEXT PRIMARY KEY, purpose TEXT, timestamp_utc TEXT)')
+    connection.commit()
+    return connection
+
+def claim_final_access(config, run_id: str) -> FinalAccessClaim:
+    """Record one use of the sealed final-check interval and return its proof token.
+
+    The scope key excludes model/seed/experiment so renaming an experiment cannot
+    buy extra views. Reading the sealed interval requires this token.
+    """
+    scope = digest({'source': config.data.source, 'version': config.data.version, 'final': config.splits.final.model_dump(mode='json')})
+    final = config.splits.final
+    with audit_db(config.output_root) as db:
+        db.execute('BEGIN IMMEDIATE')
+        count = db.execute('SELECT COUNT(*) FROM final_access WHERE scope=?', (scope,)).fetchone()[0]
+        if count >= config.final_access.max_views:
+            raise ValueError(f'Final split view limit reached ({count}); access denied')
+        granted_at = utc_now()
+        db.execute('INSERT INTO final_access VALUES (?,?,?,?)', (scope, run_id, config.final_access.purpose, granted_at))
+    return FinalAccessClaim(scope=scope, run_id=run_id, granted_at=granted_at, window=(final.start.isoformat(), final.end.isoformat()))
+
+def finish(run_dir: Path, status: str, exit_code: int, *, resources=None, error=None):
+    manifest = read_json(run_dir / 'manifest.json')
+    rec = Recorder(run_dir, manifest['experiment_id'])
+    rec.event('run', 'ended', status=status, exit_code=exit_code, resources=resources)
+    manifest.update(status=status, exit_code=exit_code, ended_at=utc_now())
+    if resources is not None:
+        manifest['resources'] = resources
+    if error:
+        manifest['error'] = redact(error)
+    manifest['artifacts'] = artifacts(run_dir)
+    write_json(run_dir / 'manifest.json', manifest)
+    with audit_db(run_dir.parent) as db:
+        db.execute('INSERT INTO runs VALUES (?,?)', (manifest['run_id'], canonical_json(manifest)))
+    with (run_dir.parent / 'index.jsonl').open('a', encoding='utf-8') as f:
+        f.write(canonical_json({k: manifest.get(k) for k in ('run_id', 'experiment_id', 'status', 'exit_code', 'started_at', 'ended_at')}) + '\n')
+    return manifest

@@ -1,0 +1,167 @@
+{
+  "changes": [
+    {
+      "detail": "末层3输出改1；无界连续值；官方vwap_return与MSE；不采用论文三分类标签",
+      "type": "task"
+    },
+    {
+      "detail": "保留原torch.std算子；BiN两轴小标准差以torch.where保护，避免原地改动标准差，保持常数窗口梯度有限",
+      "type": "safety"
+    },
+    {
+      "detail": "负BiN混合权重原地重置.01，不替换Parameter，不丢失优化器引用",
+      "type": "safety"
+    },
+    {
+      "detail": "移除全局设备、CUDA硬编码、LOBSTER事件嵌入及未使用绘图/跟踪对象",
+      "type": "engineering"
+    },
+    {
+      "detail": "正弦编码注册buffer；共享因果预处理；显式设备计算预检；二进制/文本权重",
+      "type": "engineering"
+    },
+    {
+      "detail": "三/五档分钟盘口替代论文十档事件快照；掩码仅用于历史覆盖与回退，不追加字段",
+      "type": "input"
+    }
+  ],
+  "commit": "f1c0af4d81067978914361766db0457a7d8b6a46",
+  "evidence_boundary": "结构迁移，不是论文性能复现；分类F1证据不证明A股分钟VWAP收益改进；最终检查区间未参与本轮",
+  "files": {
+    "LICENSE": {
+      "git_blob_sha1": "521dc2bb84f5f2480e67b647d59d142366593483",
+      "sha256": "622476939f6aad03c8c80fcd25a131b7ebaecdf44f23e8ee5423d9494f34f5c3",
+      "vendored_reference": "modified_tlob/LICENSE"
+    },
+    "models/bin.py": {
+      "git_blob_sha1": "bc0be9f35b4c6013eec0b99f61c182d8fcd57bc3",
+      "sha256": "1efd98dbad2a40612879b3148ef7bf534b2b100ce95d671f13dd3de91684807d",
+      "vendored_reference": "modified_tlob/upstream/bin.py.txt"
+    },
+    "models/mlplob.py": {
+      "git_blob_sha1": "40468e131f4d1c765b9e9210d6b3fa3c8b1560f0",
+      "sha256": "dbd518a3757bc56f90de96a0b89ec45e1c2c146de29b813efa784430f212ac61",
+      "vendored_reference": "modified_tlob/upstream/mlplob.py.txt"
+    },
+    "models/tlob.py": {
+      "git_blob_sha1": "d3d68b53d5cd1ac9c8600c878d8dcef94b6c5515",
+      "sha256": "607e69dac8e87f978cbec338db612437ebd3b097e79bca0064fee166d347c55e",
+      "vendored_reference": "modified_tlob/upstream/tlob.py.txt"
+    },
+    "requirements.txt": {
+      "git_blob_sha1": "0367ebf2b0b25bbdba7f8407a2e4f98c3e154c56",
+      "sha256": "90385e5692c18ab668292e80e8ee94633bd2408fdd2227fbc9b24b387753bd97",
+      "vendored_reference": "modified_tlob/upstream/requirements.txt"
+    }
+  },
+  "flat_package": {
+    "created_at": "2026-10-28T03:41:58.059620+00:00",
+    "history_policy": {
+      "instrument_batch_size": 50,
+      "max_backfill_days": 366,
+      "mode": "recover_then_mean"
+    },
+    "layout_changes": [
+      "Merge inference dependencies with imports adjusted to the two flat files.",
+      "Resolve artifact paths beside flat files; capture their source in runtime archives.",
+      "Preserve daily streaming, model arithmetic, preprocessing and inference ordering."
+    ],
+    "license_included_in": "modified_tlob_flat.py module docstring",
+    "payload_sha256": {
+      "inference.ipynb": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178",
+      "jinyiquant_flat.py": "82e9e68d3fc78788301759df8d77c784bac7f243ed18bd4e305266429f9bcc01",
+      "modified_tlob_flat.py": "c04ffc08a2eacb5591ed14b691a161aac188404023e3ec2735fa5167853af147",
+      "modified_tlob_weights.json": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34",
+      "requirements.txt": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327",
+      "submission_config.json": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa"
+    },
+    "platform_acceptance": "not_verified",
+    "schema_version": 1,
+    "scope": "Frozen-weight platform inference; original training project remains separate.",
+    "source_commit": "6d53be0bbb296b64857a53abe21067fdbc28fab4",
+    "source_modules": {
+      "jinyiquant/data.py": "92727e9f32df8e49f42141abae3c9025816212a51a677c3e25e8319e7a9eca44",
+      "jinyiquant/io.py": "d715fe5083cd50bda39025957012e2431b7a85a76a30a59e21604dd815a1b623",
+      "jinyiquant/tracking.py": "fc156afbcc0077a2f873a7d80c19ae3bc646689b40286bfcaf974a82ab657e08",
+      "modified_tlob/adapter.py": "894635068088510d8a2db259764b284a06c3d3b885971120efe93b06d33f764e",
+      "modified_tlob/device.py": "6a71c1a65b12ceaab00a340cb7907ff908d85268aa13e9eb62a5cc560c31189a",
+      "modified_tlob/model.py": "5b9782b7244f2d3c16e617ef86f804d360ad56694b0b151d96041ce0fd2cfe2a",
+      "modified_tlob/normalization.py": "ee0aeebf6acfbea30c6c6c498b4db857bd568e88b7bf7fefe2866a4933dcbbe7",
+      "modified_tlob/schema.py": "9f762a191799e9848a37f5cabf8b0289fa70735374b4cd89e1d2d8e217f3ba31",
+      "modified_tlob/submission.py": "36764cd608d723f6550d00956cd34b1d270d5be2afb87679f5523d9245aa4428"
+    },
+    "source_package_manifest_sha256": "0a77615e999f0ba6f4cfe70f403b4a535a9a3e5c13b2e73371a2debecc7c89a1",
+    "training_run_id": "promotion-submission-20261028",
+    "weight_storage": {
+      "encoding": "original_json",
+      "source_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34",
+      "values_unchanged": true,
+      "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+    },
+    "weights_changed": false,
+    "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+  },
+  "paper": {
+    "arxiv": "2502.15757v3",
+    "pages": 11,
+    "reading_scope": "正文、脚注、表1–10、附录A/B；已核对图1/2/3/4；附录B的FI-2010图标为??且未提供",
+    "sha256": "da90d24cfcc7a0074187fd7d2c6d27c4a7ffbcc86cece5dd4d5ba12901e2e03b",
+    "url": "https://arxiv.org/pdf/2502.15757v3"
+  },
+  "paper_findings": {
+    "cautions": "BTC正文250ms/脚注100ms及12日/9+1+1切分存在不一致；附录MLPLOB最优lr=.003不在所列搜索集合中；历史比较仅两天，不能将同日事件当独立证据",
+    "component_evidence": "表9固定总层数的两轴消融支持互补；未单独隔离BiN和位置编码，不能称其贡献已被独立证明",
+    "examples": [
+      {
+        "formula": "论文Eq7，h=2,k=1",
+        "future_prices": [
+          104,
+          106
+        ],
+        "note": "本项目直接读取官方标签，不用此例生成训练标签",
+        "past_prices": [
+          100,
+          102
+        ],
+        "return": 0.039603960396039604,
+        "w_minus": 101,
+        "w_plus": 105
+      },
+      {
+        "constant_slice": [
+          2,
+          2
+        ],
+        "formula": "BiN sample std",
+        "guarded_output": [
+          0,
+          0
+        ],
+        "mean": 2,
+        "slice": [
+          1,
+          3
+        ],
+        "standardized": [
+          -0.7071067811865475,
+          0.7071067811865475
+        ],
+        "std": 1.4142135623730951
+      }
+    ],
+    "fairness": "FI-2010基线来自已有benchmark；另两数据只重训两种基线；FI-2010追加104特征，LOBSTER追加事件字段",
+    "mechanism": "窗口内先比较历史时刻，再沿隐藏特征轴比较；不需要窗口内部三角掩码，因全部输入均<=预测时点"
+  },
+  "preserved": [
+    "单次输入BiN及样本标准差",
+    "输入投影与正弦/可学习位置编码",
+    "时间轴/隐藏特征轴交替注意力",
+    "外部Q/K/V加MHA内部投影",
+    "残差、LayerNorm、GELU MLP及官方残差顺序",
+    "最后双轴各压缩至floor(dim/4)",
+    "按feature/time顺序展平及逐级四倍缩小预测网络"
+  ],
+  "repository": "https://github.com/LeonardoBerti00/TLOB",
+  "retrieved_on": "2026-10-15",
+  "schema_version": 1
+}

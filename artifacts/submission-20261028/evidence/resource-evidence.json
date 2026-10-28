@@ -1,0 +1,199 @@
+{
+  "artifact": {
+    "archive": "runs/promotion-submission-20261028/package-flat.zip",
+    "archive_sha256": "915e21897a320935afa7034ea444c23c10646bcd876c53e4928f41c91d839a38",
+    "contract": {
+      "device": "auto",
+      "history_policy": {
+        "instrument_batch_size": 50,
+        "max_backfill_days": 366,
+        "mode": "recover_then_mean"
+      },
+      "min_coverage": 0.99,
+      "platform_price_scale": 1,
+      "schema_version": 1,
+      "smoothing": {
+        "alpha": 0.9111677303420447,
+        "applied_at": "equal-weight blended score of each intraday section, before any cost scenario",
+        "candidate_registration": "runs/promotion-candidate-ewma-match-20261028/candidate.json",
+        "candidate_registration_sha256": "d70995e23a34a348f38f43d16b331c3ed5ab52d9616fd92aeb9a1d99b6bbb9c3",
+        "causality_rule": "future rows may not enter any value",
+        "function": "causal_ewma",
+        "id": "causal_ewma_turnover_matched",
+        "operator_source": "scripts/verify_turnover_change.py",
+        "operator_source_sha256": "7aaa434078ea7cbd8e4a1ac7d474e53be3e395ce591b3def66fe360145a69712",
+        "state_reset": "trading_day"
+      },
+      "wall_seconds": 10800,
+      "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+    },
+    "flat_check": {
+      "max_abs_prediction_difference": 0.0,
+      "original_packages_imported": false,
+      "passed": true,
+      "weights_byte_identical": true
+    },
+    "flat_package": "runs/promotion-submission-20261028/package-flat",
+    "flat_source_sha256": {
+      "inference.ipynb": "54c3001555a8f752fb23d496e5e15848c61f73183788ba1e5935626370090178",
+      "jinyiquant_flat.py": "82e9e68d3fc78788301759df8d77c784bac7f243ed18bd4e305266429f9bcc01",
+      "modified_tlob_flat.py": "c04ffc08a2eacb5591ed14b691a161aac188404023e3ec2735fa5167853af147",
+      "provenance.json": "f3bf64418c9c7bbd15e49e84f0c2dc7d3d5edefa37b6b6c60b39326fc1877273",
+      "requirements.txt": "0699d2f043c18e876d208d17c2dfa33a9539cca0fe265c444b479722f308f327",
+      "submission_config.json": "98303b4a50e94f34e920a2ccdec96e64b821a63c62d0c41b398b21da34e090aa"
+    },
+    "forward_check": {
+      "comparison": {
+        "all_values_bit_identical": false,
+        "compared_values": 8000,
+        "exact_equal_values": 0,
+        "matched_rows": 8000,
+        "max_abs_difference": 0.00010015122808160193,
+        "mean_abs_difference": 3.507540358443799e-06,
+        "missing_in_package": 0,
+        "missing_in_reference": 0,
+        "package_rows": 8000,
+        "reference": "archived dose-replay member scores -> equal-weight mean -> registered causal EWMA",
+        "reference_rows": 8000
+      },
+      "report": "runs/promotion-submission-20261028/forward-check/report.json"
+    },
+    "score_identity": {
+      "checks_passed": 20,
+      "checks_total": 20,
+      "daily_0bp_sha256": "7aebcaad512385163566de16346b34269b8def54baff14786d4d46dcf3deeb99",
+      "daily_5bp_sha256": "7a44007c1ab78137e3bc3ce4c9d68bcf295babefa544f2427ee59cbd42fdf53e",
+      "object_daily_0bp_sha256": "7aebcaad512385163566de16346b34269b8def54baff14786d4d46dcf3deeb99",
+      "report": "runs/promotion-submission-20261028/score-identity/report.json",
+      "verdict": "pass"
+    },
+    "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+  },
+  "artifact_kind": "inference_submission",
+  "artifact_kind_source": "the measured object is the delivered flat submission package (weights + fast inference code + submission contract) executed through the notebook entry point; no training step is run",
+  "caliber": "24 GiB (24576 MiB) gates the platform notebook inference/submission path only; training peaks are reported and never gated",
+  "comparison_to_b1_baseline": {
+    "b1_bound_mib": 3654.74,
+    "b1_gpu": {
+      "device_peak_used_mb": 217.0,
+      "policy": "VRAM reported separately, never counted against the host-memory line",
+      "torch_peak_allocated_mb": 94.85009765625,
+      "torch_peak_reserved_mb": 112.0
+    },
+    "b1_host_peaks_mb": {
+      "W1_a": 894.91,
+      "W1_b": 896.15,
+      "W3": 991.39
+    },
+    "b1_overall_peak_mb": 991.39,
+    "b1_release_source": "runs/b-release-verify-20261027/20261027T143553Z_6996506f228f/results.json",
+    "b1_source": "runs/resource-inference-verify-20261027/20261027T120917Z_713a835c173a/results.json",
+    "delta_bound_mib": -1837.95,
+    "delta_overall_peak_mb": -97.2,
+    "note": "B1 measured the nine-member incumbent blend (103,111,128-byte checkpoint, nine torch member models); this package carries three 441-day checkpoints (23,799,122-byte blend) plus the causal EWMA state, so a lower peak is expected from the smaller model set",
+    "relative_overall_peak": 0.902,
+    "this_package_bound_mib": 1816.79,
+    "this_package_overall_peak_mb": 894.19
+  },
+  "device": {
+    "device_peak_used_mb": 199.0,
+    "gpu_name": "NVIDIA GeForce RTX 2060",
+    "measured": true,
+    "policy": "device-global VRAM includes the CUDA context and every process on the board; the notebook quota is host memory, so VRAM is reported on its own scale and is never counted against 24 GiB",
+    "torch_peak_allocated_mb": 74.98291015625,
+    "torch_peak_reserved_mb": 94.0
+  },
+  "experiment_id": "promotion-submission-20261028",
+  "kind": "resource_evidence",
+  "limits": {
+    "applies_to": "platform inference/submission path only; training memory is reported only and never gated",
+    "full_range_bound_mib_le_promotion_line": true,
+    "measured_peak_mib_le_promotion_line": true,
+    "platform_ram_limit_mib": 24576.0,
+    "registered_promotion_peak_rss_mib": 20889.0
+  },
+  "measured": {
+    "bounds": {
+      "bound_mib": 1816.79,
+      "caliber_bound_mib": 938.44,
+      "growth_mb": 44.25,
+      "margin_fraction": 0.9261,
+      "margin_mib": 22759.21,
+      "margin_vs_declared_quota_mb": 22183.21,
+      "margin_vs_prereg_promotion_line_mib": 19072.21,
+      "predeclared_estimator": "measured peak + output-table growth (plan.json)",
+      "reported_estimator": "the stricter of the predeclared estimator and the drift extrapolation below"
+    },
+    "bytes_per_row": {
+      "GPU_probe": 74.0264,
+      "W1_a": 82.0264,
+      "W1_b": 82.0264,
+      "W3": 82.0055
+    },
+    "checks_passed": 8,
+    "checks_sha256": "a889e97accbc139682081bd93682355363edbab5ce2c206ce9559eaf190f571b",
+    "checks_total": 8,
+    "host_commit_peaks_by_run_mb": {
+      "W1_a": 1553.54,
+      "W1_b": 1398.12,
+      "W3": 1561.34
+    },
+    "host_peaks_by_run_mb": {
+      "W1_a": 862.25,
+      "W1_b": 816.09,
+      "W3": 894.19
+    },
+    "plan_sha256": "a5ae35086fb7f8fcec9ae3604e43e27b53a18c9cba1411962d009cef82a1201f",
+    "process_count_max": {
+      "W1_a": 3,
+      "W1_b": 3,
+      "W3": 3
+    },
+    "repeat": {
+      "attempts_mb": [
+        862.25,
+        816.09
+      ],
+      "delta_mb": 46.16,
+      "tolerance_mb": 400.0
+    },
+    "results_sha256": "d7fbff0380c0ea5ec34dc2bef27c5ce1abd203959de3a7cc13abd82dab623107",
+    "rows": {
+      "GPU_probe": 5000,
+      "W1_a": 5000,
+      "W1_b": 5000,
+      "W3": 24000
+    },
+    "run": "runs/promotion-submission-20261028/resource-inference/20261028T034705Z_a5ae35086fb7",
+    "streaming": {
+      "W1_mb": 862.25,
+      "W3_mb": 894.19,
+      "delta_mb": 31.94
+    },
+    "verdict": "pass",
+    "windows": {
+      "GPU_probe": [
+        "2023-11-01 00:00:00",
+        "2023-11-01 11:30:00"
+      ],
+      "W1_a": [
+        "2023-11-01 00:00:00",
+        "2023-11-01 11:30:00"
+      ],
+      "W1_b": [
+        "2023-11-01 00:00:00",
+        "2023-11-01 11:30:00"
+      ],
+      "W3": [
+        "2023-11-01 00:00:00",
+        "2023-11-03 15:00:00"
+      ]
+    }
+  },
+  "peak_rss_mb_recorded": 894.19,
+  "peak_rss_mib": 852.77,
+  "schema_version": 1,
+  "scope_statement": "Measured on the local host with the verifier's own process-tree sampler at 50 ms, own DAI stand-in and the B1 fixture rows; the 24 GiB platform limit applies to the inference/submission path, training memory is reported only. No threshold, candidate, alpha or contract value was changed to produce this evidence.",
+  "unit_note": "peak_rss_mib is 2**20 bytes; manifest peak_rss_mb is decimal MB converted with 1e6/2**20",
+  "wall_seconds": 150.09
+}

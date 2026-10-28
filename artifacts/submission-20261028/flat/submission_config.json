@@ -1,0 +1,25 @@
+{
+ "device": "auto",
+ "history_policy": {
+  "instrument_batch_size": 50,
+  "max_backfill_days": 366,
+  "mode": "recover_then_mean"
+ },
+ "min_coverage": 0.99,
+ "platform_price_scale": 1,
+ "schema_version": 1,
+ "smoothing": {
+  "alpha": 0.9111677303420447,
+  "applied_at": "equal-weight blended score of each intraday section, before any cost scenario",
+  "candidate_registration": "runs/promotion-candidate-ewma-match-20261028/candidate.json",
+  "candidate_registration_sha256": "d70995e23a34a348f38f43d16b331c3ed5ab52d9616fd92aeb9a1d99b6bbb9c3",
+  "causality_rule": "future rows may not enter any value",
+  "function": "causal_ewma",
+  "id": "causal_ewma_turnover_matched",
+  "operator_source": "scripts/verify_turnover_change.py",
+  "operator_source_sha256": "7aaa434078ea7cbd8e4a1ac7d474e53be3e395ce591b3def66fe360145a69712",
+  "state_reset": "trading_day"
+ },
+ "wall_seconds": 10800,
+ "weights_sha256": "8fb8cf710407e21db801a8a99d86e152619ed116575a7a5cd2d3a66e0b869d34"
+}
