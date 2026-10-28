@@ -217,6 +217,9 @@ def load_cache(path, *, verify="digest"):
     feeding a run different numbers; ``verify="shape"`` only checks row counts.
     """
     path = Path(path)
+    if not (path / "manifest.json").exists():
+        raise ValueError(f"{path}: no completed build found "
+                         "(killed before the aggregate manifest was written)")
     manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
     if not manifest.get("complete", True):
         raise ValueError(f"{path}: cache build did not finish (manifest has complete=false)")
@@ -403,8 +406,22 @@ def cache_split(config, adapter, split, *, name, weights, cache_root, part_rows,
     return manifest
 
 
+CACHE_SPLITS = ("train", "replay")
+
+
+def requested_splits(value):
+    """Validated split names from ``--splits``; unknown names are refused, not silently skipped."""
+    requested = [name.strip() for name in value.split(",") if name.strip()]
+    unknown = [name for name in requested if name not in CACHE_SPLITS]
+    if unknown or not requested:
+        raise SystemExit(f"cache splits {requested or '[]'} are not allowed; "
+                         f"expected a non-empty subset of {list(CACHE_SPLITS)}")
+    return requested
+
+
 def cache_stage(args):
     torch.set_num_threads(1)
+    splits = requested_splits(args.splits)
     config = load_config(Path(args.config))
     cache_root = Path(args.cache)
     cache_root.mkdir(parents=True, exist_ok=True)
@@ -417,8 +434,8 @@ def cache_stage(args):
                 "config": str(args.config), "config_sha256": file_sha256(args.config),
                 "torch": torch.__version__, "generated_utc": pd.Timestamp.utcnow().isoformat(),
                 "splits": {}}
-    for name in ("train", "replay"):
-        if name not in args.splits.split(","):
+    for name in CACHE_SPLITS:
+        if name not in splits:
             continue
         manifest["splits"][name] = cache_split(
             config, adapter, truncated(split_of(config, name), args.max_days), name=name,

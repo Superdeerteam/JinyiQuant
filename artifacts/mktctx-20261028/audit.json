@@ -1801,15 +1801,24 @@
   "note": "pinned_by_captain and recomputed_by_auditor below are the historical record of what was pinned and measured at the start of t3 and t5; the authority is the 'authoritative' block in this section and pin_decision at the top level",
   "authoritative": {
    "scripts/market_context.py": {
-    "sha256_disk_crlf": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
-    "sha256_lf_git": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78",
-    "bytes": 54576,
-    "lines": 968,
-    "crlf_pairs": 968,
-    "role": "authoritative build revision: produced the delivered cache h/context and the b-s11/c-s11 heads, and is the revision phase_b, after_weights, audit_trained and the cache evidence in this report were measured on"
+    "sha256_disk_crlf": "861fcadb809aaba8f24d47faf9840703f4a872119ecbcf301e0125d0a3a99c2e",
+    "sha256_lf_git": "97c213b39eb8aa7ba359d81bc397bb3ee226c9c231e91932d9118b41ba7f169e",
+    "bytes": 55329,
+    "lines": 985,
+    "crlf_pairs": 985,
+    "supersedes": "a4237116 (CLI hygiene only: F1 error text + F4 split-name validation; no change to cache arrays, context, weights, or training path)",
+    "role": "current file: a4237116 plus the two CLI-hygiene fixes (F1: an interrupted first split now raises an explicit ValueError instead of FileNotFoundError; F4: --splits names outside {train,replay} now exit non-zero instead of writing an empty complete=true manifest). t10 verified it rebuilds the frozen cache bitwise (h/context/context_count identical on the overlapping day) and that a fresh --max-days 1 build passes load_cache(verify=digest), so every number in this report still holds; the delivered cache and heads themselves were produced by a4237116",
+    "produced_the_delivered_artifacts": {
+     "sha256_disk_crlf": "a4237116caf158cef53edad5603d4c8227ba0c4df577d53b295863941c3f9617",
+     "sha256_lf_git": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78",
+     "bytes": 54576,
+     "lines": 968,
+     "crlf_pairs": 968,
+     "role": "authoritative build revision: produced the delivered cache h/context and the b-s11/c-s11 heads, and is the revision phase_b, after_weights, audit_trained and the cache evidence in this report were measured on"
+    }
    },
    "scripts/market_context.py_lf": {
-    "sha256_git_lf": "72c3a35e01d23c47bfd331f213ea44dc0a77702aa99fa8fc8c09cf3cd8e7eb78"
+    "sha256_git_lf": "97c213b39eb8aa7ba359d81bc397bb3ee226c9c231e91932d9118b41ba7f169e"
    },
    "modified_tlob/market_head.py": "84d141d9f83ca4cfbf41f215d3416ed577c962c178ad3240279b6be4998be208",
    "modified_tlob/adapter.py": "1a40de9fe3058ec66d9ddc15339b0102b2c7db90025c6709be92e159b54e4e40",

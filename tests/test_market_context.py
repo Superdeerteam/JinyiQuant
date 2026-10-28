@@ -170,3 +170,23 @@ def test_a_rechunked_batch_falls_below_the_cross_section_floor():
     _, fragment_codes, fragment_groups, _ = timestamp_codes(keys.iloc[[0, 4]])
     assert cross_section_floor(fragment_codes, fragment_groups) == 1
     assert cross_section_floor(fragment_codes, fragment_groups) < market_head.MIN_CROSS_SECTION
+
+
+def test_unknown_split_names_are_refused_instead_of_building_nothing(tmp_path):
+    from scripts.market_context import requested_splits
+
+    assert requested_splits("train,replay") == ["train", "replay"]
+    assert requested_splits("replay,") == ["replay"]
+    for value in ("final", "train,final", ""):
+        with pytest.raises(SystemExit) as raised:
+            requested_splits(value)
+        assert "expected a non-empty subset of ['train', 'replay']" in str(raised.value.code)
+
+
+def test_a_killed_build_is_reported_as_such_not_as_a_missing_file(tmp_path):
+    from scripts.market_context import load_cache
+
+    killed = tmp_path / "train" / "parts"
+    killed.mkdir(parents=True)
+    with pytest.raises(ValueError, match="no completed build found"):
+        load_cache(tmp_path / "train")
