@@ -150,7 +150,9 @@ def exposure_report(keys: pd.DataFrame, sample_mask, exposure_counts, *,
         raise ValueError("Exposure counters must have one entry per usable training row")
     if counts.min() < 0:
         raise ValueError("Exposure counters must be nonnegative")
-    usable = keys.loc[mask]
+    # ``counts`` is indexed by usable-row order; groupby yields index labels, so
+    # normalise to positions first (they diverge as soon as the mask has holes).
+    usable = keys.loc[mask].reset_index(drop=True)
     dates = pd.to_datetime(usable["date"]).dt.normalize()
     per_day = []
     for date, rows in usable.groupby(dates, sort=True).groups.items():

@@ -294,6 +294,25 @@ def test_exposure_report_rejects_a_mismatched_counter_or_mask():
                         batch_size=2, steps=3)
 
 
+def test_exposure_accounting_indexes_by_position_when_the_training_mask_has_holes():
+    """Timestamp-grouped sampling drops the tail rows of every timestamp group, so the mask
+    keeps holes and the surviving index labels run past the counter array. The day loop must
+    index ``counts`` by rank-in-mask, not by label: label indexing raised
+    ``IndexError: index 3499776 is out of bounds for axis 0 with size 3499776`` at the end of
+    a 145k-step trajectory run."""
+    dates = pd.to_datetime(["2023-08-01 10:00"] * 6 + ["2023-08-02 10:00"] * 4)
+    keys = pd.DataFrame({"date": dates, "instrument": [f"S{index}" for index in range(10)]})
+    # Day 1 keeps labels 0-2 (3, 4, 5 dropped), day 2 keeps labels 6-9: the last label (9)
+    # is far beyond the seven counters that actually exist.
+    mask = np.array([True, True, True, False, False, False, True, True, True, True])
+    counts = np.array([2, 1, 0, 2, 1, 1, 1], dtype=np.int64)
+    report = exposure_report(keys, mask, counts, batch_size=2, steps=4)
+    assert report["usable_samples"] == 7 and report["samples_seen"] == 8
+    assert [day["date"] for day in report["per_day"]] == ["2023-08-01", "2023-08-02"]
+    assert [day["unique_samples"] for day in report["per_day"]] == [2, 4]
+    assert [day["samples_seen"] for day in report["per_day"]] == [3, 5]
+
+
 def test_adapter_inference_import_does_not_pull_the_training_only_module():
     """The flat submission package whitelists inference dependencies only; adapter must not
     import jinyiquant.trajectory at import time, or the package cannot be built."""
