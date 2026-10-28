@@ -316,6 +316,10 @@ class TLOBAdapter:
             raise ValueError("Ranking loss and its weight must be enabled together")
         data = data_config.model_dump(mode="json") if hasattr(data_config, "model_dump") else dict(data_config)
         self.preprocessing = {k: data[k] for k in PREPROCESS_KEYS}
+        # Default-off: only a non-default transform joins the frozen preprocessing contract, so
+        # existing checkpoint preprocessing dicts keep their exact identity.
+        if data.get("feature_transform", "none") != "none":
+            self.preprocessing["feature_transform"] = data["feature_transform"]
         self.training_sample_times = tuple(data.get("training_sample_times") or data["sample_times"])
         fields = tuple(self.preprocessing["feature_columns"])
         self.lob_feature_count = validate_input_schema(

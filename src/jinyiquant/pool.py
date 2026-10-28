@@ -114,6 +114,7 @@ class StreamingPool:
     effective_count: np.ndarray = field(repr=False)
     sample_times: Any = None
     features: Any = None
+    feature_transform: str = "none"
     approved_minutes: np.ndarray | None = None
 
     # ------------------------------------------------------------------ construction
@@ -166,7 +167,8 @@ class StreamingPool:
         pool = cls(keys=keys, arrays=arrays, codes=codes, begin=begin, stop=stop, settings=settings,
                    history_feature_count=history_feature_count, coverage=coverage,
                    observed_count=observed_count, effective_count=effective_count, sample_times=times,
-                   features=features, approved_minutes=approved_sample_minutes(times))
+                   features=features, feature_transform=config_option(config, "feature_transform", "none"),
+                   approved_minutes=approved_sample_minutes(times))
         if history_quality_summary:
             pool.coverage["history_quality"] = history_quality(
                 pool.history_diagnostics(), features, history_feature_count)
@@ -219,6 +221,7 @@ class StreamingPool:
         history_dates = np.full((len(positions), lookback), np.datetime64("NaT", "ns"), dtype="datetime64[ns]")
         window_arrays(self.arrays, self.codes[positions], self.begin[positions], self.stop[positions],
                       x, observed, history_dates, history_feature_count=self.history_feature_count,
+                      features=self.features, feature_transform=self.feature_transform,
                       **self.settings)
         return Batch(keys, x, observed, history_dates, self.coverage, self.history_feature_count)
 

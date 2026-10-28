@@ -12,7 +12,7 @@ from .evaluation import METRIC_SPEC, aggregate_metric
 from .io import digest, read_json
 
 DATA_FACTORS = {"lookback", "history_days", "min_history", "feature_columns", "missing_policy",
-                "max_ffill_steps", "price_scale", "missing_sentinel"}
+                "max_ffill_steps", "price_scale", "missing_sentinel", "feature_transform"}
 _LOCATIONS = {"path", "bars_path", "labels_path", "instruments_path", "instrument_map_path",
               "cache_dir", "cache_path"}
 
@@ -57,6 +57,9 @@ def fair_config_pair(baseline, candidate, change):
     if change["factor"] != "control.identity":
         section, field = change["factor"].split(".")
         for value, arm in ((left, "baseline"), (right, "candidate")):
+            if (section, field) == ("data", "feature_transform"):
+                # Defaulted keys are omitted from snapshots; compare the omission as "none".
+                value.setdefault(section, {})[field] = value[section].get(field, "none")
             if field not in value.get(section, {}) or value[section][field] != change[arm]:
                 raise ValueError(f"unfair comparison: {arm} differs from preregistered {change['factor']}")
             del value[section][field]

@@ -1207,19 +1207,54 @@ def forward_fill(values: np.ndarray, limit: int) -> np.ndarray:
     return values
 
 
+def relative_price_log_volume(window: np.ndarray, features: Sequence[str]) -> None:
+    """Apply ``price_rel_vol_log`` in place to one block of gathered windows.
+
+    Prices become ``(p - ref) / ref`` with ``ref`` the mid price ``(ask_price1 + bid_price1)/2``
+    at the window's own last step, so the transform is causal, per (instrument, window) and
+    independent of the instrument's absolute price level. A missing or non-positive mid zeroes
+    that window's price channels instead of dividing by it. Volumes become ``log1p(v)`` for
+    ``v >= 0``. Applied after forward fill and before the final NaN->0 fill on the one window
+    path shared by the materialised, streaming and inference builders.
+    """
+    names = list(features)
+    if len(names) != window.shape[2]:
+        raise ValueError("feature names do not match the window width")
+    try:
+        ask, bid = names.index("ask_price1"), names.index("bid_price1")
+    except ValueError:
+        raise ValueError("price_rel_vol_log requires ask_price1 and bid_price1") from None
+    mid = 0.5 * (window[:, -1, ask] + window[:, -1, bid])
+    valid = np.isfinite(mid) & (mid > 0)
+    reference = np.where(valid, mid, 1.0)[:, None, None]
+    prices = [index for index, name in enumerate(names) if "price" in name]
+    if prices:
+        values = (window[:, :, prices] - reference) / reference
+        values[~valid] = 0.0
+        window[:, :, prices] = values
+    volumes = [index for index, name in enumerate(names) if "volume" in name]
+    if volumes:
+        window[:, :, volumes] = np.log1p(np.maximum(window[:, :, volumes], 0.0))
+
+
 def window_arrays(arrays: BarArrays, codes: np.ndarray, begin: np.ndarray, stop: np.ndarray,
                   x: np.ndarray, observed: np.ndarray, history_dates: np.ndarray, *,
                   lookback: int, minimum: int, policy: str, limit: int,
-                  history_feature_count: int, chunk: int | None = None):
+                  history_feature_count: int, features: Sequence[str] = (),
+                  feature_transform: str = "none", chunk: int | None = None):
     """Assemble every key's trailing window into the preallocated outputs.
 
     The single window builder: the materialised pool fills one pool-sized array set and the
     streaming pool fills one batch's worth, so both paths produce the same values by
     construction. Windows are right-aligned (short history pads the front with NaN, which
     ``observed`` reports as unobserved and ``x`` reports as zero), ``enough`` counts rows with
-    any finite primary feature, and ``observed`` is measured before any filling. Returns
-    ``(enough, history_count)``.
+    any finite primary feature, and ``observed`` is measured before any filling. ``features``
+    and ``feature_transform`` apply the configured input transform after forward fill and before
+    the final zero fill, so training, validation and prediction windows see the same values.
+    Returns ``(enough, history_count)``.
     """
+    if feature_transform not in ("none", "price_rel_vol_log"):
+        raise ValueError(f"Unsupported feature_transform: {feature_transform!r}")
     count = len(codes)
     if not arrays.rows:
         return np.zeros(count, dtype=bool), np.zeros(count, dtype=np.int64)
@@ -1245,6 +1280,8 @@ def window_arrays(arrays: BarArrays, codes: np.ndarray, begin: np.ndarray, stop:
         if policy == "ffill" and limit:
             # Interval trades are flows; filling them repeats a past interval's activity.
             window[:, :, :history_feature_count] = forward_fill(window[:, :, :history_feature_count], limit)
+        if feature_transform != "none":
+            relative_price_log_volume(window, features)
         np.nan_to_num(window, copy=False, nan=0.0)
         x[rows] = window
     return enough, stop - begin
@@ -1278,6 +1315,7 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
         raise ValueError("Missing configured feature columns")
     key_dates = validate_sample_times(keys, config_option(config, "sample_times", []))
     settings = window_parameters(config)
+    feature_transform = config_option(config, "feature_transform", "none")
     arrays = bar_arrays(bars, features)
     codes = instrument_codes(arrays, keys["instrument"])
     begin, stop = window_geometry(arrays, codes, key_dates, settings["lookback"])
@@ -1286,7 +1324,9 @@ def build_batch(bars: pd.DataFrame, keys: pd.DataFrame, config: Any) -> Batch:
     history_dates = np.full((len(keys), settings["lookback"]), np.datetime64("NaT", "ns"),
                             dtype="datetime64[ns]")
     enough, history_count = window_arrays(arrays, codes, begin, stop, x, observed, history_dates,
-                                          history_feature_count=history_feature_count, **settings)
+                                          history_feature_count=history_feature_count,
+                                          features=tuple(features), feature_transform=feature_transform,
+                                          **settings)
     # Insufficient windows remain in the batch to preserve universe alignment.
     # The runner rejects their coverage when acceptance.min_coverage is not met.
     coverage = window_coverage(keys, enough, observed_count=int(observed.sum()),

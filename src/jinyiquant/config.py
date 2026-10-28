@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 from .io import digest, read_json
 
@@ -79,10 +79,21 @@ class DataConfig(StrictModel):
     sample_times: tuple[str, ...] = ("09:30", "10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30")
     training_sample_times: tuple[str, ...] | None = None
     price_scale: float = Field(default=1.0, gt=0)
+    # Optional input transform, default OFF. The wrap serializer below omits the default from
+    # every snapshot, so hashes of registered recipes that do not set it cannot move.
+    feature_transform: Literal["none", "price_rel_vol_log"] = "none"
     missing_sentinel: float | None = -1.0
     source: str = Field(min_length=1)
     version: str = Field(min_length=1)
     monthly_sampling: MonthlySampling | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_default_feature_transform(self, handler):
+        """Serialize the default transform away so registered recipe identities stay fixed."""
+        data = handler(self)
+        if data.get("feature_transform", "none") == "none":
+            data.pop("feature_transform", None)
+        return data
 
     @model_validator(mode="after")
     def valid_features(self):

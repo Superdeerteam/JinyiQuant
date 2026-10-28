@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "experiment_id": "featnorm-132d-20261028-seed29-control",
+  "created_at_utc": "2026-10-28T06:03:12Z",
+  "status": "execution_plan_of_registered_prereg",
+  "registration": {
+    "path": "configs/b4_feature_norm_prereg_20261028.json",
+    "sha256": "1e27dffefa7d41e57de0699e20810f8f1e68ab2c96674cd85069d6aaa6f3b025",
+    "registration_path": "configs/b4_feature_norm_prereg_20261028.registration.json",
+    "role": "support",
+    "note": "the primary seed is the only escalation seed; support seeds are descriptive stability references"
+  },
+  "question_zh": "种子 29、对照臂（特征不变）：132 日配方、1.32/2.64 两个预算点上的样本外排序表现",
+  "hypothesis": "Holding the frozen 132-day recipe and the two effective-epoch budget points fixed, the control arm reproduces the registered baseline on this host.",
+  "factor": {
+    "changed": "control.identity",
+    "note": "control arm: the recipe is the registered 132-day data-probe recipe, unchanged"
+  },
+  "environment_only_changes": {
+    "data.bars_path": "host data root",
+    "data.labels_path": "host data root",
+    "data.instruments_path": "host data root",
+    "data.instrument_map_path": "host data root",
+    "data.cache_dir": "host cache root",
+    "output_root": "host run root",
+    "note": "path-only changes required by the training host: data and cache live on the container-local disk, run artifacts under /mnt/work (network disk that survives a container restart)"
+  },
+  "recipe_config": "configs/mlplob_v3_132d_csz_19800_seed29.json",
+  "recipe_sha256": "ea24d2f078e77f03a0b97aff212e836341b9ba38b3b04f12a80bb2949996f478",
+  "recipe_frozen_baseline": {
+    "path": "configs/mlplob_v3_60d_csz_19800.json",
+    "sha256": "7524a3444247bb500889e55c81f44ee83235dc5bf25cd36cdffe23a4f9af2383"
+  },
+  "recipe_frozen": [
+    "model.kind",
+    "model.hidden_dim",
+    "model.num_layers",
+    "data.feature_columns",
+    "data.lookback",
+    "data.sample_times",
+    "data.label_horizon_minutes",
+    "data.outside_universe_labels",
+    "data.price_scale",
+    "model.target_centering",
+    "model.target_scaling",
+    "model.time_loss_weighting",
+    "model.batch_size",
+    "model.learning_rate",
+    "evaluation_split",
+    "evaluation",
+    "acceptance",
+    "data.feature_transform"
+  ],
+  "budget_only_overrides": {
+    "model.max_steps": "cleared; the registered trajectory steps govern the budget",
+    "model.epochs": "kept as the upper bound (must exceed the last budget point)",
+    "data.splits.train.start": "moved earlier to 2023-04-14; the single changed factor",
+    "note": "feature_transform is the registered factor, not a budget override; any other deviation from the frozen recipe must fail the run guard"
+  },
+  "budget_points": [
+    {
+      "name": "data-1.32",
+      "effective_epochs": 1.32,
+      "steps": 43488,
+      "role": "primary point of the registered comparison"
+    },
+    {
+      "name": "data-2.64",
+      "effective_epochs": 2.64,
+      "steps": 86976,
+      "role": "descriptive second point; reported, not gated"
+    }
+  ],
+  "one_continuous_trajectory": true,
+  "lr_schedule": "constant",
+  "exposure": {
+    "min_coverage": 1.0,
+    "effective_epochs_atol": 0.001,
+    "track_exposure": true,
+    "reconcile": "samples_seen == steps * batch_size; unique/usable coverage >= min_coverage; realised effective epochs within atol of the declared point"
+  },
+  "resume": {
+    "state": [
+      "network",
+      "optimizer",
+      "torch_rng",
+      "numpy_rng",
+      "python_rng",
+      "sampler_generator",
+      "sampler_position",
+      "exposure_counters"
+    ],
+    "repro_tolerance": {
+      "atol": 1e-06,
+      "rtol": 1e-05
+    },
+    "fail_closed": "pool, recipe, fitted transforms and sampler batch order must reproduce the checkpoint exactly",
+    "note": "the two budget points are checkpoints of one uninterrupted trajectory, not two runs"
+  },
+  "derived_reference": {
+    "estimate_not_budget": true,
+    "trading_days": 132,
+    "usable_samples_estimate": 1054750,
+    "steps_estimate": {
+      "1.32": 43508,
+      "2.64": 87017
+    },
+    "batch_size": 32,
+    "calibration": "60-day measured pool 479432 usable samples and 19777/39553 steps, scaled by 132/60",
+    "deviation_tolerance": {
+      "relative": 0.05,
+      "applies_to": [
+        "usable_samples",
+        "steps"
+      ],
+      "rule": "a realised value beyond +/-5% stops the run and reports; the estimate is not edited afterwards"
+    },
+    "note": "the driver re-derives usable samples and steps from the pool actually built at run time"
+  },
+  "cloud": {
+    "host": "hz-t3.matpool.com:26155 (36 cores / 192 GB / 3x Tesla P100-SXM2-16GB, driver 550.163.01 / CUDA 12.2)",
+    "gpu_index": 1,
+    "concurrency": {
+      "processes": 3,
+      "gpus": 3,
+      "one_process_per_gpu": true,
+      "threads_per_process": 1,
+      "sharing": "one seed per card; both arms run in separate waves"
+    }
+  },
+  "evaluation_scope": {
+    "cloud": "validation split 2023-11-01..2023-11-15 = 10 trading days, process diagnostic only",
+    "formal": "the five declared research windows produced locally by replaying exported per-budget-point weights; a cloud validation score is never the delivery evidence",
+    "sealed_final": "never read"
+  }
+}

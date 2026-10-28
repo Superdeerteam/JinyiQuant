@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "prereg_path": "configs/b4_feature_norm_prereg_20261028.json",
+  "prereg_sha256": "1e27dffefa7d41e57de0699e20810f8f1e68ab2c96674cd85069d6aaa6f3b025",
+  "registered_at_utc": "2026-10-28T06:03:12Z",
+  "host": "hz-t3.matpool.com:26155 (36 cores / 192 GB / 3x Tesla P100-SXM2-16GB, driver 550.163.01 / CUDA 12.2)",
+  "recipe_pins": {
+    "configs/mlplob_v3_132d_csz_19800.json": "3aec9e95ecf5b02fc5ccfbb89b93aba531a4b59c16ea2f3aa114180a21fab403",
+    "configs/mlplob_v3_132d_csz_19800_seed29.json": "ea24d2f078e77f03a0b97aff212e836341b9ba38b3b04f12a80bb2949996f478",
+    "configs/mlplob_v3_132d_csz_19800_seed47.json": "b51e16c304d5fb1268ae6511a3fe3c9ecbd5f1f5d5df42b3bd165ec36841b481",
+    "configs/featnorm_132d_csz_seed11.json": "a43d199a20a5a6fb371ca68a8f25c9f58817752f874190a659b01672e1934c09",
+    "configs/featnorm_132d_csz_seed29.json": "56aec656bf08ee96e0f5ef40e3a537de4c5c9a295d6565fcc6ee3529fb0ab58a",
+    "configs/featnorm_132d_csz_seed47.json": "19eae18ba898116394acfac5bb4cbc87e8f3b4d98be22e8952468ca23cb87b2f"
+  },
+  "plan_pins": {
+    "configs/featnorm_132d_seed11_control_plan.json": "51983c342547bf262f39e3678630fe8137baaf38ead767c67adf9f52c9ab8dc6",
+    "configs/featnorm_132d_seed11_pricerel_plan.json": "2d4a36753ea25fed9a47e535bf27fc1fff70148b9857a54406d6cbe563525341",
+    "configs/featnorm_132d_seed29_control_plan.json": "5446d6b5b6d10130b2ced6433167fb30cbfbc03c291fa515f9c63dc209ca184a",
+    "configs/featnorm_132d_seed29_pricerel_plan.json": "dcf5b3df192d254a8072a48c64c7951fd0654cf4e1a957980cb53212e41ea895",
+    "configs/featnorm_132d_seed47_control_plan.json": "066934c2e3cbd7c9e4d161248829e95f4bea634040d8f404dbea7d7125a33c5e",
+    "configs/featnorm_132d_seed47_pricerel_plan.json": "abccb14a26505f3e012a4832ef03bc0cebb2c945e916640b132054696309ca7b"
+  },
+  "ordering": {
+    "registered_before_any_feature_transform_training_started": true,
+    "note_zh": "登记时 hz-t3 上尚未启动任何一条该线训练"
+  }
+}

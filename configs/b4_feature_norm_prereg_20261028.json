@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "experiment_id": "featnorm-132d-20261028",
+  "frozen_at_utc": "2026-10-28T06:03:12Z",
+  "author": "captain",
+  "question_zh": "固定 MLPLOB v3 CSZ 132 日配方与 1.32/2.64 两个预算点，只把输入特征换成价格相对化 + 成交量 log1p，样本外排序表现是否改善",
+  "hypothesis_zh": "标签已按时间戳横截面 z-score，而特征侧是原始盘口价乘 100 加原始股数，同一时间戳跨股票排序时分数尺度不可比。把价格相对化到窗口自身的 mid、成交量取 log1p，应减少模型在 40 维隐层里同时学绝对价位不变性所需的工作量，从而提高 RankIC。",
+  "factor": {
+    "changed": "data.feature_transform",
+    "from": "none",
+    "to": "price_rel_vol_log",
+    "definition": {
+      "prices": "(p - ref) / ref, ref = (ask_price1 + bid_price1) / 2 at the window's own last step, read after forward fill",
+      "volumes": "log1p(max(v, 0))",
+      "invalid_ref": "a missing or non-positive ref zeroes that window's price channels",
+      "causality": "per (instrument, window); no future row, no cross-window or dataset statistic",
+      "code": "src/jinyiquant/data.py::relative_price_log_volume, called from window_arrays only"
+    },
+    "default_path_unchanged": "with the key absent the window bytes are unchanged (X_SHA 21feb1ac535dea5cee5cd43666880586aeb513760b83f84a2b0d069b8222ce43)"
+  },
+  "arms": {
+    "control": {
+      "data.feature_transform": "none",
+      "recipes": [
+        "configs/mlplob_v3_132d_csz_19800.json",
+        "configs/mlplob_v3_132d_csz_19800_seed29.json",
+        "configs/mlplob_v3_132d_csz_19800_seed47.json"
+      ]
+    },
+    "candidate": {
+      "data.feature_transform": "price_rel_vol_log",
+      "recipes": [
+        "configs/featnorm_132d_csz_seed11.json",
+        "configs/featnorm_132d_csz_seed29.json",
+        "configs/featnorm_132d_csz_seed47.json"
+      ]
+    }
+  },
+  "rung": {
+    "train_trading_days": 132,
+    "train_window": [
+      "2023-04-14",
+      "2023-10-31"
+    ],
+    "validation": [
+      "2023-11-01",
+      "2023-11-15"
+    ],
+    "note_zh": "沿用已注册 132 日配方的时间切分，只改特征变换一个因素"
+  },
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "primary_seed": 11,
+  "budget_points": [
+    {
+      "name": "data-1.32",
+      "effective_epochs": 1.32,
+      "steps": 43488
+    },
+    {
+      "name": "data-2.64",
+      "effective_epochs": 2.64,
+      "steps": 86976
+    }
+  ],
+  "primary": {
+    "metric": "rank_ic",
+    "point": "data-1.32",
+    "caliber": "configs/training_trajectory_replay_20261027_plan.json: 5 windows (2023-11, 2024-01, 2024-03, 2024-04, 2024-06), 104 trading days, eval-v2",
+    "pairing": "candidate - control within (seed, trading day), then mean over the three seeds",
+    "uncertainty": "5-trading-day moving block bootstrap, 20000 draws"
+  },
+  "thresholds": {
+    "min_improvement": 0.003,
+    "ci_must_exclude_zero": true,
+    "min_positive_windows": 4,
+    "windows_total": 5,
+    "note_zh": "+0.003 约为 132 日 9 种子标准差 0.00247 的 1.2 倍"
+  },
+  "secondary": {
+    "point_2.64": "descriptive at the same caliber; reported, not gated",
+    "turnover_degradation_max": 0.0318,
+    "net5": "reported at 5bp for both arms"
+  },
+  "decision_rule_zh": "当且仅当三种子配对平均 RankIC 改善 >= 0.003、其 95% 区间下界 > 0、且 5 个窗口中至少 4 个为正时，判定特征归一化值得进入配方；否则判定不通过并停止该线。",
+  "cost_cap": {
+    "runs": 6,
+    "steps_per_run": 86976,
+    "wall_hours": 3
+  },
+  "no_threshold_change": true,
+  "homogeneity": {
+    "host": "hz-t3.matpool.com:26155 (36 cores / 192 GB / 3x Tesla P100-SXM2-16GB, driver 550.163.01 / CUDA 12.2)",
+    "torch": "2.6.0+cu124",
+    "threads_per_process": 1,
+    "one_process_per_gpu": true,
+    "note_zh": "两臂同机同 torch；控制臂同时是跨机复现检查，但跨机一致性只作描述，不作判据"
+  },
+  "ordering": {
+    "registered_before_any_feature_transform_training_started": true,
+    "note_zh": "本文件落盘时该线一次训练都没有跑过，也没有任何 RankIC 被读取"
+  },
+  "scope_limits_zh": [
+    "132 日档的结论不外推到 441/927 档，后者需要单独预登记",
+    "若通过，927 三种子的配方作废：不能与旧配方模型混编，也不能直接当提交候选",
+    "本轮不追求晋升，只判定特征归一化是否值得进入配方"
+  ]
+}
