@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dev10-window-roles-20261028",
+  "frozen_at_utc": "2026-10-28T12:12:00Z",
+  "author": "captain",
+  "question_zh": "封存窗已一次性花掉、十个开发窗已被十几个候选反复使用之后，如何避免第 22-40 次比较把选择偏差当成效应。",
+  "purpose_zh": "在开始 R5/R6/R7/R8/R10 这批新方向之前，预先固定十个开发窗各自扮演的角色与判据，使筛查与确认使用互不重叠的数据。",
+  "window_roles": {
+    "screen": ["nov2023", "jan2024", "feb2024", "mar2024", "apr2024", "may2024", "jul2024", "aug2024"],
+    "confirmation": ["jun2024", "sep2024"]
+  },
+  "day_counts": {
+    "nov2023": 22,
+    "jan2024": 22,
+    "feb2024": 15,
+    "mar2024": 21,
+    "apr2024": 20,
+    "may2024": 20,
+    "jun2024": 19,
+    "jul2024": 23,
+    "aug2024": 22,
+    "sep2024": 19,
+    "total": 203,
+    "screen_total": 165,
+    "confirmation_total": 38
+  },
+  "rules": {
+    "screen_decision": {
+      "metric": "rank_ic",
+      "caliber": "pooled paired delta over the eight screen windows on eval-v2, paired within (window, trading day), 5-day moving block bootstrap with ceil(n/5) blocks, 20000 draws, seed 20261028",
+      "min_improvement": 0.003,
+      "ci_must_exclude_zero": true,
+      "min_positive_windows": 7,
+      "windows_total": 8
+    },
+    "confirmation": {
+      "windows": ["jun2024", "sep2024"],
+      "days": 38,
+      "read_budget_per_direction": 1,
+      "criterion_zh": "池化配对均值 > 0 且 >= 21/38 个交易日为正。这是否决线而不是晋升线：38 天无法用显著性判定，确认窗只能杀掉方向、不能建立方向。",
+      "order_zh": "只有通过 screen_decision 的方向才允许读取确认窗，且只读一次。"
+    },
+    "no_confirmation_reuse_for_tuning": true
+  },
+  "scope": {
+    "applies_to": "所有在 2026-10-28T12:12:00Z 之后登记的 R5/R6/R7/R8/R10 类实验，以及它们的预注册文件",
+    "does_not_apply_to": [
+      "configs/mktctx_t4_prereg_20261028.json",
+      "configs/b4_feature_norm_prereg_20261028.json",
+      "configs/b4_scaling_extension_prereg_20261028.json",
+      "configs/b4_data_scaling_600d_extension_20261028.registration.json",
+      "configs/b4_scaling_927d_lotb_extension_20261028.registration.json"
+    ],
+    "rationale_zh": "上述实验在规则冻结之前已按十个窗口注册并评价，保持原口径；本文件不得被用来事后重算它们的 verdict。"
+  },
+  "deferred": {
+    "R9_risk_residual_labels": {
+      "status": "not_scheduled",
+      "decided_by": "user",
+      "reason_zh": "数据/cpt_jyc_2026_instruments(1).parquet 只有 date/instrument/name 三列，没有行业、市值、beta；本地只能自造代理暴露，而平台的 BARRA 中性化用的是真实暴露，代理版本测出来的结论不能迁移，故不做。"
+    }
+  },
+  "caveat_zh": "jun2024 是现行候选历史上最弱的一窗（多种口径下该窗改善最小或为负）。把它放进确认集意味着确认是一次偏保守的硬测试，写在这里以免将来误读为随机选择。",
+  "registered_before_any_r5_r10_score": true,
+  "no_threshold_change": true,
+  "sealed_interval_note_zh": "封存窗 [2024-10-08, 2025-01-01) 已于 2026-10-28 一次性消耗（候选 - 现任 +0.010288，修正口径 CI [+0.005089,+0.015253]），不再作为任何后续实验的确认数据。"
+}
