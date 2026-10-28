@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "experiment_id": "screen10-mh-441d-seed47",
+  "created_at_utc": "2026-10-28T12:37:24.074227+00:00",
+  "status": "execution_plan_of_draft_screen10_multi_horizon",
+  "registration": {
+    "path": "screen10_mh_prereg_draft.json",
+    "role": "draft arm D1 (multi-horizon labels), seed 47",
+    "note": "the draft is not registered; this plan may not be executed before an explicit registration act, and after it is written no threshold, weight or window may change"
+  },
+  "question_zh": "\u5728\u51bb\u7ed3\u7684 MLPLOB v3 CSZ \u4e3b\u5e72\u4e0e 441 \u65e5\u8bad\u7ec3\u7a97\u4e0a\uff0c\u628a\u5355\u4e00 30 \u5206\u949f\u6807\u7b7e\u6362\u6210 5/15/30/60 \u56db\u4e2a\u524d\u5411 VWAP \u6536\u76ca\u6807\u7b7e\u3001\u4e00\u4e2a\u4e3b\u5e72\u56db\u4e2a\u8f93\u51fa\u5934\u3001\u63a8\u7406\u65f6\u56fa\u5b9a\u7b49\u6743\u6df7\u5408\uff0c\u5728\u540c\u4e00\u4e2a 1.32 \u6709\u6548 epoch \u9884\u7b97\u70b9\u4e0a\uff0c\u5341\u7a97\u6837\u672c\u5916 RankIC \u7684\u914d\u5bf9\u5dee\u662f\u5426\u4e3a\u6b63\u3002",
+  "hypothesis": "short and long forward-VWAP labels share most of their cross-sectional signal but not all of it; averaging four heads trained on the same trunk reduces label-specific noise, so the blended score should beat the single 30-minute head at matched budget if horizon diversity carries real signal. A pooled paired difference at or below the pre-declared floor falsifies the arm.",
+  "factor": {
+    "changed": "data.label_horizons",
+    "from": [
+      30
+    ],
+    "to": [
+      5,
+      15,
+      30,
+      60
+    ],
+    "definition": {
+      "label_k": "close(t + k) / vwap((t, t + k]) - 1, the official forward-VWAP form",
+      "primary_column": "the 30-minute column is the official vwap_return target verbatim",
+      "rebuild": "5/15/60 are rebuilt in one bounded pass over the 1-minute bars with the same form",
+      "masks": "per-horizon NaN masks; the training row set stays the 30-minute selection",
+      "clock": "trading clock skips the lunch break (11:30 + 30m = 13:30); a horizon without enough session left is NaN",
+      "targets": "per-horizon timestamp z-score then train-set RMS-matched scaling, fitted on the training split only",
+      "heads": "one trunk, four Linear(80, 1) heads; loss = equal average of per-horizon masked MSE",
+      "score": "fixed equal average of the head outputs in each head's optimization units"
+    },
+    "train_window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "declared_trading_days": 441,
+    "validation_unchanged": [
+      "2023-11-01T00:00:00",
+      "2023-11-15T00:00:00"
+    ],
+    "train_end_exclusive": "2023-11-01T00:00:00",
+    "default_path_unchanged": {
+      "claim": "with data.label_horizons absent or [30] the labels, windows, loss and state are bit-identical to the registered path",
+      "evidence": {
+        "measured_on": "hz-t3 ZW75JY, /root/py312, CPU device, 2026-10-28",
+        "window": [
+          "2022-01-04",
+          "2022-01-07"
+        ],
+        "label_rows": 23928,
+        "fit_rows": 23928,
+        "absent_vs_explicit_30": "identical",
+        "labels_sha256": "eba2870e850b1424e88ae96b02a90e9c98efb7b3ec5a3a6a1a2820510cb37d14",
+        "windows_sha256": "2791fb5e6057b6cdc7a217eb5bc45774c685af9d6b38b93046d54cded09ac82d",
+        "data_sha256": "924c01e4404ac9501742c6a477db099570a3f74da5653f3e1891f8697141f50e",
+        "state_sha256_after_5_steps": "9ed0f2dea6b09f7be0361f12b64e626d31345d527ceb85a3efed22017b8a4876",
+        "five_step_losses": [
+          2.735749672950668e-05,
+          1.6560159930270433e-05,
+          1.3206067292788765e-05,
+          1.4227484795957897e-05,
+          1.0610767223368314e-05
+        ],
+        "metadata_keys_without_multi_horizon": true
+      }
+    },
+    "note": "the only changed recipe key; the training window, validation split, evaluation split, seed, model dimensions and optimizer are the control's"
+  },
+  "environment_only_changes": {
+    "data.bars_path": "host data root",
+    "data.labels_path": "host data root",
+    "data.instruments_path": "host data root",
+    "data.instrument_map_path": "host data root",
+    "data.cache_dir": "host cache root",
+    "output_root": "host run root",
+    "note": "path-only changes required by the training host: data and cache live on the container-local disk, run artifacts under /mnt/work (network disk that survives a container restart)"
+  },
+  "recipe_config": "configs/screen10_mh_441d_csz_seed47.json",
+  "recipe_sha256": "524eafd2d2b835a3d1b67f9c09f0f3f5105efcde5aeee6fb2592209d912ed08c",
+  "recipe_frozen_baseline": {
+    "path": "configs/mlplob_v3_60d_csz_19800.json",
+    "sha256": "7524a3444247bb500889e55c81f44ee83235dc5bf25cd36cdffe23a4f9af2383"
+  },
+  "recipe_frozen": [
+    "model.kind",
+    "model.hidden_dim",
+    "model.num_layers",
+    "data.feature_columns",
+    "data.lookback",
+    "data.sample_times",
+    "data.label_horizon_minutes",
+    "data.outside_universe_labels",
+    "model.target_centering",
+    "model.target_scaling",
+    "model.time_loss_weighting",
+    "model.batch_size",
+    "model.learning_rate",
+    "evaluation_split",
+    "evaluation",
+    "acceptance",
+    "data.label_horizons"
+  ],
+  "budget_only_overrides": {
+    "model.max_steps": "cleared; the registered trajectory steps govern the budget",
+    "model.epochs": "kept as the upper bound (must exceed the last budget point)",
+    "data.splits.train.start": "moved earlier to 2023-04-14; the single changed factor",
+    "note": "any other deviation from the frozen recipe must fail the run guard",
+    "data.label_horizons": "the single changed factor; not a budget knob. The recipe keeps the control's experiment_id and output_root, so the runner allocates a unique timestamped run directory per arm (nothing is overwritten); prefer an explicit per-arm output_root at launch."
+  },
+  "budget_points": [
+    {
+      "name": "mh-1.32",
+      "effective_epochs": 1.32,
+      "role": "scored point: the 441-day rung anchor (145269 steps at batch 32 on hz-t3, 145290 on hz-4, derived at run start)"
+    },
+    {
+      "name": "mh-stepup-1.33",
+      "effective_epochs": 1.33,
+      "role": "throw-away step-up point (~+1100 optimizer steps): exists only because validate_budget_points demands two strictly increasing points; never scored, never exported"
+    }
+  ],
+  "one_continuous_trajectory": true,
+  "lr_schedule": "constant",
+  "exposure": {
+    "min_coverage": 1.0,
+    "effective_epochs_atol": 0.001,
+    "track_exposure": true,
+    "reconcile": "samples_seen == steps * batch_size; unique/usable coverage >= min_coverage; realised effective epochs within atol of the declared point"
+  },
+  "resume": {
+    "state": [
+      "network",
+      "optimizer",
+      "torch_rng",
+      "numpy_rng",
+      "python_rng",
+      "sampler_generator",
+      "sampler_position",
+      "exposure_counters"
+    ],
+    "repro_tolerance": {
+      "atol": 1e-06,
+      "rtol": 1e-05
+    },
+    "fail_closed": "pool, recipe, fitted transforms and sampler batch order must reproduce the checkpoint exactly",
+    "note": "the two budget points are checkpoints of one uninterrupted trajectory, not two runs"
+  },
+  "derived_reference": {
+    "estimate_not_budget": true,
+    "trading_days": 441,
+    "usable_samples_estimate": 3522173,
+    "batch_size": 32,
+    "steps_expected": {
+      "1.32": 145290
+    },
+    "calibration": "level-1 measured 1054256 usable samples over 132 trading days, scaled linearly by trading days; the driver re-derives both from the pool actually built",
+    "deviation_tolerance": {
+      "relative": 0.05,
+      "applies_to": [
+        "usable_samples",
+        "steps"
+      ],
+      "rule": "a realised value beyond +/-5% stops the run and reports; the estimate is not edited afterwards"
+    }
+  },
+  "cloud": {
+    "host": "hz-4.matpool.com:26197 (24 cores / 172 GB / 2x RTX 3090 24GB)",
+    "concurrency": {
+      "processes": 3,
+      "gpus": 2,
+      "one_process_per_gpu": false,
+      "sharing": "packed by the memory pre-flight, not by a fixed map",
+      "threads_per_process": 4,
+      "seed_gpu_map": {
+        "11": 0,
+        "29": 1,
+        "47": 0
+      }
+    },
+    "checkpoint_dir": "trajectory/",
+    "artifacts_to_retrieve": [
+      "manifest.json",
+      "trajectory.json",
+      "exposure.json",
+      "events.jsonl",
+      "trajectory/training_state.pt",
+      "trajectory/training_state.json",
+      "budget_points/*.json",
+      "budget_points/*.parquet"
+    ]
+  },
+  "evaluation_scope": {
+    "cloud": "validation split 2023-11-01..2023-11-15 = 10 trading days, process diagnostic only",
+    "formal": "the five declared research windows produced locally by replaying exported per-budget-point weights; a cloud validation score is never the delivery evidence",
+    "sealed_final": "never read"
+  },
+  "candidate_score": {
+    "definition": "fixed equal average of the K head outputs, each in its own optimization units",
+    "weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "horizons": [
+      5,
+      15,
+      30,
+      60
+    ],
+    "tuned_after_training": false,
+    "note_zh": "\u5934\u6743\u91cd\u5199\u6b7b\u4e3a 1/K\uff0c\u8bad\u7ec3\u540e\u4e0d\u6539\uff0c\u4e5f\u4e0d\u7528\u5f00\u53d1\u7a97\u5206\u6570\u518d\u8c03"
+  },
+  "scored_point": "mh-1.32",
+  "anchor_point_role": "driver_requires_two_points_only",
+  "non_scored_points": [
+    "mh-stepup-1.33"
+  ],
+  "exported_for_comparison": [
+    "modified_tlob_weights-mh-1.32.json"
+  ],
+  "non_scored_point_exclusion": {
+    "rule": "the 1.33 point may never enter any comparison, blend, checkpoint selection or reported metric",
+    "artifacts": [
+      "modified_tlob_weights-mh-stepup-1.33.json",
+      "budget_points/mh-stepup-1.33_predictions.parquet"
+    ]
+  },
+  "checkpoint_naming": {
+    "rule": "scripts/run_training_trajectory.py names each point weights after the budget-point name",
+    "scored": "modified_tlob_weights-mh-1.32.json",
+    "stepup": "modified_tlob_weights-mh-stepup-1.33.json",
+    "no_overwrite": true
+  },
+  "scoredfirst_conversion_utc": "2026-10-28T13:10:00+00:00",
+  "scoredfirst_conversion_note": "converted from a one-point plan because the trajectory driver refuses fewer than two budget points; the 1.33 point is a throw-away step-up, not a budget rung",
+  "identity_repair": {
+    "seed47": {
+      "utc": "2026-10-28T13:20:00+00:00",
+      "why": "the generated recipe still carried the registered 441-day ladder identity (scaling-441d-seedN) and its output_root; both were rewritten so this arm cannot be mistaken for, or write into, the registered rung",
+      "recipe_sha256_before": "f79920a35422933633488f3a87bb946c2b534004d7cf1b9c076ee24810f9f1fd",
+      "recipe_sha256_after": "524eafd2d2b835a3d1b67f9c09f0f3f5105efcde5aeee6fb2592209d912ed08c",
+      "fields_changed": [
+        "experiment_id",
+        "output_root"
+      ]
+    }
+  }
+}

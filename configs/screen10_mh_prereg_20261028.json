@@ -1,0 +1,476 @@
+{
+  "schema_version": 1,
+  "experiment_id": "screen10-mh-441d-20261028",
+  "kind": "candidate_vs_control_training_arm",
+  "status": "registered",
+  "author": "captain",
+  "frozen_at_utc": "2026-10-28T12:37:24.109034+00:00",
+  "question_zh": "在冻结的 MLPLOB v3 CSZ 441 日配方与 1.32 预算点上，把单一 30 分钟前向 VWAP 收益标签换成 5/15/30/60 四个期限、一个主干四个输出头、推理时固定等权混合，能否在十窗样本外 RankIC 上相对同预算单头对照取得可复验的改进，且跨期限一致性带来更稳的跨窗表现。",
+  "hypothesis_zh": "不同期限的前向 VWAP 收益共享大部分横截面信号但噪声不共线；同一主干上的四个头分别学习各期限，等权混合可以互相抵消期限特异的标签噪声，从而在同一训练预算下提高 RankIC 与跨窗稳定性。若池化配对差低于预先声明的门槛，则本臂的假设被否证。",
+  "factor": {
+    "changed": "data.label_horizons",
+    "from": [
+      30
+    ],
+    "to": [
+      5,
+      15,
+      30,
+      60
+    ],
+    "definition": {
+      "label_k": "close(t + k) / vwap((t, t + k]) - 1",
+      "primary_column": "k=30 keeps the official vwap_return target verbatim",
+      "rebuild": "5/15/60 rebuilt from the 1-minute bars in one bounded pass",
+      "masks": "per-horizon NaN masks, never a row drop",
+      "trading_clock": "lunch break skipped; 11:30 + 30m = 13:30; insufficient session -> NaN",
+      "transform": "per-horizon timestamp z-score + train-set RMS matching",
+      "heads": "one trunk, K=4 Linear(80, 1) heads",
+      "loss": "equal average of per-horizon masked MSE",
+      "score": "fixed equal average of head outputs in optimization units"
+    },
+    "default_path_unchanged": {
+      "claim": "absent or [30] is bit-identical to the registered path",
+      "evidence": {
+        "measured_on": "hz-t3 ZW75JY, /root/py312, CPU device, 2026-10-28",
+        "window": [
+          "2022-01-04",
+          "2022-01-07"
+        ],
+        "label_rows": 23928,
+        "fit_rows": 23928,
+        "absent_vs_explicit_30": "identical",
+        "labels_sha256": "eba2870e850b1424e88ae96b02a90e9c98efb7b3ec5a3a6a1a2820510cb37d14",
+        "windows_sha256": "2791fb5e6057b6cdc7a217eb5bc45774c685af9d6b38b93046d54cded09ac82d",
+        "data_sha256": "924c01e4404ac9501742c6a477db099570a3f74da5653f3e1891f8697141f50e",
+        "state_sha256_after_5_steps": "9ed0f2dea6b09f7be0361f12b64e626d31345d527ceb85a3efed22017b8a4876",
+        "five_step_losses": [
+          2.735749672950668e-05,
+          1.6560159930270433e-05,
+          1.3206067292788765e-05,
+          1.4227484795957897e-05,
+          1.0610767223368314e-05
+        ],
+        "metadata_keys_without_multi_horizon": true
+      },
+      "label_audit": {
+        "measured_on": "hz-t3 ZW75JY, /root/py312, 2026-10-28, three trading days 2022-01-04..2022-01-07",
+        "rows": 23976,
+        "primary_horizon": 30,
+        "rebuilt_nan_rows": {
+          "5": 49,
+          "15": 48,
+          "30": 48,
+          "60": 3039
+        },
+        "rebuilt_nan_fraction": {
+          "5": 0.00204,
+          "15": 0.002,
+          "30": 0.002,
+          "60": 0.12676
+        },
+        "agreement_with_official_primary": {
+          "rows": 23928,
+          "correlation": 0.9937108290029808,
+          "median_abs_diff": 5.927377073056128e-07,
+          "max_abs_diff": 0.010580348963791009,
+          "fraction_within_1e-6": 0.531
+        },
+        "note": "the 60-minute lane is NaN on the 14:30 clock (12.68% of rows), which is the intended edge case, not a row drop; the 30-minute column of the attached matrix is the official target verbatim"
+      }
+    },
+    "code": {
+      "src/jinyiquant/config.py": "DataConfig.label_horizons, default-off serializer, validator",
+      "src/jinyiquant/protocol.py": "DATA_FACTORS gains label_horizons",
+      "src/jinyiquant/data.py": "trading_clock_end, forward_vwap_returns, attach_horizon_labels, target_matrix",
+      "src/jinyiquant/runner.py": "_fit_targets passes the 1-D label or the horizon matrix",
+      "modified_tlob/model.py": "MLPLOB horizons=1 keeps the single head; >1 adds K heads",
+      "modified_tlob/adapter.py": "per-horizon targets/centering, masked MSE, blended score, payload"
+    }
+  },
+  "arms": {
+    "control": {
+      "data.label_horizons": [
+        30
+      ],
+      "role": "the registered 441-day rung at its 1.32 point, three seeds",
+      "recipes": {
+        "11": "configs/scaling_441d_csz_seed11.json",
+        "29": "configs/scaling_441d_csz_seed29.json",
+        "47": "configs/scaling_441d_csz_seed47.json"
+      },
+      "recipe_sha256": {
+        "11": "c4c5353c24caab28585b7e8129b07c9773a603084b2662d444374306f7471ac4",
+        "29": "2e346850407372a34afceac996b4364b327b24feee54feed4c050f4e1a64248b",
+        "47": "50699d51b426a7d8ea540aeb5afff1c6154cc8a5df4c86dd4a88140931d42280"
+      }
+    },
+    "candidate": {
+      "data.label_horizons": [
+        5,
+        15,
+        30,
+        60
+      ],
+      "role": "draft arm D1, multi-horizon labels, three seeds",
+      "recipes": {
+        "11": "configs/screen10_mh_441d_csz_seed11.json",
+        "29": "configs/screen10_mh_441d_csz_seed29.json",
+        "47": "configs/screen10_mh_441d_csz_seed47.json"
+      },
+      "recipe_sha256": {
+        "11": "2b412e19c53156d676a94de3b6d48fb898a5d191a650d3aedc12cb37672ab56d",
+        "29": "9f9de80e7b9b60b8f780286c067e19808916647e7d7c69394f64672f3d902906",
+        "47": "f79920a35422933633488f3a87bb946c2b534004d7cf1b9c076ee24810f9f1fd"
+      },
+      "plans": {
+        "11": "configs/screen10_mh_seed11_1point_plan.json",
+        "29": "configs/screen10_mh_seed29_1point_plan.json",
+        "47": "configs/screen10_mh_seed47_1point_plan.json"
+      },
+      "plan_sha256": {
+        "11": "823eff90a93d1da3f4e8b6aff0d239cff3807654b15af863ea5b2db7a78a8de9",
+        "29": "049f62ecb0302faae7c1fded0f3e94a3b01fcd1dc1619da8540c8719f5f772e3",
+        "47": "8b5b40bdb2e2ff24a2d56f079e4543410af76df09f82f8bdd500c7ac0635d110"
+      }
+    }
+  },
+  "rung": {
+    "train_trading_days": 441,
+    "train_window": [
+      "2022-01-04",
+      "2023-10-31"
+    ],
+    "validation": [
+      "2023-11-01",
+      "2023-11-15"
+    ],
+    "note_zh": "训练窗、验证窗、评估口径与种子都与 441 日对照完全一致，只有标签期限不同"
+  },
+  "seeds": [
+    11,
+    29,
+    47
+  ],
+  "primary_seed": 11,
+  "budget_points": [
+    {
+      "name": "mh-1.32",
+      "effective_epochs": 1.32,
+      "steps": 145290,
+      "role": "inherited from the 441-day rung 1.32 point (3522173 usable samples, batch 32, +/-5%)"
+    }
+  ],
+  "evaluation": {
+    "windows": {
+      "all_ten": [
+        "nov2023",
+        "jan2024",
+        "feb2024",
+        "mar2024",
+        "apr2024",
+        "may2024",
+        "jun2024",
+        "jul2024",
+        "aug2024",
+        "sep2024"
+      ],
+      "delivered_trading_days": {
+        "nov2023": 22,
+        "jan2024": 22,
+        "feb2024": 15,
+        "mar2024": 21,
+        "apr2024": 20,
+        "may2024": 20,
+        "jun2024": 19,
+        "jul2024": 23,
+        "aug2024": 22,
+        "sep2024": 19
+      },
+      "total_days": 203,
+      "source": "configs/dev10_postprocess_prereg_20261028.json",
+      "note_zh": "十窗全部落在每个 checkpoint 的训练窗之外，且不触碰封存区间 [2024-10-08, 2025-01-01]"
+    },
+    "metric": "rank_ic",
+    "caliber": "eval-v2 contract in src/jinyiquant/evaluation.py, gross track, eight clocks per day, no neutralization",
+    "pairing": "candidate - control inside each (seed, window, trading day); then one pooled mean over the three seeds and all 203 (window, day) pairs",
+    "uncertainty": {
+      "method": "whole-series circular moving-block bootstrap of the pooled daily mean",
+      "implementation": "scripts/compare_blend_replay.py::block_interval (fixed 2026-10-28)",
+      "block_days": 5,
+      "blocks_per_draw": 41,
+      "block_rule": "ceil(n / 5) with n = 203 pooled trading days",
+      "draws": 20000,
+      "seed": 20261028,
+      "confidence": 0.95,
+      "retired_estimator": "archived_single_block_interval is the pre-fix estimator whose half width was sqrt(n / 5) too wide; it may reproduce archived readings but may never gate this decision"
+    }
+  },
+  "thresholds": {
+    "min_improvement": 0.003,
+    "ci_must_exclude_zero": true,
+    "min_positive_windows": 7,
+    "windows_total": 10,
+    "positive_rule": "a window counts as positive when its own pooled paired mean over its trading days and the three seeds is > 0",
+    "note_zh": "0.003 沿用已注册对照口径（约 132 日 9 种子标准差 0.00247 的 1.2 倍）；要求 CI 不含零且 7/10 窗为正，是为了同时约束幅度与跨窗一致性"
+  },
+  "primary": {
+    "metric": "rank_ic",
+    "point": "mh-1.32",
+    "seed_pooling": "mean of the three paired seeds before the pooled window mean",
+    "statistic": "pooled paired RankIC difference over the 203 trading days"
+  },
+  "secondary": {
+    "rank_ic_by_window": "per-window pooled paired difference, reported even when the primary fails",
+    "positive_windows": "count of windows with a positive window mean, must be >= 7 of 10",
+    "diagnostics": "per-horizon RankIC of each head on the official 30-minute label, the blend's cross-horizon rank agreement, turnover and long/short spread under the eval-v2 contract; all reported, none may replace the primary"
+  },
+  "decision_rule_zh": "池化配对差 >= 0.003 且 20000 draws 的 95% CI 下界 > 0 且至少 7/10 窗为正，才判本臂通过；任一条不满足即判不通过并保留单头对照；通过后仍需在其它种子或时段复验才能替换主模型",
+  "ordering": {
+    "registered_before_any_candidate_score": true,
+    "no_candidate_run_started": true,
+    "note_zh": "本文件写于任何多头候选训练之前，写入时不存在任何候选分数；注册是之后的独立动作"
+  },
+  "no_threshold_change": true,
+  "cost_cap": {
+    "runs": 3,
+    "steps_per_run": 145290,
+    "wall_seconds_per_run": 9000,
+    "wall_hours_total_upper_bound": 7.5,
+    "note_zh": "三进程并行，单进程 wall 上限沿用 441 日 rung 的 9000 秒"
+  },
+  "homogeneity": {
+    "host": "hz-3 / hz-4 matpool hosts, torch from /root/py312",
+    "threads_per_process": 1,
+    "one_process_per_gpu": false,
+    "note_zh": "候选与对照必须使用同一台机器、同一 torch 版本、同线程数，且同时段内不与他人争 GPU"
+  },
+  "evidence": {
+    "default_path": {
+      "measured_on": "hz-t3 ZW75JY, /root/py312, CPU device, 2026-10-28",
+      "window": [
+        "2022-01-04",
+        "2022-01-07"
+      ],
+      "label_rows": 23928,
+      "fit_rows": 23928,
+      "absent_vs_explicit_30": "identical",
+      "labels_sha256": "eba2870e850b1424e88ae96b02a90e9c98efb7b3ec5a3a6a1a2820510cb37d14",
+      "windows_sha256": "2791fb5e6057b6cdc7a217eb5bc45774c685af9d6b38b93046d54cded09ac82d",
+      "data_sha256": "924c01e4404ac9501742c6a477db099570a3f74da5653f3e1891f8697141f50e",
+      "state_sha256_after_5_steps": "9ed0f2dea6b09f7be0361f12b64e626d31345d527ceb85a3efed22017b8a4876",
+      "five_step_losses": [
+        2.735749672950668e-05,
+        1.6560159930270433e-05,
+        1.3206067292788765e-05,
+        1.4227484795957897e-05,
+        1.0610767223368314e-05
+      ],
+      "metadata_keys_without_multi_horizon": true
+    },
+    "label_audit": {
+      "measured_on": "hz-t3 ZW75JY, /root/py312, 2026-10-28, three trading days 2022-01-04..2022-01-07",
+      "rows": 23976,
+      "primary_horizon": 30,
+      "rebuilt_nan_rows": {
+        "5": 49,
+        "15": 48,
+        "30": 48,
+        "60": 3039
+      },
+      "rebuilt_nan_fraction": {
+        "5": 0.00204,
+        "15": 0.002,
+        "30": 0.002,
+        "60": 0.12676
+      },
+      "agreement_with_official_primary": {
+        "rows": 23928,
+        "correlation": 0.9937108290029808,
+        "median_abs_diff": 5.927377073056128e-07,
+        "max_abs_diff": 0.010580348963791009,
+        "fraction_within_1e-6": 0.531
+      },
+      "note": "the 60-minute lane is NaN on the 14:30 clock (12.68% of rows), which is the intended edge case, not a row drop; the 30-minute column of the attached matrix is the official target verbatim"
+    },
+    "multi_head_smoke": {
+      "measured_on": "hz-t3 ZW75JY, /root/py312, CPU device, seed 11, 30 steps, 2026-10-28",
+      "label_horizons": [
+        5,
+        15,
+        30,
+        60
+      ],
+      "loss_finite": true,
+      "target_finite_fraction": 0.9687,
+      "horizon_target_scales": [
+        0.0031596548693507156,
+        0.004041004471969108,
+        0.005114456739282069,
+        0.006721384302040678
+      ],
+      "all_heads_nonzero": true,
+      "head_gradient_abs_sums": {
+        "heads.0": 0.07781,
+        "heads.1": 0.12623,
+        "heads.2": 0.08838,
+        "heads.3": 0.10087
+      },
+      "export_load_predict_max_abs_diff": 0.0,
+      "export_load_predict_exactly_equal": true,
+      "single_head_roundtrip_exactly_equal": true,
+      "peak_rss_mb_multi": 852.2,
+      "peak_rss_mb_single": 842.0,
+      "mean_step_ms_multi": 70.15,
+      "mean_step_ms_single": 73.36
+    },
+    "estimator_note_zh": "本臂的区块 bootstrap 必须调用仓库内修复版 compare_blend_replay.block_interval（sha 0bf08a47…），不得另写实现"
+  },
+  "risks_zh": [
+    "对照臂（441 日 @1.32、三种子、十窗）的十窗回放必须先按同一 harness 产出，否则配对差不成立",
+    "hz-t3 上的 scripts/compare_blend_replay.py 仍是 2026-10-28 之前的单块版本；分析机必须使用修好的 block_interval，退役估计量不得用于判定",
+    "5/15/60 头用的是由 1 分钟 bar 重建的标签；在 30 分钟主期限上与官方列的相关 0.9937、中位绝对差 5.9e-7、53.1% 落在 1e-6 内、最大 1.06e-2（bar 区间被截断的边缘行）",
+    "60 分钟头在 14:30 时钟上必然缺失（约 12.68% 行），损失按期限掩码跳过，不能因此丢行",
+    "混合权重是固定 1/K、优化单位等权；若训练后发现各头量纲差异很大，本文件不允许事后改权重",
+    "候选配方沿用对照的 experiment_id / output_root；runner 每次分配唯一时间戳目录不会覆盖，但建议启动时显式覆盖到独立 output_root 以免两臂混在同一目录"
+  ],
+  "scope_limits_zh": [
+    "不读封存窗 202410-202412",
+    "不调超参、不改学习率/批大小/epochs",
+    "不改门槛、不改权重、不改窗口集合",
+    "不改已注册的 configs/*",
+    "本臂只回答标签期限这一个因素，不与其他因素同时变化"
+  ],
+  "uncertainty": {
+    "estimator": "compare_blend_replay.block_interval",
+    "semantics": "ceil(n/5) contiguous 5-day blocks per replicate with random start points and wraparound, then the mean over the spliced n days; the replicate distribution is the sampling distribution of the pooled n-day mean",
+    "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+    "implementation_bytes": 23084,
+    "block_days": 5,
+    "draws": 20000,
+    "seed": 20261028,
+    "retired_estimator": "archived_single_block_interval (one 5-day block mean per replicate) is retained for provenance only and may never gate a decision",
+    "debt_note_zh": "旧口径把半宽放大 sqrt(n/5)（n=203 约 6.4 倍），2026-10-28 已修；本臂的主判定只用修复版实现"
+  },
+  "windows": {
+    "screen": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jul2024",
+      "aug2024"
+    ],
+    "screen_trading_days": 165,
+    "confirmation": [
+      "jun2024",
+      "sep2024"
+    ],
+    "confirmation_trading_days": 38,
+    "authority": "configs/dev10_window_roles_20261028.json",
+    "authority_sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4",
+    "read_discipline": "the eight screen windows may be read repeatedly; jun2024 and sep2024 are the frozen confirmation windows and may be read only once, and only on the captain's release"
+  },
+  "fusion": {
+    "score_units": "the multi-horizon score is the fixed equal average of the four heads in their own optimization units; it is not a 30-minute return quantity",
+    "rank_normalization_required": true,
+    "rule": "before any blend or comparison against the single-head candidate, each arm's scores are cross-sectionally rank-normalized within every timestamp; raw-score averaging across arms is forbidden",
+    "rationale_zh": "各头与单头在各自的标准化单位上，直接平均会让尺度支配融合结果；秩变换在每个时间戳内做，与比赛的同刻跨股票排序口径一致",
+    "downstream_warning": "the score must not be treated as an expected return for thresholding or position sizing"
+  },
+  "schema": "screen10-prereg/1",
+  "registered_before_any_candidate_score": true,
+  "registration": {
+    "registered_at_utc": "2026-10-28T13:25:00Z",
+    "registered_by": "captain",
+    "git_head": "737c5c57ff2da22b287cbda4a9ba09dd3263668b",
+    "registered_before_any_candidate_score": true,
+    "decided_scope": "three seeds x scored point mh-1.32 on the 441-day rung, four horizons 5/15/30/60; the mh-stepup-1.33 point exists only to satisfy the trajectory driver and is never compared",
+    "plan_sha256": {
+      "seed11": {
+        "path": "configs/screen10_mh_seed11_scoredfirst_plan.json",
+        "sha256": "7e191c1e3751fff198061a6bfeae11323565d2afae3d2f07a9f96a0e046da711"
+      },
+      "seed29": {
+        "path": "configs/screen10_mh_seed29_scoredfirst_plan.json",
+        "sha256": "489ff809bc233cda5eb08ac4acc7fdd0e9762ce05e698f358b8e01d617c1d07b"
+      },
+      "seed47": {
+        "path": "configs/screen10_mh_seed47_scoredfirst_plan.json",
+        "sha256": "009a2b49c490ae448d028d125179d01f4793da7169e5588cb3da19babe4303f0"
+      }
+    },
+    "recipe_sha256": {
+      "seed11": {
+        "path": "configs/screen10_mh_441d_csz_seed11.json",
+        "sha256": "623bb10103769024e527e4c48562567ae701ab7b396bacea2eb574b253826b94"
+      },
+      "seed29": {
+        "path": "configs/screen10_mh_441d_csz_seed29.json",
+        "sha256": "cc3924adc309939d66e02bd7d1fe8fe6a1b213a33f3a48cf656b084b79c8a076"
+      },
+      "seed47": {
+        "path": "configs/screen10_mh_441d_csz_seed47.json",
+        "sha256": "524eafd2d2b835a3d1b67f9c09f0f3f5105efcde5aeee6fb2592209d912ed08c"
+      }
+    },
+    "roles_authority": {
+      "path": "configs/dev10_window_roles_20261028.json",
+      "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4"
+    },
+    "estimator": {
+      "path": "scripts/compare_blend_replay.py",
+      "sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+      "bytes": 23084,
+      "note": "the repaired block_interval; the retired single-block estimator may not gate"
+    },
+    "window_policy": "screening reads the eight screening windows only (165 trading days = 33 blocks); jun2024 and sep2024 are released for reading by the captain alone, and a direction released once may not be re-read",
+    "threshold_status": "unchanged from the draft floor: min_improvement 0.003, CI excluding zero, at least seven of ten windows positive",
+    "smoke_status": "plan-level static gate passed on hz-t3 (trajectory_config accepted all three plans, deviations only model.max_steps and output_root, derived steps 145269/146370 at usable 3521680); arm-level evidence (default path bit-identical, 15 unit tests, four non-zero head gradients, roundtrip 0.0, +1.0 MB RSS) sits in the draft evidence block",
+    "identity_repair": {
+      "why_zh": "生成器把 441 日阶梯的 experiment_id/output_root 原样带进了候选配方（scaling-441d-seedN），会让这臂被误认成已注册阶梯并写进同一个目录",
+      "fixed_utc": "2026-10-28T13:20:00+00:00",
+      "fields": [
+        "experiment_id",
+        "output_root"
+      ],
+      "recipes_rehashed": true,
+      "plans_repointed": true,
+      "post_fix_recipe_diff_vs_baseline": {
+        "seed11": [
+          "data.label_horizons",
+          "experiment_id",
+          "output_root"
+        ],
+        "seed29": [
+          "data.label_horizons",
+          "experiment_id",
+          "output_root",
+          "seed"
+        ],
+        "seed47": [
+          "data.label_horizons",
+          "experiment_id",
+          "output_root",
+          "seed"
+        ]
+      }
+    },
+    "provenance_open_items": [
+      "hz-t3 derives 145269 steps and hz-4 145290 for the same 1.32 point; the arm runs on hz-t3 and the number is re-derived at run start and recorded in budget.json"
+    ],
+    "host_note": "the plans' cloud.host text still names hz-4 (template inheritance); the arm actually runs on hz-t3 in /root/repo_mh, the same cosmetic deviation as the 600-day extension"
+  },
+  "known_limitations_zh": [
+    "30 分钟头用官方标签原值，5/15/60 分钟头由 1 分钟 bar 重算，两者仍有约 0.4% 的 tick vs bar 边界差（corr 0.9916、中位差 1.1e-7）",
+    "多头分数是各头优化单位的等权平均，不是收益量纲；跨臂融合必须先做每个 timestamp 的横截面秩归一化",
+    "未跑过真实 12 epoch/145290 步，只有 3 天窗口端到端与 3-30 步冒烟"
+  ],
+  "next_steps_after_user_review": [
+    "起跑三条 seed × mh-1.32（hz-t3，排在 R2 与标签波动率调整之后）",
+    "十窗回放后用修复版 block_interval 做配对判定",
+    "jun2024/sep2024 待放行"
+  ]
+}
