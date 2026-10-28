@@ -1,0 +1,70 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-scaling-927d-lotb-extension-20261028",
+ "kind": "extension_of_registered_prereg",
+ "owner_role": "captain",
+ "parent_registration": "configs/b4_data_scaling_prereg_20261027.json",
+ "parent_component": "F (927 trading days, seeds 11/29/47)",
+ "registered_at_utc": "2026-10-28T08:35:35.922477+00:00",
+ "registered_by": "captain",
+ "declared_before_any_score_of_these_seeds": true,
+ "why": [
+  "the rung was registered with three seeds; a three-seed paired mean has SE about 0.0012 while the promotion line is 0.0034, so the rung is judged at 2.8 SE",
+  "the 441-day rung showed the *level* reproduces across independent seed lots (0.07424 vs 0.07428) while the within-lot point ordering does not, so a second lot on the newest rung is the cheapest way to separate level from lot noise",
+  "pooling six seeds is a variance reduction on the rung that currently scores highest; it does not add a new factor"
+ ],
+ "seeds": [
+  53,
+  59,
+  61
+ ],
+ "seeds_already_registered": [
+  11,
+  29,
+  47
+ ],
+ "rung_trading_days": 927,
+ "train_window": [
+  "2020-01-02",
+  "2023-10-31"
+ ],
+ "points": [
+  "1.32",
+  "2.64"
+ ],
+ "steps_per_point": {
+  "1.32": 305227,
+  "2.64": 610453
+ },
+ "unchanged": {
+  "recipe_fields_other_than_seed": "byte-identical to component F (generator reproducibility is asserted before writing)",
+  "budget_points": [
+   "1.32",
+   "2.64"
+  ],
+  "budget_only_overrides": "inherited unchanged from the component-F plans",
+  "evaluation": "the same five-window delivery caliber (104 trading days) used for every rung",
+  "thresholds": "none are introduced here"
+ },
+ "no_threshold_change": true,
+ "does_not_alter_parent_decision": true,
+ "pooling_rule": "the lot-B seeds may be pooled with the registered lot-A seeds to evaluate a six-seed blend of the rung; lot-B alone is not a pre-registered decision arm",
+ "cost": {
+  "processes": 3,
+  "steps_per_seed": 915680,
+  "wall_estimate_hours": 3.5,
+  "host": "hz-4.matpool.com:26197 (2x RTX 3090, 172 GB)"
+ },
+ "artifacts": {
+  "recipes": {
+   "configs/scaling_927d_csz_seed53.json": "0734430296297dbcb8c08f38f320b9b45069b6580560d680378cded7159372f4",
+   "configs/scaling_927d_csz_seed59.json": "2a1c1fc4ab7fbd72b9e3371133be86a39c352f240899ddb9f6981b494d775017",
+   "configs/scaling_927d_csz_seed61.json": "a01a5f528e890e83356bf39f0e0a83790817be67bb378c0ec62125bb86db9aa9"
+  },
+  "plans": {
+   "configs/scaling_927d_seed53_2point_plan.json": "ff63f583fdb6cc6843e516b830dd2b15ad918211df20e438777838aed3232880",
+   "configs/scaling_927d_seed59_2point_plan.json": "e73692f9fcfc9c8b36ba79280292467a79571b1ecd71fa469f5cd89cb00a7547",
+   "configs/scaling_927d_seed61_2point_plan.json": "215ea2bf043e51b0888deb73f9c5d450c557bd81ec4a6162274db30413c1383a"
+  }
+ }
+}
