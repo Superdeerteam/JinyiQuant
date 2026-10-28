@@ -22,7 +22,8 @@ for _path in (ROOT / "src", ROOT):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from jinyiquant.data import build_batch, load_data, select_targets  # noqa: E402
+from jinyiquant.data import (SEALED_END, SEALED_START, build_batch, load_data,  # noqa: E402
+                              select_targets)
 from jinyiquant.evaluation import EVALUATION_VERSION, aggregate_metric, evaluate  # noqa: E402
 from jinyiquant.io import file_sha256, read_json, utc_now, write_json  # noqa: E402
 from jinyiquant.tracking import Recorder, capture_source, finish, new_run_dir  # noqa: E402
@@ -80,8 +81,15 @@ def window_targets(bundle, config: dict, start: pd.Timestamp, end: pd.Timestamp)
                           config["label_horizon_minutes"], sample_times=config["sample_times"])
 
 
-def predict_window(models: dict, bundle, config: dict, keys: pd.DataFrame, chunk_days: int):
-    """Build identical batches once per day chunk and score every version on them."""
+def predict_window(models: dict, bundle, config: dict, keys: pd.DataFrame, chunk_days: int,
+                   version_configs: dict | None = None):
+    """Build one batch per day chunk and score every version on it.
+
+    A version whose saved preprocessing differs in ``feature_transform`` needs its own
+    batch because the transform rewrites the window values, so batches are cached by
+    transform and every other version reuses the shared one.
+    """
+    version_configs = version_configs or {}
     days = np.sort(pd.unique(keys.date.dt.normalize()))
     scores = {name: [] for name in models}
     chunks, fallback_keys = [], []
@@ -89,16 +97,21 @@ def predict_window(models: dict, bundle, config: dict, keys: pd.DataFrame, chunk
         chunk_days_set = set(pd.to_datetime(days[offset:offset + chunk_days]))
         chunk_keys = keys.loc[keys.date.dt.normalize().isin(chunk_days_set)].reset_index(drop=True)
         started = time.monotonic()
-        batch = build_batch(bundle.bars, chunk_keys, config)
+        built = {}
+        for name, model in models.items():
+            cfg = version_configs.get(name, config)
+            variant = cfg.get("feature_transform", "none")
+            if variant not in built:
+                built[variant] = build_batch(bundle.bars, chunk_keys, cfg)
+            scores[name].append(model.predict(built[variant]))
+        batch = built["none"] if "none" in built else next(iter(built.values()))
         missing = batch.effective_rows.sum(axis=1) < int(config["min_history"])
         no_history = ~batch.effective_rows.any(axis=1)
         fallback_keys.append(batch.keys.loc[missing, ["date", "instrument"]].assign(
             no_history=no_history[missing]))
-        for name, model in models.items():
-            scores[name].append(model.predict(batch))
         chunks.append({"days": len(chunk_days_set), "keys": len(batch.keys),
                        "coverage": batch.coverage, "seconds": time.monotonic() - started})
-        del batch
+        del built, batch
         gc.collect()
     result = {name: np.concatenate(values) for name, values in scores.items()}
     return result, chunks, pd.concat(fallback_keys, ignore_index=True)
@@ -145,6 +158,34 @@ def by_time(sections: pd.DataFrame) -> pd.DataFrame:
     }).reset_index()
 
 
+def mint_final_access(plan: dict, config: dict, run_id: str, output_root: Path):
+    """Mint the audited one-time claim that is the only way to open the sealed interval.
+
+    The window is checked against the code constant, so a plan cannot widen or shift it;
+    the audit row and the ``max_views`` limit are enforced by ``tracking.claim_final_access``.
+    """
+    from types import SimpleNamespace
+
+    from jinyiquant.tracking import claim_final_access
+
+    declared = plan["final_access"]
+    start = pd.Timestamp(declared["window"]["start"])
+    end = pd.Timestamp(declared["window"]["end"])
+    if (start, end) != (SEALED_START, SEALED_END):
+        raise ValueError(f"final_access window [{start},{end}) is not the sealed interval "
+                         f"[{SEALED_START},{SEALED_END})")
+    final = SimpleNamespace(start=start, end=end,
+                            model_dump=lambda **_: {"start": start.isoformat(), "end": end.isoformat()})
+    shim = SimpleNamespace(data=SimpleNamespace(source=config.get("source"), version=config.get("version")),
+                           splits=SimpleNamespace(final=final),
+                           output_root=Path(output_root),
+                           final_access=SimpleNamespace(purpose=str(declared.get("purpose", "")).strip(),
+                                                       max_views=int(declared.get("max_views", 1))))
+    if not shim.final_access.purpose:
+        raise ValueError("final_access requires a non-empty purpose")
+    return claim_final_access(shim, run_id)
+
+
 def run(plan_path: Path, output_root: Path | None = None) -> Path:
     plan, config = load_plan(plan_path)
     root = output_root or resolve(plan_path.resolve().parent, plan["output_root"])
@@ -153,9 +194,16 @@ def run(plan_path: Path, output_root: Path | None = None) -> Path:
     recorder.event("run", "started", plan=str(plan_path), windows=len(plan["windows"]),
                    versions=len(plan["versions"]), label_input=False)
     write_json(run_dir / "plan.json", plan)
+    sealed = plan.get("final_access")
+    claim = mint_final_access(plan, config, run_dir.name, root) if sealed else None
+    if claim is not None:
+        recorder.event("data", "final_access_claimed", purpose=sealed.get("purpose"),
+                       window=[str(SEALED_START), str(SEALED_END)], scope=claim.scope,
+                       granted_at=claim.granted_at)
     started = time.monotonic()
     device = "cuda" if _cuda_available() else "cpu"
     models = {}
+    version_configs = {}
     for version in plan["versions"]:
         path = Path(version["weights"])
         digest = file_sha256(path)
@@ -167,6 +215,14 @@ def run(plan_path: Path, output_root: Path | None = None) -> Path:
                      "missing_policy", "missing_sentinel", "price_scale", "sample_times"):
             if name in saved and saved[name] != config[name]:
                 raise ValueError(f"{version['name']}: saved preprocessing {name} differs from replay config")
+        # feature_transform is version-local: the checkpoint records the transform its
+        # windows were trained with, and the replay must rebuild the same inputs.
+        variant = dict(config)
+        variant["feature_transform"] = saved.get("feature_transform", "none")
+        if "feature_transform" in config and config["feature_transform"] != variant["feature_transform"]:
+            raise ValueError(f"{version['name']}: saved preprocessing feature_transform "
+                             f"{variant['feature_transform']!r} differs from replay config")
+        version_configs[version["name"]] = variant
         model.config["batch_size"] = int(plan.get("predict_batch_size", 32))
         models[version["name"]] = model
         recorder.event("loading", "model_loaded", version=version["name"], sha256=digest,
@@ -176,7 +232,7 @@ def run(plan_path: Path, output_root: Path | None = None) -> Path:
     for window in plan["windows"]:
         start, end = pd.Timestamp(window["start"]), pd.Timestamp(window["end"])
         recorder.event("data", "loading", window=window["name"], start=str(start), end=str(end))
-        bundle = load_data(config, start, end)
+        bundle = load_data(config, start, end, sealed_access=claim)
         keys = window_keys(bundle, config, start, end)
         targets = window_targets(bundle, config, start, end)
         if set(map(tuple, targets[["date", "instrument"]].to_numpy())) - set(
@@ -185,7 +241,8 @@ def run(plan_path: Path, output_root: Path | None = None) -> Path:
         recorder.event("data", "validated", window=window["name"], keys=len(keys),
                        targets=len(targets), bars=len(bundle.bars))
         scores, chunks, fallback = predict_window(models, bundle, config, keys,
-                                                  int(plan.get("chunk_days", 11)))
+                                                  int(plan.get("chunk_days", 11)),
+                                                  version_configs)
         counts = daily_counts(keys, targets, fallback)
         write_json(run_dir / "windows" / window["name"] / "coverage.json",
                    {"keys": len(keys), "targets": len(targets), "chunks": chunks,

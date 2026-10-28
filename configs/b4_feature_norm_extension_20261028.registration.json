@@ -1,0 +1,35 @@
+{
+ "schema_version": 1,
+ "kind": "extension_of_registered_prereg",
+ "prereg_path": "configs/b4_feature_norm_prereg_20261028.json",
+ "prereg_sha256": "1e27dffefa7d41e57de0699e20810f8f1e68ab2c96674cd85069d6aaa6f3b025",
+ "registered_at_utc": "2026-10-28T06:03:12Z",
+ "declared_at_utc": "2026-10-28T07:30:00Z",
+ "seeds": [
+  53,
+  59,
+  61
+ ],
+ "note": "extension seeds declared after the registered three-seed run finished and before any replay score existed; the registered decision keeps using seeds 11/29/47 only",
+ "ordering": {
+  "declared_before_any_replay_score": true,
+  "registered_three_seed_run_had_finished": true
+ },
+ "decision_rule": "unchanged from the registered prereg; these seeds are a declared replication, reported separately, and do not replace the registered three-seed test",
+ "recipe_pins": {
+  "configs/featnorm_ext_132d_csz_seed53_control.json": "3804fb01ee02b9560858b818412ad949ea814397a798b4f0ce91b1c8500cae16",
+  "configs/featnorm_ext_132d_csz_seed53_pricerel.json": "b7380bba04c554fa693af8be530ca9692d2f06cc1672811fc6d850474799ee13",
+  "configs/featnorm_ext_132d_csz_seed59_control.json": "23d4367ab4f7f9b5dcf7f0356b3776ee637588cf78e28e1fda3fe4140930a75a",
+  "configs/featnorm_ext_132d_csz_seed59_pricerel.json": "713fdac7c4856ac3ac3c44ad6d614a132dcadc1c9a03348123a075ff81ff5071",
+  "configs/featnorm_ext_132d_csz_seed61_control.json": "d2e9df97718677736cafc2bd467cb3cb6c4f52fe75a2bd303c214b094f06d8d7",
+  "configs/featnorm_ext_132d_csz_seed61_pricerel.json": "5bc2d26f6c1e6f72e498097d96bfb71113b7d8beb915cf6be216782d7f615cb3"
+ },
+ "plan_pins": {
+  "configs/featnorm_ext_132d_seed53_control_plan.json": "ab897c5d8b9cbac329bb3b5ebacfcd52d09f138b49837ed6d575efdf60db09b4",
+  "configs/featnorm_ext_132d_seed59_control_plan.json": "d1c0141195714b78fa35fd947f7cc5a02cfebf002b314dbe6dc8afdcc30a6b3b",
+  "configs/featnorm_ext_132d_seed61_control_plan.json": "2f0a4f23f9fd5ef426991b089d23611bc3072dc230f97909c03eed70e2d4d92b",
+  "configs/featnorm_ext_132d_seed53_pricerel_plan.json": "504f966403793756a9bf58b4fb87e48f03ccbd601b7c6ab63c597420388a93d5",
+  "configs/featnorm_ext_132d_seed59_pricerel_plan.json": "955b71223dc931357e0aabcaa9b89ae73589538190f545fee30dbc82c6337880",
+  "configs/featnorm_ext_132d_seed61_pricerel_plan.json": "508c875aa50684445782b7ce6bb18bd0713a12046e5b32f31a59a49a27534691"
+ }
+}
