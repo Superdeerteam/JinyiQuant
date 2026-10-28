@@ -1,0 +1,109 @@
+{
+  "schema_version": "screen10-screening-addendum/1",
+  "experiment_id": "screen10-screening-addendum-20261028",
+  "kind": "protocol_clarification_applies_forward",
+  "status": "registered",
+  "author": "captain",
+  "registered_at_utc": "2026-10-28T13:24:32.988120+00:00",
+  "purpose_zh": "把 2026-10-28 冻结的窗口角色协议（8 个筛查窗 / 165 个交易日 + jun2024/sep2024 确认窗）应用到本日注册的 screen10 系列实验上，解决'筛查集与阈值分母不一致'的问题。只澄清口径与判定形式，不改任何已注册的阈值、估计量或方向。",
+  "authority": {
+    "file": "configs/dev10_window_roles_20261028.json",
+    "sha256": "3f8782f60ce2c4d06d6a931cf537542ad841aed3b3792132472305d1840743a4",
+    "frozen_at_utc": "2026-10-28T12:12:00Z",
+    "scope_zh": "该文件冻结早于本日任何 screen10 候选产生分数；本附件只是把它落到具体实验上。"
+  },
+  "applies_to": [
+    {
+      "file": "configs/screen10_prereg_20261028.json",
+      "sha256": "875b6ee6b8ace07f63bb1c5d40638ead2f7c1538373295f2718bd13d7c6aa90f",
+      "registered_at_utc": "2026-10-28T12:45:38.578270+00:00",
+      "arms": [
+        "rankhinge (R1)",
+        "lookback240 (R2)"
+      ],
+      "resolution_zh": "该文件把 development_windows 写成十个窗/203 天。本附件规定：筛查阶段的读数只用 8 个筛查窗（165 天），十窗/203 天的池化读数只在最终报告里出现，且一旦出现即视为已花掉 jun2024/sep2024 的确认额度。"
+    },
+    {
+      "file": "configs/screen10_voladj_prereg_20261028.json",
+      "sha256": "53474a7190ebaeb120a512ca69df9c615c518cd6b1371dfa974f6f77d2ab0e61",
+      "registered_at_utc": "2026-10-28T12:46:52.698768+00:00",
+      "arms": [
+        "label_vol_adjustment=realized_vol"
+      ],
+      "resolution_zh": "同上；该文件的 development_windows 已引用窗口角色文件，但没有写死'筛查=8 窗'，本附件补上。"
+    },
+    {
+      "file": "configs/screen10_mh_prereg_20261028.json",
+      "sha256": "6e59bc08535f00ea052222953eafceebdb9ce39bd7199421e1800beb8dd4bf4b",
+      "registered_at_utc": "2026-10-28T12:37:24.109034+00:00",
+      "arms": [
+        "label_horizons=(5,15,30,60)"
+      ],
+      "resolution_zh": "该文件的 thresholds 段写着 min_positive_windows=7 / windows_total=10，而 windows 段又写筛查 8 窗/165 天 + 确认 38 天，两处不自洽。本附件规定以 8 窗/165 天为准，min_positive_windows 仍为 7 —— 即从 '10 窗里 7 个为正（70%）' 收紧口径为 '8 窗里 7 个为正（87.5%）'，阈值 min_improvement=0.003 与 CI 不含零完全不变。"
+    }
+  ],
+  "screening_read": {
+    "metric": "rank_ic",
+    "windows": [
+      "nov2023",
+      "jan2024",
+      "feb2024",
+      "mar2024",
+      "apr2024",
+      "may2024",
+      "jul2024",
+      "aug2024"
+    ],
+    "trading_days": 165,
+    "pairing": "paired within (window, trading day): candidate minus control, pooled over the 165 days",
+    "control_baseline_on_this_screen_set": {
+      "rank_ic": 0.075639,
+      "turnover": 1.1288,
+      "source": "/root/runs/screen10-control-20261028/20261028T114953.558456Z_6bd15e7c8599"
+    },
+    "min_improvement": 0.003,
+    "ci_must_exclude_zero": true,
+    "min_positive_windows": 7,
+    "windows_total": 8,
+    "positive_rule": "a window counts as positive when its own pooled paired mean over its trading days and the three seeds is > 0",
+    "estimator": {
+      "implementation": "scripts/compare_blend_replay.py::block_interval",
+      "implementation_sha256": "0bf08a4783c397ab3d05ec3e2f3ef7899ea94cbd44db4d7cee42cf4e0ddbc4d1",
+      "block_days": 5,
+      "draws": 20000,
+      "seed": 20261028,
+      "retired_estimator": "archived_single_block_interval — provenance only, never gates"
+    }
+  },
+  "confirmation_read": {
+    "windows": [
+      "jun2024",
+      "sep2024"
+    ],
+    "trading_days": 38,
+    "read_budget_per_direction": 1,
+    "criterion_zh": "池化配对均值 > 0 且 ≥21/38 个交易日为正；这是否决线不是晋升线，38 天无法用显著性判定",
+    "order_zh": "只有通过 screening_read 的方向才允许读确认窗，且每个方向只读一次",
+    "note_zh": "jun2024 是现行候选历史最弱的一窗，把两端弱窗放进确认集意味着确认是偏保守的硬测试。"
+  },
+  "ten_window_read": {
+    "allowed": true,
+    "only_as": "final_report",
+    "consequence_zh": "一旦在报告里给出十窗/203 天的池化读数，jun2024/sep2024 即不再是任何方向的干净留出集；此后新方向只能靠筛查 8 窗 + 提高门槛（+0.004~0.005）来判断。"
+  },
+  "no_threshold_change": true,
+  "evidence_that_no_arm_had_a_score_when_this_was_frozen": {
+    "note_zh": "四臂（R1/R2/voladj/mh）此刻都还在训练，1.32 评分点尚未产出；本日之前没有任何一条针对这四臂的十窗回放被启动。",
+    "training_started_utc": {
+      "rankhinge_hz4": "2026-10-28T12:52Z",
+      "lookback240_hz_t3": "2026-10-28T12:52Z",
+      "voladj_hz_t3": "2026-10-28T12:58Z",
+      "multihorizon_hz_t3": "2026-10-28T13:11Z"
+    },
+    "replays_run_for_these_arms_as_of_freeze": "none",
+    "checkpoints_needed_for_a_score_exist_as_of_freeze": false
+  },
+  "caveat_zh": "筛查集 165 天在本日已被十余个候选反复使用，未做多重性校正；+0.003 门槛与 7/8 同向性是把它当'可进入确认窗'的最低证据，不构成晋升声明。",
+  "registered_by": "captain",
+  "no_score_was_seen_before_registration": true
+}
