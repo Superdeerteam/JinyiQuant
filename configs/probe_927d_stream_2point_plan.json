@@ -1,0 +1,29 @@
+{
+ "schema_version": 1,
+ "experiment_id": "probe-927d-stream",
+ "created_at_utc": "2026-10-28T02:00:00+00:00",
+ "status": "unregistered_probe_plan",
+ "question_zh": "\u6d41\u5f0f\u6c60\u63a5\u7ebf\u540e\uff0c927 \u65e5\u7a97\u53e3\u7684 driver \u80fd\u5426\u8d77\u8dd1\u3001\u5cf0\u503c\u5185\u5b58\u662f\u5426 <= 40 GiB\u3001\u6b65\u65f6\u591a\u5c11\u3002",
+ "note": "Engineering probe, not a registered trajectory. The recipe is the registered 927d recipe, unchanged; only the budget points are shrunk to a boot/footprint measurement and the second point proves the checkpoint/resume path on a streamed pool.",
+ "recipe_config": "configs/scaling_927d_csz_seed11.json",
+ "recipe_sha256": "a6199b5cc1981b92d95bad1a4346ef0f71b6a312a4229004a7de818a3c41098e",
+ "budget_points": [
+  {
+   "name": "probe-1",
+   "effective_epochs": 0.0004,
+   "role": "boot, footprint and step cost"
+  },
+  {
+   "name": "probe-2",
+   "effective_epochs": 0.0009,
+   "role": "resume from a streamed checkpoint"
+  }
+ ],
+ "lr_schedule": "constant",
+ "exposure": {
+  "min_coverage": 1e-05,
+  "effective_epochs_atol": 0.001,
+  "track_exposure": true,
+  "note": "a probe covers a negligible fraction of the pool, so min_coverage is tiny"
+ }
+}

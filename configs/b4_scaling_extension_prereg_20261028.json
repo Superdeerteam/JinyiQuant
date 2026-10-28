@@ -1,0 +1,108 @@
+{
+ "schema_version": 1,
+ "registration_id": "b4-scaling-extension-20261028",
+ "owner_role": "captain",
+ "phase": "B4 data-quantity research, 927-day rung extension (candidate refinement)",
+ "status": "registered",
+ "one_shot": true,
+ "registered_at_source": "written while the registered 1.32/2.64 trajectory of the 927-day rung was training and before any 927 score was read",
+ "purpose": "Fix, before any 927-day score exists, the single condition under which the 927-day trajectory is extended from 2.64 to 3.96 effective epochs, so the extension cannot be chosen after seeing the numbers.",
+ "extension_rule": "927 日轨迹是否从 2.64 续到 3.96，当且仅当 927 日的种子配对 (2.64 − 1.32) RankIC 差值为正、且其 5 交易日移动块 bootstrap 95% 区间不含零时触发；否则停在 2.64，不续训。",
+ "evidence_caliber": "与 240→441 那次完全相同——同 5 个审计窗、104 个交易日、eval-v2、按交易日配对。",
+ "not_a_dose_claim": "剂量结论只用已注册的 (1.32, 2.64) 对；3.96 是候选精化，不得用于\"更多数据更好\"的声明。",
+ "homogeneity": "一旦触发，三个种子全部续到 3.96，不允许混合长度的 blend。",
+ "cost_cap": "3 种子 × 305,405 步增量，wall 上限 3 h。",
+ "no_threshold_change": "晋升阈值一个字都不改。",
+ "base_plans": [
+  "configs/scaling_927d_seed11_2point_plan.json",
+  "configs/scaling_927d_seed29_2point_plan.json",
+  "configs/scaling_927d_seed47_2point_plan.json"
+ ],
+ "extension_plans": [
+  "configs/scaling_927d_seed11_3point_plan.json",
+  "configs/scaling_927d_seed29_3point_plan.json",
+  "configs/scaling_927d_seed47_3point_plan.json"
+ ],
+ "plan_shape": {
+  "appended_point": {
+   "name": "scaling-3.96",
+   "effective_epochs": 3.96,
+   "role": "candidate refinement only: the extension is triggered by the pre-registered paired 2.64-vs-1.32 rule, and 3.96 never supports a dose claim"
+  },
+  "unchanged": "recipe_config, recipe_sha256, both registered budget points, exposure, resume, cloud and evaluation_scope are byte-identical to the registered two-point plans",
+  "mechanism": "run_training_trajectory.py --resume-from <finished 2.64 run> continues from that run's last checkpoint; the 1.32 and 2.64 points are not retrained",
+  "derived_reference": "left as registered: it documents the two registered magnitudes; the driver re-derives every point from the pool actually built"
+ },
+ "trigger_reading": {
+  "seed_pairing": [
+   11,
+   29,
+   47
+  ],
+  "paired_quantity": "per-seed RankIC difference (2.64 - 1.32) at the registered points, then the seed mean",
+  "interval": "5-day moving-block bootstrap 95% interval, 4000 draws, paired by trading day (the registered 240->441 estimator)",
+  "windows": "the same five audit windows and 104 paired trading days as the 240->441 comparison",
+  "metric": "eval-v2 RankIC, paired by trading day",
+  "trigger": "seed-paired difference positive AND the 95% interval excludes zero; otherwise the rung stops at 2.64"
+ },
+ "prefix_guard": {
+  "usable_samples": 7399431,
+  "batch_size": 32,
+  "rule": "the source run's trained points must be the head of the extension plan's points (run_training_trajectory.resume_position)",
+  "seeds": {
+   "11": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   },
+   "29": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   },
+   "47": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   }
+  }
+ },
+ "prohibitions": [
+  "no extension when the registered trigger does not fire",
+  "no mixed-length blend across seeds",
+  "no dose claim from 3.96",
+  "no change to any promotion threshold, secondary line, net5 limit or cost scenario",
+  "no reading of the sealed interval",
+  "no retraining of the 1.32 or 2.64 points"
+ ]
+}

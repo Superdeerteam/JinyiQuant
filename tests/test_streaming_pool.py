@@ -258,3 +258,45 @@ def test_streamed_training_reproduces_the_materialised_trajectory():
     assert shifted_losses != left_losses and shifted_progress["steps"] == 10
     assert [name for name in left_state if left_state[name] != shifted_state[name]]
 
+
+
+def test_streaming_scores_chunk_the_pool_without_moving_a_number(monkeypatch):
+    """``TLOBAdapter._predict`` on a pool must equal the same rows of the materialised batch.
+
+    The pool is scored in bounded key chunks instead of over a prefetched window tensor, so the
+    chunk boundary is the only new degree of freedom. A chunk is widened to a whole number of
+    forward slices, which is what keeps a row's device kernel identical; shrinking the requested
+    chunk to seven keys (three draws of eight for 24 keys) makes that rule observable.
+    """
+    pytest.importorskip("torch")
+    from jinyiquant.config import DataConfig, ModelConfig
+    from modified_tlob import adapter as adapter_module
+
+    settings = DataConfig(bars_path="unused", labels_path="unused", source="streaming-predict-test",
+                          version="v1", feature_columns=FEATURES, lookback=16, min_history=1,
+                          history_days=1, sample_times=("10:00",))
+    bars, source = training_case()
+    materialised, pool = build_batch(bars, source, settings), StreamingPool.build(bars, source, settings)
+    model_config = ModelConfig(kind="modified_tlob", hidden_dim=8, num_layers=2, batch_size=4,
+                               epochs=1, device="cpu", log_every_steps=1, target_scaling="train_std")
+    model = adapter_module.TLOBAdapter(model_config, settings, seed=3)
+    model.intercept, model.target_scale = -0.25, 1.75   # a nonzero fallback and scale must both carry
+
+    expected = model._predict(materialised)
+    draws, draw = [], pool.batch
+    monkeypatch.setattr(adapter_module, "PREDICT_CHUNK_ROWS", 7)
+
+    def counting(indices):
+        draws.append(np.asarray(indices).copy())
+        return draw(indices)
+
+    monkeypatch.setattr(pool, "batch", counting)
+    scores = model._predict(pool)
+    assert len(draws) == 3 and [len(draw) for draw in draws] == [8, 8, 8]
+    np.testing.assert_array_equal(np.concatenate(draws), np.arange(len(pool.keys)))
+    assert scores.tobytes() == expected.tobytes()
+
+    # The same code on a pool whose windows are one bar later must score differently, or the
+    # equality above only proves the two paths are equally blind.
+    pool.begin = pool.begin + 1
+    assert model._predict(pool).tobytes() != expected.tobytes()

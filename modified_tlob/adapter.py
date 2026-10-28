@@ -30,6 +30,8 @@ COMPILE_OPTIONS = {"eager": {}, "default": {"mode": "default"},
                    "aot-eager": {"backend": "aot_eager"}}
 # A compiled trunk must reproduce the eager forward bit-for-bit within this bound.
 COMPILE_EQUIVALENCE_ATOL = 1e-6
+# Key chunk a streaming pool is scored in: its windows are built per chunk, never pooled.
+PREDICT_CHUNK_ROWS = 8192
 
 
 def _trajectory_helpers():
@@ -47,9 +49,14 @@ def _streaming_pool(batch):
 
     Only ``jinyiquant.pool.StreamingPool`` takes the streamed-window path; the type is resolved
     lazily for the same reason as the trajectory helpers (the flat inference package carries
-    neither module), so a materialised ``Batch`` keeps its exact training path.
+    neither module), so a materialised ``Batch`` keeps its exact training path. A build without
+    the pool module can hold no pool - the class is defined there - so an absent module means
+    "materialised" rather than an error on the inference path.
     """
-    pool_type = importlib.import_module(STREAMING_POOL_MODULE).StreamingPool
+    try:
+        pool_type = importlib.import_module(STREAMING_POOL_MODULE).StreamingPool
+    except ModuleNotFoundError:
+        return None
     return batch if isinstance(batch, pool_type) else None
 
 
@@ -1041,8 +1048,29 @@ class TLOBAdapter:
         return self._predict(batch)
 
     def _predict(self, batch):
-        """Fixed-weight scores for epoch diagnostics; public inference still requires a fitted model."""
-        x = self._input(batch)
+        """Fixed-weight scores for epoch diagnostics; public inference still requires a fitted model.
+
+        ``batch`` is a materialised :class:`jinyiquant.data.Batch` or a
+        :class:`jinyiquant.pool.StreamingPool`. The pool has no window tensor to score in one
+        pass, so a bounded key chunk is windowed and scored at a time, and the chunk is a whole
+        number of forward slices: a row's score comes out of a device kernel whose tiling depends
+        on how many rows it is fed, so scoring the pool in ``batch_size`` slices aligned to the
+        pool start is what keeps the two paths bitwise equal.
+        """
+        pool = _streaming_pool(batch)
+        if pool is None:
+            return self._score(self._input(batch), batch.observed)
+        width = self.config["batch_size"]
+        chunk_rows = max(width, -(-PREDICT_CHUNK_ROWS // width) * width)
+        scores = np.empty(len(pool), dtype=np.float64)
+        for start in range(0, len(pool), chunk_rows):
+            rows = np.arange(start, min(start + chunk_rows, len(pool)))
+            batch_chunk = pool.batch(rows)
+            scores[rows] = self._score(self._input(batch_chunk), batch_chunk.observed)
+        return scores
+
+    def _score(self, x, observed):
+        """Device forward in batch-size slices, then the missing-history fallback score."""
         scores = np.empty(len(x), dtype=np.float64)
         self.network.eval()
         with torch.inference_mode():
@@ -1050,7 +1078,7 @@ class TLOBAdapter:
                 xb = torch.from_numpy(x[offset:offset + self.config["batch_size"]]).to(self.device)
                 scores[offset:offset + len(xb)] = self.network(xb).cpu().numpy()
         scores *= self.target_scale
-        missing = (batch.observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
+        missing = (observed[..., :self.lob_feature_count].any(axis=2).sum(axis=1)
                    < self.preprocessing["min_history"])
         # Fallback is the fitted training-target mean. For timestamp-centered training
         # this is a relative score; no future timestamp mean or evaluation label exists here.

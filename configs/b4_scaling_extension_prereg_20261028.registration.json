@@ -1,0 +1,97 @@
+{
+ "schema_version": 1,
+ "prereg_path": "configs/b4_scaling_extension_prereg_20261028.json",
+ "prereg_sha256": "4f83a9af3e3bfb219b9432cd657df4469bbe7ead4d9b8eaf1b14e125274e7775",
+ "registered_at": "2026-10-28T04:55:53.955660+00:00",
+ "git_head": "6669736d10e6771f0d02b0f453648df6c7b7f105",
+ "plan_sha256": {
+  "configs/scaling_927d_seed11_3point_plan.json": "fdcef206bb24a218dae654d5c99ffa25ef72d31eab346bbb0a351a4687011e69",
+  "configs/scaling_927d_seed29_3point_plan.json": "262200d96f0f7de413f79d53ba795acfc5d1d9d874507cb8ab547a2f661afef0",
+  "configs/scaling_927d_seed47_3point_plan.json": "1f00e5b45e98738b6c4924cd8cd3a7e51edcb895c0eb2118e880e49442fae113"
+ },
+ "recipe_sha256": {
+  "configs/scaling_927d_csz_seed11.json": "a6199b5cc1981b92d95bad1a4346ef0f71b6a312a4229004a7de818a3c41098e",
+  "configs/scaling_927d_csz_seed29.json": "5abac3ee8c374ccd4b39160437daac8c42d2894a5427b8b7011493007eb02e11",
+  "configs/scaling_927d_csz_seed47.json": "4fcd865cbfd5df85f3e561b17220423f09702e39327f4bc7c092548536afbef4"
+ },
+ "ordering": {
+  "registered_before_the_extension_run_started": true,
+  "registered_before_any_927_score_was_read": true,
+  "note": "the registered 1.32/2.64 trajectory of the 927-day rung was already training; the extension this document governs has neither started nor been read"
+ },
+ "prefix_guard": {
+  "usable_samples": 7399431,
+  "batch_size": 32,
+  "rule": "the source run's trained points must be the head of the extension plan's points (run_training_trajectory.resume_position)",
+  "seeds": {
+   "11": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   },
+   "29": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   },
+   "47": {
+    "registered_steps": [
+     305227,
+     610453
+    ],
+    "extension_steps": [
+     305227,
+     610453,
+     915680
+    ],
+    "increment": 305227,
+    "prefix_accepted": true,
+    "shifted_point_rejected": true,
+    "finished_plan_rejected": true
+   }
+  }
+ },
+ "code": {
+  "git_head": "6669736d10e6771f0d02b0f453648df6c7b7f105",
+  "uncommitted_paths": [
+   "configs/b4_scaling_extension_prereg_20261028.json",
+   "configs/b4_scaling_extension_prereg_20261028.registration.json",
+   "configs/probe_927d_stream_2point_plan.json",
+   "configs/scaling_927d_seed11_3point_plan.json",
+   "configs/scaling_927d_seed29_3point_plan.json",
+   "configs/scaling_927d_seed47_3point_plan.json",
+   "configs/stream_pool_probe_local_20261027.json",
+   "modified_tlob/adapter.py",
+   "scripts/bench_kernel_paths.py",
+   "scripts/run_training_trajectory.py",
+   "scripts/scaling_extension_prereg.py",
+   "scripts/verify_resume_from.py",
+   "scripts/verify_trajectory_streaming.py",
+   "tests/test_streaming_pool.py",
+   "tests/test_trajectory_streaming.py"
+  ],
+  "driver_sha256": "646813d1c6908b2a6b53b3366fbf3e4171472baf4457120790433356f4e334d2",
+  "adapter_sha256": "e2f983fb7af1f6a3d4f0718ce7d0fa2e57d1b6042a459f01d807cf24d7440f28",
+  "digest_rule": "LF-normalised bytes, so the digests match the git-archive tree on the host"
+ }
+}
